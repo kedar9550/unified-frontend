@@ -518,7 +518,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
 
                 {/* Actions Section */}
                 <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 0" } }}>
-                    {((isHOD && data.status === 'Pending at HOD') || (isResearchAdmin && data.status === 'Pending at R&D')) ? (
+                    {(isResearchAdmin && data.status === 'Pending at R&D') ? (
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", p: 4, mb: 0, height: "100%" }}>
                             <SectionHeader icon={<GavelIcon />} title="Review Decision" />
 

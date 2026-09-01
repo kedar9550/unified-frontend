@@ -96,6 +96,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
     const [sdgMap, setSdgMap] = useState({});
     const [profileImageSrc, setProfileImageSrc] = useState(null);
     const [editOpen, setEditOpen] = useState(false);
+    const [sdgList, setSdgList] = useState([]);
 
     const [leftCardHeight, setLeftCardHeight] = useState(null);
     const observerRef = React.useRef(null);
@@ -199,7 +200,15 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
     useEffect(() => {
         const fetchDetails = async () => {
             try {
-                const res = await API.get(`/api/research/journal/${id}`);
+                const [res, sdgRes] = await Promise.all([
+                    API.get(`/api/research/journal/${id}`),
+                    API.get('/api/sdg?limit=100').catch(() => null)
+                ]);
+
+                if (sdgRes?.data?.success) {
+                    setSdgList(sdgRes.data.data || []);
+                }
+
                 if (res.data?.success) {
                     const journal = res.data.data;
                     setData(journal);
@@ -712,44 +721,62 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                             "&::-webkit-scrollbar-track": { background: "rgba(0, 0, 0, 0.03)", borderRadius: "10px" },
                             "&::-webkit-scrollbar-thumb": { background: "rgba(0, 0, 0, 0.15)", borderRadius: "10px", "&:hover": { background: "var(--color-primary)" } }
                         }}>
-                            {getMatchedSdgBadgeList(data.sdgs).map((sdg, idx) => (
-                                <Box
-                                    key={idx}
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 1.5,
-                                        p: 1.25,
-                                        borderRadius: "10px",
-                                        background: "var(--bg-panel)",
-                                        border: "1px solid var(--border-color)",
-                                        transition: "all 0.2s ease",
-                                        "&:hover": { transform: "translateX(2px)", borderColor: sdg.color }
-                                    }}
-                                >
-                                    <Box
-                                        sx={{
-                                            width: 32,
-                                            height: 32,
-                                            borderRadius: "6px",
-                                            bgcolor: sdg.color,
-                                            color: "#ffffff",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            fontWeight: 900,
-                                            fontSize: "0.75rem",
-                                            flexShrink: 0,
-                                            boxShadow: `0 2px 8px ${sdg.color}44`
-                                        }}
-                                    >
-                                        <PublicIcon sx={{ fontSize: 18 }} />
-                                    </Box>
-                                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>
-                                        {sdg.label}
-                                    </Typography>
-                                </Box>
-                            ))}
+                            {(() => {
+                                const numbers = data.sdgs ? String(data.sdgs).match(/\d+/g) : null;
+                                if (!numbers) return null;
+                                const matchedNumbers = [...new Set(numbers.map(n => parseInt(n, 10)))].sort((a, b) => a - b);
+                                return matchedNumbers.map((num, idx) => {
+                                    const dbSdg = sdgList.find(s => parseInt(s.sdgNumber, 10) === num);
+                                    const fallback = SDG_COLOR_MAP[num] || { code: `SDG-${num}`, label: `SDG-${num}`, color: "#000" };
+                                    const color = dbSdg?.backgroundColor || fallback.color;
+                                    const imageUrl = dbSdg?.imageUrl ? `${API.defaults.baseURL || ''}${dbSdg.imageUrl}` : null;
+                                    const label = dbSdg?.sdgTitle ? `SDG-${num}: ${dbSdg.sdgTitle}` : fallback.label;
+                                    
+                                    return (
+                                        <Box
+                                            key={idx}
+                                            sx={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 1.5,
+                                                p: 1.25,
+                                                borderRadius: "10px",
+                                                background: "var(--bg-panel)",
+                                                border: "1px solid var(--border-color)",
+                                                transition: "all 0.2s ease",
+                                                "&:hover": { transform: "translateX(2px)", borderColor: color }
+                                            }}
+                                        >
+                                            <Box
+                                                sx={{
+                                                    width: 32,
+                                                    height: 32,
+                                                    borderRadius: "6px",
+                                                    bgcolor: color,
+                                                    color: "#ffffff",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                    fontWeight: 900,
+                                                    fontSize: "0.75rem",
+                                                    flexShrink: 0,
+                                                    boxShadow: `0 2px 8px ${color}44`,
+                                                    overflow: 'hidden'
+                                                }}
+                                            >
+                                                {imageUrl ? (
+                                                    <img src={imageUrl} alt={`SDG ${num}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                ) : (
+                                                    <PublicIcon sx={{ fontSize: 18 }} />
+                                                )}
+                                            </Box>
+                                            <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>
+                                                {label}
+                                            </Typography>
+                                        </Box>
+                                    );
+                                });
+                            })()}
                         </Box>
                     </Card>
                 </Box>
@@ -775,6 +802,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                 <TableRow>
                                     <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>POSITION</TableCell>
                                     <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>TYPE</TableCell>
                                     <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
                                 </TableRow>
                             </TableHead>
@@ -800,6 +828,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                                     </Box>
                                                 </TableCell>
                                                 <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
+                                                <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)", textTransform: "capitalize" }}>{ca.CoAuthorType || "-"}</TableCell>
                                                 <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
                                             </TableRow>
                                         );
@@ -850,7 +879,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 {data.hodComment && <Box sx={{ flex: 1, minWidth: 300 }}><Card sx={{ ...cardStyle, borderLeft: "4px solid #ffc107", height: "100%", mb: 0 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><HistoryIcon sx={{ color: "#ffc107" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>HOD Review</Typography></Box><Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}><Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.hodComment}"</Typography></Box></Card></Box>}
 
                 <Box sx={{ flex: 1, minWidth: 350 }}>
-                    {((isHOD && data.status === 'Pending at HOD') || (isResearchAdmin && data.status === 'Pending at R&D')) ? (
+                    {(isResearchAdmin && data.status === 'Pending at R&D') ? (
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
 
