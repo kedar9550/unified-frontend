@@ -129,20 +129,27 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                             <TextField fullWidth label="DOI" name="doi" value={formData.doi || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" } }}>
                             <FormControl fullWidth size="small">
                                 <InputLabel>Journal Type</InputLabel>
                                 <Select label="Journal Type" name="journalType" value={formData.journalType || ""} onChange={handleChange}>
                                     <MenuItem value="SCI">SCI</MenuItem>
                                     <MenuItem value="SCIE">SCIE</MenuItem>
-                                    <MenuItem value="SCOPUS">SCOPUS</MenuItem>
                                     <MenuItem value="ESCI">ESCI</MenuItem>
-                                    <MenuItem value="UGC">UGC</MenuItem>
-                                    <MenuItem value="Other">Other</MenuItem>
+                                    <MenuItem value="None">None</MenuItem>
                                 </Select>
                             </FormControl>
                         </Box>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" } }}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Scopus</InputLabel>
+                                <Select label="Scopus" name="isScopus" value={formData.isScopus || ""} onChange={handleChange}>
+                                    <MenuItem value="Yes">Yes</MenuItem>
+                                    <MenuItem value="No">No</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Box>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" } }}>
                             <FormControl fullWidth size="small">
                                 <InputLabel>Quartile</InputLabel>
                                 <Select label="Quartile" name="journalQuartile" value={formData.journalQuartile || ""} onChange={handleChange}>
@@ -150,20 +157,14 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                                     <MenuItem value="Q2">Q2</MenuItem>
                                     <MenuItem value="Q3">Q3</MenuItem>
                                     <MenuItem value="Q4">Q4</MenuItem>
-                                    <MenuItem value="N/A">N/A</MenuItem>
+                                    <MenuItem value="None">None</MenuItem>
                                 </Select>
                             </FormControl>
                         </Box>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" } }}>
                             <TextField fullWidth label="Publication Scope" name="publicationScope" value={formData.publicationScope || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" } }}>
-                            <TextField fullWidth label="Total Authors" name="totalAuthors" type="number" value={formData.totalAuthors || ""} onChange={handleChange} variant="outlined" size="small" />
-                        </Box>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" } }}>
-                            <TextField fullWidth label="Applicant Position" name="userAuthorPosition" type="number" value={formData.userAuthorPosition || ""} onChange={handleChange} variant="outlined" size="small" />
-                        </Box>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" } }}>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                             <FormControl fullWidth size="small">
                                 <InputLabel>Published Month</InputLabel>
                                 <Select label="Published Month" name="publishedMonth" value={formData.publishedMonth || ""} onChange={handleChange}>
@@ -171,7 +172,7 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                                 </Select>
                             </FormControl>
                         </Box>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" } }}>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                             <FormControl fullWidth size="small">
                                 <InputLabel>Published Year</InputLabel>
                                 <Select label="Published Year" name="publishedYear" value={formData.publishedYear || ""} onChange={handleChange}>
@@ -221,7 +222,6 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                             <TextField fullWidth label="Citations" name="citations" type="number" value={formData.citations || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
-                        {renderArrayEditor('coAuthors', 'Co-Authors', 'authorPosition')}
                     </Box>
                 );
 

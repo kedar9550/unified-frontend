@@ -15,6 +15,8 @@ import HistoryIcon from '@mui/icons-material/History';
 import GavelIcon from '@mui/icons-material/Gavel';
 import DownloadIcon from '@mui/icons-material/Download';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
+import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
+import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import ArticleIcon from '@mui/icons-material/Article';
@@ -37,6 +39,8 @@ import GrassIcon from '@mui/icons-material/Grass';
 import PublicIcon from '@mui/icons-material/Public';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
 
 const SDG_COLOR_MAP = {
     1: { code: "SDG-1", label: "SDG-1: No Poverty", color: "#E5243B" },
@@ -97,6 +101,10 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
     const [profileImageSrc, setProfileImageSrc] = useState(null);
     const [editOpen, setEditOpen] = useState(false);
     const [sdgList, setSdgList] = useState([]);
+    const [decisionMode, setDecisionMode] = useState(null);
+    const [isEditingDetails, setIsEditingDetails] = useState(false);
+    const [editableData, setEditableData] = useState({});
+    const [detailsSaving, setDetailsSaving] = useState(false);
 
     const [leftCardHeight, setLeftCardHeight] = useState(null);
     const observerRef = React.useRef(null);
@@ -124,6 +132,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
     useEffect(() => {
         API.get("/api/sdgs").then(res => {
             if (res.data?.success) {
+                setSdgList(res.data.data);
                 const map = {};
                 res.data.data.forEach(sdg => {
                     const title = sdg.sdgTitle.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
@@ -256,10 +265,6 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
 
         if (action === 'Approve') {
             if (isResearchAdmin) {
-                if (!jcrImpactFactor) {
-                    toast.error('Please enter the Impact Factor (JCR)');
-                    return;
-                }
                 if (data.applyIncentive === 'Yes' && !approvedAmount) {
                     toast.error('Please enter the approved incentive amount');
                     return;
@@ -277,14 +282,15 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
             const payload = {
                 action,
                 comment: remarks,
-                approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined,
-                hIndex: isResearchAdmin ? hIndex : undefined,
-                jcrImpactFactor: isResearchAdmin ? jcrImpactFactor : undefined,
-                citations: isResearchAdmin ? citations : undefined,
-                journalQuartile: isResearchAdmin ? quartile : undefined,
-                journalType: isResearchAdmin ? journalType : undefined,
-                appraisalEligible: isResearchAdmin ? appraisalEligible : undefined
             };
+            if (isResearchAdmin && data.applyIncentive === 'Yes' && approvedAmount) payload.approvedAmount = approvedAmount;
+            if (isResearchAdmin && hIndex) payload.hIndex = hIndex;
+            if (isResearchAdmin && jcrImpactFactor) payload.jcrImpactFactor = jcrImpactFactor;
+            if (isResearchAdmin && citations) payload.citations = citations;
+            if (isResearchAdmin && quartile) payload.journalQuartile = quartile;
+            if (isResearchAdmin && journalType) payload.journalType = journalType;
+            if (isResearchAdmin && action === 'Approve' && appraisalEligible) payload.appraisalEligible = appraisalEligible;
+
             const res = await API.put(endpoint, payload);
             if (res.data?.success) {
                 toast.success(`Request ${action === 'Approve' ? 'Approved' : 'Rejected'} successfully`);
@@ -423,9 +429,13 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         </Box>
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
-                        <Chip
-                            icon={<AccessTimeIcon sx={{ fontSize: "16px !important", color: "inherit" }} />}
-                            label={data.status || "Pending at HOD"}
+                            <Chip
+                                icon={
+                                    /approved/i.test(data.status) ? <CheckCircleOutlineIcon sx={{ fontSize: "16px !important", color: "inherit" }} /> :
+                                    /reject/i.test(data.status) ? <CloseIcon sx={{ fontSize: "16px !important", color: "inherit" }} /> :
+                                    <AccessTimeIcon sx={{ fontSize: "16px !important", color: "inherit" }} />
+                                }
+                                label={data.status || "Pending at HOD"}
                             sx={{
                                 bgcolor: /approved/i.test(data.status) ? "rgba(46, 125, 50, 0.1)" : /reject/i.test(data.status) ? "rgba(211, 47, 47, 0.1)" : "rgba(237, 108, 2, 0.1)",
                                 color: /approved/i.test(data.status) ? "#2e7d32" : /reject/i.test(data.status) ? "#d32f2f" : "#ed6c02",
@@ -540,32 +550,89 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         }}
                     >
                         <Box sx={{ p: 3, pb: 2, borderBottom: "1px solid var(--border-color)" }}>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
-                                <FormatListBulletedIcon sx={{ color: "var(--color-primary)" }} />
-                                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                                    Publication Details
-                                </Typography>
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                    <FormatListBulletedIcon sx={{ color: "var(--color-primary)" }} />
+                                    <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                                        Publication Details
+                                    </Typography>
+                                </Box>
+                                {isResearchAdmin && (
+                                    isEditingDetails ? (
+                                        <Box sx={{ display: "flex", gap: 1 }}>
+                                            <Button size="small" variant="outlined" color="inherit" onClick={() => setIsEditingDetails(false)} disabled={detailsSaving}>Cancel</Button>
+                                            <Button 
+                                                size="small" 
+                                                variant="contained" 
+                                                color="primary" 
+                                                startIcon={<SaveIcon />} 
+                                                disabled={detailsSaving}
+                                                onClick={async () => {
+                                                    setDetailsSaving(true);
+                                                    try {
+                                                        const res = await API.put(`/api/hod/research-requests/journal/${data._id}`, editableData);
+                                                        if (res.data?.success) {
+                                                            setData(res.data.data);
+                                                            setIsEditingDetails(false);
+                                                            toast.success("Publication details updated successfully");
+                                                        }
+                                                    } catch (err) {
+                                                        toast.error("Failed to update publication details");
+                                                    } finally {
+                                                        setDetailsSaving(false);
+                                                    }
+                                                }}
+                                            >
+                                                Save
+                                            </Button>
+                                        </Box>
+                                    ) : (
+                                        <Button 
+                                            size="small" 
+                                            variant="outlined" 
+                                            startIcon={<EditIcon />}
+                                            onClick={() => {
+                                                setEditableData({
+                                                    journalQuartile: data.journalQuartile || data.categoryOfJournal || "",
+                                                    isScopus: data.isScopus || "",
+                                                    journalType: data.journalType || "",
+                                                    vol: data.vol || "",
+                                                    issue: data.issue || "",
+                                                    hIndex: data.hIndex || "",
+                                                    jcrImpactFactor: data.jcrImpactFactor || data.impactFactor || "",
+                                                    citations: data.citations || ""
+                                                });
+                                                setIsEditingDetails(true);
+                                            }}
+                                            sx={{ borderRadius: "8px", textTransform: "none" }}
+                                        >
+                                            Edit
+                                        </Button>
+                                    )
+                                )}
                             </Box>
                             <Box sx={{ width: 140, height: 3, bgcolor: "var(--color-primary)", borderRadius: "3px" }} />
                         </Box>
                         <Box sx={{ display: "flex", flexDirection: "column" }}>
                             {[
-                                { label: "Academic Year", value: data.academicYear?.year || "-", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                                { label: "DOI", value: data.doi || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                                { label: "Applicant Author Position", value: data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-"), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                                { label: "Journal Quartile", value: data.journalQuartile || data.categoryOfJournal || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                                { label: "Scopus", value: data.isScopus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                                { label: "Journal Type", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                                { label: "Volume", value: data.vol || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                                { label: "Issue", value: data.issue || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                                { label: "Published Year", value: data.publishedYear || data.year || "-", icon: <CalendarTodayIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                                { label: "Published Month", value: data.publishedMonth || data.month || "-", icon: <CalendarMonthIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                                { label: "H-Index", value: data.hIndex || "-", icon: <TrendingUpIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                                { label: "Impact Factor", value: data.jcrImpactFactor || data.impactFactor || "-", icon: <BarChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                                { label: "Citations", value: data.citations || "-", icon: <FormatQuoteIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                                { label: "AGEC Referencing Numbers", value: data.agecReferencingNumbers || data.referencingNos || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                                { label: "Number of References Belonging to AGEC", value: data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-"), icon: <GroupsIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                                { label: "Seed Grant Work", value: data.applyingSeedGrant || "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> }
+                                { key: "academicYear", label: "Academic Year", value: data.academicYear?.year || "-", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                { key: "doi", label: "DOI", value: data.doi || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                { key: "authorPos", label: "Applicant Author Position", value: data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-"), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                { key: "journalQuartile", label: "Journal Quartile", value: data.journalQuartile || data.categoryOfJournal || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Q1", "Q2", "Q3", "Q4", "None"] },
+                                { key: "isScopus", label: "Scopus", value: data.isScopus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
+                                { key: "journalType", label: "Journal Type", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["SCI", "SCIE", "ESCI", "None"] },
+                                { key: "vol", label: "Volume", value: data.vol || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
+                                { key: "issue", label: "Issue", value: data.issue || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
+                                { key: "publishedYear", label: "Published Year", value: data.publishedYear || data.year || "-", icon: <CalendarTodayIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                { key: "publishedMonth", label: "Published Month", value: data.publishedMonth || data.month || "-", icon: <CalendarMonthIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                { key: "hIndex", label: "H-Index", value: data.hIndex || "-", icon: <TrendingUpIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "number" },
+                                { key: "jcrImpactFactor", label: "Impact Factor", value: data.jcrImpactFactor || data.impactFactor || "-", icon: <BarChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "number" },
+                                { key: "citations", label: "Citations", value: data.citations || "-", icon: <FormatQuoteIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "number" },
+                                { key: "agecReferencingNumbers", label: "AGEC Referencing Numbers", value: data.agecReferencingNumbers || data.referencingNos || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                { key: "numberOfReferences", label: "Number of References Belonging to AGEC", value: data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-"), icon: <GroupsIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                { key: "applyingSeedGrant", label: "Seed Grant Work", value: data.applyingSeedGrant || "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                { key: "applyIncentive", label: "Apply For Incentive", value: data.applyIncentive || "No", icon: <CardGiftcardIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                { key: "approvedAmount", label: "Approved Incentive Amount", value: data.approvedAmount ? `₹${data.approvedAmount}` : "-", icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false }
                             ].map((item, idx, arr) => (
                                 <Box
                                     key={idx}
@@ -586,9 +653,32 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                             {item.label}
                                         </Typography>
                                     </Box>
-                                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", textAlign: "right", maxWidth: "55%", wordBreak: "break-word" }}>
-                                        {item.value}
-                                    </Typography>
+                                    
+                                    {isEditingDetails && item.editable ? (
+                                        item.type === "select" ? (
+                                            <Select
+                                                size="small"
+                                                value={editableData[item.key] || ""}
+                                                onChange={(e) => setEditableData({ ...editableData, [item.key]: e.target.value })}
+                                                sx={{ minWidth: 120, height: 32, fontSize: "0.875rem" }}
+                                            >
+                                                {item.options.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+                                            </Select>
+                                        ) : (
+                                            <TextField
+                                                size="small"
+                                                type={item.type === "number" ? "number" : "text"}
+                                                value={editableData[item.key] || ""}
+                                                onChange={(e) => setEditableData({ ...editableData, [item.key]: e.target.value })}
+                                                sx={{ width: 120, "& .MuiInputBase-root": { height: 32, fontSize: "0.875rem" } }}
+                                                inputProps={item.type === "number" ? { step: "any" } : {}}
+                                            />
+                                        )
+                                    ) : (
+                                        <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", textAlign: "right", maxWidth: "55%", wordBreak: "break-word" }}>
+                                            {item.value}
+                                        </Typography>
+                                    )}
                                 </Box>
                             ))}
                         </Box>
@@ -726,7 +816,10 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                 if (!numbers) return null;
                                 const matchedNumbers = [...new Set(numbers.map(n => parseInt(n, 10)))].sort((a, b) => a - b);
                                 return matchedNumbers.map((num, idx) => {
-                                    const dbSdg = sdgList.find(s => parseInt(s.sdgNumber, 10) === num);
+                                    const dbSdg = sdgList.find(s => {
+                                        const sNum = parseInt(String(s.sdgNumber).replace(/\D/g, ''), 10);
+                                        return sNum === num;
+                                    });
                                     const fallback = SDG_COLOR_MAP[num] || { code: `SDG-${num}`, label: `SDG-${num}`, color: "#000" };
                                     const color = dbSdg?.backgroundColor || fallback.color;
                                     const imageUrl = dbSdg?.imageUrl ? `${API.defaults.baseURL || ''}${dbSdg.imageUrl}` : null;
@@ -883,90 +976,63 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
 
-                            {isResearchAdmin && (
-                                <Box sx={{ display: "flex", gap: 3, mb: 3, flexWrap: "wrap" }}>
-                                    <Box sx={{ flex: "1 1 150px" }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>QUARTILE</Typography>
-                                        <Select fullWidth size="small" value={quartile} onChange={e => setQuartile(e.target.value)} displayEmpty sx={{ borderRadius: "10px", bgcolor: "var(--bg-panel)" }}>
-                                            <MenuItem value="" disabled>Select Quartile</MenuItem>
-                                            <MenuItem value="Q1">Q1</MenuItem>
-                                            <MenuItem value="Q2">Q2</MenuItem>
-                                            <MenuItem value="Q3">Q3</MenuItem>
-                                            <MenuItem value="Q4">Q4</MenuItem>
-                                        </Select>
+                            {!decisionMode ? (
+                                <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
+                                    <Button variant="outlined" color="error" onClick={() => setDecisionMode('Reject')} sx={{ px: 3 }}>Reject</Button>
+                                    <Button variant="contained" color="success" onClick={() => setDecisionMode('Approve')} sx={{ px: 4 }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
+                                </Box>
+                            ) : (
+                                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                                    {decisionMode === 'Approve' && isResearchAdmin && (
+                                        <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                                            {data.applyIncentive === 'Yes' && (
+                                                <Box sx={{ flex: "1 1 200px" }}>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED INCENTIVE (₹) *</Typography>
+                                                    <TextField
+                                                        fullWidth size="small" type="number"
+                                                        placeholder="Enter Approved Incentive Amount"
+                                                        value={approvedAmount}
+                                                        onChange={e => setApprovedAmount(e.target.value)}
+                                                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }}
+                                                    />
+                                                </Box>
+                                            )}
+                                            <Box sx={{ flex: "1 1 200px" }}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPRAISAL ELIGIBLE *</Typography>
+                                                <Select 
+                                                    fullWidth size="small" 
+                                                    value={appraisalEligible} 
+                                                    onChange={e => setAppraisalEligible(e.target.value)} 
+                                                    displayEmpty 
+                                                    sx={{ borderRadius: "10px", bgcolor: "var(--bg-panel)" }}
+                                                >
+                                                    <MenuItem value="" disabled>Select Eligibility</MenuItem>
+                                                    <MenuItem value="Yes">Yes</MenuItem>
+                                                    <MenuItem value="No">No</MenuItem>
+                                                </Select>
+                                            </Box>
+                                        </Box>
+                                    )}
+
+                                    <Box>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>REMARKS {decisionMode === 'Reject' ? '*' : ''}</Typography>
+                                        <TextField fullWidth multiline rows={3} placeholder={`Provide your ${decisionMode.toLowerCase()} comments...`} value={remarks} onChange={e => setRemarks(e.target.value)} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }} />
                                     </Box>
-                                    <Box sx={{ flex: "1 1 150px" }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>JOURNAL TYPE</Typography>
-                                        <Select fullWidth size="small" value={journalType} onChange={e => setJournalType(e.target.value)} displayEmpty sx={{ borderRadius: "10px", bgcolor: "var(--bg-panel)" }}>
-                                            <MenuItem value="" disabled>Select Type</MenuItem>
-                                            <MenuItem value="SCI">SCI</MenuItem>
-                                            <MenuItem value="SCIE">SCIE</MenuItem>
-                                            <MenuItem value="SCOPUS">SCOPUS</MenuItem>
-                                            <MenuItem value="ESCI">ESCI</MenuItem>
-                                            <MenuItem value="UGC">UGC</MenuItem>
-                                            <MenuItem value="Other">Other</MenuItem>
-                                        </Select>
-                                    </Box>
-                                    <Box sx={{ flex: "1 1 150px" }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>JOURNAL H-INDEX</Typography>
-                                        <TextField
-                                            fullWidth size="small"
-                                            placeholder="Enter Journal H-Index"
-                                            value={hIndex}
-                                            onChange={e => setHIndex(e.target.value)}
-                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }}
-                                        />
-                                    </Box>
-                                    <Box sx={{ flex: "1 1 150px" }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>IMPACT FACTOR (JCR) *</Typography>
-                                        <TextField
-                                            fullWidth size="small"
-                                            placeholder="Enter Impact Factor (JCR)"
-                                            value={jcrImpactFactor}
-                                            onChange={e => setJcrImpactFactor(e.target.value)}
-                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }}
-                                        />
-                                    </Box>
-                                    <Box sx={{ flex: "1 1 150px" }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>CITATIONS</Typography>
-                                        <TextField
-                                            fullWidth size="small"
-                                            placeholder="Enter Citations"
-                                            value={citations}
-                                            onChange={e => setCitations(e.target.value)}
-                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }}
-                                        />
-                                    </Box>
-                                    <Box sx={{ flex: "1 1 150px" }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPRAISAL ELIGIBLE *</Typography>
-                                        <Select fullWidth size="small" value={appraisalEligible} onChange={e => setAppraisalEligible(e.target.value)} displayEmpty sx={{ borderRadius: "10px", bgcolor: "var(--bg-panel)" }}>
-                                            <MenuItem value="" disabled>Select Eligibility</MenuItem>
-                                            <MenuItem value="Yes">Yes</MenuItem>
-                                            <MenuItem value="No">No</MenuItem>
-                                        </Select>
+
+                                    <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end", mt: 1 }}>
+                                        <Button variant="outlined" color="inherit" onClick={() => setDecisionMode(null)} sx={{ px: 3 }}>Cancel</Button>
+                                        <Button 
+                                            variant="contained" 
+                                            color={decisionMode === 'Reject' ? "error" : "success"} 
+                                            disabled={actionLoading} 
+                                            onClick={() => handleAction(decisionMode)} 
+                                            sx={{ px: 4 }}
+                                        >
+                                            {decisionMode === 'Reject' ? "Confirm Reject" : "Save Record"}
+                                        </Button>
                                     </Box>
                                 </Box>
                             )}
-
-                            {isResearchAdmin && data.applyIncentive === 'Yes' && (
-                                <Box sx={{ mb: 3 }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED INCENTIVE (₹)</Typography>
-                                    <TextField
-                                        fullWidth size="small" type="number"
-                                        placeholder="Enter Approved Incentive Amount"
-                                        value={approvedAmount}
-                                        onChange={e => setApprovedAmount(e.target.value)}
-                                        sx={{ maxWidth: 250, "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }}
-                                    />
-                                </Box>
-                            )}
-
-                            <TextField fullWidth multiline rows={3} placeholder="Provide your review comments..." value={remarks} onChange={e => setRemarks(e.target.value)} sx={{ mb: 3, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }} />
-
-                            <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ px: 3 }}>Reject</Button>
-                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ px: 4 }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
-                            </Box>
                         </Card>
                     ) : (
                         <Stack spacing={3}>
