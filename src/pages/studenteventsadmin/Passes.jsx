@@ -338,8 +338,8 @@ const Passes = () => {
                           {participant.roll || 'N/A'}
                         </Typography>
                         <Box sx={{ width: '4px', height: '4px', borderRadius: '50%', bgcolor: '#cbd5e1' }} />
-                        <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }} title={participant.college}>
-                          {participant.college || 'N/A'}
+                        <Typography variant="body2" sx={{ color: '#64748b', fontWeight: 500, fontSize: '0.85rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '140px' }} title={participant.college === 'Other College' && participant.otherCollege ? participant.otherCollege : participant.college}>
+                          {participant.college === 'Other College' && participant.otherCollege ? participant.otherCollege : (participant.college || 'N/A')}
                         </Typography>
                       </Box>
                     </Box>
