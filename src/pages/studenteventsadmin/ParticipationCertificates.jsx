@@ -510,149 +510,160 @@ const ParticipationCertificates = () => {
             </style>
             
             <Box className="certificate-box" sx={{
-              height: { xs: '60vh', md: '70vh' }, // Fits comfortably in the dialog viewport
+              height: { xs: '60vh', md: '70vh' },
               aspectRatio: '1.414',
               containerType: 'size',
-              background: '#fdfbf7', // slight off-white paper color
+              background: '#fff',
               position: 'relative',
               p: '4cqh',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
-              textAlign: 'center',
-              border: '3cqh solid #0a192f', // Dark blue outer border
-              outline: '0.6cqh solid #b8860b', // Gold inner border
-              outlineOffset: '-4cqh',
-              boxShadow: 'inset 0 0 0 1.2cqh #b8860b', // Inner gold border
+              boxSizing: 'border-box',
+              overflow: 'hidden',
+              fontFamily: 'sans-serif'
             }}>
               
-              {/* Decorative Corners (simulated with CSS) */}
-              <Box sx={{ position: 'absolute', top: '2.5cqh', left: '2.5cqh', width: '6cqh', height: '6cqh', borderTop: '0.5cqh solid #b8860b', borderLeft: '0.5cqh solid #b8860b' }}></Box>
-              <Box sx={{ position: 'absolute', top: '2.5cqh', right: '2.5cqh', width: '6cqh', height: '6cqh', borderTop: '0.5cqh solid #b8860b', borderRight: '0.5cqh solid #b8860b' }}></Box>
-              <Box sx={{ position: 'absolute', bottom: '2.5cqh', left: '2.5cqh', width: '6cqh', height: '6cqh', borderBottom: '0.5cqh solid #b8860b', borderLeft: '0.5cqh solid #b8860b' }}></Box>
-              <Box sx={{ position: 'absolute', bottom: '2.5cqh', right: '2.5cqh', width: '6cqh', height: '6cqh', borderBottom: '0.5cqh solid #b8860b', borderRight: '0.5cqh solid #b8860b' }}></Box>
+              {/* Corner Accents */}
+              {/* Top Left (Blue) */}
+              <Box sx={{ position: 'absolute', top: 0, left: 0, width: '15cqh', height: '15cqh', background: '#1c3d9a', clipPath: 'polygon(0 0, 100% 0, 0 100%)', zIndex: 0 }} />
+              {/* Top Right (Orange) */}
+              <Box sx={{ position: 'absolute', top: 0, right: 0, width: '15cqh', height: '15cqh', background: '#ea580c', clipPath: 'polygon(0 0, 100% 0, 100% 100%)', zIndex: 0 }} />
+              {/* Bottom Left (Orange) */}
+              <Box sx={{ position: 'absolute', bottom: 0, left: 0, width: '15cqh', height: '15cqh', background: '#ea580c', clipPath: 'polygon(0 100%, 0 0, 100% 100%)', zIndex: 0 }} />
+              {/* Bottom Right (Blue) */}
+              <Box sx={{ position: 'absolute', bottom: 0, right: 0, width: '15cqh', height: '15cqh', background: '#1c3d9a', clipPath: 'polygon(100% 100%, 100% 0, 0 100%)', zIndex: 0 }} />
 
-              <Box sx={{ mt: '2cqh', pb: '3cqh', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%' }}>
+              {/* Inner Border (Thin Dark Blue) */}
+              <Box sx={{ 
+                position: 'absolute', top: '2.5cqh', left: '2.5cqh', right: '2.5cqh', bottom: '2.5cqh', 
+                border: '0.2cqh solid #1c3d9a', zIndex: 1 
+              }}>
+                 {/* Decorative Corner Flairs on Inner Border */}
+                 <Box sx={{ position: 'absolute', top: '-1cqh', left: '-1cqh', width: '2cqh', height: '2cqh', border: '0.2cqh solid #1c3d9a', borderRadius: '50%', background: '#fff' }} />
+                 <Box sx={{ position: 'absolute', top: '-1cqh', right: '-1cqh', width: '2cqh', height: '2cqh', border: '0.2cqh solid #1c3d9a', borderRadius: '50%', background: '#fff' }} />
+                 <Box sx={{ position: 'absolute', bottom: '-1cqh', left: '-1cqh', width: '2cqh', height: '2cqh', border: '0.2cqh solid #1c3d9a', borderRadius: '50%', background: '#fff' }} />
+                 <Box sx={{ position: 'absolute', bottom: '-1cqh', right: '-1cqh', width: '2cqh', height: '2cqh', border: '0.2cqh solid #1c3d9a', borderRadius: '50%', background: '#fff' }} />
+              </Box>
+
+              <Box sx={{ position: 'relative', zIndex: 2, height: '100%', display: 'flex', flexDirection: 'column', pt: '1.5cqh', px: '3cqh' }}>
                 
-                {/* Logo area */}
-                <Box sx={{ mb: '1cqh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <img src="/src/assets/logo.png" style={{ height: '9cqh', objectFit: 'contain' }} alt="Logo" onError={(e) => e.target.style.display = 'none'} />
-                </Box>
-                
-                <Typography sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 900, fontSize: '6cqh', color: '#0a192f', letterSpacing: '2px', lineHeight: 1 }}>
-                  ADITYA UNIVERSITY
-                </Typography>
-                <Typography sx={{ fontFamily: 'sans-serif', fontSize: '2cqh', color: '#444', mb: '1cqh', mt: '0.8cqh' }}>
-                  (Established Under the Aditya University Act)
-                </Typography>
-                
-                <Typography sx={{ fontFamily: '"Playfair Display", serif', fontWeight: 900, fontSize: '8cqh', color: '#0a192f', letterSpacing: '4px', mb: '1.5cqh' }}>
-                  VEDA 2026
-                </Typography>
-                
-                {/* Banner */}
-                <Box sx={{ background: '#0a192f', color: '#fff', py: '1.2cqh', px: '8cqh', mb: '3cqh', position: 'relative', border: '0.3cqh solid #b8860b' }}>
-                  <Typography sx={{ fontFamily: 'sans-serif', fontWeight: 700, fontSize: '2.5cqh', letterSpacing: '2px' }}>
-                    CERTIFICATE OF PARTICIPATION
-                  </Typography>
-                  {/* Banner Ribbons */}
-                  <Box sx={{ position: 'absolute', top: '50%', left: '-2.5cqh', transform: 'translateY(-50%)', borderTop: '2.5cqh solid transparent', borderBottom: '2.5cqh solid transparent', borderRight: '2.5cqh solid #0a192f', zIndex: -1 }}></Box>
-                  <Box sx={{ position: 'absolute', top: '50%', right: '-2.5cqh', transform: 'translateY(-50%)', borderTop: '2.5cqh solid transparent', borderBottom: '2.5cqh solid transparent', borderLeft: '2.5cqh solid #0a192f', zIndex: -1 }}></Box>
+                {/* Header: Logos */}
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: '1.5cqh', gap: '1cqh' }}>
+                   {/* Fallback mock accreditation logos as simple text blocks since actual images aren't present */}
+                   <Box sx={{ fontSize: '1.2cqh', fontWeight: 'bold', color: '#1c3d9a', border: '1px solid #1c3d9a', px: '0.5cqh' }}>nirf</Box>
+                   <Box sx={{ fontSize: '1.2cqh', fontWeight: 'bold', color: '#1c3d9a', border: '1px solid #1c3d9a', px: '0.5cqh' }}>NAAC A+</Box>
+                   <Box sx={{ fontSize: '1.2cqh', fontWeight: 'bold', color: '#1c3d9a', border: '1px solid #1c3d9a', px: '0.5cqh' }}>NBA</Box>
                 </Box>
 
-                <Typography sx={{ fontFamily: '"Playfair Display", serif', fontStyle: 'italic', fontSize: '2.5cqh', color: '#333', mb: '1cqh' }}>
-                  This Certificate is Proudly Presented to
-                </Typography>
-
-                {/* Participant Name */}
-                <Typography sx={{ fontFamily: '"Great Vibes", cursive', fontSize: '13cqh', color: '#b8860b', lineHeight: 1.1, mb: '1.5cqh' }}>
-                  {selectedCertificate.participant.name || 'Participant Name'}
-                </Typography>
-
-                {/* Paragraph */}
-                <Box sx={{ maxWidth: '85%', mb: '2cqh' }}>
-                  <Typography sx={{ fontFamily: 'sans-serif', fontSize: '2.4cqh', color: '#333', lineHeight: 1.6 }}>
-                    for actively participating in <strong>{selectedCertificate.payment.eventName || '-'}</strong> organized by <strong>Aditya University</strong>. <br/>
-                    Your enthusiastic participation, dedication and valuable contribution have made the event a grand success. <br/>
-                    We appreciate your commitment and wish you all the best for your future endeavors.
+                {/* Header: Aditya University */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '2cqh', gap: '2cqh' }}>
+                  <img src="/src/assets/logo.png" style={{ height: '7cqh', objectFit: 'contain' }} alt="Logo" onError={(e) => e.target.style.display = 'none'} />
+                  <Typography sx={{ fontFamily: '"Arial", sans-serif', fontWeight: 900, fontSize: '6cqh', color: '#ea580c', letterSpacing: '2px' }}>
+                    ADITYA <span style={{ color: '#1c3d9a' }}>UNIVERSITY</span>
                   </Typography>
                 </Box>
 
-                {/* Footer Details: Date, Venue, Signatures */}
-                <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', pl: '24cqh', pr: '6cqh', mt: '3cqh' }}>
+                {/* VEDA Logo & Certificate Title */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3cqh', mb: '5cqh' }}>
+                  <Box sx={{ 
+                    width: '10cqh', height: '10cqh', borderRadius: '50%', background: '#1c3d9a', 
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff' 
+                  }}>
+                     <Typography sx={{ fontSize: '1.8cqh', fontWeight: 'bold' }}>2K26</Typography>
+                     <Typography sx={{ fontSize: '3cqh', fontWeight: 900, borderTop: '0.2cqh solid #fff', borderBottom: '0.2cqh solid #fff', lineHeight: 1 }}>VEDA</Typography>
+                     <Typography sx={{ fontSize: '1cqh', mt: '0.2cqh' }}>A SYMPOSIUM</Typography>
+                  </Box>
+                  <Typography sx={{ fontFamily: '"Great Vibes", cursive', fontSize: '7cqh', color: '#6b7280', whiteSpace: 'nowrap' }}>
+                    Certificate of Participation
+                  </Typography>
+                </Box>
 
-                  {/* Date & Venue (Center-Left) */}
-                  <Box sx={{ display: 'flex', gap: '4cqh', mb: '1.5cqh' }}>
-                     <Box sx={{ textAlign: 'center' }}>
-                        <Typography sx={{ fontWeight: 700, fontSize: '1.8cqh', color: '#333' }}>
-                          15 September 2026
-                        </Typography>
-                        <Typography sx={{ fontSize: '1.4cqh', color: '#666' }}>Date</Typography>
+                {/* Body Content */}
+                <Box sx={{ px: '5cqh', textAlign: 'left', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                   {/* Line 1 */}
+                   <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: '2cqh', mb: '2.5cqh' }}>
+                      <Typography sx={{ fontSize: '2.4cqh', color: '#4b5563', whiteSpace: 'nowrap' }}>This is to certify that Mr./Ms.</Typography>
+                      <Box sx={{ flex: 1, borderBottom: '0.1cqh solid #d1d5db', textAlign: 'center', pb: '0.5cqh' }}>
+                         <Typography sx={{ fontFamily: '"Great Vibes", cursive', fontSize: '4cqh', color: '#1f2937', lineHeight: 0.8 }}>
+                           {selectedCertificate.participant.name || 'Participant Name'}
+                         </Typography>
+                      </Box>
+                   </Box>
+
+                   {/* Line 2 */}
+                   <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: '2cqh', mb: '3.5cqh' }}>
+                      <Typography sx={{ fontSize: '2.4cqh', color: '#4b5563', whiteSpace: 'nowrap' }}>of</Typography>
+                      <Box sx={{ width: '20cqh', borderBottom: '0.1cqh solid #d1d5db', textAlign: 'center', pb: '0.5cqh' }}>
+                         <Typography sx={{ fontFamily: '"Great Vibes", cursive', fontSize: '3.2cqh', color: '#1f2937', lineHeight: 0.8, whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                           {selectedCertificate.participant.college === 'Other College' && selectedCertificate.participant.otherCollege ? selectedCertificate.participant.otherCollege : (selectedCertificate.participant.college || '-')}
+                         </Typography>
+                      </Box>
+                      <Typography sx={{ fontSize: '2.4cqh', color: '#4b5563', whiteSpace: 'nowrap' }}>department of</Typography>
+                      <Box sx={{ width: '20cqh', borderBottom: '0.1cqh solid #d1d5db', textAlign: 'center', pb: '0.5cqh' }}>
+                         <Typography sx={{ fontFamily: '"Great Vibes", cursive', fontSize: '3.2cqh', color: '#1f2937', lineHeight: 0.8 }}>
+                           {selectedCertificate.participant.branch || '-'}
+                         </Typography>
+                      </Box>
+                      <Typography sx={{ fontSize: '2.4cqh', color: '#4b5563', whiteSpace: 'nowrap' }}>has</Typography>
+                      <Box sx={{ flex: 1, borderBottom: '0.1cqh solid #d1d5db', textAlign: 'center', pb: '0.5cqh' }}>
+                         <Typography sx={{ fontFamily: '"Great Vibes", cursive', fontSize: '3.2cqh', color: '#1f2937', lineHeight: 0.8, whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                           {selectedCertificate.payment.eventName || '-'}
+                         </Typography>
+                      </Box>
+                   </Box>
+
+                   {/* Line 3, 4, 5 */}
+                   <Typography sx={{ fontSize: '2.4cqh', color: '#6b7280', lineHeight: 1.8, mb: '1cqh' }}>
+                      event of <span style={{ color: '#ea580c' }}>VEDA 2K26</span>, A National Level Student Symposium held on 11th & 12th September, 2026, <br/>
+                      on the occasion of <span style={{ color: '#ea580c' }}>Engineers's Day</span>.
+                   </Typography>
+                   <Typography sx={{ fontSize: '2.4cqh', color: '#6b7280' }}>
+                      We appreciate your enthusiasm and valuable contribution to making the event a success.
+                   </Typography>
+                </Box>
+
+                {/* Footer Signatures & QR */}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', px: '8cqh', mb: '4cqh' }}>
+                   
+                   {/* QR Code in Bottom Left */}
+                   <Box sx={{ textAlign: 'center', zIndex: 10 }}>
+                     <Box sx={{ width: '9cqh', height: '9cqh', border: '0.2cqh solid #cbd5e1', p: '0.5cqh', background: '#fff' }}>
+                       <img 
+                         src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`${window.location.origin}/verify/certificate/${selectedCertificate.payment.receipt}/${selectedCertificate.participant.roll || 'team'}`)}`} 
+                         alt="Verify QR" 
+                         style={{ width: '100%', height: '100%' }} 
+                       />
                      </Box>
-                     <Box sx={{ borderLeft: '0.2cqh solid #ccc' }}></Box>
-                     <Box sx={{ textAlign: 'center' }}>
-                        <Typography sx={{ fontWeight: 700, fontSize: '1.8cqh', color: '#333' }}>
-                          Aditya University
-                        </Typography>
-                        <Typography sx={{ fontSize: '1.4cqh', color: '#666' }}>Venue</Typography>
-                     </Box>
-                  </Box>
+                     <Typography sx={{ fontSize: '1.1cqh', fontWeight: 700, mt: '0.5cqh', color: '#374151' }}>Scan to Verify</Typography>
+                   </Box>
 
-                  {/* Right Side: Signatures */}
-                  <Box sx={{ display: 'flex', gap: '4cqh', mb: '1cqh' }}>
-                    <Box sx={{ textAlign: 'center' }}>
-                      <Box sx={{ height: '7cqh', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', mb: '0.5cqh' }}>
-                        <CoordinatorPhoto 
-                          employeeCode={eventEmpId} 
-                          fallbackSrc="https://info.aec.edu.in/adityacentral/staffPhotos/default.jpg" 
-                          sx={{ maxHeight: '100%', objectFit: 'contain' }} 
-                        />
+                   {/* Left Signature */}
+                   <Box sx={{ textAlign: 'center', width: '25cqh', position: 'relative' }}>
+                      <Box sx={{ height: '6cqh', display: 'flex', justifyContent: 'center', alignItems: 'flex-end', mb: '0.5cqh' }}>
+                          <Typography sx={{ fontFamily: '"Great Vibes", cursive', fontSize: '4cqh', color: '#1c3d9a' }}>D. V. Sesha Reddy</Typography>
                       </Box>
-                      <Box sx={{ borderTop: '0.2cqh solid #333', width: '20cqh', pt: '0.5cqh' }}>
-                        <Typography sx={{ fontWeight: 700, fontSize: '1.6cqh' }}>Event Coordinator</Typography>
-                      </Box>
-                    </Box>
-                    
-                    <Box sx={{ textAlign: 'center' }}>
-                      <Box sx={{ height: '7cqh', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', mb: '0.5cqh' }}>
-                        <CoordinatorPhoto 
-                          employeeCode={facultyEmpId} 
-                          fallbackSrc="https://info.aec.edu.in/adityacentral/staffPhotos/default.jpg" 
-                          sx={{ maxHeight: '100%', objectFit: 'contain' }} 
-                        />
-                      </Box>
-                      <Box sx={{ borderTop: '0.2cqh solid #333', width: '20cqh', pt: '0.5cqh' }}>
-                        <Typography sx={{ fontWeight: 700, fontSize: '1.6cqh' }}>Faculty Coordinator</Typography>
-                      </Box>
-                    </Box>
+                      <Typography sx={{ color: '#dc2626', fontWeight: 600, fontSize: '1.6cqh' }}>Dr. D. V. Sesha Reddy</Typography>
+                      <Typography sx={{ color: '#4b5563', fontSize: '1.4cqh' }}>Vice - Chancellor</Typography>
+                   </Box>
 
-                    <Box sx={{ textAlign: 'center' }}>
-                      <Box sx={{ height: '7cqh', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', mb: '0.5cqh' }}></Box>
-                      <Box sx={{ borderTop: '0.2cqh solid #333', width: '20cqh', pt: '0.5cqh' }}>
-                        <Typography sx={{ fontWeight: 700, fontSize: '1.6cqh' }}>Dean / Principal</Typography>
+                   {/* Right Signature */}
+                   <Box sx={{ textAlign: 'center', width: '25cqh', position: 'relative' }}>
+                      <Box sx={{ height: '6cqh', display: 'flex', justifyContent: 'center', alignItems: 'flex-end', mb: '0.5cqh' }}>
+                          <Typography sx={{ fontFamily: '"Great Vibes", cursive', fontSize: '4cqh', color: '#60a5fa' }}>A. Ramesh</Typography>
                       </Box>
-                    </Box>
-                  </Box>
-
+                      <Typography sx={{ color: '#dc2626', fontWeight: 600, fontSize: '1.6cqh' }}>Dr. A. Ramesh</Typography>
+                      <Typography sx={{ color: '#4b5563', fontSize: '1.4cqh' }}>Pro Vice-Chancellor (Academics)</Typography>
+                   </Box>
                 </Box>
 
-                {/* ID Badge at top left */}
-                <Box sx={{ position: 'absolute', top: '3cqh', left: '4cqh', zIndex: 10 }}>
-                  <Typography sx={{ color: '#333', fontSize: '1.8cqh', fontWeight: 700, letterSpacing: '1px', borderBottom: '1px solid #b8860b', pb: '0.2cqh' }}>
-                    Certificate ID: VEDA2026-P-{selectedCertificate.payment.receipt || '000001'}
-                  </Typography>
-                </Box>
-
-                {/* QR Code at bottom left */}
-                <Box sx={{ position: 'absolute', bottom: '3cqh', left: '4cqh', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 10 }}>
-                  <Box sx={{ width: '12cqh', height: '12cqh', border: '0.3cqh solid #333', p: '0.8cqh', mb: '0.5cqh', background: '#fff' }}>
-                    <img 
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`${window.location.origin}/verify/certificate/${selectedCertificate.payment.receipt}/${selectedCertificate.participant.roll || 'team'}`)}`} 
-                      alt="QR" 
-                      style={{width: '100%', height: '100%'}}
-                    />
-                  </Box>
-                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#333', fontSize: '1.6cqh' }}>Scan to Verify</Typography>
+                {/* Orange Address Bar */}
+                <Box sx={{ 
+                  background: '#ea580c', color: '#fff', py: '1cqh', textAlign: 'center', 
+                  position: 'absolute', bottom: '2cqh', left: '15cqh', right: '15cqh', zIndex: 10 
+                }}>
+                   <Typography sx={{ fontSize: '1.6cqh', letterSpacing: '0.5px' }}>
+                     Aditya Nagar, ADB Road, Surampalem, 533 437, Kakinada Dist., Andhra Pradesh
+                   </Typography>
                 </Box>
 
               </Box>

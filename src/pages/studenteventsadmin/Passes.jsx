@@ -7,7 +7,26 @@ import {
   MenuItem,
   TextField,
   Paper,
+  alpha,
 } from '@mui/material';
+import { keyframes } from '@mui/system';
+
+const fadeUp = keyframes`
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const pulse = keyframes`
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+`;
+
+const pulseWarning = keyframes`
+  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+`;
 import {
   Refresh as RefreshIcon,
   Download as DownloadIcon,
@@ -210,19 +229,22 @@ const Passes = () => {
           }
         />
 
-        {/* Filters Bar */}
+        {/* Glassmorphic Filters Bar */}
         <Paper
-          variant="outlined"
+          elevation={0}
           sx={{
-            p: 2,
-            mb: 3,
-            borderRadius: '16px',
-            background: 'var(--bg-paper)',
-            borderColor: 'var(--border-color)',
+            p: 2.5,
+            mb: 4,
+            borderRadius: '20px',
+            background: 'rgba(255, 255, 255, 0.7)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255, 255, 255, 0.8)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.04)',
             display: 'flex',
-            gap: 2,
+            gap: 2.5,
             flexWrap: 'wrap',
             alignItems: 'center',
+            animation: `${fadeUp} 0.5s ease-out forwards`,
           }}
         >
           <TextField
@@ -263,33 +285,47 @@ const Passes = () => {
           <Box
             sx={{
               display: 'grid',
-              gap: 3,
+              gap: 3.5,
               gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' },
             }}
             className="no-print"
           >
-            {filteredParticipants.map((participant) => (
+            {filteredParticipants.map((participant, index) => (
               <Card
                 key={participant.id}
                 sx={{
                   position: 'relative',
-                  borderRadius: '20px',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
+                  borderRadius: '24px',
+                  boxShadow: '0 10px 40px -10px rgba(0,0,0,0.08)',
                   display: 'flex',
                   flexDirection: 'column',
                   height: '100%',
                   overflow: 'hidden',
-                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  background: '#ffffff',
+                  border: '1px solid rgba(0,0,0,0.03)',
+                  transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                  animation: `${fadeUp} 0.6s ease-out forwards`,
+                  animationDelay: `${index * 0.05}s`,
+                  opacity: 0,
                   '&:hover': {
-                    transform: 'translateY(-5px)',
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.12)'
+                    transform: 'translateY(-8px) scale(1.02)',
+                    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.15)',
+                    borderColor: 'rgba(59, 130, 246, 0.2)',
                   },
-                  border: '1px solid rgba(0,0,0,0.05)',
-                  backgroundColor: '#ffffff'
                 }}
               >
-                {/* Top Accent Bar */}
-                <Box sx={{ height: '6px', width: '100%', background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)' }} />
+                {/* Premium Gradient Accent */}
+                <Box sx={{ height: '6px', width: '100%', background: 'linear-gradient(90deg, #2563eb, #7c3aed, #db2777)', backgroundSize: '200% auto', animation: 'gradientShift 3s ease infinite' }} />
+                
+                <style>
+                  {`
+                    @keyframes gradientShift {
+                      0% { background-position: 0% 50%; }
+                      50% { background-position: 100% 50%; }
+                      100% { background-position: 0% 50%; }
+                    }
+                  `}
+                </style>
 
                 <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 2, p: 3, pt: 3 }}>
                   <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center' }}>
@@ -312,20 +348,22 @@ const Passes = () => {
                       <Box
                         sx={{
                           position: 'absolute',
-                          bottom: -2,
-                          right: -2,
-                          width: 20,
-                          height: 20,
+                          bottom: -4,
+                          right: -4,
+                          width: 22,
+                          height: 22,
                           borderRadius: '50%',
                           bgcolor: participant.attended ? '#10b981' : '#f59e0b',
                           border: '3px solid #fff',
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'center'
+                          justifyContent: 'center',
+                          animation: participant.attended ? `${pulse} 2s infinite` : `${pulseWarning} 2s infinite`,
+                          boxShadow: participant.attended ? '0 0 10px rgba(16,185,129,0.5)' : '0 0 10px rgba(245,158,11,0.5)'
                         }}
                         title={participant.attended ? 'Verified' : 'Pending Verification'}
                       >
-                        {participant.attended && <i className="bi bi-check" style={{ color: '#fff', fontSize: '14px', lineHeight: 1 }} />}
+                        {participant.attended && <i className="bi bi-check" style={{ color: '#fff', fontSize: '15px', lineHeight: 1, fontWeight: 'bold' }} />}
                       </Box>
                     </Box>
 
@@ -348,21 +386,26 @@ const Passes = () => {
                   <Box
                     sx={{
                       mt: 'auto',
-                      p: 2,
-                      borderRadius: '14px',
-                      background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                      p: 2.5,
+                      borderRadius: '16px',
+                      background: 'linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%)',
                       border: '1px solid #e2e8f0',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: 1.5
+                      gap: 1.5,
+                      position: 'relative',
+                      overflow: 'hidden'
                     }}
                   >
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {/* Decorative element */}
+                    <Box sx={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1))', filter: 'blur(10px)' }} />
+
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1 }}>
                       <Box>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748b', letterSpacing: '0.8px', fontSize: '0.7rem', textTransform: 'uppercase' }}>
-                          Event
+                        <Typography variant="caption" sx={{ fontWeight: 800, color: '#3b82f6', letterSpacing: '1px', fontSize: '0.7rem', textTransform: 'uppercase' }}>
+                          Event Registered
                         </Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 800, color: '#0f172a', mt: 0.2, fontSize: '0.95rem' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: '#0f172a', mt: 0.5, fontSize: '0.95rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                           {participant.eventName}
                         </Typography>
                       </Box>
@@ -453,9 +496,17 @@ const Passes = () => {
           })()}
 
           {filteredParticipants.length === 0 && !loading && (
-            <Typography variant="body1" color="text.secondary" align="center" sx={{ mt: 4 }}>
-              No passes found. Adjust filters to see results.
-            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 10, animation: `${fadeUp} 0.5s ease-out forwards` }}>
+              <Box sx={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 3 }}>
+                <i className="bi bi-search" style={{ fontSize: '32px', color: '#3b82f6' }}></i>
+              </Box>
+              <Typography variant="h5" sx={{ fontWeight: 700, color: '#1e293b', mb: 1 }}>
+                No passes found
+              </Typography>
+              <Typography variant="body1" sx={{ color: '#64748b', textAlign: 'center', maxWidth: 400 }}>
+                We couldn't find any passes matching your current search or filters. Try adjusting your criteria.
+              </Typography>
+            </Box>
           )}
         </>
       )}
