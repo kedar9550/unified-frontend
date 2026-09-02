@@ -32,6 +32,7 @@ import {
   Delete as DeleteIcon,
   ArrowBack as ArrowBackIcon,
   CloudUpload as CloudUploadIcon,
+  Download as DownloadIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
@@ -623,6 +624,76 @@ const EventCreation = () => {
     return row;
   });
 
+  const handleDownloadExcel = () => {
+    if (events.length === 0) {
+      toast.error('No events to download.');
+      return;
+    }
+
+    const headers = [
+      'Event Name', 'Event School', 'Departments', 'Price Type', 'Price', 
+      'Max Team Size', 'Extra Team Size', 'Extra Amount Per Head', 
+      'Venue Type', 'Venue', 'Registration Stop', 'Overview', 
+      'Rules', 'Themes', 'Faculty Coordinators', 'Student Coordinators', 'Conveners'
+    ];
+    const csvRows = [headers.join(',')];
+
+    events.forEach(event => {
+      // In evencreation.jsx, the array is typically called `department` in the event payload
+      const depts = (event.department || event.departments)?.map(d => d.name || d).join(' & ') || '';
+      
+      const escapeCsv = (str) => {
+        if (!str) return '""';
+        return `"${String(str).replace(/"/g, '""').replace(/\n/g, ' ')}"`;
+      };
+
+      const facultyCoords = event.facultyCoordinators?.map(f => `${f.employeeName} (${f.employeeId})`).join(' | ') || 
+                            (event.facultyCoordinator ? `${event.facultyCoordinator.employeeName} (${event.facultyCoordinator.employeeId})` : '');
+      const studentCoords = event.studentCoordinators?.map(s => `${s.name} (${s.rollNo})`).join(' | ') || '';
+      const convenersList = event.conveners?.map(c => `${c.name}`).join(' | ') || '';
+      
+      const venueStr = event.venueType === 'Indoor' && event.building && event.floor
+        ? `${event.building.name || event.building}-${event.floor.name || event.floor}${event.roomNo ? `, Room No: ${event.roomNo}` : ''}`
+        : event.venueType === 'Outdoor' && event.ground
+        ? `${event.ground.name || event.ground}${event.roomNo ? `, Room No: ${event.roomNo}` : ''}`
+        : (event.venue || '');
+
+      const rulesStr = Array.isArray(event.rules) ? event.rules.join(' | ') : (event.rules || '');
+      const themesStr = Array.isArray(event.themes) ? event.themes.join(' | ') : (event.themes || '');
+
+      const row = [
+        escapeCsv(event.eventName),
+        escapeCsv(event.eventSchool?.groupName),
+        escapeCsv(depts),
+        escapeCsv(event.priceType),
+        escapeCsv(event.price),
+        escapeCsv(event.maxTeamSize),
+        escapeCsv(event.extraTeamSize),
+        escapeCsv(event.extraAmountPerHead),
+        escapeCsv(event.venueType),
+        escapeCsv(venueStr),
+        escapeCsv(event.registrationStop),
+        escapeCsv(event.overview),
+        escapeCsv(rulesStr),
+        escapeCsv(themesStr),
+        escapeCsv(facultyCoords),
+        escapeCsv(studentCoords),
+        escapeCsv(convenersList)
+      ];
+      csvRows.push(row.join(','));
+    });
+
+    const csvData = csvRows.join('\n');
+    const blob = new Blob([csvData], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'events_list.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+    toast.success('Events downloaded successfully!');
+  };
+
   if (view === 'list') {
     return (
       <PageContainer>
@@ -630,14 +701,24 @@ const EventCreation = () => {
           title="Event Management"
           subtitle="Create and manage VEDA events"
           action={
-            activeRole !== 'FACULTY_COORDINATOR' && (
-              <ActionButton
-                startIcon={<AddIcon />}
-                onClick={openCreateForm}
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="outlined"
+                startIcon={<DownloadIcon />}
+                onClick={handleDownloadExcel}
+                sx={{ borderRadius: '8px' }}
               >
-                Create Event
-              </ActionButton>
-            )
+                Download Excel
+              </Button>
+              {activeRole !== 'FACULTY_COORDINATOR' && (
+                <ActionButton
+                  startIcon={<AddIcon />}
+                  onClick={openCreateForm}
+                >
+                  Create Event
+                </ActionButton>
+              )}
+            </Box>
           }
         />
 
