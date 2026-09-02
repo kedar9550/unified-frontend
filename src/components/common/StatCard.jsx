@@ -55,8 +55,8 @@ export default function StatCard({
         width: "100%",
         height: "100%",
         boxSizing: "border-box",
-        p: { xs: 2, sm: 2.5 },
-        borderRadius: { xs: "16px", sm: "20px" },
+        p: { xs: 1.75, sm: 2.25 },
+        borderRadius: { xs: "14px", sm: "18px" },
         background: "var(--bg-paper)",
         border: "1px solid var(--border-color)",
         boxShadow: "var(--shadow-premium)",
@@ -67,7 +67,7 @@ export default function StatCard({
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        minHeight: { xs: "135px", sm: "165px" },
+        minHeight: { xs: "110px", sm: "130px" },
         "&:hover": {
           transform: "translateY(-4px)",
           boxShadow: "0 12px 35px rgba(0, 0, 0, 0.16)",
@@ -78,8 +78,8 @@ export default function StatCard({
           position: "absolute",
           top: 0,
           right: 0,
-          width: { xs: "90px", sm: "140px" },
-          height: { xs: "90px", sm: "140px" },
+          width: { xs: "80px", sm: "120px" },
+          height: { xs: "80px", sm: "120px" },
           background: `radial-gradient(circle at top right, ${cardColor}20, transparent 70%)`,
           zIndex: 0,
           pointerEvents: "none",
@@ -88,13 +88,13 @@ export default function StatCard({
       }}
     >
       {/* Top Section: Icon + Text Details */}
-      <Box sx={{ display: "flex", alignItems: "flex-start", gap: { xs: 1, sm: 2 }, zIndex: 1, position: "relative" }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.25, sm: 1.75 }, zIndex: 1, position: "relative" }}>
         {icon && (
           <Box
             sx={{
-              width: { xs: 38, sm: 48 },
-              height: { xs: 38, sm: 48 },
-              borderRadius: { xs: "10px", sm: "14px" },
+              width: { xs: 38, sm: 46 },
+              height: { xs: 38, sm: 46 },
+              borderRadius: { xs: "10px", sm: "12px" },
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -109,10 +109,10 @@ export default function StatCard({
                 position: "absolute",
                 inset: 0,
                 background: "linear-gradient(180deg, rgba(255,255,255,0.25), transparent)",
-                borderRadius: { xs: "10px", sm: "14px" },
+                borderRadius: { xs: "10px", sm: "12px" },
               },
               "& svg": {
-                fontSize: { xs: 18, sm: 24 },
+                fontSize: { xs: 18, sm: 22 },
                 color: "#ffffff",
               },
             }}
@@ -124,15 +124,18 @@ export default function StatCard({
         <Box sx={{ flex: 1, minWidth: 0 }}>
           {displayTitle && (
             <Typography
+              noWrap
+              title={displayTitle}
               sx={{
-                fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                fontSize: { xs: "0.68rem", sm: "0.72rem" },
                 fontWeight: 800,
                 color: "var(--text-secondary)",
                 textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                mb: 0.5,
+                letterSpacing: "0.04em",
+                mb: 0.25,
                 lineHeight: 1.2,
-                wordBreak: "break-word",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
               }}
             >
               {displayTitle}
@@ -140,12 +143,16 @@ export default function StatCard({
           )}
 
           <Typography
+            noWrap
+            title={String(displayValue)}
             sx={{
-              fontSize: { xs: "1.3rem", sm: "2rem" },
+              fontSize: { xs: "1.2rem", sm: "1.55rem", md: "1.75rem" },
               fontWeight: 900,
               color: "var(--text-primary)",
-              lineHeight: 1,
-              my: 0.5,
+              lineHeight: 1.15,
+              my: 0.25,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
             }}
           >
             {displayValue}
@@ -155,11 +162,11 @@ export default function StatCard({
             <Typography
               noWrap
               sx={{
-                fontSize: { xs: "0.7rem", sm: "0.75rem" },
+                fontSize: { xs: "0.68rem", sm: "0.72rem" },
                 fontWeight: 600,
                 color: "var(--text-secondary)",
                 opacity: 0.85,
-                mt: 0.5,
+                mt: 0.25,
               }}
             >
               {displaySub}

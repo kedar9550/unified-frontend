@@ -7,40 +7,45 @@ import { Box } from '@mui/material';
  * - Tablet (sm): 2 cards per row (odd remaining card expands evenly).
  * - Mobile (xs): 1 column (100% full width).
  */
-export default function StatCardGrid({ children, columns = 4, gap = 2.5, sx = {}, item, ...props }) {
-  // Determine percentage basis & minWidth based on columns prop (default 4 max per row)
-  const cols = Number(columns) || 4;
+export default function StatCardGrid({ children, columns = 4, gap = 2, sx = {}, item, ...props }) {
+  let gridCols;
 
-  const mobileBasis = '100%';
-  const tabletBasis = cols === 1 ? '100%' : 'calc(50% - 12px)';
-
-  let desktopBasis = 'calc(25% - 16px)';
-  if (cols === 1) desktopBasis = '100%';
-  else if (cols === 2) desktopBasis = 'calc(50% - 12px)';
-  else if (cols === 3) desktopBasis = 'calc(33.333% - 14px)';
-  else if (cols === 4) desktopBasis = 'calc(25% - 16px)';
-  else if (cols === 5) desktopBasis = 'calc(20% - 16px)';
+  if (typeof columns === 'object' && columns !== null) {
+    gridCols = {
+      xs: columns.xs ? (typeof columns.xs === 'number' ? `repeat(${columns.xs}, 1fr)` : columns.xs) : '1fr',
+      sm: columns.sm ? (typeof columns.sm === 'number' ? `repeat(${columns.sm}, 1fr)` : columns.sm) : undefined,
+      md: columns.md ? (typeof columns.md === 'number' ? `repeat(${columns.md}, 1fr)` : columns.md) : undefined,
+      lg: columns.lg ? (typeof columns.lg === 'number' ? `repeat(${columns.lg}, 1fr)` : columns.lg) : undefined,
+      xl: columns.xl ? (typeof columns.xl === 'number' ? `repeat(${columns.xl}, 1fr)` : columns.xl) : undefined,
+    };
+  } else {
+    const cols = Number(columns) || 4;
+    if (cols === 1) {
+      gridCols = { xs: '1fr' };
+    } else if (cols === 2) {
+      gridCols = { xs: '1fr', sm: 'repeat(2, 1fr)' };
+    } else if (cols === 3) {
+      gridCols = { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' };
+    } else if (cols === 4) {
+      gridCols = { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' };
+    } else if (cols === 5) {
+      gridCols = { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(5, 1fr)' };
+    } else {
+      gridCols = { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', xl: `repeat(${cols}, 1fr)` };
+    }
+  }
 
   return (
     <Box
       sx={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: { xs: 1.5, sm: gap },
+        display: 'grid',
+        gridTemplateColumns: gridCols,
+        gap: { xs: 1.5, sm: 2, md: typeof gap === 'number' ? gap : 2.5 },
         mb: 3,
         width: '100%',
         boxSizing: 'border-box',
         '& > *': {
-          flex: {
-            xs: `1 1 ${mobileBasis}`,
-            sm: `1 1 ${tabletBasis}`,
-            md: `1 1 ${desktopBasis}`,
-          },
-          minWidth: {
-            xs: mobileBasis,
-            sm: tabletBasis,
-            md: desktopBasis,
-          },
+          minWidth: 0, // Prevents overflow blowout from large numbers/text
           maxWidth: '100%',
           boxSizing: 'border-box',
         },

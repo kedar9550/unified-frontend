@@ -442,9 +442,6 @@ export const ROLE_ROUTES = {
 
   STUDENT_EVENT_ADMIN: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
-    // { text: "Student Event Admin", path: "/student-event-admin", icon: <AssignmentInd /> },
-    // { text: "Club Management", path: "/student-event-admin/clubs", icon: <Groups /> },
-    // { text: "Event Assignment", path: "/student-event-admin/event-assignments", icon: <AssignmentInd /> },
     {
       text: "VEDA EVENT ",
       icon: <SupportAgent />,
@@ -460,14 +457,6 @@ export const ROLE_ROUTES = {
             { text: "Grounds for outdoor", path: "/infrastructure/grounds", icon: <AccountBalance /> }
           ]
         },
-        // {
-        //   text: "Schools",
-        //   icon: <Groups />,
-        //   nested: [
-        //     { text: "List", path: "/Eventveda/groups", icon: <Groups /> },
-        //     { text: "Coordinators", path: "/Eventveda/groups/coordinators", icon: <Person /> }
-        //   ]
-        // },
         {
           text: "Schools",
           icon: <School />,
@@ -492,8 +481,6 @@ export const ROLE_ROUTES = {
           icon: <Groups />,
           nested: [
             { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
-            // { text: "Accommodation", path: "/Eventveda/participants/accommodation", icon: <Hotel /> },
-            // { text: "No Accommodation", path: "/Eventveda/participants/no-accommodation", icon: <Hotel /> }
           ]
         },
         {
@@ -516,14 +503,60 @@ export const ROLE_ROUTES = {
         { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> }
       ]
     },
-    // { text: "Send Mail", path: "/Eventveda/send-mail", icon: <EmailIcon /> }
-    //   nested: [
-    //     { text: "Raise Ticket", path: "/service-desk/raise" },
-    //     { text: "My Tickets", path: "/service-desk/my-tickets" },
-    //   ]
-    // }
-
   ],
+
+  VEDA_ADMIN: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "VEDA EVENT ",
+      icon: <SupportAgent />,
+      nested: [
+        {
+          text: "Schools",
+          icon: <School />,
+          nested: [
+            { text: "List", path: "/Eventveda/event-schools", icon: <School /> },
+            { text: "School Coordinators", path: "/Eventveda/event-schools/coordinators", icon: <Person /> }
+          ]
+        },
+        {
+          text: "Events",
+          icon: <EventAvailable />,
+          nested: [
+            { text: "List", path: "/Eventveda/events", icon: <EventAvailable /> },
+            { text: "Faculty Coordinators", path: "/Eventveda/events/coordinators", icon: <Person /> },
+            { text: "Student Coordinators", path: "/Eventveda/events/student-coordinators", icon: <Person /> }
+          ]
+        },
+        { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
+        { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+        {
+          text: "Participants",
+          icon: <Groups />,
+          nested: [
+            { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
+          ]
+        },
+        {
+          text: "Certificates",
+          icon: <WorkspacePremium />,
+          nested: [
+            { text: "Winning Certificates", path: "/Eventveda/winning-certificates", icon: <WorkspacePremium /> },
+            { text: "Participation Certificates", path: "/Eventveda/participation-certificates", icon: <WorkspacePremium /> }
+          ]
+        },
+        { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> }
+      ]
+    },
+  ],
+
+  get "STUDENT EVENT ADMIN"() {
+    return this.STUDENT_EVENT_ADMIN;
+  },
+
+  get "VEDA ADMIN"() {
+    return this.VEDA_ADMIN;
+  },
 
   CONVENER: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },

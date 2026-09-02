@@ -42,7 +42,6 @@ import {
 import PageHeader from '../../components/common/PageHeader';
 import StatCard from '../../components/common/StatCard';
 import StatCardGrid from '../../components/common/StatCardGrid';
-import { PageContainer } from '../../components/common/design-system';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 
@@ -294,16 +293,16 @@ const StudentEventAdminDashboard = () => {
   const groupFilteredRevenueTotal = groupBarData.reduce((acc, curr) => acc + (curr['₹ Revenue'] || 0), 0);
 
   return (
-    <PageContainer sx={{ maxWidth: '100%', width: '100%', overflowX: 'hidden' }}>
+    <Box sx={{ width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column', gap: 3, boxSizing: 'border-box' }}>
       <PageHeader
         title="Veda Event Admin Dashboard"
         subtitle="Overview of VEDA event participation, department/group analytics and registration metrics"
         action={
           <FormControl size="small" sx={{ minWidth: 200, bgcolor: 'background.paper', borderRadius: 1 }}>
             <InputLabel>Department Filter</InputLabel>
-            <Select 
-              value={globalDeptFilter} 
-              label="Department Filter" 
+            <Select
+              value={globalDeptFilter}
+              label="Department Filter"
               onChange={(e) => setGlobalDeptFilter(e.target.value)}
             >
               {deptOptions.map((d) => (
@@ -315,11 +314,11 @@ const StudentEventAdminDashboard = () => {
       />
 
       {/* ── Summary Cards ─────────────────────────────────────────────── */}
-      <StatCardGrid columns={4}>
+      <StatCardGrid columns={{ xs: 1, sm: 2, md: 3, xl: 6 }}>
         <StatCard title="Total Teams" value={globalSummary.teams} color="#0d9488" icon={<GroupsIcon />} />
         <StatCard title="Total Students" value={globalSummary.students} color="#2563eb" icon={<PeopleIcon />} />
+        <StatCard title="Total Revenue" value={`₹${fmt(globalSummary.revenue)}`} color="#7c3aed" icon={<CurrencyRupeeIcon />} />
         <StatCard title="Total Attended" value={globalSummary.attended} color="#16a34a" icon={<PeopleIcon />} />
-        <StatCard title="Total Revenue" subtitle="(₹)" value={`₹${fmt(globalSummary.revenue)}`} color="#7c3aed" icon={<CurrencyRupeeIcon />} />
         <StatCard title="Schools (Groups)" value={globalSummary.schools} color="#ea580c" icon={<SchoolIcon />} />
         <StatCard title="Departments" value={globalSummary.departments} color="#9333ea" icon={<BusinessIcon />} />
       </StatCardGrid>
@@ -678,7 +677,7 @@ const StudentEventAdminDashboard = () => {
               </ResponsiveContainer>
             )}
           </Box>
-          
+
           {/* Revenue by Event */}
           {revenueByEventData.length > 0 && (
             <Box>
@@ -698,7 +697,7 @@ const StudentEventAdminDashboard = () => {
           )}
         </Box>
       </Paper>
-    </PageContainer>
+    </Box>
   );
 };
 
