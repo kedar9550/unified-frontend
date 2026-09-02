@@ -10,7 +10,7 @@ import {
   TablePagination, Tooltip, Radio, RadioGroup, FormControlLabel
 } from "@mui/material";
 import { toast } from "sonner";
-import { Search, Close, Download, Description, Groups, Article, Person, AttachFile, Visibility } from "@mui/icons-material";
+import { Search, Close, Download, Description, Groups, Article, Person, AttachFile, Visibility, Edit, CurrencyRupee, CardGiftcard } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
@@ -188,6 +188,8 @@ export default function JournalPublication() {
 
   const [form, setForm] = useState(emptyForm);
   const [files, setFiles] = useState({ publishedPaper: null, referencePages: null, completeJournal: null });
+  const [existingFiles, setExistingFiles] = useState({ publishedPaper: null, referencePages: null, completeJournal: null });
+  const [editJournalId, setEditJournalId] = useState(null);
   const [loading, setLoading] = useState(false);
 
   // ── Dynamic co-author list (mirrors TextbookPublication logic) ──────────────
@@ -591,9 +593,15 @@ export default function JournalPublication() {
       }
     }
 
-    if (!files.publishedPaper || !files.referencePages || !files.completeJournal) {
-      toast.error("Please attach all required documents");
-      return;
+    if (!editJournalId) {
+      if (!files.publishedPaper || !files.referencePages || !files.completeJournal) {
+        toast.error("Please attach all required documents");
+        return;
+      }
+    } else {
+      if (!files.publishedPaper && !existingFiles.publishedPaper) { toast.error("Please attach Published Paper"); return; }
+      if (!files.referencePages && !existingFiles.referencePages) { toast.error("Please attach Reference Pages"); return; }
+      if (!files.completeJournal && !existingFiles.completeJournal) { toast.error("Please attach Complete Journal"); return; }
     }
 
     setLoading(true);
@@ -637,11 +645,18 @@ export default function JournalPublication() {
       if (files.referencePages) fd.append("referencePages", files.referencePages);
       if (files.completeJournal) fd.append("completeJournal", files.completeJournal);
 
-      await API.post("/api/research/journal", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      toast.success("Journal submitted successfully!");
+      if (editJournalId) {
+        await API.put(`/api/research/journal/${editJournalId}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+        toast.success("Journal resubmitted successfully!");
+      } else {
+        await API.post("/api/research/journal", fd, { headers: { "Content-Type": "multipart/form-data" } });
+        toast.success("Journal submitted successfully!");
+      }
 
       setForm(emptyForm);
       setFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
+      setExistingFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
+      setEditJournalId(null);
       setDoiFetched(false);
       setDoiFetchedFields({});
       setSelectedYear("");
@@ -651,6 +666,59 @@ export default function JournalPublication() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEditJournal = (pub) => {
+    setEditJournalId(pub._id);
+    setSelectedYear(pub.academicYear?._id || pub.academicYear);
+    
+    // Set form fields
+    setForm({
+      doi: pub.doi || "",
+      paperTitle: pub.paperTitle || "",
+      journalName: pub.journalName || "",
+      journalQuartile: pub.journalQuartile || pub.categoryOfJournal || "",
+      journalType: pub.journalType || "",
+      vol: pub.vol || "",
+      issue: pub.issue || "",
+      pageNos: pub.pageNos || pub.pageRange || "",
+      hIndex: pub.hIndex || "",
+      jcrImpactFactor: pub.jcrImpactFactor || pub.impactFactor || "",
+      numberOfReferencesBelongingToAGEC: pub.numberOfReferencesBelongingToAGEC || 0,
+      agecReferencingNumbers: pub.agecReferencingNumbers || pub.referencingNos || "",
+      month: pub.publishedMonth || pub.month || "",
+      year: pub.publishedYear || pub.year || "",
+      applyIncentive: pub.applyIncentive || pub.incentiveApplied || "",
+      publicationScope: pub.publicationScope || "",
+      applyingSeedGrant: pub.applyingSeedGrant || "",
+      completeJournalName: pub.completeJournalName || "",
+      sdgs: pub.sdgs || "",
+      isStudentsInvolved: pub.isStudentsInvolved || "No",
+      issn: pub.issn || "",
+      eissn: pub.eissn || "",
+      isScopus: pub.isScopus || "No",
+      totalAuthors: pub.totalAuthors || 1,
+      userAuthorPosition: pub.userAuthorPosition || 1,
+      otherAuthors: pub.coAuthors?.map(ca => ({
+        authorPosition: ca.authorPosition,
+        CoAuthorType: ca.CoAuthorType || "faculty",
+        studentId: ca.studentId || "",
+        affiliationType: ca.affiliation || "",
+        empId: ca.employeeId || "",
+        authorName: ca.name || "",
+        affiliationName: ca.affiliation === "Aditya University" ? "" : (ca.affiliation || ""),
+      })) || [],
+    });
+
+    setExistingFiles({
+      publishedPaper: pub.publishedPaper,
+      referencePages: pub.referencePages,
+      completeJournal: pub.completeJournal
+    });
+    setFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
+    
+    // Switch to form view
+    setViewMode("form");
   };
 
   // ── Render helpers ────────────────────────────────────────────────────────────
@@ -707,7 +775,6 @@ export default function JournalPublication() {
           <Table sx={{ minWidth: 1100 }}>
             <TableHead sx={{ background: "var(--gradient-primary)" }}>
               <TableRow>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>DOI</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Paper Title</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Journal Name</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Quartile</TableCell>
@@ -715,13 +782,13 @@ export default function JournalPublication() {
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Authors</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Remarks</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2, textAlign: "center" }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {publicationsList.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((pub, i) => (
                 <TableRow key={pub._id || i} sx={{ "&:hover": { background: "var(--bg-accent-1)" }, transition: "background 0.15s" }}>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2, fontSize: 12 }}>{pub.doi || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2, maxWidth: 200 }}>{pub.paperTitle || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.journalName || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.journalQuartile || pub.categoryOfJournal || "N/A"}</TableCell>
@@ -752,16 +819,34 @@ export default function JournalPublication() {
                       {pub.status || "Pending"}
                     </Typography>
                   </TableCell>
+                  <TableCell sx={{ py: 2 }}>
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontSize: "0.85rem", maxWidth: 150, textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }} title={pub.rndComment || pub.hodComment || ""}>
+                      {pub.rndComment || pub.hodComment || "—"}
+                    </Typography>
+                  </TableCell>
                   <TableCell sx={{ py: 2, textAlign: "center" }}>
-                    <Tooltip title="View Details">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleOpenDetails(pub)}
-                        sx={{ color: "var(--color-primary)" }}
-                      >
-                        <Visibility fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>
+                      <Tooltip title="View Details">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenDetails(pub)}
+                          sx={{ color: "var(--color-primary)" }}
+                        >
+                          <Visibility fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      {pub.status?.includes("Rejected") && pub.visibilityRole !== "Co-Author" && (
+                        <Tooltip title="Edit & Resubmit">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleEditJournal(pub)}
+                            sx={{ color: "#ef4444" }}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}
@@ -845,11 +930,19 @@ export default function JournalPublication() {
 
   const renderForm = () => (
     <FormCard title="Journal Publication Submission">
-      {/* Academic Year Badge */}
-      <Box sx={{ mb: 3, display: "flex", alignItems: "center" }}>
-        <Typography variant="body2" sx={{ background: "var(--bg-accent-1)", color: "var(--color-primary)", px: 2, py: 0.8, borderRadius: "8px", fontWeight: 700, border: "1px solid var(--border-color)" }}>
-          Academic Year: {academicYears.find(y => y._id === selectedYear)?.year || "Selected"}
-        </Typography>
+      {/* Academic Year Selection */}
+      <Box sx={{ mb: 3, display: "flex", alignItems: "center", gap: 2 }}>
+        <Typography sx={{ ...labelStyle, mb: 0 }}>Academic Year :</Typography>
+        <Select
+          size="small"
+          value={selectedYear}
+          onChange={(e) => setSelectedYear(e.target.value)}
+          sx={{ minWidth: 150, background: "var(--bg-panel)" }}
+        >
+          {academicYears.map(y => (
+            <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
+          ))}
+        </Select>
       </Box>
 
       <FacultyInfoRow />
@@ -1163,10 +1256,34 @@ export default function JournalPublication() {
       {/* ── Documents ── */}
       <NoteBox />
       <Grid2 sx={{ mt: 2 }}>
-        <FileField label="Published Paper – 1st Page *" name="publishedPaper" onChange={setFile("publishedPaper")} />
-        <FileField label="Reference Pages (with tick mark) *" name="referencePages" onChange={setFile("referencePages")} />
+        <Box>
+          <FileField label="Published Paper – 1st Page *" name="publishedPaper" onChange={setFile("publishedPaper")} />
+          {existingFiles.publishedPaper && !files.publishedPaper && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, pl: 2 }}>
+              <Typography variant="caption" color="text.secondary">Existing: <a href={existingFiles.publishedPaper} target="_blank" rel="noreferrer" style={{color: 'var(--color-primary)'}}>View File</a></Typography>
+              <IconButton size="small" color="error" onClick={() => setExistingFiles(prev => ({ ...prev, publishedPaper: null }))}><Close fontSize="inherit" /></IconButton>
+            </Box>
+          )}
+        </Box>
+        
+        <Box>
+          <FileField label="Reference Pages (with tick mark) *" name="referencePages" onChange={setFile("referencePages")} />
+          {existingFiles.referencePages && !files.referencePages && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, pl: 2 }}>
+              <Typography variant="caption" color="text.secondary">Existing: <a href={existingFiles.referencePages} target="_blank" rel="noreferrer" style={{color: 'var(--color-primary)'}}>View File</a></Typography>
+              <IconButton size="small" color="error" onClick={() => setExistingFiles(prev => ({ ...prev, referencePages: null }))}><Close fontSize="inherit" /></IconButton>
+            </Box>
+          )}
+        </Box>
+
         <Box>
           <FileField label="Complete Journal *" name="completeJournal" onChange={handleCompleteJournalChange} accept=".pdf" maxSize={5 * 1024 * 1024} />
+          {existingFiles.completeJournal && !files.completeJournal && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, pl: 2 }}>
+              <Typography variant="caption" color="text.secondary">Existing: <a href={existingFiles.completeJournal} target="_blank" rel="noreferrer" style={{color: 'var(--color-primary)'}}>View File</a></Typography>
+              <IconButton size="small" color="error" onClick={() => setExistingFiles(prev => ({ ...prev, completeJournal: null }))}><Close fontSize="inherit" /></IconButton>
+            </Box>
+          )}
           {scanningSdg && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1, p: 1.5, borderRadius: '8px', bgcolor: 'rgba(25, 118, 210, 0.05)', border: '1px solid rgba(25, 118, 210, 0.2)' }}>
               <Loader size={16} />
@@ -1443,7 +1560,9 @@ export default function JournalPublication() {
                     { label: "Citations", value: data.citations || "-", icon: <FormatQuoteIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "AGEC Referencing Numbers", value: data.agecReferencingNumbers || data.referencingNos || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Number of References Belonging to AGEC", value: data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-"), icon: <Groups sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    { label: "Seed Grant Work", value: data.applyingSeedGrant || "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> }
+                    { label: "Seed Grant Work", value: data.applyingSeedGrant || "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Apply For Incentive", value: data.applyIncentive || "No", icon: <CardGiftcard sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Approved Incentive Amount", value: data.approvedAmount ? `₹${data.approvedAmount}` : "-", icon: <CurrencyRupee sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> }
                   ].map((item, idx, arr) => (
                     <Box
                       key={idx}
@@ -1604,7 +1723,10 @@ export default function JournalPublication() {
                     if (!numbers) return null;
                     const matchedNumbers = [...new Set(numbers.map(n => parseInt(n, 10)))].sort((a, b) => a - b);
                     return matchedNumbers.map((num, idx) => {
-                      const dbSdg = sdgList.find(s => parseInt(s.sdgNumber, 10) === num);
+                      const dbSdg = sdgList.find(s => {
+                        const sNum = parseInt(String(s.sdgNumber).replace(/\D/g, ''), 10);
+                        return sNum === num;
+                      });
                       const fallback = SDG_COLOR_MAP[num] || { code: `SDG-${num}`, label: `SDG-${num}`, color: "#000" };
                       const color = dbSdg?.backgroundColor || fallback.color;
                       const imageUrl = dbSdg?.imageUrl ? `${API.defaults.baseURL || ''}${dbSdg.imageUrl}` : null;
