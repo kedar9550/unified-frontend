@@ -18,6 +18,8 @@ import {
   TableHead,
   TableRow,
   IconButton,
+  ToggleButton,
+  ToggleButtonGroup
 } from '@mui/material';
 import {
   ReceiptLong as ReceiptIcon,
@@ -61,6 +63,33 @@ const Payments = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [departmentsDialogOpen, setDepartmentsDialogOpen] = useState(false);
   const [departmentsToView, setDepartmentsToView] = useState([]);
+  const [activeTab, setActiveTab] = useState('ALL');
+
+  const handleManualApprove = async (id) => {
+    try {
+      const res = await API.put(`/api/razorpay/registrations/manual-approve/${id}`);
+      if (res.data.ok) {
+        toast.success(res.data.message);
+        fetchPayments();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Manual approval failed');
+    }
+  };
+
+  const handleVerifyGateway = async (id) => {
+    try {
+      const res = await API.get(`/api/razorpay/registrations/verify-gateway/${id}`);
+      if (res.data.status === 'PAID') {
+        toast.success(res.data.message);
+        fetchPayments();
+      } else {
+        toast.warning(res.data.message);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Gateway verification failed');
+    }
+  };
 
   const fetchPayments = useCallback(async () => {
     setLoading(true);
@@ -124,7 +153,14 @@ const Payments = () => {
     window.print();
   };
 
-  const rows = payments.map((payment, index) => {
+  const filteredPayments = payments.filter(p => {
+    const isPaid = (p.paymentStatus || (p.verified ? 'PAID' : 'PENDING')) === 'PAID';
+    if (activeTab === 'SUCCESSFUL') return isPaid;
+    if (activeTab === 'PENDING') return !isPaid;
+    return true;
+  });
+
+  const rows = filteredPayments.map((payment, index) => {
     const amountValue = payment.amountRupees ?? payment.amount;
     const isPaid = (payment.paymentStatus || (payment.verified ? 'PAID' : 'PENDING')) === 'PAID';
     const schoolCategory = payment.category || payment.schoolId || '-';
@@ -184,7 +220,7 @@ const Payments = () => {
       },
       {
         value: 'View Invoice',
-        display: (
+        display: isPaid ? (
           <Button
             variant="outlined"
             size="small"
@@ -198,7 +234,30 @@ const Payments = () => {
           >
             Invoice
           </Button>
-        ),
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, minWidth: '130px' }}>
+            <Button
+              variant="contained"
+              size="small"
+              color="info"
+              onClick={() => handleVerifyGateway(payment._id)}
+              startIcon={<RefreshIcon sx={{ fontSize: 14 }} />}
+              sx={{ borderRadius: '16px', textTransform: 'none', fontSize: '10px', px: 1.5, py: 0.5 }}
+            >
+              Verify Gateway
+            </Button>
+            <Button
+              variant="contained"
+              size="small"
+              color="success"
+              onClick={() => handleManualApprove(payment._id)}
+              startIcon={<CheckCircleIcon sx={{ fontSize: 14 }} />}
+              sx={{ borderRadius: '16px', textTransform: 'none', fontSize: '10px', px: 1.5, py: 0.5 }}
+            >
+              Manual Approve
+            </Button>
+          </Box>
+        )
       },
     ];
   });
@@ -247,7 +306,35 @@ const Payments = () => {
         </Box>
       ) : (
         <Box sx={{ mt: 2 }}>
-          {payments.length === 0 ? (
+          {payments.length > 0 && (
+            <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', p: 1.5, bgcolor: '#f8fafc', borderRadius: '12px' }}>
+              <Typography variant="body2" sx={{ fontWeight: 700, color: '#475569' }}>Filter Registrations:</Typography>
+              <ToggleButtonGroup
+                value={activeTab}
+                exclusive
+                onChange={(e, newTab) => { if (newTab) setActiveTab(newTab); }}
+                size="small"
+                sx={{
+                  '& .MuiToggleButton-root': { textTransform: 'none', px: 2, py: 0.5, borderRadius: '20px !important', mx: 0.5, border: '1px solid #cbd5e1 !important', fontWeight: 600, color: '#64748b' },
+                  '& .Mui-selected': { bgcolor: '#f1f5f9', color: '#0f172a !important', borderColor: '#94a3b8 !important' },
+                  '& .MuiToggleButton-root[value="SUCCESSFUL"].Mui-selected': { bgcolor: '#ecfdf5', color: '#059669 !important', borderColor: '#10b981 !important' },
+                  '& .MuiToggleButton-root[value="PENDING"].Mui-selected': { bgcolor: '#fefce8', color: '#d97706 !important', borderColor: '#fbbf24 !important' }
+                }}
+              >
+                <ToggleButton value="SUCCESSFUL">
+                  <CheckCircleIcon sx={{ fontSize: 16, mr: 0.5 }} /> Successful (Paid) ({payments.filter(p => (p.paymentStatus || (p.verified ? 'PAID' : 'PENDING')) === 'PAID').length})
+                </ToggleButton>
+                <ToggleButton value="ALL">
+                  All Registrations ({payments.length})
+                </ToggleButton>
+                <ToggleButton value="PENDING">
+                  Pending / Incomplete ({payments.filter(p => (p.paymentStatus || (p.verified ? 'PAID' : 'PENDING')) !== 'PAID').length})
+                </ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+          )}
+
+          {filteredPayments.length === 0 ? (
             <EmptyState
               title="No payment registrations found"
               description="Payment data will appear here once registrations are created or verified."
