@@ -31,8 +31,10 @@ import {
   Event as EventIcon,
   PeopleAlt as PeopleAltIcon,
   Refresh as RefreshIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { TextField, MenuItem } from '@mui/material';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
 import { PageContainer, EmptyState } from '../../components/common/design-system';
@@ -64,6 +66,11 @@ const Payments = () => {
   const [departmentsDialogOpen, setDepartmentsDialogOpen] = useState(false);
   const [departmentsToView, setDepartmentsToView] = useState([]);
   const [activeTab, setActiveTab] = useState('ALL');
+
+  const [addParticipantDialogOpen, setAddParticipantDialogOpen] = useState(false);
+  const [selectedPaymentForAdd, setSelectedPaymentForAdd] = useState(null);
+  const [participantFormData, setParticipantFormData] = useState([]);
+  const [addParticipantLoading, setAddParticipantLoading] = useState(false);
 
   const handleManualApprove = async (id) => {
     try {
@@ -105,6 +112,60 @@ const Payments = () => {
       }
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to delete registration');
+    }
+  };
+
+  const handleOpenAddParticipant = (payment) => {
+    setSelectedPaymentForAdd(payment);
+    const size = payment.teamSize || 1;
+    const initialData = Array.from({ length: size }, () => ({
+      roll: '',
+      name: '',
+      college: 'Aditya University',
+      gender: '',
+      mobile: '',
+      email: '',
+      year: '',
+      department: '',
+      branch: '',
+      location: ''
+    }));
+    setParticipantFormData(initialData);
+    setAddParticipantDialogOpen(true);
+  };
+
+  const handleParticipantChange = (index, field, value) => {
+    const updated = [...participantFormData];
+    updated[index][field] = value;
+    setParticipantFormData(updated);
+  };
+
+  const handleSaveParticipants = async () => {
+    // Basic validation
+    for (let i = 0; i < participantFormData.length; i++) {
+      const p = participantFormData[i];
+      if (!p.name || !p.roll || !p.mobile || !p.email) {
+        toast.error(`Please fill required fields (Name, Roll, Mobile, Email) for Participant ${i + 1}`);
+        return;
+      }
+    }
+
+    setAddParticipantLoading(true);
+    try {
+      const res = await API.put(`/api/razorpay/registrations/${selectedPaymentForAdd._id}/participants`, {
+        participants: participantFormData,
+        eventName: selectedPaymentForAdd.eventName,
+        category: selectedPaymentForAdd.category
+      });
+      if (res.data.ok) {
+        toast.success(res.data.message || 'Participants added successfully');
+        setAddParticipantDialogOpen(false);
+        fetchPayments();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to add participants');
+    } finally {
+      setAddParticipantLoading(false);
     }
   };
 
@@ -205,7 +266,19 @@ const Payments = () => {
 
     return [
       index + 1,
-      payment.teamId || (!isPaid ? 'Pending' : '-'),
+      {
+        value: payment.teamId || (!isPaid ? 'Pending' : '-'),
+        display: payment.teamId ? (
+          payment.teamId
+        ) : (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2">{!isPaid ? 'Pending' : '-'}</Typography>
+            <IconButton size="small" onClick={() => handleOpenAddParticipant(payment)} color="primary">
+              <VisibilityIcon fontSize="small" />
+            </IconButton>
+          </Box>
+        )
+      },
       schoolCategory,
       payment.eventName || '-',
       departmentNode,
@@ -664,6 +737,162 @@ const Payments = () => {
         <DialogActions>
           <Button onClick={() => setDepartmentsDialogOpen(false)} variant="contained" sx={{ textTransform: 'none' }}>
             Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Add Missing Participant Dialog */}
+      <Dialog 
+        open={addParticipantDialogOpen} 
+        onClose={() => !addParticipantLoading && setAddParticipantDialogOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '16px' } }}
+      >
+        <DialogTitle sx={{ background: 'var(--gradient-primary)', color: '#fff', fontWeight: 700 }}>
+          Add Participant Details
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 3, background: '#f8fafc' }}>
+          {selectedPaymentForAdd && (
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" fontWeight={700}>
+                Event: {selectedPaymentForAdd.eventName} ({selectedPaymentForAdd.category})
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Team Size: {selectedPaymentForAdd.teamSize || 1}
+              </Typography>
+            </Box>
+          )}
+
+          {participantFormData.map((p, idx) => (
+            <Paper key={idx} sx={{ p: 3, mb: 3, borderRadius: '12px' }} elevation={0} variant="outlined">
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: 'var(--color-primary)' }}>
+                Participant {idx + 1}
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField 
+                    label="Roll Number" 
+                    fullWidth 
+                    size="small" 
+                    value={p.roll} 
+                    onChange={(e) => handleParticipantChange(idx, 'roll', e.target.value)} 
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField 
+                    label="Name" 
+                    fullWidth 
+                    size="small" 
+                    value={p.name} 
+                    onChange={(e) => handleParticipantChange(idx, 'name', e.target.value)} 
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField 
+                    label="College" 
+                    select
+                    fullWidth 
+                    size="small" 
+                    value={p.college} 
+                    onChange={(e) => handleParticipantChange(idx, 'college', e.target.value)} 
+                  >
+                    <MenuItem value="Aditya University">Aditya University</MenuItem>
+                    <MenuItem value="Other College">Other College</MenuItem>
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField 
+                    label="Gender" 
+                    select
+                    fullWidth 
+                    size="small" 
+                    value={p.gender} 
+                    onChange={(e) => handleParticipantChange(idx, 'gender', e.target.value)} 
+                  >
+                    <MenuItem value="Male">Male</MenuItem>
+                    <MenuItem value="Female">Female</MenuItem>
+                  </TextField>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField 
+                    label="Mobile" 
+                    fullWidth 
+                    size="small" 
+                    value={p.mobile} 
+                    onChange={(e) => handleParticipantChange(idx, 'mobile', e.target.value)} 
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField 
+                    label="Email" 
+                    type="email"
+                    fullWidth 
+                    size="small" 
+                    value={p.email} 
+                    onChange={(e) => handleParticipantChange(idx, 'email', e.target.value)} 
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField 
+                    label="Year of Study" 
+                    fullWidth 
+                    size="small" 
+                    value={p.year} 
+                    onChange={(e) => handleParticipantChange(idx, 'year', e.target.value)} 
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField 
+                    label="Department" 
+                    fullWidth 
+                    size="small" 
+                    value={p.department} 
+                    onChange={(e) => handleParticipantChange(idx, 'department', e.target.value)} 
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField 
+                    label="Branch" 
+                    fullWidth 
+                    size="small" 
+                    value={p.branch} 
+                    onChange={(e) => handleParticipantChange(idx, 'branch', e.target.value)} 
+                  />
+                </Grid>
+                <Grid item xs={12} sm={12}>
+                  <TextField 
+                    label="Location" 
+                    fullWidth 
+                    size="small" 
+                    value={p.location} 
+                    onChange={(e) => handleParticipantChange(idx, 'location', e.target.value)} 
+                  />
+                </Grid>
+              </Grid>
+            </Paper>
+          ))}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, background: '#fff' }}>
+          <Button 
+            onClick={() => setAddParticipantDialogOpen(false)} 
+            disabled={addParticipantLoading}
+            variant="outlined" 
+            sx={{ textTransform: 'none', borderRadius: '8px' }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSaveParticipants} 
+            disabled={addParticipantLoading}
+            variant="contained" 
+            sx={{ textTransform: 'none', borderRadius: '8px', px: 3 }}
+          >
+            {addParticipantLoading ? <CircularProgress size={24} color="inherit" /> : 'Save Participants & Generate Team ID'}
           </Button>
         </DialogActions>
       </Dialog>
