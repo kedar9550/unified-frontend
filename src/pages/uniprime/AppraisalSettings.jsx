@@ -88,15 +88,15 @@ const AppraisalSettings = () => {
           axiosInstance.get("/api/academic-years"),
           axiosInstance.get("/api/appraisal/active-year")
         ]);
-        
+
         const activeAppraisalYearId = resActive.data?.data;
         const yearsList = resYears.data?.years || [];
-        
+
         const mappedYears = yearsList.map(y => ({
           ...y,
           isAppraisalActive: activeAppraisalYearId === y._id
         }));
-        
+
         setAcademicYears(mappedYears);
         if (mappedYears.length > 0) {
           const active = mappedYears.find((y) => y.isAppraisalActive);
@@ -316,9 +316,9 @@ const AppraisalSettings = () => {
     onAdd = null, // function (idx, field, val)
     onDelete = null, // function (idx)
     isRangeList = false,
-    accentColor = "#10b981",
-    accentBg = "rgba(16, 185, 129, 0.08)",
-    hoverBorderColor = "rgba(16, 185, 129, 0.2)"
+    accentColor = "var(--color-primary)",
+    accentBg = "rgba(1, 60, 110, 0.08)",
+    hoverBorderColor = "rgba(1, 60, 110, 0.2)"
   }) => {
     const isEditing = !!editingCard[id];
 
@@ -348,15 +348,18 @@ const AppraisalSettings = () => {
                 width: 34,
                 height: 34,
                 borderRadius: "50%",
-                backgroundColor: accentBg,
-                color: accentColor,
+                backgroundColor: "var(--bg-accent-4, rgba(1, 60, 110, 0.08))",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 flexShrink: 0
               }}
             >
-              {icon}
+              {React.isValidElement(icon)
+                ? React.cloneElement(icon, {
+                  sx: { color: "var(--color-primary)", ...icon.props.sx, "& path": { fill: "url(#primaryGradient)" } }
+                })
+                : icon}
             </Box>
             <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.85rem" }}>
               {title}
@@ -371,14 +374,18 @@ const AppraisalSettings = () => {
               textTransform: "none",
               fontWeight: 700,
               fontSize: "0.72rem",
-              borderRadius: "6px",
-              px: 1.2,
-              py: 0.3,
-              border: "1px solid",
-              borderColor: isEditing ? "success.main" : "var(--border-color)",
-              color: isEditing ? "success.main" : accentColor,
+              borderRadius: "8px",
+              px: 1.5,
+              py: 0.4,
+              background: isEditing ? "success.main" : "var(--gradient-primary)",
+              color: "#fff",
+              border: "none",
+              boxShadow: isEditing ? "0 2px 8px rgba(46, 125, 50, 0.2)" : "0 2px 8px rgba(1, 60, 110, 0.25)",
+              transition: "all 0.2s ease",
               "&:hover": {
-                backgroundColor: isEditing ? "rgba(46, 125, 50, 0.05)" : "rgba(0, 78, 146, 0.05)"
+                background: isEditing ? "success.dark" : "var(--gradient-primary-hover)",
+                boxShadow: isEditing ? "0 4px 12px rgba(46, 125, 50, 0.3)" : "0 4px 12px rgba(1, 60, 110, 0.35)",
+                transform: "translateY(-1px)"
               }
             }}
           >
@@ -394,10 +401,21 @@ const AppraisalSettings = () => {
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
               <Box sx={{
                 border: "1px solid var(--border-color)",
-                borderTop: `3px solid ${accentColor}`,
                 borderRadius: "8px",
                 overflow: "hidden",
-                backgroundColor: "var(--bg-paper)"
+                backgroundColor: "var(--bg-paper)",
+                position: "relative",
+                pt: "3px",
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: "3px",
+                  background: "var(--gradient-primary)",
+                  zIndex: 1
+                }
               }}>
                 {/* Header row */}
                 <Box sx={{
@@ -565,10 +583,21 @@ const AppraisalSettings = () => {
           ) : (
             <Box sx={{
               border: "1px solid var(--border-color)",
-              borderTop: `3px solid ${accentColor}`,
               borderRadius: "8px",
               overflow: "hidden",
-              backgroundColor: "var(--bg-paper)"
+              backgroundColor: "var(--bg-paper)",
+              position: "relative",
+              pt: "3px",
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: "3px",
+                background: "var(--gradient-primary)",
+                zIndex: 1
+              }
             }}>
               {/* Header row */}
               <Box sx={{
@@ -662,14 +691,13 @@ const AppraisalSettings = () => {
                 width: 34,
                 height: 34,
                 borderRadius: "50%",
-                backgroundColor: "rgba(16, 185, 129, 0.08)",
-                color: "#10b981",
+                backgroundColor: "rgba(1, 60, 110, 0.08)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center"
               }}
             >
-              <BarChart />
+              <BarChart sx={{ "& path": { fill: "url(#primaryGradient)" } }} />
             </Box>
             <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.85rem" }}>
               2.7 & 2.8 Scopus Citation & H-Index Points Settings
@@ -684,14 +712,18 @@ const AppraisalSettings = () => {
               textTransform: "none",
               fontWeight: 700,
               fontSize: "0.72rem",
-              borderRadius: "6px",
-              px: 1.2,
-              py: 0.3,
-              border: "1px solid",
-              borderColor: isEditing ? "success.main" : "var(--border-color)",
-              color: isEditing ? "success.main" : "var(--color-primary)",
+              borderRadius: "8px",
+              px: 1.5,
+              py: 0.4,
+              background: isEditing ? "success.main" : "var(--gradient-primary)",
+              color: "#fff",
+              border: "none",
+              boxShadow: isEditing ? "0 2px 8px rgba(46, 125, 50, 0.2)" : "0 2px 8px rgba(1, 60, 110, 0.25)",
+              transition: "all 0.2s ease",
               "&:hover": {
-                backgroundColor: isEditing ? "rgba(46, 125, 50, 0.05)" : "rgba(0, 78, 146, 0.05)"
+                background: isEditing ? "success.dark" : "var(--gradient-primary-hover)",
+                boxShadow: isEditing ? "0 4px 12px rgba(46, 125, 50, 0.3)" : "0 4px 12px rgba(1, 60, 110, 0.35)",
+                transform: "translateY(-1px)"
               }
             }}
           >
@@ -790,14 +822,13 @@ const AppraisalSettings = () => {
                 width: 34,
                 height: 34,
                 borderRadius: "50%",
-                backgroundColor: "rgba(245, 158, 11, 0.08)",
-                color: "#f59e0b",
+                backgroundColor: "rgba(1, 60, 110, 0.08)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center"
               }}
             >
-              <SupervisorAccount />
+              <SupervisorAccount sx={{ "& path": { fill: "url(#primaryGradient)" } }} />
             </Box>
             <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.85rem" }}>
               4.1 Administrative Roles Point Configurations
@@ -812,14 +843,18 @@ const AppraisalSettings = () => {
               textTransform: "none",
               fontWeight: 700,
               fontSize: "0.72rem",
-              borderRadius: "6px",
-              px: 1.2,
-              py: 0.3,
-              border: "1px solid",
-              borderColor: isEditing ? "success.main" : "var(--border-color)",
-              color: isEditing ? "success.main" : "var(--color-primary)",
+              borderRadius: "8px",
+              px: 1.5,
+              py: 0.4,
+              background: isEditing ? "success.main" : "var(--gradient-primary)",
+              color: "#fff",
+              border: "none",
+              boxShadow: isEditing ? "0 2px 8px rgba(46, 125, 50, 0.2)" : "0 2px 8px rgba(1, 60, 110, 0.25)",
+              transition: "all 0.2s ease",
               "&:hover": {
-                backgroundColor: isEditing ? "rgba(46, 125, 50, 0.05)" : "rgba(0, 78, 146, 0.05)"
+                background: isEditing ? "success.dark" : "var(--gradient-primary-hover)",
+                boxShadow: isEditing ? "0 4px 12px rgba(46, 125, 50, 0.3)" : "0 4px 12px rgba(1, 60, 110, 0.35)",
+                transform: "translateY(-1px)"
               }
             }}
           >
@@ -973,125 +1008,215 @@ const AppraisalSettings = () => {
 
   return (
     <PageContainer px={0} py={0}>
-      {/* Redesigned Header using common PageHeader */}
+      {/* SVG Defs for Icon Gradient Fill using CSS variables for theme reactivity */}
+      <svg width="0" height="0" style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}>
+        <defs>
+          <linearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="var(--gradient-start, #004e92)" />
+            <stop offset="50%" stopColor="var(--gradient-mid, #013c6e)" />
+            <stop offset="100%" stopColor="var(--color-primary, #BE9337)" />
+          </linearGradient>
+        </defs>
+      </svg>
+      {/* Header using common PageHeader */}
       <PageHeader
         title="Appraisal Points Settings"
         subtitle="Manage points mapping, caps, and weightage rules for self appraisal configurations."
-        action={
-          <Box sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            alignItems: { xs: "stretch", sm: "center" },
-            gap: 2,
-            width: { xs: "100%", sm: "auto" }
-          }}>
-            {/* Group controls */}
-            <Box sx={{
-              display: "flex",
-              flexDirection: { xs: "column", sm: "row" },
-              alignItems: { xs: "stretch", sm: "center" },
-              gap: 2,
-              width: { xs: "100%", sm: "auto" },
-              justifyContent: "space-between"
-            }}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={config.isActive || false}
-                    onChange={(e) => setConfig(prev => ({ ...prev, isActive: e.target.checked }))}
-                    color="primary"
-                    sx={{
-                      "& .MuiSwitch-switchBase.Mui-checked": {
-                        color: "var(--color-primary)"
-                      },
-                      "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-                        backgroundColor: "var(--color-primary)"
-                      }
-                    }}
-                  />
-                }
-                label={
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                    Active Config
-                  </Typography>
-                }
-                sx={{ m: 0 }}
-              />
+      />
 
-              <Box sx={{ display: "flex", flexDirection: "row", gap: 2, width: { xs: "100%", sm: "auto" } }}>
-                <FormControl variant="outlined" size="small" sx={{ flex: 1, minWidth: { xs: 0, sm: 160 } }}>
-                  <InputLabel id="academic-year-select-label">Academic Year</InputLabel>
-                  <Select
-                    labelId="academic-year-select-label"
-                    value={selectedYear}
-                    onChange={(e) => setSelectedYear(e.target.value)}
-                    label="Academic Year"
-                    sx={{
-                      borderRadius: "10px",
-                      backgroundColor: "var(--bg-paper)",
-                      "& .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "var(--border-color)"
-                      },
-                      "&:hover .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "var(--color-primary)"
-                      },
-                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                        borderColor: "var(--color-primary)"
-                      }
-                    }}
-                  >
-                    {academicYears.map((ay) => (
-                      <MenuItem key={ay._id} value={ay._id}>
-                        {ay.year}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-                <TextField
-                  label="Cutoff Date"
-                  type="date"
-                  size="small"
-                  value={config.cutoffDate ? new Date(config.cutoffDate).toISOString().split('T')[0] : ""}
-                  onChange={(e) => setConfig(prev => ({ ...prev, cutoffDate: e.target.value }))}
-                  slotProps={{ inputLabel: { shrink: true } }}
+      {/* Top Configuration Controls Card */}
+      <Card
+        sx={{
+          mb: 3,
+          p: { xs: 2, sm: 2.5 },
+          borderRadius: "16px",
+          background: "var(--bg-glass)",
+          backdropFilter: "blur(12px) saturate(150%)",
+          border: "1px solid var(--border-color)",
+          boxShadow: "var(--shadow-premium)"
+        }}
+      >
+        <Grid container spacing={2.5} sx={{ alignItems: "center", justifyContent: "space-between" }}>
+          {/* Element 1: Academic Year */}
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} sx={{ display: "flex", alignItems: "center" }}>
+            <FormControl variant="outlined" size="small" fullWidth>
+              <InputLabel id="academic-year-select-label">Academic Year</InputLabel>
+              <Select
+                labelId="academic-year-select-label"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                label="Academic Year"
+                sx={{
+                  borderRadius: "10px",
+                  backgroundColor: "var(--bg-paper)",
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "var(--border-color)"
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "var(--color-primary)"
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "var(--color-primary)"
+                  }
+                }}
+              >
+                {academicYears.map((ay) => (
+                  <MenuItem key={ay._id} value={ay._id}>
+                    {ay.year}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          {/* Element 2: Cutoff Date */}
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} sx={{ display: "flex", alignItems: "center" }}>
+            <TextField
+              label="Cutoff Date"
+              type="date"
+              size="small"
+              fullWidth
+              value={config.cutoffDate ? new Date(config.cutoffDate).toISOString().split('T')[0] : ""}
+              onChange={(e) => setConfig(prev => ({ ...prev, cutoffDate: e.target.value }))}
+              slotProps={{ inputLabel: { shrink: true } }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "10px",
+                  backgroundColor: "var(--bg-paper)"
+                }
+              }}
+            />
+          </Grid>
+
+          {/* Element 3: Config Status Pill Toggle */}
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} sx={{ display: "flex", justifyContent: { xs: "stretch", md: "center" }, alignItems: "center" }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "row", md: "column" },
+                alignItems: "center",
+                justifyContent: { xs: "space-between", md: "center" },
+                gap: { xs: 1.5, md: 0.6 },
+                width: "100%"
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 700,
+                  color: "var(--text-primary)",
+                  fontSize: { xs: "0.82rem", md: "0.75rem" },
+                  whiteSpace: "nowrap"
+                }}
+              >
+                Configuration Status
+              </Typography>
+              <Box
+                onClick={() => setConfig(prev => ({ ...prev, isActive: !prev.isActive }))}
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  position: "relative",
+                  background: "var(--bg-accent-4, rgba(59, 130, 246, 0.1))",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "9999px",
+                  p: "4px",
+                  cursor: "pointer",
+                  userSelect: "none",
+                  boxShadow: "inset 0 1px 3px rgba(0, 0, 0, 0.08)",
+                  transition: "all 0.3s ease",
+                  flexShrink: 0
+                }}
+              >
+                {/* Sliding primary gradient pill knob */}
+                <Box
                   sx={{
-                    flex: 1,
-                    minWidth: { xs: 0, sm: 200 },
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: "10px",
-                      backgroundColor: "var(--bg-paper)"
-                    }
+                    position: "absolute",
+                    top: "4px",
+                    bottom: "4px",
+                    left: config.isActive ? "calc(50% + 1px)" : "4px",
+                    width: "calc(50% - 5px)",
+                    background: "var(--gradient-primary)",
+                    borderRadius: "9999px",
+                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                    boxShadow: "0 2px 6px rgba(0, 0, 0, 0.25)",
+                    zIndex: 1
                   }}
                 />
+
+                {/* Option 1: Inactive */}
+                <Typography
+                  variant="body2"
+                  sx={{
+                    position: "relative",
+                    zIndex: 2,
+                    px: 1.8,
+                    py: 0.5,
+                    fontWeight: 500,
+                    fontSize: "0.78rem",
+                    letterSpacing: "0.02em",
+                    color: !config.isActive ? "#ffffff" : "var(--text-secondary)",
+                    transition: "color 0.3s ease",
+                    textAlign: "center",
+                    minWidth: "60px"
+                  }}
+                >
+                  Inactive
+                </Typography>
+
+                {/* Option 2: Active */}
+                <Typography
+                  variant="body2"
+                  sx={{
+                    position: "relative",
+                    zIndex: 2,
+                    px: 1.8,
+                    py: 0.5,
+                    fontWeight: 600,
+                    fontSize: "0.78rem",
+                    letterSpacing: "0.02em",
+                    color: config.isActive ? "#ffffff" : "var(--text-secondary)",
+                    transition: "color 0.3s ease",
+                    textAlign: "center",
+                    minWidth: "60px"
+                  }}
+                >
+                  Active
+                </Typography>
               </Box>
             </Box>
+          </Grid>
 
+          {/* Element 4: Save Configuration Button */}
+          <Grid size={{ xs: 12, sm: 6, md: 3 }} sx={{ display: "flex", justifyContent: { xs: "stretch", md: "flex-end" }, alignItems: "center" }}>
             <Button
               variant="contained"
               color="primary"
+              size="small"
               startIcon={<Save />}
               onClick={handleSave}
               disabled={loading}
+              fullWidth
               sx={{
-                borderRadius: "20px",
+                borderRadius: "10px",
                 textTransform: "none",
                 fontWeight: 700,
-                px: 3,
-                py: 1,
-                boxShadow: "0 4px 14px rgba(59, 130, 246, 0.4)",
+                fontSize: "0.82rem",
+                height: "38px",
+                py: 0.6,
+                boxShadow: "0 3px 10px rgba(59, 130, 246, 0.3)",
                 background: "var(--gradient-primary)",
                 color: "#fff",
-                width: { xs: "100%", sm: "auto" },
                 "&:hover": {
                   background: "var(--gradient-primary-hover)"
                 }
               }}
             >
-              Save
+              Save Configuration
             </Button>
-          </Box>
-        }
-      />
+          </Grid>
+        </Grid>
+      </Card>
 
       <Card
         sx={{
@@ -1135,8 +1260,8 @@ const AppraisalSettings = () => {
               ======================================================== */}
           {activeTab === 0 && (
             <Box sx={{ animation: "fadeIn 0.3s ease" }}>
-              <Box sx={{ display: "flex", gap: 1, alignItems: "center", mb: 3 }}>
-                <SettingsSuggest color="primary" />
+              <Box sx={{ display: "flex", gap: 1.2, alignItems: "center", mb: 3 }}>
+                <SettingsSuggest sx={{ fontSize: "1.6rem", color: "var(--color-primary)", "& path": { fill: "url(#primaryGradient)" } }} />
                 <Typography variant="subtitle1" fontWeight={700} color="var(--text-primary)">
                   1. Teaching & Learning Metric Settings (Overall Cap: Max 80 points)
                 </Typography>
@@ -1158,9 +1283,9 @@ const AppraisalSettings = () => {
                       }
                     },
                     onDelete: (idx) => deleteRange("passPercentagePoints", idx),
-                    accentColor: "#3b82f6",
-                    accentBg: "rgba(59, 130, 246, 0.08)",
-                    hoverBorderColor: "rgba(59, 130, 246, 0.2)"
+                    accentColor: "var(--color-primary)",
+                    accentBg: "rgba(1, 60, 110, 0.08)",
+                    hoverBorderColor: "rgba(1, 60, 110, 0.2)"
                   })}
                 </Box>
 
@@ -1179,9 +1304,9 @@ const AppraisalSettings = () => {
                       }
                     },
                     onDelete: (idx) => deleteRange("feedbackPoints", idx),
-                    accentColor: "#3b82f6",
-                    accentBg: "rgba(59, 130, 246, 0.08)",
-                    hoverBorderColor: "rgba(59, 130, 246, 0.2)"
+                    accentColor: "var(--color-primary)",
+                    accentBg: "rgba(1, 60, 110, 0.08)",
+                    hoverBorderColor: "rgba(1, 60, 110, 0.2)"
                   })}
                 </Box>
 
@@ -1200,9 +1325,9 @@ const AppraisalSettings = () => {
                       }
                     },
                     onDelete: (idx) => deleteRange("proctoringPoints", idx),
-                    accentColor: "#3b82f6",
-                    accentBg: "rgba(59, 130, 246, 0.08)",
-                    hoverBorderColor: "rgba(59, 130, 246, 0.2)"
+                    accentColor: "var(--color-primary)",
+                    accentBg: "rgba(1, 60, 110, 0.08)",
+                    hoverBorderColor: "rgba(1, 60, 110, 0.2)"
                   })}
                 </Box>
 
@@ -1216,9 +1341,9 @@ const AppraisalSettings = () => {
                       value: config.teaching.coAttainmentPoints[coVal] || 0,
                       setter: (val) => updateCoAttainment(coVal, val)
                     })),
-                    accentColor: "#3b82f6",
-                    accentBg: "rgba(59, 130, 246, 0.08)",
-                    hoverBorderColor: "rgba(59, 130, 246, 0.2)"
+                    accentColor: "var(--color-primary)",
+                    accentBg: "rgba(1, 60, 110, 0.08)",
+                    hoverBorderColor: "rgba(1, 60, 110, 0.2)"
                   })}
                 </Box>
               </Box>
@@ -1230,8 +1355,8 @@ const AppraisalSettings = () => {
               ======================================================== */}
           {activeTab === 1 && (
             <Box sx={{ animation: "fadeIn 0.3s ease" }}>
-              <Box sx={{ display: "flex", gap: 1, alignItems: "center", mb: 3 }}>
-                <Science color="primary" />
+              <Box sx={{ display: "flex", gap: 1.2, alignItems: "center", mb: 3 }}>
+                <Science sx={{ fontSize: "1.6rem", color: "var(--color-primary)", "& path": { fill: "url(#primaryGradient)" } }} />
                 <Typography variant="subtitle1" fontWeight={700} color="var(--text-primary)">
                   2. Research Point Configurations & Rules
                 </Typography>
@@ -1318,8 +1443,8 @@ const AppraisalSettings = () => {
               ======================================================== */}
           {activeTab === 2 && (
             <Box sx={{ animation: "fadeIn 0.3s ease" }}>
-              <Box sx={{ display: "flex", gap: 1, alignItems: "center", mb: 3 }}>
-                <WorkspacePremium color="primary" />
+              <Box sx={{ display: "flex", gap: 1.2, alignItems: "center", mb: 3 }}>
+                <WorkspacePremium sx={{ fontSize: "1.6rem", color: "var(--color-primary)", "& path": { fill: "url(#primaryGradient)" } }} />
                 <Typography variant="subtitle1" fontWeight={700} color="var(--text-primary)">
                   3. Extension & Value Addition Points
                 </Typography>
@@ -1403,8 +1528,8 @@ const AppraisalSettings = () => {
               ======================================================== */}
           {activeTab === 3 && (
             <Box sx={{ animation: "fadeIn 0.3s ease" }}>
-              <Box sx={{ display: "flex", gap: 1, alignItems: "center", mb: 3 }}>
-                <SupervisorAccount color="primary" />
+              <Box sx={{ display: "flex", gap: 1.2, alignItems: "center", mb: 3 }}>
+                <SupervisorAccount sx={{ fontSize: "1.6rem", color: "var(--color-primary)", "& path": { fill: "url(#primaryGradient)" } }} />
                 <Typography variant="subtitle1" fontWeight={700} color="var(--text-primary)">
                   4. Administrative Responsibilities Capped Points
                 </Typography>
@@ -1423,8 +1548,8 @@ const AppraisalSettings = () => {
               ======================================================== */}
           {activeTab === 4 && (
             <Box sx={{ animation: "fadeIn 0.3s ease" }}>
-              <Box sx={{ display: "flex", gap: 1, alignItems: "center", mb: 3 }}>
-                <Stars color="primary" />
+              <Box sx={{ display: "flex", gap: 1.2, alignItems: "center", mb: 3 }}>
+                <Stars sx={{ fontSize: "1.6rem", color: "var(--color-primary)", "& path": { fill: "url(#primaryGradient)" } }} />
                 <Typography variant="subtitle1" fontWeight={700} color="var(--text-primary)">
                   5. Minimum Points Requirements
                 </Typography>
@@ -1444,16 +1569,16 @@ const AppraisalSettings = () => {
                         { label: "Value Addition", value: config.minimumPoints?.[category]?.valueAddition ?? 0, setter: (val) => setConfig(prev => ({ ...prev, minimumPoints: { ...prev.minimumPoints, [category]: { ...prev.minimumPoints?.[category], valueAddition: Number(val) } } })) },
                         { label: "Administration", value: config.minimumPoints?.[category]?.administration ?? 0, setter: (val) => setConfig(prev => ({ ...prev, minimumPoints: { ...prev.minimumPoints, [category]: { ...prev.minimumPoints?.[category], administration: Number(val) } } })) },
                         { label: "Interpersonal Skills", value: config.minimumPoints?.[category]?.interpersonalSkills ?? 0, setter: (val) => setConfig(prev => ({ ...prev, minimumPoints: { ...prev.minimumPoints, [category]: { ...prev.minimumPoints?.[category], interpersonalSkills: Number(val) } } })) },
-                        { 
-                          label: "TOTAL", 
-                          value: (config.minimumPoints?.[category]?.teaching || 0) + 
-                                 (config.minimumPoints?.[category]?.research21 || 0) + 
-                                 (config.minimumPoints?.[category]?.research22_28 || 0) + 
-                                 (config.minimumPoints?.[category]?.valueAddition || 0) + 
-                                 (config.minimumPoints?.[category]?.administration || 0) + 
-                                 (config.minimumPoints?.[category]?.interpersonalSkills || 0), 
-                          readOnly: true, 
-                          isCap: true 
+                        {
+                          label: "TOTAL",
+                          value: (config.minimumPoints?.[category]?.teaching || 0) +
+                            (config.minimumPoints?.[category]?.research21 || 0) +
+                            (config.minimumPoints?.[category]?.research22_28 || 0) +
+                            (config.minimumPoints?.[category]?.valueAddition || 0) +
+                            (config.minimumPoints?.[category]?.administration || 0) +
+                            (config.minimumPoints?.[category]?.interpersonalSkills || 0),
+                          readOnly: true,
+                          isCap: true
                         }
                       ],
                       accentColor: "#f59e0b",
