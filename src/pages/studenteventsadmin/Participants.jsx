@@ -67,6 +67,9 @@ const Participants = ({ mode = 'all' }) => {
   );
   const [attendanceFilter, setAttendanceFilter] = useState('ALL');
   const [genderFilter, setGenderFilter] = useState('ALL');
+  const [schoolFilter, setSchoolFilter] = useState('ALL');
+  const [departmentFilter, setDepartmentFilter] = useState('ALL');
+  const [branchMap, setBranchMap] = useState({});
 
   useEffect(() => {
     if (mode === 'accommodation') {
@@ -117,11 +120,46 @@ const Participants = ({ mode = 'all' }) => {
                 : eventMatch.venue
           ) : null,
           eventGroup: eventMatch?.group?.name || eventMatch?.group || '-',
-          eventCategory: eventMatch?.category?.name || eventMatch?.category || p.category || '-'
+          eventCategory: eventMatch?.category?.name || eventMatch?.category || p.category || '-',
+          eventSchool: eventMatch?.eventSchool?.name || p.category || p.schoolId || '-'
         };
       });
       
       setPayments(fetchedPayments);
+
+      // Fetch missing branches asynchronously
+      const missingRolls = new Set();
+      fetchedPayments.forEach(pay => {
+        if (Array.isArray(pay.participants)) {
+          pay.participants.forEach(p => {
+            if (!p.branch && p.roll && p.roll.length > 5 && (!p.college || p.college.toLowerCase().includes('aditya'))) {
+              missingRolls.add(p.roll.toUpperCase());
+            }
+          });
+        }
+      });
+
+      if (missingRolls.size > 0) {
+        const rollsToFetch = Array.from(missingRolls);
+        rollsToFetch.forEach(async (roll) => {
+          try {
+            const res = await API.get(`/api/razorpay/registrations/branch/${roll}`);
+            const data = res.data;
+            let branch = null;
+            if (Array.isArray(data) && data.length > 0 && data[0].branch) {
+              branch = data[0].branch;
+            } else if (data && data.value && Array.isArray(data.value) && data.value.length > 0 && data.value[0].branch) {
+              branch = data.value[0].branch;
+            }
+            if (branch) {
+              setBranchMap(prev => ({ ...prev, [roll]: branch }));
+            }
+          } catch (err) {
+            console.error(`Failed to fetch branch for ${roll}`, err);
+          }
+        });
+      }
+
     } catch (error) {
       console.error('Error fetching event participants:', error);
       toast.error(error.response?.data?.message || 'Failed to load participants');
@@ -156,13 +194,15 @@ const Participants = ({ mode = 'all' }) => {
             venue: payment.venue,
             eventGroup: payment.eventGroup || '-',
             eventCategory: payment.eventCategory || '-',
+            eventSchool: payment.eventSchool || '-',
             teamId: payment.teamId,
+            computedBranch: participant.branch || branchMap[participant.roll?.toUpperCase()] || '',
           });
         });
       }
     });
     return list;
-  }, [payments]);
+  }, [payments, branchMap]);
 
   // Extract unique events for filter dropdown
   const uniqueEvents = useMemo(() => {
@@ -170,8 +210,28 @@ const Participants = ({ mode = 'all' }) => {
     allParticipants.forEach((p) => {
       if (p.eventName) eventsSet.add(p.eventName);
     });
-    return Array.from(eventsSet);
+    return Array.from(eventsSet).sort();
   }, [allParticipants]);
+
+  const uniqueSchools = useMemo(() => {
+    const set = new Set();
+    allParticipants.forEach(p => {
+      const school = p.eventSchool || p.category || p.schoolId;
+      if (school && school !== '-') set.add(school);
+    });
+    return Array.from(set).sort();
+  }, [allParticipants]);
+
+  const uniqueDepartments = useMemo(() => {
+    const set = new Set();
+    allParticipants.forEach(p => {
+      const relatedEvent = allEvents.find(e => e._id === p.eventId);
+      if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
+        relatedEvent.department.forEach(d => set.add(d.name || d));
+      }
+    });
+    return Array.from(set).sort();
+  }, [allParticipants, allEvents]);
 
   // Apply filters
   const filteredParticipants = useMemo(() => {
@@ -189,6 +249,22 @@ const Participants = ({ mode = 'all' }) => {
 
       // Gender filter
       if (genderFilter !== 'ALL' && p.gender?.toLowerCase() !== genderFilter.toLowerCase()) return false;
+
+      // School filter
+      if (schoolFilter !== 'ALL') {
+        const schoolCategory = p.eventSchool || p.category || p.schoolId;
+        if (schoolCategory !== schoolFilter) return false;
+      }
+
+      // Department filter
+      if (departmentFilter !== 'ALL') {
+        const relatedEvent = allEvents.find(e => e._id === p.eventId);
+        let eventDepts = [];
+        if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
+          eventDepts = relatedEvent.department.map(d => d.name || d);
+        }
+        if (!eventDepts.includes(departmentFilter)) return false;
+      }
 
       // Search query
       if (searchQuery.trim()) {
@@ -248,7 +324,7 @@ const Participants = ({ mode = 'all' }) => {
     }
 
     return filtered;
-  }, [allParticipants, eventFilter, accommodationFilter, attendanceFilter, genderFilter, searchQuery, mode]);
+  }, [allParticipants, eventFilter, accommodationFilter, attendanceFilter, genderFilter, schoolFilter, departmentFilter, searchQuery, mode, allEvents]);
 
   // Metrics
   const accommodationCount = useMemo(() => {
@@ -286,13 +362,13 @@ const Participants = ({ mode = 'all' }) => {
       return;
     }
 
-    const headers = ['S.No', 'Name', 'Roll No', 'Team ID', 'School Name', 'Event Name', 'Event Department(s)', 'College', 'Student Department', 'Student Year', 'Gender', 'Mobile', 'Email', 'Attended'];
+    const headers = ['S.No', 'Name', 'Roll No', 'Team ID', 'School Name', 'Event Name', 'Event Department(s)', 'College', 'Branch', 'Student Department', 'Student Year', 'Gender', 'Mobile', 'Email', 'Attended'];
     const csvRows = [headers.join(',')];
 
     filteredParticipants.forEach((p, idx) => {
       const collegeName = p.college === 'Other College' && p.otherCollege ? p.otherCollege : (p.college || '');
       
-      const schoolCategory = p.category || p.schoolId || '-';
+      const schoolCategory = p.eventSchool || p.category || p.schoolId || '-';
       const relatedEvent = allEvents.find(e => e._id === p.eventId);
       let eventDepartmentStr = '-';
       if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
@@ -308,6 +384,7 @@ const Participants = ({ mode = 'all' }) => {
         `"${p.eventName || ''}"`,
         `"${eventDepartmentStr}"`,
         `"${collegeName}"`,
+        `"${p.computedBranch || ''}"`,
         `"${p.department || ''}"`,
         `"${p.year || ''}"`,
         `"${p.gender || ''}"`,
@@ -337,7 +414,7 @@ const Participants = ({ mode = 'all' }) => {
     'EVENT NAME',
     'Department(s)',
     'College',
-    'Department / Year',
+    'Branch & Dept / Year',
     'Contact Info',
     'Attended',
   ];
@@ -355,7 +432,7 @@ const Participants = ({ mode = 'all' }) => {
   const rows = filteredParticipants.map((p, index) => {
     const isAccomm = p.accommodation?.toLowerCase() === 'yes';
 
-    const schoolCategory = p.category || p.schoolId || '-';
+    const schoolCategory = p.eventSchool || p.category || p.schoolId || '-';
     const relatedEvent = allEvents.find(e => e._id === p.eventId);
     let departmentNode = '-';
     if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
@@ -406,7 +483,16 @@ const Participants = ({ mode = 'all' }) => {
       p.eventName || '-',
       departmentNode,
       p.college ? (p.college === 'Other College' && p.otherCollege ? p.otherCollege : p.college) : '-',
-      p.department ? `Dept: ${p.department}${p.year ? ' | Yr: ' + p.year : ''}` : (p.year ? `Yr: ${p.year}` : '-'),
+      <Box>
+        {p.computedBranch && (
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            Branch: {p.computedBranch}
+          </Typography>
+        )}
+        <Typography variant="body2">
+          {p.department ? `Dept: ${p.department}${p.year ? ' | Yr: ' + p.year : ''}` : (p.year ? `Yr: ${p.year}` : '-')}
+        </Typography>
+      </Box>,
       <Box>
         {p.mobile ? (
           <Typography variant="caption" sx={{ display: 'block', fontWeight: 600 }}>
@@ -530,6 +616,38 @@ const Participants = ({ mode = 'all' }) => {
           {uniqueEvents.map((evt) => (
             <MenuItem key={evt} value={evt}>
               {evt}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          select
+          label="Filter School"
+          size="small"
+          value={schoolFilter}
+          onChange={(e) => setSchoolFilter(e.target.value)}
+          sx={{ width: { xs: '100%', sm: 180 } }}
+        >
+          <MenuItem value="ALL">All Schools</MenuItem>
+          {uniqueSchools.map((s) => (
+            <MenuItem key={s} value={s}>
+              {s}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          select
+          label="Filter Dept"
+          size="small"
+          value={departmentFilter}
+          onChange={(e) => setDepartmentFilter(e.target.value)}
+          sx={{ width: { xs: '100%', sm: 160 } }}
+        >
+          <MenuItem value="ALL">All Depts</MenuItem>
+          {uniqueDepartments.map((d) => (
+            <MenuItem key={d} value={d}>
+              {d}
             </MenuItem>
           ))}
         </TextField>
@@ -692,10 +810,10 @@ const Participants = ({ mode = 'all' }) => {
 
               <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  Department & Year
+                  Branch & Dept & Year
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>
-                  {selectedParticipant.department ? `Dept: ${selectedParticipant.department}` : ''} {selectedParticipant.year ? `| Year: ${selectedParticipant.year}` : ''}
+                  {selectedParticipant.computedBranch ? `Branch: ${selectedParticipant.computedBranch} | ` : ''} {selectedParticipant.department ? `Dept: ${selectedParticipant.department}` : ''} {selectedParticipant.year ? `| Year: ${selectedParticipant.year}` : ''}
                 </Typography>
               </Grid>
 
