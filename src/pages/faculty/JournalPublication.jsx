@@ -671,7 +671,7 @@ export default function JournalPublication() {
   const handleEditJournal = (pub) => {
     setEditJournalId(pub._id);
     setSelectedYear(pub.academicYear?._id || pub.academicYear);
-    
+
     // Set form fields
     setForm({
       doi: pub.doi || "",
@@ -716,7 +716,7 @@ export default function JournalPublication() {
       completeJournal: pub.completeJournal
     });
     setFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
-    
+
     // Switch to form view
     setViewMode("form");
   };
@@ -733,7 +733,7 @@ export default function JournalPublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Journal Publications</Typography>
-        <Button
+        {/* <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -747,7 +747,7 @@ export default function JournalPublication() {
           sx={{ background: "var(--gradient-primary)", px: 3, fontWeight: 700, textTransform: "none", "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }, transition: "all 0.2s ease" }}
         >
           Apply New
-        </Button>
+        </Button> */}
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -937,7 +937,8 @@ export default function JournalPublication() {
           size="small"
           value={selectedYear}
           onChange={(e) => setSelectedYear(e.target.value)}
-          sx={{ minWidth: 150, background: "var(--bg-panel)" }}
+          sx={{ minWidth: 150, background: "var(--bg-panel)", ...(!editJournalId ? disabledField : {}) }}
+          disabled={!editJournalId}
         >
           {academicYears.map(y => (
             <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
@@ -1257,33 +1258,38 @@ export default function JournalPublication() {
       <NoteBox />
       <Grid2 sx={{ mt: 2 }}>
         <Box>
-          <FileField label="Published Paper – 1st Page *" name="publishedPaper" onChange={setFile("publishedPaper")} />
-          {existingFiles.publishedPaper && !files.publishedPaper && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, pl: 2 }}>
-              <Typography variant="caption" color="text.secondary">Existing: <a href={existingFiles.publishedPaper} target="_blank" rel="noreferrer" style={{color: 'var(--color-primary)'}}>View File</a></Typography>
-              <IconButton size="small" color="error" onClick={() => setExistingFiles(prev => ({ ...prev, publishedPaper: null }))}><Close fontSize="inherit" /></IconButton>
-            </Box>
-          )}
-        </Box>
-        
-        <Box>
-          <FileField label="Reference Pages (with tick mark) *" name="referencePages" onChange={setFile("referencePages")} />
-          {existingFiles.referencePages && !files.referencePages && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, pl: 2 }}>
-              <Typography variant="caption" color="text.secondary">Existing: <a href={existingFiles.referencePages} target="_blank" rel="noreferrer" style={{color: 'var(--color-primary)'}}>View File</a></Typography>
-              <IconButton size="small" color="error" onClick={() => setExistingFiles(prev => ({ ...prev, referencePages: null }))}><Close fontSize="inherit" /></IconButton>
-            </Box>
-          )}
+          <FileField
+            label="Published Paper – 1st Page *"
+            name="publishedPaper"
+            onChange={setFile("publishedPaper")}
+            existingFileUrl={!files.publishedPaper ? existingFiles.publishedPaper : null}
+            existingFileName={existingFiles.publishedPaper ? existingFiles.publishedPaper.split('/').pop() : ""}
+            onRemoveExisting={() => setExistingFiles(prev => ({ ...prev, publishedPaper: null }))}
+          />
         </Box>
 
         <Box>
-          <FileField label="Complete Journal *" name="completeJournal" onChange={handleCompleteJournalChange} accept=".pdf" maxSize={5 * 1024 * 1024} />
-          {existingFiles.completeJournal && !files.completeJournal && (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, pl: 2 }}>
-              <Typography variant="caption" color="text.secondary">Existing: <a href={existingFiles.completeJournal} target="_blank" rel="noreferrer" style={{color: 'var(--color-primary)'}}>View File</a></Typography>
-              <IconButton size="small" color="error" onClick={() => setExistingFiles(prev => ({ ...prev, completeJournal: null }))}><Close fontSize="inherit" /></IconButton>
-            </Box>
-          )}
+          <FileField
+            label="Reference Pages (with tick mark) *"
+            name="referencePages"
+            onChange={setFile("referencePages")}
+            existingFileUrl={!files.referencePages ? existingFiles.referencePages : null}
+            existingFileName={existingFiles.referencePages ? existingFiles.referencePages.split('/').pop() : ""}
+            onRemoveExisting={() => setExistingFiles(prev => ({ ...prev, referencePages: null }))}
+          />
+        </Box>
+
+        <Box>
+          <FileField
+            label="Complete Journal *"
+            name="completeJournal"
+            onChange={handleCompleteJournalChange}
+            accept=".pdf"
+            maxSize={5 * 1024 * 1024}
+            existingFileUrl={!files.completeJournal ? existingFiles.completeJournal : null}
+            existingFileName={existingFiles.completeJournal ? existingFiles.completeJournal.split('/').pop() : ""}
+            onRemoveExisting={() => setExistingFiles(prev => ({ ...prev, completeJournal: null }))}
+          />
           {scanningSdg && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1, p: 1.5, borderRadius: '8px', bgcolor: 'rgba(25, 118, 210, 0.05)', border: '1px solid rgba(25, 118, 210, 0.2)' }}>
               <Loader size={16} />
@@ -1731,7 +1737,7 @@ export default function JournalPublication() {
                       const color = dbSdg?.backgroundColor || fallback.color;
                       const imageUrl = dbSdg?.imageUrl ? `${API.defaults.baseURL || ''}${dbSdg.imageUrl}` : null;
                       const label = dbSdg?.sdgTitle ? `SDG-${num}: ${dbSdg.sdgTitle}` : fallback.label;
-                      
+
                       return (
                         <Box
                           key={idx}

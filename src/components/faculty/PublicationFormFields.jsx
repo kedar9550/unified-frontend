@@ -88,7 +88,7 @@ export function NoteBox() {
 }
 
 // File upload field
-export function FileField({ label, name, onChange, error, onError, accept = ".png,.jpg,.jpeg,.pdf", maxSize = 200 * 1024 }) {
+export function FileField({ label, name, onChange, error, onError, accept = ".png,.jpg,.jpeg,.pdf", maxSize = 200 * 1024, existingFileUrl, existingFileName, onRemoveExisting }) {
   const [fileName, setFileName] = useState("");
   const [preview, setPreview] = useState(null);
   const [fileType, setFileType] = useState("");
@@ -177,18 +177,24 @@ export function FileField({ label, name, onChange, error, onError, accept = ".pn
           <input type="file" hidden accept={accept} name={name} onChange={handleFileChange} ref={fileInputRef} />
         </Button>
 
-        <Tooltip title={fileName || ""} disableHoverListener={!fileName}>
+        <Tooltip title={fileName || (existingFileUrl ? (existingFileName || "Existing File") : "")} disableHoverListener={!(fileName || existingFileUrl)}>
           <Typography sx={{ fontSize: 14, color: "var(--text-secondary)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flexGrow: 1, minWidth: 0 }}>
-            {fileName || "No file chosen"}
+            {fileName ? fileName : (existingFileUrl ? (existingFileName || "Existing File") : "No file chosen")}
           </Typography>
         </Tooltip>
 
-        {fileName && (
+        {(fileName || existingFileUrl) && (
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            {preview && (
+            {(preview || existingFileUrl) && (
               <Button
                 startIcon={<Visibility />}
-                onClick={() => setOpenModal(true)}
+                onClick={() => {
+                  if (preview) {
+                    setOpenModal(true);
+                  } else if (existingFileUrl) {
+                    window.open(existingFileUrl, '_blank');
+                  }
+                }}
                 sx={{
                   textTransform: "none",
                   fontWeight: 700,
@@ -201,7 +207,13 @@ export function FileField({ label, name, onChange, error, onError, accept = ".pn
               </Button>
             )}
             <IconButton
-              onClick={handleRemove}
+              onClick={() => {
+                if (fileName) {
+                  handleRemove();
+                } else if (existingFileUrl && onRemoveExisting) {
+                  onRemoveExisting();
+                }
+              }}
               sx={{
                 color: "#ef4444",
                 background: "rgba(239, 68, 68, 0.05)",
