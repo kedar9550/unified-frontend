@@ -208,15 +208,12 @@ const Registrations = () => {
   }, [allParticipants]);
 
   const uniqueDepartments = useMemo(() => {
-    const set = new Set();
+    const set = new Set(['AIML', 'AIDS', 'CE', 'CSE', 'ECE', 'EEE', 'FS', 'IT', 'ME', 'PT', 'MinE', 'AgE', 'BBA', 'BCA', 'MCA', 'MBA']);
     allParticipants.forEach(p => {
-      const relatedEvent = allEvents.find(e => e._id === p.eventId);
-      if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
-        relatedEvent.department.forEach(d => set.add(d.name || d));
-      }
+      if (p.department) set.add(p.department);
     });
     return Array.from(set).sort();
-  }, [allParticipants, allEvents]);
+  }, [allParticipants]);
 
   // Apply filters
   const filteredParticipants = useMemo(() => {
@@ -239,12 +236,7 @@ const Registrations = () => {
 
       // Department filter
       if (departmentFilter !== 'ALL') {
-        const relatedEvent = allEvents.find(e => e._id === p.eventId);
-        let eventDepts = [];
-        if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
-          eventDepts = relatedEvent.department.map(d => d.name || d);
-        }
-        if (!eventDepts.includes(departmentFilter)) return false;
+        if (!p.department || p.department !== departmentFilter) return false;
       }
 
       // Search query
@@ -525,8 +517,8 @@ const Registrations = () => {
       {/* Summary Cards */}
       <StatCardGrid columns={2} sx={{ mt: 1, mb: 3 }}>
         <StatCard
-          title="Total Registrations"
-          value={allParticipants.length}
+          title="Filtered Registrations"
+          value={filteredParticipants.length}
           color="#d97706"
           icon={<PeopleIcon />}
         />

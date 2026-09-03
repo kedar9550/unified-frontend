@@ -163,9 +163,9 @@ const Payments = () => {
   const rows = filteredPayments.map((payment, index) => {
     const amountValue = payment.amountRupees ?? payment.amount;
     const isPaid = (payment.paymentStatus || (payment.verified ? 'PAID' : 'PENDING')) === 'PAID';
-    const schoolCategory = payment.category || payment.schoolId || '-';
-
+    
     const relatedEvent = allEvents.find(e => e._id === payment.eventId);
+    const schoolCategory = relatedEvent?.school?.name || relatedEvent?.eventSchool?.name || payment.category || payment.schoolId || '-';
     let departmentNode = '-';
     if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
       if (relatedEvent.department.length > 1) {
@@ -188,7 +188,7 @@ const Payments = () => {
 
     return [
       index + 1,
-      payment.teamId || '-',
+      payment.teamId || (!isPaid ? 'Pending' : '-'),
       schoolCategory,
       payment.eventName || '-',
       departmentNode,

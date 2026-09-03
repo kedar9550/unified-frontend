@@ -528,7 +528,7 @@ export const ROLE_ROUTES = {
             { text: "Student Coordinators", path: "/Eventveda/events/student-coordinators", icon: <Person /> }
           ]
         },
-        { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
+        // { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
         { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
         {
           text: "Participants",
@@ -612,7 +612,7 @@ export const ROLE_ROUTES = {
         { text: "Student Coordinators", path: "/Eventveda/events/student-coordinators", icon: <Person /> }
       ]
     },
-    { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
+    // { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
     { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
     {
       text: "Participants",
@@ -636,7 +636,7 @@ export const ROLE_ROUTES = {
   FACULTY_COORDINATOR: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Events", path: "/Eventveda/events", icon: <EventAvailable /> },
-    { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
+    // { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
     { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
     { text: "Participants", path: "/Eventveda/participants", icon: <Groups /> },
     {
