@@ -80,6 +80,8 @@ const Payments = () => {
   const handleVerifyGateway = async (id) => {
     try {
       const res = await API.get(`/api/razorpay/registrations/verify-gateway/${id}`);
+      console.log("kedar");
+      console.log(res.data)
       if (res.data.status === 'PAID') {
         toast.success(res.data.message);
         fetchPayments();
@@ -88,6 +90,21 @@ const Payments = () => {
       }
     } catch (err) {
       toast.error(err.response?.data?.error || 'Gateway verification failed');
+    }
+  };
+
+  const handleDeletePayment = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this payment registration? This action cannot be undone.")) {
+      return;
+    }
+    try {
+      const res = await API.delete(`/api/razorpay/registrations/${id}`);
+      if (res.data.ok) {
+        toast.success(res.data.message || 'Registration deleted successfully');
+        fetchPayments();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to delete registration');
     }
   };
 
@@ -163,7 +180,7 @@ const Payments = () => {
   const rows = filteredPayments.map((payment, index) => {
     const amountValue = payment.amountRupees ?? payment.amount;
     const isPaid = (payment.paymentStatus || (payment.verified ? 'PAID' : 'PENDING')) === 'PAID';
-    
+
     const relatedEvent = allEvents.find(e => e._id === payment.eventId);
     const schoolCategory = relatedEvent?.school?.name || relatedEvent?.eventSchool?.name || payment.category || payment.schoolId || '-';
     let departmentNode = '-';
@@ -220,42 +237,58 @@ const Payments = () => {
       },
       {
         value: 'View Invoice',
-        display: isPaid ? (
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => handleOpenInvoice(payment)}
-            startIcon={<ViewIcon sx={{ fontSize: 16 }} />}
-            sx={{
-              borderRadius: '8px',
-              textTransform: 'none',
-              fontWeight: 600,
-            }}
-          >
-            Invoice
-          </Button>
-        ) : (
+        display: (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, minWidth: '130px' }}>
-            <Button
-              variant="contained"
-              size="small"
-              color="info"
-              onClick={() => handleVerifyGateway(payment._id)}
-              startIcon={<RefreshIcon sx={{ fontSize: 14 }} />}
-              sx={{ borderRadius: '16px', textTransform: 'none', fontSize: '10px', px: 1.5, py: 0.5 }}
-            >
-              Verify Gateway
-            </Button>
-            <Button
-              variant="contained"
-              size="small"
-              color="success"
-              onClick={() => handleManualApprove(payment._id)}
-              startIcon={<CheckCircleIcon sx={{ fontSize: 14 }} />}
-              sx={{ borderRadius: '16px', textTransform: 'none', fontSize: '10px', px: 1.5, py: 0.5 }}
-            >
-              Manual Approve
-            </Button>
+            {isPaid ? (
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => handleOpenInvoice(payment)}
+                startIcon={<ViewIcon sx={{ fontSize: 16 }} />}
+                sx={{
+                  borderRadius: '8px',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                }}
+              >
+                Invoice
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="contained"
+                  size="small"
+                  color="info"
+                  onClick={() => handleVerifyGateway(payment._id)}
+                  startIcon={<RefreshIcon sx={{ fontSize: 14 }} />}
+                  sx={{ borderRadius: '16px', textTransform: 'none', fontSize: '10px', px: 1.5, py: 0.5 }}
+                >
+                  Verify Gateway
+                </Button>
+                <Button
+                  variant="contained"
+                  size="small"
+                  color="success"
+                  onClick={() => handleManualApprove(payment._id)}
+                  startIcon={<CheckCircleIcon sx={{ fontSize: 14 }} />}
+                  sx={{ borderRadius: '16px', textTransform: 'none', fontSize: '10px', px: 1.5, py: 0.5 }}
+                >
+                  Manual Approve
+                </Button>
+              </>
+            )}
+            {['STUDENT EVENT ADMIN', 'STUDENT_EVENT_ADMIN'].includes(activeRole) && (
+              <Button
+                variant="outlined"
+                size="small"
+                color="error"
+                onClick={() => handleDeletePayment(payment._id)}
+                startIcon={<CloseIcon sx={{ fontSize: 14 }} />}
+                sx={{ borderRadius: '16px', textTransform: 'none', fontSize: '10px', px: 1.5, py: 0.5 }}
+              >
+                Delete
+              </Button>
+            )}
           </Box>
         )
       },
