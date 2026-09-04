@@ -614,7 +614,7 @@ const Registrations = () => {
       />
 
       {/* Metrics Cards */}
-      <StatCardGrid columns={{ xs: 1, sm: 2, md: 4 }} sx={{ mb: 3 }}>
+      <StatCardGrid columns={{ xs: 1, sm: 2, md: 3 }} sx={{ mb: 3 }}>
         <StatCard
           title="Total Registrations"
           value={filteredParticipants.length}
@@ -634,18 +634,11 @@ const Registrations = () => {
           subtitle="Distinct payment records"
         />
         <StatCard
-          title="Unique Colleges"
-          value={uniqueCollegesCount}
-          icon={<SchoolIcon />}
+          title="Events Count"
+          value={uniqueEvents.length}
+          icon={<EventIcon />}
           color="info"
-          subtitle="Across all participants"
-        />
-        <StatCard
-          title="Accommodation Req."
-          value={accommodationCount}
-          icon={<AccommodationIcon />}
-          color="warning"
-          subtitle={`M: ${maleAccommodationCount} | F: ${femaleAccommodationCount}`}
+          subtitle={allEvents.length > 0 ? `Total available events: ${allEvents.length}` : 'Unique registered events'}
         />
       </StatCardGrid>
 
