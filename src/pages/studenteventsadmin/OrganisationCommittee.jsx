@@ -428,7 +428,7 @@ const StudentCoordinatorManager = () => {
 };
 
 // ----------------------------------------------------------------------
-// ReadOnlyCoordinators Component (For Event & Faculty Coordinators)
+// ReadOnlyCoordinators Component (For School & Faculty Coordinators)
 // ----------------------------------------------------------------------
 const ReadOnlyCoordinators = ({ type }) => {
   const [loading, setLoading] = useState(false);
@@ -437,10 +437,15 @@ const ReadOnlyCoordinators = ({ type }) => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const endpoint = type === 'Event' ? '/api/event_schools' : '/api/events';
-      const response = await API.get(endpoint);
-      setDataList(response.data?.event_schools || response.data?.events || []);
+      if (type === 'School') {
+        const response = await API.get('/api/event-schools');
+        setDataList(response.data?.eventSchools || response.data?.event_schools || response.data?.data || []);
+      } else {
+        const response = await API.get('/api/events');
+        setDataList(response.data?.events || response.data?.data || []);
+      }
     } catch (error) {
+      console.error(`Failed to load ${type} coordinators:`, error);
       toast.error(`Failed to load ${type} coordinators`);
     } finally {
       setLoading(false);
@@ -456,8 +461,12 @@ const ReadOnlyCoordinators = ({ type }) => {
 
     dataList.forEach(item => {
       let coordsList = [];
-      if (type === 'Event') {
-        if (item.coordinator) coordsList = [item.coordinator];
+      if (type === 'School') {
+        if (Array.isArray(item.coordinators) && item.coordinators.length > 0) {
+          coordsList = item.coordinators;
+        } else if (item.coordinator) {
+          coordsList = [item.coordinator];
+        }
       } else {
         coordsList = Array.isArray(item.facultyCoordinators) && item.facultyCoordinators.length > 0
           ? item.facultyCoordinators
@@ -465,6 +474,7 @@ const ReadOnlyCoordinators = ({ type }) => {
       }
 
       coordsList.forEach(c => {
+        if (!c) return;
         const id = c.institutionId || c.employeeId || c.employeeCode;
         if (id) {
           let deptName = c.department || '';
@@ -476,13 +486,13 @@ const ReadOnlyCoordinators = ({ type }) => {
               id,
               name: c.employeeName || c.name || 'N/A',
               department: deptName,
-              designation: c.designation || 'Coordinator',
+              designation: c.designation || (type === 'School' ? 'School Coordinator' : 'Faculty Coordinator'),
               phone: c.phone || c.mobile || 'N/A',
               labels: []
             });
           }
-          const labelName = type === 'Event' ? item.name : item.eventName;
-          if (!coordsMap.get(id).labels.includes(labelName)) {
+          const labelName = type === 'School' ? (item.name || item.shortName) : item.eventName;
+          if (labelName && !coordsMap.get(id).labels.includes(labelName)) {
             coordsMap.get(id).labels.push(labelName);
           }
         }
@@ -552,7 +562,7 @@ const OrganisationCommittee = () => {
         <Tabs value={tabValue} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
           <Tab label="Conveners" />
           <Tab label="Members" />
-          <Tab label="Event Coordinators" />
+          <Tab label="School Coordinators" />
           <Tab label="Faculty Coordinators" />
           <Tab label="Student Coordinators" />
         </Tabs>
@@ -561,7 +571,7 @@ const OrganisationCommittee = () => {
       <Box sx={{ mt: 3 }}>
         {tabValue === 0 && <CommitteeRoleManager role="Convener" />}
         {tabValue === 1 && <CommitteeRoleManager role="Member" />}
-        {tabValue === 2 && <ReadOnlyCoordinators type="Event" />}
+        {tabValue === 2 && <ReadOnlyCoordinators type="School" />}
         {tabValue === 3 && <ReadOnlyCoordinators type="Faculty" />}
         {tabValue === 4 && <StudentCoordinatorManager />}
       </Box>
