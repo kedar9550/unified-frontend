@@ -270,6 +270,30 @@ const StudentEventAdminDashboard = () => {
     [stats]
   );
 
+  const yearLabels = ['First Years', 'Second Years', 'Third Years', 'Fourth Years'];
+  const yearKeys = ['1', '2', '3', '4'];
+
+  const yearDataMap = useMemo(() => {
+    const raw = stats?.yearWise || stats?.yearCounts;
+    if (raw && (raw['1'] !== undefined || raw['2'] !== undefined || raw['3'] !== undefined || raw['4'] !== undefined)) {
+      if ((raw['1'] || 0) + (raw['2'] || 0) + (raw['3'] || 0) + (raw['4'] || 0) > 0) {
+        return raw;
+      }
+    }
+    // Fallback: Aggregate from campusWise if available
+    if (stats?.campusWise) {
+      const counts = { '1': 0, '2': 0, '3': 0, '4': 0 };
+      Object.values(stats.campusWise).forEach((c) => {
+        counts['1'] += c.I || 0;
+        counts['2'] += c.II || 0;
+        counts['3'] += c.III || 0;
+        counts['4'] += c.IV || 0;
+      });
+      return counts;
+    }
+    return raw || {};
+  }, [stats]);
+
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
@@ -280,9 +304,6 @@ const StudentEventAdminDashboard = () => {
       </Box>
     );
   }
-
-  const yearLabels = ['First Years', 'Second Years', 'Third Years', 'Fourth Years'];
-  const yearKeys = ['1', '2', '3', '4'];
 
   const filteredTeamsTotal = deptBarData.reduce((acc, curr) => acc + (curr['Teams count'] || 0), 0);
   const filteredStudentsTotal = deptBarData.reduce((acc, curr) => acc + (curr['Student count'] || 0), 0);
@@ -296,7 +317,7 @@ const StudentEventAdminDashboard = () => {
     <Box sx={{ width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column', gap: 3, boxSizing: 'border-box' }}>
       <PageHeader
         title="Veda Event Admin Dashboard"
-        subtitle="Overview of VEDA event participation, department/group analytics and registration metrics"
+        subtitle="Overview of paid VEDA event participation, department/school analytics and registration metrics"
         action={
           <FormControl size="small" sx={{ minWidth: 200, bgcolor: 'background.paper', borderRadius: 1 }}>
             <InputLabel>Department Filter</InputLabel>
@@ -450,7 +471,7 @@ const StudentEventAdminDashboard = () => {
                 {yearLabels[idx]}
               </Box>
               <Typography variant="h4" sx={{ fontWeight: 900, color: 'var(--text-primary)', mb: 0.5, fontSize: { xs: '1.5rem', sm: '2rem' } }}>
-                {fmt(stats?.yearWise?.[yr] || 0)}
+                {fmt(yearDataMap?.[yr] ?? 0)}
               </Typography>
               <Typography variant="caption" sx={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
                 Total registered participants
