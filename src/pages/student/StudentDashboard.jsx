@@ -29,11 +29,14 @@ const StudentDashboard = () => {
       
       const [eventsRes, response] = await Promise.all([
         API.get('/api/events').catch(() => ({ data: { events: [] } })),
-        API.get(`/api/razorpay/registrations?roll=${roll}&email=${email}`)
+        API.get(`/api/razorpay/registrations?roll=${roll}&email=${email}&paymentStatus=PAID`)
       ]);
 
       const allEvents = eventsRes.data?.events || [];
-      let fetchedPayments = response.data?.payments || [];
+      let fetchedPayments = (response.data?.payments || []).filter(p => {
+        const status = (p.paymentStatus || p.payment || '').toString().trim().toUpperCase();
+        return status === 'PAID';
+      });
 
       fetchedPayments = fetchedPayments.map(p => {
         const eventMatch = allEvents.find(e => e.eventName === (p.eventName || p.category));

@@ -713,6 +713,8 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
             sx: {
               ml: 1,
               minWidth: 200,
+              maxHeight: 400,
+              overflowY: 'auto',
               borderRadius: "16px",
               border: "1px solid var(--border-color)",
               background: "var(--bg-paper)",
@@ -727,36 +729,59 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
             {activeSubmenuItem?.text}
           </Typography>
         </Box>
-        {activeSubmenuItem?.nested?.map((subItem) => {
-          const isActive = active === subItem.text;
-          return (
-            <MenuItem
-              key={subItem.text}
-              onClick={() => {
-                navigateTo(subItem.path, subItem.text, true);
-                setSubmenuAnchor(null);
-                setActiveSubmenuItem(null);
-              }}
-              selected={isActive}
-              sx={{
-                borderRadius: "10px",
-                fontSize: "0.85rem",
-                fontWeight: isActive ? 700 : 500,
-                color: isActive ? "var(--color-primary)" : "var(--text-secondary)",
-                background: isActive ? "var(--bg-accent-4) !important" : "transparent",
-                py: 1,
-                px: 2,
-                mb: 0.5,
-                "&:hover": {
-                  background: "var(--bg-panel)",
-                },
-                "&:last-child": { mb: 0 }
-              }}
-            >
-              {subItem.text}
-            </MenuItem>
-          );
-        })}
+        {(() => {
+          const flattenMenu = (items, level = 0) => {
+            let result = [];
+            items.forEach(item => {
+              if (item.path) {
+                result.push({ ...item, level });
+              } else if (item.nested) {
+                result.push({ ...item, isHeader: true, level });
+                result = result.concat(flattenMenu(item.nested, level + 1));
+              }
+            });
+            return result;
+          };
+
+          return flattenMenu(activeSubmenuItem?.nested || []).map((subItem, index) => {
+            if (subItem.isHeader) {
+              return (
+                <Typography key={`header-${subItem.text}-${index}`} sx={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--color-primary)", pl: 2 + subItem.level * 2, py: 0.5, mt: 1 }}>
+                  {subItem.text}
+                </Typography>
+              );
+            }
+            const isActive = active === subItem.path;
+            return (
+              <MenuItem
+                key={`item-${subItem.text}-${index}`}
+                onClick={() => {
+                  navigateTo(subItem.path, subItem.text, true);
+                  setSubmenuAnchor(null);
+                  setActiveSubmenuItem(null);
+                }}
+                selected={isActive}
+                sx={{
+                  borderRadius: "10px",
+                  fontSize: "0.85rem",
+                  fontWeight: isActive ? 700 : 500,
+                  color: isActive ? "var(--color-primary)" : "var(--text-secondary)",
+                  background: isActive ? "var(--bg-accent-4) !important" : "transparent",
+                  py: 1,
+                  pl: 2 + subItem.level * 2,
+                  pr: 2,
+                  mb: 0.5,
+                  "&:hover": {
+                    background: "var(--bg-panel)",
+                  },
+                  "&:last-child": { mb: 0 }
+                }}
+              >
+                {subItem.text}
+              </MenuItem>
+            );
+          });
+        })()}
       </Menu>
     </Box>
   );
@@ -764,10 +789,33 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
   const sidebarWidth = isCollapsed ? 85 : 270;
 
   return (
-    <Box component="nav" sx={{ width: { md: sidebarWidth }, flexShrink: { md: 0 }, display: { xs: "none", md: "block" }, transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)", overflow: "visible" }}>
+    <Box component="nav" sx={{ width: { md: sidebarWidth }, flexShrink: { md: 0 }, overflow: "visible" }}>
+      {/* Mobile Drawer */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={onDrawerToggle}
+        ModalProps={{ keepMounted: true }}
+        sx={{
+          display: { xs: "block", md: "none" },
+          "& .MuiDrawer-paper": {
+            boxSizing: "border-box",
+            width: 270, // Mobile drawer is never collapsed
+            background: "var(--bg-paper)",
+            borderRight: "none",
+          },
+        }}
+      >
+        {/* We reuse drawerContent but we could technically render it with isCollapsed=false here if we wanted. But it reacts to state. 
+            For now, we'll just render drawerContent. On mobile, the toggle button is hidden by CSS. */}
+        {drawerContent}
+      </Drawer>
+
+      {/* Desktop Drawer */}
       <Drawer
         variant="permanent"
         sx={{
+          display: { xs: "none", md: "block" },
           "& .MuiDrawer-paper": {
             boxSizing: "border-box",
             width: sidebarWidth,
@@ -775,8 +823,8 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
             background: "var(--bg-paper)",
             overflow: "visible",
             transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            top: { xs: "70px", md: "88px" },
-            height: { xs: "calc(100% - 70px)", md: "calc(100% - 88px)" }
+            top: "88px",
+            height: "calc(100% - 88px)"
           },
         }}
         open
