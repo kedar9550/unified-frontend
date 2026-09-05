@@ -313,6 +313,7 @@ const StudentEventAdminDashboard = () => {
     );
   }
 
+  const filteredEventsTotal = deptBarData.reduce((acc, curr) => acc + (curr['Events count'] || 0), 0);
   const filteredTeamsTotal = deptBarData.reduce((acc, curr) => acc + (curr['Teams count'] || 0), 0);
   const filteredStudentsTotal = deptBarData.reduce((acc, curr) => acc + (curr['Student count'] || 0), 0);
   const filteredRevenueTotal = deptBarData.reduce((acc, curr) => acc + (curr['₹ Revenue'] || 0), 0);
@@ -342,7 +343,7 @@ const StudentEventAdminDashboard = () => {
       {currentTab === 0 && (
         <>
           {/* ── Summary Cards ─────────────────────────────────────────────── */}
-          <StatCardGrid columns={{ xs: 1, sm: 2, md: 3, xl: 6 }}>
+          <StatCardGrid columns={{ xs: 1, sm: 2, md: 3 }}>
             <StatCard title="Total Teams" value={globalSummary.teams} color="#0d9488" icon={<GroupsIcon />} />
             <StatCard title="Total Students" value={globalSummary.students} color="#2563eb" icon={<PeopleIcon />} />
             <StatCard title="Total Revenue" value={`₹${fmt(globalSummary.revenue)}`} color="#7c3aed" icon={<CurrencyRupeeIcon />} />
@@ -353,7 +354,7 @@ const StudentEventAdminDashboard = () => {
 
 
           {/* ── Section 3: Year cards + Campus-wise Years ─────────────────── */}
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '340px 1fr' }, gap: 2, alignItems: 'stretch', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '400px 1fr' }, gap: 2, alignItems: 'stretch', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
             {/* Year cards */}
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gridTemplateRows: { lg: '1fr 1fr', xs: 'auto' }, gap: 2, height: '100%', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
               {yearKeys.map((yr, idx) => (
@@ -656,7 +657,7 @@ const StudentEventAdminDashboard = () => {
           <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
             <Box sx={{ display: 'flex', alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2 }}>
               <Box>
-                <SectionTitle>Teams, Students & Events Count by Department</SectionTitle>
+                <SectionTitle>Events Count by Department</SectionTitle>
                 <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
                   Aggregated across all departments from the event departments collection
                 </Typography>
@@ -676,23 +677,17 @@ const StudentEventAdminDashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
                   <XAxis dataKey="name" angle={-30} textAnchor="end" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} interval={0} />
                   <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} domain={[0, (dataMax) => Math.ceil(dataMax * 1.15)]} />
-                  <Tooltip formatter={(val, name) => [name === '₹ Revenue' ? `₹${fmt(val)}` : fmt(val), name]} />
+                  <Tooltip formatter={(val, name) => [fmt(val), name]} />
                   <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: 10 }} />
-                  <Bar dataKey="Teams count" fill={DEPT_BAR_COLORS.teams} radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="Teams count" position="top" formatter={(v) => (v > 0 ? fmt(v) : '')} fill="var(--text-primary)" fontSize={9} fontWeight={600} />
-                  </Bar>
-                  <Bar dataKey="Student count" fill={DEPT_BAR_COLORS.students} radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="Student count" position="top" formatter={(v) => (v > 0 ? fmt(v) : '')} fill="var(--text-primary)" fontSize={9} fontWeight={600} />
-                  </Bar>
                   <Bar dataKey="Events count" fill={DEPT_BAR_COLORS.events} radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="Events count" position="top" formatter={(v) => (v > 0 ? fmt(v) : '')} fill="var(--text-primary)" fontSize={9} fontWeight={600} />
+                    <LabelList dataKey="Events count" position="top" formatter={(v) => (v > 0 ? fmt(v) : '')} fill="var(--text-primary)" fontSize={10} fontWeight={700} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </Box>
             <Box sx={{ mt: 2, textAlign: 'center', p: 1.5, borderRadius: '12px', background: 'var(--bg-glass)', border: '1px solid var(--border-color)' }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                Filtered Teams: {fmt(filteredTeamsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Students: {fmt(filteredStudentsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Revenue: ₹{fmt(filteredRevenueTotal)}
+                Filtered Events: {fmt(filteredEventsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Teams: {fmt(filteredTeamsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Students: {fmt(filteredStudentsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Revenue: ₹{fmt(filteredRevenueTotal)}
               </Typography>
             </Box>
           </Paper>
