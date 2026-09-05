@@ -355,6 +355,16 @@ export const ROLE_ROUTES = {
         }
       ]
     },
+    {
+      text: "Special Data Entry",
+      icon: <Description />,
+      nested: [
+        {
+          text: "Journal",
+          path: "/research-data-entry/journal"
+        }
+      ]
+    },
     { text: "Reference Journals", path: "/research-dean/reference-journals", icon: <LibraryBooks /> },
     { text: "Author Citations", path: "/research-dean/author-citations", icon: <Assignment /> },
   ],
@@ -377,6 +387,16 @@ export const ROLE_ROUTES = {
         {
           text: "Reports",
           path: "/research-coordinator/reports"
+        }
+      ]
+    },
+    {
+      text: "Special Data Entry",
+      icon: <Description />,
+      nested: [
+        {
+          text: "Journal",
+          path: "/research-data-entry/journal"
         }
       ]
     },
