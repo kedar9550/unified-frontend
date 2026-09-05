@@ -32,6 +32,7 @@ import {
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
 } from '@mui/icons-material';
+import * as XLSX from 'xlsx-js-style';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
@@ -40,6 +41,7 @@ import ActionButton from '../../components/common/ActionButton';
 import StatCard from '../../components/common/StatCard';
 import StatCardGrid from '../../components/common/StatCardGrid';
 import API from '../../api/axios';
+import { fetchEventDepartments } from '../../api/eventDepartmentApi';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../../context/AuthContext';
@@ -56,6 +58,7 @@ const Participants = ({ mode = 'all' }) => {
   const [passDialogOpen, setPassDialogOpen] = useState(false);
 
   const [allEvents, setAllEvents] = useState([]);
+  const [allDepartments, setAllDepartments] = useState([]);
   const [departmentsDialogOpen, setDepartmentsDialogOpen] = useState(false);
   const [departmentsToView, setDepartmentsToView] = useState([]);
 
@@ -84,9 +87,14 @@ const Participants = ({ mode = 'all' }) => {
   const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
-      const eventsRes = await API.get('/api/events');
+      const [eventsRes, deptsRes] = await Promise.all([
+        API.get('/api/events'),
+        fetchEventDepartments().catch(() => ({ data: { departments: [] } })),
+      ]);
       const allEvents = eventsRes.data?.events || [];
+      const fetchedDepts = deptsRes.data?.departments || [];
       setAllEvents(allEvents);
+      setAllDepartments(fetchedDepts);
 
       let allowedEventNames = null;
       if (activeRole === 'FACULTY_COORDINATOR' && user) {
@@ -104,7 +112,6 @@ const Participants = ({ mode = 'all' }) => {
       const response = await API.get('/api/razorpay/registrations');
       let fetchedPayments = response.data?.payments || [];
       
-      // Only display registrations with PAID status
       fetchedPayments = fetchedPayments.filter(p => p.paymentStatus === 'PAID' || p.verified === true);
       if (allowedEventNames) {
         fetchedPayments = fetchedPayments.filter(p => allowedEventNames.includes(p.eventName || p.category));
@@ -129,7 +136,6 @@ const Participants = ({ mode = 'all' }) => {
       
       setPayments(fetchedPayments);
 
-      // Fetch missing branches asynchronously
       const missingRolls = new Set();
       fetchedPayments.forEach(pay => {
         if (Array.isArray(pay.participants)) {
@@ -148,13 +154,12 @@ const Participants = ({ mode = 'all' }) => {
             const res = await API.get(`/api/razorpay/registrations/branch/${roll}`);
             const data = res.data;
             let branch = null;
-            if (Array.isArray(data) && data.length > 0 && data[0].branch) {
-              branch = data[0].branch;
-            } else if (data && data.value && Array.isArray(data.value) && data.value.length > 0 && data.value[0].branch) {
-              branch = data.value[0].branch;
+            const studentObj = Array.isArray(data) && data.length > 0 ? data[0] : (data?.value && Array.isArray(data.value) && data.value.length > 0 ? data.value[0] : (data && typeof data === 'object' ? data : null));
+            if (studentObj) {
+              branch = studentObj.branch || studentObj.branch_name || studentObj.branchName || studentObj.BRANCH;
             }
             if (branch) {
-              setBranchMap(prev => ({ ...prev, [roll]: branch }));
+              setBranchMap(prev => ({ ...prev, [roll]: String(branch).trim() }));
             }
           } catch (err) {
             console.error(`Failed to fetch branch for ${roll}`, err);
@@ -174,7 +179,40 @@ const Participants = ({ mode = 'all' }) => {
     fetchPayments();
   }, [fetchPayments]);
 
-  // Flatten all participants across payment registrations
+  const deptLookupMap = useMemo(() => {
+    const map = {};
+    allDepartments.forEach(d => {
+      if (d && d.name) {
+        const canonical = d.name.trim();
+        map[canonical.toUpperCase()] = canonical;
+        if (d.alternativeNames) {
+          d.alternativeNames.split(',').forEach(alt => {
+            const cleanAlt = alt.trim().toUpperCase();
+            if (cleanAlt) {
+              map[cleanAlt] = canonical;
+            }
+          });
+        }
+      }
+    });
+    return map;
+  }, [allDepartments]);
+
+  const resolveStudentDepartment = useCallback((p) => {
+    if (!p) return '';
+    const rawDept = String(p.department || '').trim();
+    if (rawDept && deptLookupMap[rawDept.toUpperCase()]) {
+      return deptLookupMap[rawDept.toUpperCase()];
+    }
+    if (rawDept) return rawDept;
+
+    const rawBranch = String(p.computedBranch || p.branch || '').trim();
+    if (rawBranch && deptLookupMap[rawBranch.toUpperCase()]) {
+      return deptLookupMap[rawBranch.toUpperCase()];
+    }
+    return rawBranch || '';
+  }, [deptLookupMap]);
+
   const allParticipants = useMemo(() => {
     const list = [];
     payments.forEach((payment) => {
@@ -206,7 +244,6 @@ const Participants = ({ mode = 'all' }) => {
     return list;
   }, [payments, branchMap]);
 
-  // Extract unique events for filter dropdown
   const uniqueEvents = useMemo(() => {
     const eventsSet = new Set();
     allParticipants.forEach((p) => {
@@ -226,41 +263,35 @@ const Participants = ({ mode = 'all' }) => {
 
   const uniqueDepartments = useMemo(() => {
     const set = new Set(['AIML', 'AIDS', 'CE', 'CSE', 'ECE', 'EEE', 'FS', 'IT', 'ME', 'PT', 'MinE', 'AgE', 'BBA', 'BCA', 'MCA', 'MBA']);
-    allParticipants.forEach(p => {
-      if (p.department) set.add(p.department);
+    allDepartments.forEach(d => {
+      if (d?.name) set.add(d.name.trim());
     });
-    return Array.from(set).sort();
-  }, [allParticipants]);
+    allParticipants.forEach(p => {
+      const dept = resolveStudentDepartment(p);
+      if (dept) set.add(dept);
+    });
+    return Array.from(set).filter(Boolean).sort((a, b) => a.localeCompare(b));
+  }, [allDepartments, allParticipants, resolveStudentDepartment]);
 
-  // Apply filters
   const filteredParticipants = useMemo(() => {
     let filtered = allParticipants.filter((p) => {
-      // Event filter
       if (eventFilter !== 'ALL' && p.eventName !== eventFilter) return false;
-
-      // Accommodation filter
       if (accommodationFilter === 'YES' && p.accommodation?.toLowerCase() !== 'yes') return false;
       if (accommodationFilter === 'NO' && p.accommodation?.toLowerCase() === 'yes') return false;
-
-      // Attendance filter
       if (attendanceFilter === 'PRESENT' && !p.attended) return false;
       if (attendanceFilter === 'ABSENT' && p.attended) return false;
-
-      // Gender filter
       if (genderFilter !== 'ALL' && p.gender?.toLowerCase() !== genderFilter.toLowerCase()) return false;
 
-      // School filter
       if (schoolFilter !== 'ALL') {
         const schoolCategory = p.eventSchool || p.category || p.schoolId;
         if (schoolCategory !== schoolFilter) return false;
       }
 
-      // Department filter
       if (departmentFilter !== 'ALL') {
-        if (!p.department || p.department !== departmentFilter) return false;
+        const dept = resolveStudentDepartment(p);
+        if (!dept || dept.toUpperCase() !== departmentFilter.toUpperCase()) return false;
       }
 
-      // Search query
       if (searchQuery.trim()) {
         const query = searchQuery.toLowerCase();
         const name = (p.name || '').toLowerCase();
@@ -268,7 +299,7 @@ const Participants = ({ mode = 'all' }) => {
         const email = (p.email || '').toLowerCase();
         const mobile = (p.mobile || '').toLowerCase();
         const college = (p.college || '').toLowerCase();
-        const dept = (p.department || '').toLowerCase();
+        const dept = (resolveStudentDepartment(p) || p.department || '').toLowerCase();
         const eventName = (p.eventName || '').toLowerCase();
         const receipt = (p.receipt || '').toLowerCase();
 
@@ -318,9 +349,8 @@ const Participants = ({ mode = 'all' }) => {
     }
 
     return filtered;
-  }, [allParticipants, eventFilter, accommodationFilter, attendanceFilter, genderFilter, schoolFilter, departmentFilter, searchQuery, mode, allEvents]);
+  }, [allParticipants, eventFilter, accommodationFilter, attendanceFilter, genderFilter, schoolFilter, departmentFilter, searchQuery, mode, allEvents, resolveStudentDepartment]);
 
-  // Metrics
   const accommodationCount = useMemo(() => {
     return allParticipants.filter((p) => p.accommodation?.toLowerCase() === 'yes').length;
   }, [allParticipants]);
@@ -349,69 +379,98 @@ const Participants = ({ mode = 'all' }) => {
     return filteredParticipants.filter((p) => p.gender?.toLowerCase() === 'female').length;
   }, [filteredParticipants]);
 
-  // CSV Export handler
-  const handleExportCSV = () => {
+  const handleExportExcel = () => {
     if (filteredParticipants.length === 0) {
       toast.error('No participants data to export.');
       return;
     }
 
-    const headers = ['S.No', 'Name', 'Roll No', 'Team ID', 'School Name', 'Event Name', 'Event Department(s)', 'College', 'Branch', 'Student Department', 'Student Year', 'Gender', 'Mobile', 'Email', 'Attended'];
-    const csvRows = [headers.join(',')];
+    const headers = [
+      'S.No', 'Name', 'Roll No', 'Team ID', 'School Name', 'Event Name', 'Event Department(s)', 
+      'College', 'Branch', 'Student Department', 'Student Year', 'Gender', 'Mobile', 'Email', 'Attended'
+    ];
 
-    filteredParticipants.forEach((p, idx) => {
+    const colWidths = [
+      { wch: 6 }, { wch: 26 }, { wch: 16 }, { wch: 16 }, { wch: 22 }, 
+      { wch: 28 }, { wch: 32 }, { wch: 25 }, { wch: 16 }, { wch: 20 }, 
+      { wch: 12 }, { wch: 10 }, { wch: 15 }, { wch: 28 }, { wch: 12 }
+    ];
+
+    const applySheetStyles = (ws, headerColsCount) => {
+      ws['!cols'] = colWidths;
+      for (let c = 0; c < headerColsCount; c++) {
+        const cellRef = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws[cellRef]) {
+          ws[cellRef].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+            fill: { fgColor: { rgb: '1E3A8A' } },
+            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+            border: {
+              top: { style: 'thin', color: { rgb: 'CBD5E1' } },
+              bottom: { style: 'thin', color: { rgb: 'CBD5E1' } },
+              left: { style: 'thin', color: { rgb: 'CBD5E1' } },
+              right: { style: 'thin', color: { rgb: 'CBD5E1' } }
+            }
+          };
+        }
+      }
+    };
+
+    const mapParticipantToRow = (p, idx) => {
       const collegeName = p.college === 'Other College' && p.otherCollege ? p.otherCollege : (p.college || '');
-      
       const schoolCategory = p.eventSchool || p.category || p.schoolId || '-';
       const relatedEvent = allEvents.find(e => e._id === p.eventId);
       let eventDepartmentStr = '-';
       if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
         eventDepartmentStr = relatedEvent.department.map(d => d.name).join(', ');
       }
+      const studentDept = resolveStudentDepartment(p);
 
-      const row = [
-        idx + 1,
-        `"${p.name || ''}"`,
-        `"${p.roll || ''}"`,
-        `"${p.teamId || ''}"`,
-        `"${schoolCategory}"`,
-        `"${p.eventName || ''}"`,
-        `"${eventDepartmentStr}"`,
-        `"${collegeName}"`,
-        `"${p.computedBranch || ''}"`,
-        `"${p.department || ''}"`,
-        `"${p.year || ''}"`,
-        `"${p.gender || ''}"`,
-        `"${p.mobile || ''}"`,
-        `"${p.email || ''}"`,
-        `"${p.attended ? 'Yes' : 'No'}"`
+      return [
+        idx + 1, p.name || '', p.roll || '', p.teamId || '', schoolCategory,
+        p.eventName || '', eventDepartmentStr, collegeName, p.computedBranch || p.branch || '',
+        studentDept, p.year || '', p.gender || '', p.mobile || '', p.email || '', p.attended ? 'Yes' : 'No'
       ];
-      csvRows.push(row.join(','));
+    };
+
+    const workbook = XLSX.utils.book_new();
+    const allRows = [headers, ...filteredParticipants.map((p, idx) => mapParticipantToRow(p, idx))];
+    const allWs = XLSX.utils.aoa_to_sheet(allRows);
+    applySheetStyles(allWs, headers.length);
+    XLSX.utils.book_append_sheet(workbook, allWs, 'All Participants');
+
+    const deptMap = {};
+    filteredParticipants.forEach((p) => {
+      const deptKey = resolveStudentDepartment(p) || 'Other Dept';
+      if (!deptMap[deptKey]) deptMap[deptKey] = [];
+      deptMap[deptKey].push(p);
     });
 
-    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `VEDA_Event_Participants_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-    toast.success('participants data exported successfully!');
+    const usedSheetNames = new Set(['all participants']);
+    const sortedDeptKeys = Object.keys(deptMap).sort((a, b) => a.localeCompare(b));
+
+    sortedDeptKeys.forEach((deptKey) => {
+      const deptParticipants = deptMap[deptKey];
+      const deptRows = [headers, ...deptParticipants.map((p, idx) => mapParticipantToRow(p, idx))];
+      const deptWs = XLSX.utils.aoa_to_sheet(deptRows);
+      applySheetStyles(deptWs, headers.length);
+
+      let cleanName = deptKey.replace(/[\\/?*:[\]]/g, '').trim().substring(0, 31) || 'Dept';
+      let uniqueName = cleanName;
+      let counter = 1;
+      while (usedSheetNames.has(uniqueName.toLowerCase())) {
+        uniqueName = `${cleanName.substring(0, 27)}_${counter}`;
+        counter++;
+      }
+      usedSheetNames.add(uniqueName.toLowerCase());
+      XLSX.utils.book_append_sheet(workbook, deptWs, uniqueName);
+    });
+
+    XLSX.writeFile(workbook, `VEDA_Event_Participants_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success('Participants exported to Excel successfully!');
   };
 
-  const columns = [
-    'S.No',
-    'Name',
-    'Roll Number',
-    'Team ID',
-    'School Name',
-    'EVENT NAME',
-    'Department(s)',
-    'College',
-    'Branch & Dept / Year',
-    'Contact Info',
-    'Attended',
-  ];
+  const columns = ['S.No', 'Name', 'Roll Number', 'Team ID', 'School Name', 'EVENT NAME', 'Department(s)', 'College', 'Branch & Dept / Year', 'Contact Info', 'Attended'];
 
   const handleOpenDetails = (participant) => {
     setSelectedParticipant(participant);
@@ -424,8 +483,6 @@ const Participants = ({ mode = 'all' }) => {
   };
 
   const rows = filteredParticipants.map((p, index) => {
-    const isAccomm = p.accommodation?.toLowerCase() === 'yes';
-
     const schoolCategory = p.eventSchool || p.category || p.schoolId || '-';
     const relatedEvent = allEvents.find(e => e._id === p.eventId);
     let departmentNode = '-';
@@ -434,13 +491,7 @@ const Participants = ({ mode = 'all' }) => {
         departmentNode = {
           value: 'All Departments',
           display: (
-            <span 
-              style={{ color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer' }}
-              onClick={() => {
-                setDepartmentsToView(relatedEvent.department);
-                setDepartmentsDialogOpen(true);
-              }}
-            >
+            <span style={{ color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer' }} onClick={() => { setDepartmentsToView(relatedEvent.department); setDepartmentsDialogOpen(true); }}>
               All Departments
             </span>
           )
@@ -450,65 +501,36 @@ const Participants = ({ mode = 'all' }) => {
       }
     }
 
+    const resolvedDept = resolveStudentDepartment(p);
+
     return [
       index + 1,
       {
         value: p.name || '-',
         display: (
           <Box>
-            <Typography variant="body2" sx={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-              {p.name || '-'}
-            </Typography>
-            {p.gender ? (
-              <Typography variant="caption" color="text.secondary">
-                Gender: {p.gender}
-              </Typography>
-            ) : null}
+            <Typography variant="body2" sx={{ fontWeight: 700, color: 'var(--text-primary)' }}>{p.name || '-'}</Typography>
+            {p.gender ? <Typography variant="caption" color="text.secondary">Gender: {p.gender}</Typography> : null}
           </Box>
         ),
       },
-      p.roll ? (
-        <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>
-          {p.roll}
-        </Typography>
-      ) : '-',
+      p.roll ? <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>{p.roll}</Typography> : '-',
       p.teamId || '-',
       schoolCategory,
       p.eventName || '-',
       departmentNode,
       p.college ? (p.college === 'Other College' && p.otherCollege ? p.otherCollege : p.college) : '-',
       <Box>
-        {p.computedBranch && (
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            Branch: {p.computedBranch}
-          </Typography>
-        )}
-        <Typography variant="body2">
-          {p.department ? `Dept: ${p.department}${p.year ? ' | Yr: ' + p.year : ''}` : (p.year ? `Yr: ${p.year}` : '-')}
-        </Typography>
+        {p.computedBranch && <Typography variant="body2" sx={{ fontWeight: 600 }}>Branch: {p.computedBranch}</Typography>}
+        <Typography variant="body2">{resolvedDept ? `Dept: ${resolvedDept}${p.year ? ' | Yr: ' + p.year : ''}` : (p.year ? `Yr: ${p.year}` : '-')}</Typography>
       </Box>,
       <Box>
-        {p.mobile ? (
-          <Typography variant="caption" sx={{ display: 'block', fontWeight: 600 }}>
-            Ph: {p.mobile}
-          </Typography>
-        ) : null}
-        {p.email ? (
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-            {p.email}
-          </Typography>
-        ) : null}
+        {p.mobile ? <Typography variant="caption" sx={{ display: 'block', fontWeight: 600 }}>Ph: {p.mobile}</Typography> : null}
+        {p.email ? <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{p.email}</Typography> : null}
       </Box>,
       {
         value: p.attended ? 'Yes' : 'No',
-        display: (
-          <Chip
-            label={p.attended ? 'Yes' : 'No'}
-            color={p.attended ? 'success' : 'error'}
-            size="small"
-            sx={{ fontWeight: 700, borderRadius: '6px' }}
-          />
-        ),
+        display: <Chip label={p.attended ? 'Yes' : 'No'} color={p.attended ? 'success' : 'error'} size="small" sx={{ fontWeight: 700, borderRadius: '6px' }} />,
       },
     ];
   });
@@ -675,7 +697,7 @@ const Participants = ({ mode = 'all' }) => {
         <Box sx={{ ml: { sm: 'auto' }, width: { xs: '100%', sm: 'auto' } }}>
           <Button
             variant="contained"
-            onClick={handleExportCSV}
+            onClick={handleExportExcel}
             startIcon={<DownloadIcon />}
             disabled={filteredParticipants.length === 0}
             sx={{
@@ -698,7 +720,7 @@ const Participants = ({ mode = 'all' }) => {
               },
             }}
           >
-            Export CSV
+            Export Excel
           </Button>
         </Box>
       </Paper>

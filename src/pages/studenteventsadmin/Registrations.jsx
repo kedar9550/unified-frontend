@@ -30,6 +30,7 @@ import {
   Event as EventIcon,
   Badge as BadgeIcon,
 } from '@mui/icons-material';
+import * as XLSX from 'xlsx-js-style';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
@@ -38,6 +39,7 @@ import ActionButton from '../../components/common/ActionButton';
 import StatCard from '../../components/common/StatCard';
 import StatCardGrid from '../../components/common/StatCardGrid';
 import API from '../../api/axios';
+import { fetchEventDepartments } from '../../api/eventDepartmentApi';
 import { toast } from 'sonner';
 import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../../context/AuthContext';
@@ -54,6 +56,7 @@ const Registrations = () => {
   const [passDialogOpen, setPassDialogOpen] = useState(false);
 
   const [allEvents, setAllEvents] = useState([]);
+  const [allDepartments, setAllDepartments] = useState([]);
   const [departmentsDialogOpen, setDepartmentsDialogOpen] = useState(false);
   const [departmentsToView, setDepartmentsToView] = useState([]);
 
@@ -69,9 +72,14 @@ const Registrations = () => {
   const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
-      const eventsRes = await API.get('/api/events');
+      const [eventsRes, deptsRes] = await Promise.all([
+        API.get('/api/events'),
+        fetchEventDepartments().catch(() => ({ data: { departments: [] } })),
+      ]);
       const allEvents = eventsRes.data?.events || [];
+      const fetchedDepts = deptsRes.data?.departments || [];
       setAllEvents(allEvents);
+      setAllDepartments(fetchedDepts);
 
       let allowedEventNames = null;
       if (activeRole === 'FACULTY_COORDINATOR' && user) {
@@ -134,13 +142,12 @@ const Registrations = () => {
             const res = await API.get(`/api/razorpay/registrations/branch/${roll}`);
             const data = res.data;
             let branch = null;
-            if (Array.isArray(data) && data.length > 0 && data[0].branch) {
-              branch = data[0].branch;
-            } else if (data && data.value && Array.isArray(data.value) && data.value.length > 0 && data.value[0].branch) {
-              branch = data.value[0].branch;
+            const studentObj = Array.isArray(data) && data.length > 0 ? data[0] : (data?.value && Array.isArray(data.value) && data.value.length > 0 ? data.value[0] : (data && typeof data === 'object' ? data : null));
+            if (studentObj) {
+              branch = studentObj.branch || studentObj.branch_name || studentObj.branchName || studentObj.BRANCH;
             }
             if (branch) {
-              setBranchMap(prev => ({ ...prev, [roll]: branch }));
+              setBranchMap(prev => ({ ...prev, [roll]: String(branch).trim() }));
             }
           } catch (err) {
             console.error(`Failed to fetch branch for ${roll}`, err);
@@ -159,6 +166,42 @@ const Registrations = () => {
   useEffect(() => {
     fetchPayments();
   }, [fetchPayments]);
+
+  // Lookup map for department names and alternative names / branch codes (e.g. "117" -> "BCA")
+  const deptLookupMap = useMemo(() => {
+    const map = {};
+    allDepartments.forEach(d => {
+      if (d && d.name) {
+        const canonical = d.name.trim();
+        map[canonical.toUpperCase()] = canonical;
+        if (d.alternativeNames) {
+          d.alternativeNames.split(',').forEach(alt => {
+            const cleanAlt = alt.trim().toUpperCase();
+            if (cleanAlt) {
+              map[cleanAlt] = canonical;
+            }
+          });
+        }
+      }
+    });
+    return map;
+  }, [allDepartments]);
+
+  // Helper to resolve student department from department name, branch code, or alternative names
+  const resolveStudentDepartment = useCallback((p) => {
+    if (!p) return '';
+    const rawDept = String(p.department || '').trim();
+    if (rawDept && deptLookupMap[rawDept.toUpperCase()]) {
+      return deptLookupMap[rawDept.toUpperCase()];
+    }
+    if (rawDept) return rawDept;
+
+    const rawBranch = String(p.computedBranch || p.branch || '').trim();
+    if (rawBranch && deptLookupMap[rawBranch.toUpperCase()]) {
+      return deptLookupMap[rawBranch.toUpperCase()];
+    }
+    return rawBranch || '';
+  }, [deptLookupMap]);
 
   // Flatten all participants across payment registrations
   const allParticipants = useMemo(() => {
@@ -212,11 +255,15 @@ const Registrations = () => {
 
   const uniqueDepartments = useMemo(() => {
     const set = new Set(['AIML', 'AIDS', 'CE', 'CSE', 'ECE', 'EEE', 'FS', 'IT', 'ME', 'PT', 'MinE', 'AgE', 'BBA', 'BCA', 'MCA', 'MBA']);
-    allParticipants.forEach(p => {
-      if (p.department) set.add(p.department);
+    allDepartments.forEach(d => {
+      if (d?.name) set.add(d.name.trim());
     });
-    return Array.from(set).sort();
-  }, [allParticipants]);
+    allParticipants.forEach(p => {
+      const dept = resolveStudentDepartment(p);
+      if (dept) set.add(dept);
+    });
+    return Array.from(set).filter(Boolean).sort((a, b) => a.localeCompare(b));
+  }, [allDepartments, allParticipants, resolveStudentDepartment]);
 
   // Apply filters
   const filteredParticipants = useMemo(() => {
@@ -239,7 +286,8 @@ const Registrations = () => {
 
       // Department filter
       if (departmentFilter !== 'ALL') {
-        if (!p.department || p.department !== departmentFilter) return false;
+        const dept = resolveStudentDepartment(p);
+        if (!dept || dept.toUpperCase() !== departmentFilter.toUpperCase()) return false;
       }
 
       // Search query
@@ -250,7 +298,7 @@ const Registrations = () => {
         const email = (p.email || '').toLowerCase();
         const mobile = (p.mobile || '').toLowerCase();
         const college = (p.college || '').toLowerCase();
-        const dept = (p.department || '').toLowerCase();
+        const dept = (resolveStudentDepartment(p) || p.department || '').toLowerCase();
         const eventName = (p.eventName || '').toLowerCase();
         const receipt = (p.receipt || '').toLowerCase();
 
@@ -268,7 +316,7 @@ const Registrations = () => {
 
       return true;
     });
-  }, [allParticipants, eventFilter, accommodationFilter, genderFilter, schoolFilter, departmentFilter, searchQuery, allEvents]);
+  }, [allParticipants, eventFilter, accommodationFilter, genderFilter, schoolFilter, departmentFilter, searchQuery, resolveStudentDepartment]);
 
   // Metrics
   const accommodationCount = useMemo(() => {
@@ -291,53 +339,137 @@ const Registrations = () => {
     return set.size;
   }, [allParticipants]);
 
-  // CSV Export handler
-  const handleExportCSV = () => {
+  // Multi-sheet Excel Export handler with individual department sheets
+  const handleExportExcel = () => {
     if (filteredParticipants.length === 0) {
       toast.error('No registrations data to export.');
       return;
     }
 
-    const headers = ['S.No', 'Name', 'Roll No', 'Team ID', 'School Name', 'Event Name', 'Event Department(s)', 'College', 'Branch', 'Student Department', 'Student Year', 'Gender', 'Mobile', 'Email'];
-    const csvRows = [headers.join(',')];
+    const headers = [
+      'S.No',
+      'Name',
+      'Roll No',
+      'Team ID',
+      'School Name',
+      'Event Name',
+      'Event Department(s)',
+      'College',
+      'Branch',
+      'Student Department',
+      'Student Year',
+      'Gender',
+      'Mobile',
+      'Email'
+    ];
 
-    filteredParticipants.forEach((p, idx) => {
+    const colWidths = [
+      { wch: 6 },
+      { wch: 26 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 22 },
+      { wch: 28 },
+      { wch: 32 },
+      { wch: 25 },
+      { wch: 16 },
+      { wch: 20 },
+      { wch: 12 },
+      { wch: 10 },
+      { wch: 15 },
+      { wch: 28 }
+    ];
+
+    const applySheetStyles = (ws, headerColsCount) => {
+      ws['!cols'] = colWidths;
+      for (let c = 0; c < headerColsCount; c++) {
+        const cellRef = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws[cellRef]) {
+          ws[cellRef].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+            fill: { fgColor: { rgb: '1E3A8A' } },
+            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+            border: {
+              top: { style: 'thin', color: { rgb: 'CBD5E1' } },
+              bottom: { style: 'thin', color: { rgb: 'CBD5E1' } },
+              left: { style: 'thin', color: { rgb: 'CBD5E1' } },
+              right: { style: 'thin', color: { rgb: 'CBD5E1' } }
+            }
+          };
+        }
+      }
+    };
+
+    const mapParticipantToRow = (p, idx) => {
       const collegeName = p.college === 'Other College' && p.otherCollege ? p.otherCollege : (p.college || '');
-      
       const relatedEvent = allEvents.find(e => e._id === p.eventId);
       const schoolCategory = relatedEvent?.school?.name || p.eventSchool || p.category || p.schoolId || '-';
       let eventDepartmentStr = '-';
       if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
         eventDepartmentStr = relatedEvent.department.map(d => d.name).join(', ');
       }
+      const studentDept = resolveStudentDepartment(p);
 
-      const row = [
+      return [
         idx + 1,
-        `"${p.name || ''}"`,
-        `"${p.roll || ''}"`,
-        `"${p.teamId || ''}"`,
-        `"${schoolCategory}"`,
-        `"${p.eventName || ''}"`,
-        `"${eventDepartmentStr}"`,
-        `"${collegeName}"`,
-        `"${p.computedBranch || ''}"`,
-        `"${p.department || ''}"`,
-        `"${p.year || ''}"`,
-        `"${p.gender || ''}"`,
-        `"${p.mobile || ''}"`,
-        `"${p.email || ''}"`
+        p.name || '',
+        p.roll || '',
+        p.teamId || '',
+        schoolCategory,
+        p.eventName || '',
+        eventDepartmentStr,
+        collegeName,
+        p.computedBranch || p.branch || '',
+        studentDept,
+        p.year || '',
+        p.gender || '',
+        p.mobile || '',
+        p.email || ''
       ];
-      csvRows.push(row.join(','));
+    };
+
+    const workbook = XLSX.utils.book_new();
+
+    // 1. Master sheet: "All Registrations"
+    const allRows = [headers, ...filteredParticipants.map((p, idx) => mapParticipantToRow(p, idx))];
+    const allWs = XLSX.utils.aoa_to_sheet(allRows);
+    applySheetStyles(allWs, headers.length);
+    XLSX.utils.book_append_sheet(workbook, allWs, 'All Registrations');
+
+    // 2. Group by resolved Student Department for individual sheets
+    const deptMap = {};
+    filteredParticipants.forEach((p) => {
+      const deptKey = resolveStudentDepartment(p) || 'Other Dept';
+      if (!deptMap[deptKey]) {
+        deptMap[deptKey] = [];
+      }
+      deptMap[deptKey].push(p);
     });
 
-    const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `VEDA_Event_Participants_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-    toast.success('registrations data exported successfully!');
+    const usedSheetNames = new Set(['all registrations']);
+    const sortedDeptKeys = Object.keys(deptMap).sort((a, b) => a.localeCompare(b));
+
+    sortedDeptKeys.forEach((deptKey) => {
+      const deptParticipants = deptMap[deptKey];
+      const deptRows = [headers, ...deptParticipants.map((p, idx) => mapParticipantToRow(p, idx))];
+      const deptWs = XLSX.utils.aoa_to_sheet(deptRows);
+      applySheetStyles(deptWs, headers.length);
+
+      let cleanName = deptKey.replace(/[\\/?*:[\]]/g, '').trim().substring(0, 31) || 'Dept';
+      let uniqueName = cleanName;
+      let counter = 1;
+      while (usedSheetNames.has(uniqueName.toLowerCase())) {
+        uniqueName = `${cleanName.substring(0, 27)}_${counter}`;
+        counter++;
+      }
+      usedSheetNames.add(uniqueName.toLowerCase());
+
+      XLSX.utils.book_append_sheet(workbook, deptWs, uniqueName);
+    });
+
+    const fileName = `VEDA_Event_Registrations_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+    toast.success('Registrations exported to Excel with department-wise sheets successfully!');
   };
 
   const columns = [
@@ -351,7 +483,6 @@ const Registrations = () => {
     'College',
     'Branch & Dept / Year',
     'Contact Info',
-    // 'Accommodation',
     'Action',
   ];
 
@@ -392,6 +523,8 @@ const Registrations = () => {
       }
     }
 
+    const resolvedDept = resolveStudentDepartment(p);
+
     return [
       index + 1,
       {
@@ -426,7 +559,7 @@ const Registrations = () => {
           </Typography>
         )}
         <Typography variant="body2">
-          {p.department ? `Dept: ${p.department}${p.year ? ' | Yr: ' + p.year : ''}` : (p.year ? `Yr: ${p.year}` : '-')}
+          {resolvedDept ? `Dept: ${resolvedDept}${p.year ? ' | Yr: ' + p.year : ''}` : (p.year ? `Yr: ${p.year}` : '-')}
         </Typography>
       </Box>,
       <Box>
@@ -441,50 +574,18 @@ const Registrations = () => {
           </Typography>
         ) : null}
       </Box>,
-      /* {
-        value: p.accommodation || 'No',
-        display: (
-          <Chip
-            label={isAccomm ? 'Requested' : 'No'}
-            color={isAccomm ? 'primary' : 'default'}
-            size="small"
-            sx={{ fontWeight: 700, borderRadius: '6px' }}
-          />
-        ),
-      }, */
       {
-        value: 'Details',
+        value: '',
         display: (
-          <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
               variant="outlined"
               size="small"
+              startIcon={<ViewIcon />}
               onClick={() => handleOpenDetails(p)}
-              startIcon={<ViewIcon sx={{ fontSize: 16 }} />}
-              sx={{
-                borderRadius: '8px',
-                textTransform: 'none',
-                fontWeight: 600,
-              }}
+              sx={{ borderRadius: '8px', textTransform: 'none' }}
             >
               Details
-            </Button>
-            <Button
-              variant="contained"
-              size="small"
-              onClick={() => handleOpenPass(p)}
-              startIcon={<BadgeIcon sx={{ fontSize: 16 }} />}
-              sx={{
-                borderRadius: '8px',
-                textTransform: 'none',
-                fontWeight: 600,
-                boxShadow: 'none',
-                '&:hover': {
-                  boxShadow: 'none',
-                }
-              }}
-            >
-              View Pass
             </Button>
           </Box>
         ),
@@ -495,56 +596,65 @@ const Registrations = () => {
   return (
     <PageContainer>
       <PageHeader
-        title="VEDA Event Registrations"
-        subtitle="View and manage all registered student event registrations"
-        action={
-          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-            <Button
-              variant="outlined"
-              onClick={() => navigate('/Eventveda/payments')}
-              startIcon={<PaymentIcon />}
-              sx={{ borderRadius: '12px', textTransform: 'none', px: 2.5, py: 1 }}
-            >
-              View Payments
-            </Button>
-            <ActionButton
-              onClick={fetchPayments}
-              startIcon={<RefreshIcon />}
-            >
-              Refresh
-            </ActionButton>
-          </Box>
+        title="Event Registrations"
+        subtitle="View and manage paid event participant registrations"
+        breadcrumbs={[
+          { label: 'Dashboard', path: '/' },
+          { label: 'Student Event Admin', path: '/dashboard' },
+          { label: 'Registrations' },
+        ]}
+        actions={
+          <ActionButton
+            label="Payments"
+            icon={<PaymentIcon />}
+            variant="secondary"
+            onClick={() => navigate('/Eventveda/payments')}
+          />
         }
       />
 
-      {/* Summary Cards */}
-      <StatCardGrid columns={2} sx={{ mt: 1, mb: 3 }}>
+      {/* Metrics Cards */}
+      <StatCardGrid columns={{ xs: 1, sm: 2, md: 3 }} sx={{ mb: 3 }}>
         <StatCard
-          title="Filtered Registrations"
+          title="Total Registrations"
           value={filteredParticipants.length}
-          color="#d97706"
           icon={<PeopleIcon />}
+          color="primary"
+          subtitle={
+            accommodationFilter !== 'ALL' || eventFilter !== 'ALL' || schoolFilter !== 'ALL' || departmentFilter !== 'ALL' || searchQuery
+              ? `Filtered from ${allParticipants.length}`
+              : 'Paid registrations'
+          }
         />
         <StatCard
-          title="Events"
+          title="Total Teams / Entries"
+          value={payments.length}
+          icon={<PaymentIcon />}
+          color="success"
+          subtitle="Distinct payment records"
+        />
+        <StatCard
+          title="Events Count"
           value={uniqueEvents.length}
-          color="#9333ea"
           icon={<EventIcon />}
+          color="info"
+          subtitle={allEvents.length > 0 ? `Total available events: ${allEvents.length}` : 'Unique registered events'}
         />
       </StatCardGrid>
 
-      {/* Filter Controls Bar */}
+      {/* Filter Bar */}
       <Paper
-        variant="outlined"
+        elevation={0}
         sx={{
           p: 2,
-          mb: 3,
+          mb: 2,
           borderRadius: '16px',
+          border: '1px solid var(--border-color)',
+          bgcolor: 'var(--bg-panel)',
           display: 'flex',
+          flexWrap: 'wrap',
           gap: 2,
           alignItems: 'center',
-          flexWrap: 'wrap',
-          background: 'var(--bg-panel, #ffffff)',
         }}
       >
         <TextField
@@ -552,7 +662,7 @@ const Registrations = () => {
           size="small"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{ width: { xs: '100%', sm: 260 } }}
+          sx={{ minWidth: 240, flexGrow: { xs: 1, md: 0 } }}
         />
 
         <TextField
@@ -561,12 +671,12 @@ const Registrations = () => {
           size="small"
           value={eventFilter}
           onChange={(e) => setEventFilter(e.target.value)}
-          sx={{ width: { xs: '100%', sm: 200 } }}
+          sx={{ minWidth: 160 }}
         >
           <MenuItem value="ALL">All Events</MenuItem>
-          {uniqueEvents.map((evt) => (
-            <MenuItem key={evt} value={evt}>
-              {evt}
+          {uniqueEvents.map((ev) => (
+            <MenuItem key={ev} value={ev}>
+              {ev}
             </MenuItem>
           ))}
         </TextField>
@@ -577,44 +687,31 @@ const Registrations = () => {
           size="small"
           value={schoolFilter}
           onChange={(e) => setSchoolFilter(e.target.value)}
-          sx={{ width: { xs: '100%', sm: 180 } }}
+          sx={{ minWidth: 160 }}
         >
           <MenuItem value="ALL">All Schools</MenuItem>
-          {uniqueSchools.map((s) => (
-            <MenuItem key={s} value={s}>
-              {s}
+          {uniqueSchools.map((sch) => (
+            <MenuItem key={sch} value={sch}>
+              {sch}
             </MenuItem>
           ))}
         </TextField>
 
         <TextField
           select
-          label="Filter Dept"
+          label="Department"
           size="small"
           value={departmentFilter}
           onChange={(e) => setDepartmentFilter(e.target.value)}
-          sx={{ width: { xs: '100%', sm: 160 } }}
+          sx={{ minWidth: 140 }}
         >
           <MenuItem value="ALL">All Depts</MenuItem>
-          {uniqueDepartments.map((d) => (
-            <MenuItem key={d} value={d}>
-              {d}
+          {uniqueDepartments.map((dept) => (
+            <MenuItem key={dept} value={dept}>
+              {dept}
             </MenuItem>
           ))}
         </TextField>
-
-        {/* <TextField
-          select
-          label="Accommodation"
-          size="small"
-          value={accommodationFilter}
-          onChange={(e) => setAccommodationFilter(e.target.value)}
-          sx={{ minWidth: 160 }}
-        >
-          <MenuItem value="ALL">All Registrations</MenuItem>
-          <MenuItem value="YES">Requested (Yes)</MenuItem>
-          <MenuItem value="NO">No Accommodation</MenuItem>
-        </TextField> */}
 
         <TextField
           select
@@ -632,11 +729,11 @@ const Registrations = () => {
         <Box sx={{ ml: 'auto' }}>
           <Button
             variant="outlined"
-            onClick={handleExportCSV}
+            onClick={handleExportExcel}
             startIcon={<DownloadIcon />}
             sx={{ borderRadius: '10px', textTransform: 'none', px: 2 }}
           >
-            Export CSV
+            Export Excel
           </Button>
         </Box>
       </Paper>
