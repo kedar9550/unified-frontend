@@ -81,6 +81,7 @@ const EventCreation = () => {
   const [extraTeamSize, setExtraTeamSize] = useState('0');
   const [extraAmountPerHead, setExtraAmountPerHead] = useState('0');
   const [overview, setOverview] = useState('');
+  const [whatsappLink, setWhatsappLink] = useState('');
   const [registrationStop, setRegistrationStop] = useState('No');
   const [rules, setRules] = useState(['']);
   const [wantTheme, setWantTheme] = useState(false);
@@ -230,6 +231,7 @@ const EventCreation = () => {
     setExtraTeamSize('0');
     setExtraAmountPerHead('0');
     setOverview('');
+    setWhatsappLink('');
     setRegistrationStop('No');
     setRules(['']);
     setWantTheme(false);
@@ -292,6 +294,7 @@ const EventCreation = () => {
     setExtraTeamSize(event.extraTeamSize != null ? String(event.extraTeamSize) : '0');
     setExtraAmountPerHead(event.extraAmountPerHead != null ? String(event.extraAmountPerHead) : '0');
     setOverview(event.overview || '');
+    setWhatsappLink(event.whatsappLink || '');
     setRegistrationStop(event.registrationStop || 'No');
     setRules(event.rules && event.rules.length > 0 ? event.rules : ['']);
     const hasThemes = event.themes && event.themes.length > 0;
@@ -399,6 +402,9 @@ const EventCreation = () => {
     formData.append('extraTeamSize', Number(extraTeamSize));
     formData.append('extraAmountPerHead', Number(extraAmountPerHead));
     formData.append('overview', overview.trim());
+    if (eventName.toLowerCase().includes('medhamanthan')) {
+      formData.append('whatsappLink', whatsappLink.trim());
+    }
     formData.append('registrationStop', registrationStop);
     rules.filter((rule) => rule.trim()).forEach(rule => {
       formData.append('rules[]', rule);
@@ -1270,6 +1276,16 @@ const EventCreation = () => {
               error={!!errors.overview}
               helperText={errors.overview}
             />
+
+            {eventName.toLowerCase().includes('medhamanthan') && (
+              <TextField
+                fullWidth
+                label="WhatsApp Group Link"
+                value={whatsappLink}
+                onChange={(e) => setWhatsappLink(e.target.value)}
+                placeholder="Enter WhatsApp invite link"
+              />
+            )}
 
             <Box>
               <Box sx={{ mb: 2 }}>
