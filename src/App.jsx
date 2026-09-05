@@ -61,6 +61,8 @@ import AppraisalResearchScoring from "./pages/research/AppraisalResearchScoring"
 import StaffList from "./pages/hod/StaffList";
 import MyResearchMetrics from "./pages/faculty/MyResearchMetrics";
 import ManagementAppraisalEvaluation from "./pages/management/ManagementAppraisalEvaluation";
+import RndJournalDataEntry from "./pages/research/RndJournalDataEntry";
+
 
 // Utilities Modules
 import ShortenUrl from "./pages/utilities/ShortenUrl";
@@ -260,6 +262,9 @@ function App() {
         <Route path="/research-dean/author-citations" element={<ProtectedRoute element={<AuthorCitationsManagement />} />} />
         <Route path="/research-coordinator/reference-journals" element={<ProtectedRoute element={<ReferenceJournalManagement />} />} />
         <Route path="/research-coordinator/author-citations" element={<ProtectedRoute element={<AuthorCitationsManagement />} />} />
+
+        <Route path="/research-data-entry/journal" element={<ProtectedRoute element={<RndJournalDataEntry />} />} />
+
 
         {/* Utilities Routes */}
         <Route path="/utilities/shorten-url" element={<ProtectedRoute element={<ShortenUrl />} />} />

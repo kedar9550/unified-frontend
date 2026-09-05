@@ -5,8 +5,9 @@ import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
 
 // Reusable read-only faculty info row
-export function FacultyInfoRow() {
-  const { user } = useAuth();
+export function FacultyInfoRow({ faculty }) {
+  const { user: authUser } = useAuth();
+  const user = faculty || authUser;
 
   const fields = [
     { label: "Name of the Faculty", value: user?.name || "" },

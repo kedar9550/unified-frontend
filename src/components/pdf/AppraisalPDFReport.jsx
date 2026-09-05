@@ -728,7 +728,8 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal, eligibilityDet
             <tbody style={{ display: 'table-row-group', pageBreakInside: 'auto' }}>
               {vData.contributions.map((c, i) => {
                 const getDesc = () => {
-                  switch (c.category) {
+                  const catCode = c.category?.code || parseInt(c.category);
+                  switch (catCode) {
                     case 1: return `Member of BOG/GB/AC/BOS: ${c.organizationName || ''}`;
                     case 2: case 3: return `Editorial Board: ${c.journalName || c.journalConferenceName || ''}`;
                     case 4: case 5: return `Awarded as ${c.awardName || 'N/A'} by ${c.awardingAgency || 'N/A'} on ${c.awardDate ? new Date(c.awardDate).toLocaleDateString('en-GB') : 'N/A'}`;
@@ -804,8 +805,8 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal, eligibilityDet
                     <td style={styles.tdLeft}>
                       {(() => {
                         const catalogEntry = ADMIN_ROLE_CATALOG.find(c => c.roleId === r.roleId);
-                        return (catalogEntry && !['other', 'other_coord', 'training_coord'].includes(r.roleId)) 
-                          ? catalogEntry.label 
+                        return (catalogEntry && !['other', 'other_coord', 'training_coord'].includes(r.roleId))
+                          ? catalogEntry.label
                           : (r.roleLabel || r.roleName);
                       })()} {!['dean', 'assoc_dean', 'coe', 'hod', 'dy_coe', 'univ_office_coord', 'dy_hod', 'dept_exam_cell'].includes(r.roleId) && r.level ? `(${r.level})` : ''} {r.details ? `[${r.details}]` : ""}
                     </td>
