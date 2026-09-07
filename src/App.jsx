@@ -98,6 +98,7 @@ import MajorEventGroups from "./pages/majorEventAdmin/MajorEventGroups";
 import FormAssign from "./pages/majorEventAdmin/FormAssign";
 import FormPreview from "./pages/majorEventAdmin/FormPreview";
 import Payments from "./pages/studenteventsadmin/Payments";
+import ManualAdding from "./pages/studenteventsadmin/ManualAdding";
 import Registrations from "./pages/studenteventsadmin/Registrations";
 import Participants from "./pages/studenteventsadmin/Participants";
 import ScanPass from "./pages/studenteventsadmin/ScanPass";
@@ -307,6 +308,7 @@ function App() {
         <Route path="/Eventveda/organisation-committee" element={<ProtectedRoute element={<OrganisationCommittee />} />} />
         <Route path="/Eventveda/departments" element={<ProtectedRoute element={<DepartmentManagement />} />} />
         <Route path="/Eventveda/payments" element={<ProtectedRoute element={<Payments />} />} />
+        <Route path="/Eventveda/manual-adding" element={<ProtectedRoute element={<ManualAdding />} />} />
         <Route path="/Eventveda/registrations" element={<ProtectedRoute element={<Registrations />} />} />
         <Route path="/Eventveda/participants" element={<ProtectedRoute element={<Participants mode="all" />} />} />
         <Route path="/Eventveda/participants/all" element={<ProtectedRoute element={<Participants mode="all" />} />} />
