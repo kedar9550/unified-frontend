@@ -32,6 +32,7 @@ import {
   PeopleAlt as PeopleAltIcon,
   Refresh as RefreshIcon,
   Visibility as VisibilityIcon,
+  PersonAdd as PersonAddIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { TextField, MenuItem } from '@mui/material';
@@ -212,6 +213,7 @@ const Payments = () => {
   const columns = [
     'S.No',
     'Team ID',
+    'Date & Time',
     'School Name',
     'Event Name',
     'Department(s)',
@@ -264,6 +266,12 @@ const Payments = () => {
       }
     }
 
+    const rawDate = payment.createdAt || payment.paidAt;
+    const dateObj = rawDate ? new Date(rawDate) : null;
+    const isValidDate = dateObj && !isNaN(dateObj.getTime());
+    const isoDate = isValidDate ? dateObj.toISOString() : '';
+    const formattedDate = isValidDate ? formatDate(rawDate) : '-';
+
     return [
       index + 1,
       {
@@ -278,6 +286,22 @@ const Payments = () => {
             </IconButton>
           </Box>
         )
+      },
+      {
+        value: isoDate ? `${isoDate} ${formattedDate}` : '-',
+        display: (
+          <Typography
+            variant="body2"
+            sx={{
+              whiteSpace: 'nowrap',
+              fontSize: '0.8rem',
+              color: 'text.secondary',
+              fontWeight: 600,
+            }}
+          >
+            {formattedDate}
+          </Typography>
+        ),
       },
       schoolCategory,
       payment.eventName || '-',
@@ -389,6 +413,14 @@ const Payments = () => {
         action={
           <Box sx={{ display: 'flex', gap: 1.5 }}>
             <Button
+              variant="contained"
+              onClick={() => navigate('/Eventveda/manual-adding')}
+              startIcon={<PersonAddIcon />}
+              sx={{ borderRadius: '12px', textTransform: 'none', px: 2.5, py: 1, background: 'var(--gradient-primary)' }}
+            >
+              Manual Adding
+            </Button>
+            <Button
               variant="outlined"
               onClick={() => navigate('/Eventveda/participants')}
               startIcon={<PeopleAltIcon />}
@@ -449,8 +481,8 @@ const Payments = () => {
             <DataTable
               columns={columns}
               rows={rows}
-              nonSortableColumns={[0, 8]}
-              alignments={['center', 'center', 'left', 'left', 'right', 'center', 'center', 'center', 'center']}
+              nonSortableColumns={[0, 10]}
+              alignments={['center', 'center', 'center', 'left', 'left', 'left', 'right', 'center', 'center', 'center', 'center']}
             />
           )}
         </Box>
