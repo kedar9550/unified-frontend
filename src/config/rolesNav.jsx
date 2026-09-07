@@ -495,8 +495,14 @@ export const ROLE_ROUTES = {
             { text: "Student Coordinators", path: "/Eventveda/events/student-coordinators", icon: <Person /> }
           ]
         },
-        { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
-        { text: "Manual Adding", path: "/Eventveda/manual-adding", icon: <PersonAdd /> },
+        {
+          text: "Payments",
+          icon: <Groups />,
+          nested: [
+            { text: "List", path: "/Eventveda/payments", icon: <Payment /> },
+            { text: "Manual Adding", path: "/Eventveda/manual-adding", icon: <PersonAdd /> },
+          ]
+        },
         { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
         {
           text: "Participants",
