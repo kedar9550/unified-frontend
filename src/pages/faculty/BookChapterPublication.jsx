@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination } from "@mui/material";
 import { toast } from "sonner";
-import { Close, Description, AttachFile, Groups, Book, Visibility } from "@mui/icons-material";
+import { Close, Description, AttachFile, Groups, Book, Visibility, Edit } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
@@ -44,8 +44,62 @@ export default function BookChapterPublication() {
   const [doiFetching, setDoiFetching] = useState(false);
   const [doiFetched, setDoiFetched] = useState(null);
   const [isbnFetching, setIsbnFetching] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editId, setEditId] = useState(null);
+
+  
+  const handleEditClick = (pub) => {
+    setEditMode(true);
+    setEditId(pub._id);
+    setSelectedYear(pub.academicYear?._id || pub.academicYear);
+    
+    const mappedAuthors = [];
+    if (pub.coAuthors && pub.coAuthors.length > 0) {
+      let positionCounter = 1;
+      const total = parseInt(pub.totalAuthors) || 1;
+      const myPos = parseInt(pub.userAuthorPosition) || 1;
+      
+      for(let i=1; i<=total; i++){
+          if(i === myPos) continue;
+          const ca = pub.coAuthors[positionCounter - 1];
+          if(ca) {
+             const isInternal = ca.employeeId ? true : false;
+             mappedAuthors.push({
+                 authorPosition: i,
+                 affiliationType: isInternal ? "Aditya University" : "Others",
+                 empId: isInternal ? (ca.employeeId?.institutionId || ca.employeeId) : "",
+                 authorName: ca.name || "",
+                 affiliationName: ca.affiliation || ""
+             });
+             positionCounter++;
+          }
+      }
+    }
+
+    setForm({
+      doi: pub.doi || "",
+      textBookName: pub.textBookName || "",
+      chapterTitle: pub.chapterTitle || "",
+      yearOfPublication: pub.yearOfPublication || "",
+      chaptersContributed: pub.chaptersContributed || "",
+      publisher: pub.publisher || "",
+      month: pub.month || "",
+      year: pub.year || "",
+      applyIncentive: pub.applyIncentive || "",
+      publicationScope: pub.publicationScope || pub.level || "",
+      applyingSeedGrant: pub.applyingSeedGrant || "",
+      isbnNumber: pub.isbnNumber || "",
+      totalAuthors: pub.totalAuthors || 1,
+      userAuthorPosition: pub.userAuthorPosition || 1,
+      otherAuthors: mappedAuthors
+    });
+    setDoiFetched(!!pub.doi);
+    setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
+    setViewMode("form");
+  };
 
   useEffect(() => {
+
     API.get("/api/research/book-chapter").then(res => {
       setPublicationsList(res.data?.data || res.data || []);
     }).catch(err => console.log("Failed to fetch book chapters", err));
@@ -650,8 +704,10 @@ export default function BookChapterPublication() {
       fd.append("college", user?.college || "");
       fd.append("panNumber", user?.panNumber || "");
 
-      await API.post("/api/research/book-chapter", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      toast.success("Book Chapter submitted successfully!");
+      const url = editMode ? `/api/research/book-chapter/${editId}` : "/api/research/book-chapter";
+      const method = editMode ? "put" : "post";
+      await API[method](url, fd, { headers: { "Content-Type": "multipart/form-data" } });
+      toast.success(editMode ? "Book Chapter updated successfully!" : "Book Chapter submitted successfully!");
       setForm({
         doi: "",
         textBookName: "", chapterTitle: "", yearOfPublication: "",
@@ -789,19 +845,36 @@ export default function BookChapterPublication() {
                     </Typography>
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
-                    <Tooltip title="View Details" arrow>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleOpenDetails(pub)}
-                        sx={{
-                          color: "var(--color-primary)",
-                          "&:hover": { background: "var(--bg-accent-1)", transform: "scale(1.1)" },
-                          transition: "all 0.2s ease"
-                        }}
-                      >
-                        <Visibility fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Stack direction="row" spacing={1}>
+                      <Tooltip title="View Details" arrow>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenDetails(pub)}
+                          sx={{
+                            color: "var(--color-primary)",
+                            "&:hover": { background: "var(--bg-accent-1)", transform: "scale(1.1)" },
+                            transition: "all 0.2s ease"
+                          }}
+                        >
+                          <Visibility fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      {pub.status?.includes("Rejected") && pub.visibilityRole === "Applicant" && (
+                        <Tooltip title="Edit & Resubmit" arrow>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleEditClick(pub)}
+                            sx={{
+                              color: "#eab308",
+                              "&:hover": { background: "rgba(234,179,8,0.1)", transform: "scale(1.1)" },
+                              transition: "all 0.2s ease"
+                            }}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ))}
@@ -862,7 +935,7 @@ export default function BookChapterPublication() {
           <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
             <Button
               variant="outlined"
-              onClick={() => setViewMode("list")}
+              onClick={() => { setViewMode("list"); setEditMode(false); setEditId(null); }}
               sx={{
                 textTransform: "none",
                 fontWeight: 600,
@@ -1186,7 +1259,7 @@ export default function BookChapterPublication() {
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
         <Button
           variant="outlined"
-          onClick={() => setViewMode("list")}
+          onClick={() => { setViewMode("list"); setEditMode(false); setEditId(null); }}
           sx={{
             px: 4,
             height: "44px",

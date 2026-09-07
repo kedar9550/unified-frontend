@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination, FormControl } from "@mui/material";
 import { toast } from "sonner";
-import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, Visibility } from "@mui/icons-material";
+import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, Visibility, Edit } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
@@ -36,7 +36,52 @@ export default function PatentPublication() {
   const [files, setFiles] = useState({ eFilingReceipt: null, form1: null });
   const [loading, setLoading] = useState(false);
 
+  
+  const handleEditClick = (pub) => {
+    setEditMode(true);
+    setEditId(pub._id);
+    setSelectedYear(pub.academicYear?._id || pub.academicYear);
+    
+    const mappedAuthors = [];
+    if (pub.coInventors && pub.coInventors.length > 0) {
+      let positionCounter = 1;
+      const total = parseInt(pub.totalInventors) || 1;
+      const myPos = parseInt(pub.userInventorPosition) || 1;
+      
+      for(let i=1; i<=total; i++){
+          if(i === myPos) continue;
+          const ca = pub.coInventors[positionCounter - 1];
+          if(ca) {
+             const isInternal = ca.employeeId ? true : false;
+             mappedAuthors.push({
+                 inventorPosition: i,
+                 affiliationType: isInternal ? "Aditya University" : "Others",
+                 empId: isInternal ? (ca.employeeId?.institutionId || ca.employeeId) : "",
+                 inventorName: ca.name || "",
+                 affiliationName: ca.affiliation || ""
+             });
+             positionCounter++;
+          }
+      }
+    }
+
+    setForm({
+      patentNumber: pub.patentNumber || "",
+      patentTitle: pub.patentTitle || "",
+      patentType: pub.patentType || "",
+      patentCategory: pub.patentCategory || "",
+      stage: pub.stage || "",
+      totalInventors: pub.totalInventors || 1,
+      userInventorPosition: pub.userInventorPosition || 1,
+      otherInventors: mappedAuthors,
+      academicYear: pub.academicYear || ""
+    });
+    setFiles({ certificate: null });
+    setViewMode("form");
+  };
+
   useEffect(() => {
+
     API.get("/api/research/patent").then(res => {
       setPublicationsList(res.data?.data || res.data || []);
     }).catch(err => console.log("Failed to fetch patents", err));
@@ -345,19 +390,36 @@ export default function PatentPublication() {
                     </Typography>
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
-                    <Tooltip title="View Details" arrow>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleOpenDetails(pub)}
-                        sx={{
-                          color: "var(--color-primary)",
-                          "&:hover": { background: "var(--bg-accent-1)", transform: "scale(1.1)" },
-                          transition: "all 0.2s ease"
-                        }}
-                      >
-                        <Visibility fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Stack direction="row" spacing={1}>
+                      <Tooltip title="View Details" arrow>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenDetails(pub)}
+                          sx={{
+                            color: "var(--color-primary)",
+                            "&:hover": { background: "var(--bg-accent-1)", transform: "scale(1.1)" },
+                            transition: "all 0.2s ease"
+                          }}
+                        >
+                          <Visibility fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      {pub.status?.includes("Rejected") && pub.visibilityRole === "Applicant" && (
+                        <Tooltip title="Edit & Resubmit" arrow>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleEditClick(pub)}
+                            sx={{
+                              color: "#eab308",
+                              "&:hover": { background: "rgba(234,179,8,0.1)", transform: "scale(1.1)" },
+                              transition: "all 0.2s ease"
+                            }}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ))}
@@ -417,7 +479,7 @@ export default function PatentPublication() {
           <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
             <Button
               variant="outlined"
-              onClick={() => setViewMode("list")}
+              onClick={() => { setViewMode("list"); setEditMode(false); setEditId(null); }}
               sx={{
                 textTransform: "none",
                 fontWeight: 600,
@@ -658,7 +720,7 @@ export default function PatentPublication() {
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
         <Button
           variant="outlined"
-          onClick={() => setViewMode("list")}
+          onClick={() => { setViewMode("list"); setEditMode(false); setEditId(null); }}
           sx={{
             px: 4,
             height: "44px",

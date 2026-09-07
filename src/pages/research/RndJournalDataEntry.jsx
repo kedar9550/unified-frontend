@@ -312,6 +312,8 @@ export default function RndJournalDataEntry() {
             authorName: a.CoAuthorType === "student" ? "" : a.authorName,
             empId: a.CoAuthorType === "student" ? "" : a.empId
           }));
+          newForm.applyIncentive = "";
+          newForm.approvedAmount = "";
         } else if (val === "Yes") {
           newForm.applyIncentive = "No";
           newForm.approvedAmount = "";
