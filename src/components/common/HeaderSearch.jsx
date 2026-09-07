@@ -146,14 +146,22 @@ const HeaderSearch = ({ activeRole, variant = "desktop", mobileOpen, onMobileOpe
     const roleRoutes = ROLE_ROUTES[activeRole] || ROLE_ROUTES.STUDENT;
 
     const allRoutes = [];
-    roleRoutes.forEach(item => {
-      if (item.path) allRoutes.push(item);
-      if (item.nested) {
-        item.nested.forEach(sub => {
-          if (sub.path) allRoutes.push({ ...sub, parentText: item.text, icon: sub.icon || item.icon });
-        });
-      }
-    });
+    const extractRoutes = (items, parentText = '') => {
+      if (!items || !Array.isArray(items)) return;
+      items.forEach(item => {
+        if (item.path) {
+          allRoutes.push({
+            ...item,
+            parentText,
+            icon: item.icon
+          });
+        }
+        if (item.nested && Array.isArray(item.nested)) {
+          extractRoutes(item.nested, parentText ? `${parentText} › ${item.text.trim()}` : item.text.trim());
+        }
+      });
+    };
+    extractRoutes(roleRoutes);
 
     const lowerQuery = query.toLowerCase();
     const filtered = allRoutes.filter(route =>

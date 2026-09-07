@@ -34,7 +34,15 @@ import {
     Devices,
     AccountBalance,
     SupervisorAccount,
-    Search
+    Search,
+    CardMembership,
+    QrCode,
+    WorkspacePremium,
+    Payment,
+    PeopleAlt,
+    Groups,
+    EventAvailable,
+    SupportAgent
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { ROLE_ROUTES } from "../../config/rolesNav";
@@ -88,7 +96,29 @@ const SUB_ITEM_METADATA = {
     "Faculty Format": { desc: "Download or view faculty-specific data formats", icon: <Assignment />, color: "rgba(124, 58, 237, 0.12)", iconColor: "#7c3aed" },
     "Students Format": { desc: "Download or view student-specific data formats", icon: <AssignmentInd />, color: "rgba(16, 185, 129, 0.12)", iconColor: "#10b981" },
     "Proctoring Verification": { desc: "Verify and approve proctoring data and allocations", icon: <SupervisorAccount />, color: "#F5F3FF", iconColor: "#7c3aed" },
-    "Administration Verification": { desc: "Verify and approve administration duties and records", icon: <AccountBalance />, color: "#F5F3FF", iconColor: "#a855f7" }
+    "Administration Verification": { desc: "Verify and approve administration duties and records", icon: <AccountBalance />, color: "#F5F3FF", iconColor: "#a855f7" },
+    "Student Passes": { desc: "Access, print and scan event passes", icon: <SupportAgent />, color: "#E0F2FE", iconColor: "#0284C7" },
+    "Passes": { desc: "View and download bulk event passes", icon: <CardMembership />, color: "#F0FDF4", iconColor: "#166534" },
+    "Update Passes": { desc: "Manage and verify student event passes", icon: <CardMembership />, color: "#FEF3C7", iconColor: "#D97706" },
+    "Scan for Attendance": { desc: "Scan attendee passes with barcode / camera", icon: <QrCode />, color: "#F3E8FF", iconColor: "#7E22CE" },
+    "Certificates": { desc: "Issue winning and participation certificates", icon: <WorkspacePremium />, color: "#FEF9C3", iconColor: "#A16207" },
+    "Winning Certificates": { desc: "View and award event winners certificates", icon: <WorkspacePremium />, color: "#FEF3C7", iconColor: "#B45309" },
+    "Participation Certificates": { desc: "Generate and verify participation certificates", icon: <WorkspacePremium />, color: "#E0F2FE", iconColor: "#0284C7" },
+    "Payments": { desc: "Track Razorpay registration transactions", icon: <Payment />, color: "#ECFDF5", iconColor: "#059669" },
+    "Registrations": { desc: "View all participant event registrations", icon: <PeopleAlt />, color: "#F5F3FF", iconColor: "#6D28D9" },
+    "Participants": { desc: "Manage event attendees and accommodation", icon: <Groups />, color: "#F0FDF4", iconColor: "#15803D" },
+    "Events": { desc: "Manage events and coordinators", icon: <EventAvailable />, color: "#EFF6FF", iconColor: "#2563EB" },
+    "Schools": { desc: "Manage participating schools and coordinators", icon: <School />, color: "#FFF7ED", iconColor: "#C2410C" },
+    "Infrastructure": { desc: "Manage campus venues, buildings and grounds", icon: <AccountBalance />, color: "#F1F5F9", iconColor: "#475569" }
+};
+
+const isItemActive = (item, currentPath) => {
+    if (!item || !currentPath) return false;
+    if (item.path && (currentPath === item.path || currentPath.startsWith(item.path))) return true;
+    if (item.nested && Array.isArray(item.nested)) {
+        return item.nested.some(sub => isItemActive(sub, currentPath));
+    }
+    return false;
 };
 
 const MobileNavbar = () => {
@@ -96,6 +126,7 @@ const MobileNavbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [expandedItem, setExpandedItem] = useState(null);
+    const [navStack, setNavStack] = useState([]);
     const [weather, setWeather] = useState({
         temp: "--°C",
         icon: "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Sun.png",
@@ -197,13 +228,7 @@ const MobileNavbar = () => {
     const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
     const menuItems = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
 
-    const activeIndex = menuItems.findIndex(item => {
-        if (item.path && location.pathname.startsWith(item.path)) return true;
-        if (item.nested) {
-            return item.nested.some(sub => sub.path && location.pathname.startsWith(sub.path));
-        }
-        return false;
-    });
+    const activeIndex = menuItems.findIndex(item => isItemActive(item, location.pathname));
 
     const displayItems = menuItems;
 
@@ -218,9 +243,11 @@ const MobileNavbar = () => {
         if (item) {
             if (item.nested) {
                 setExpandedItem(item);
+                setNavStack([item]);
             } else {
                 navigate(item.path);
                 setExpandedItem(null);
+                setNavStack([]);
             }
         }
     };
@@ -230,6 +257,7 @@ const MobileNavbar = () => {
             document.activeElement.blur();
         }
         setExpandedItem(null);
+        setNavStack([]);
     }, [location.pathname]);
 
     useEffect(() => {
@@ -326,7 +354,10 @@ const MobileNavbar = () => {
             <Drawer
                 anchor="bottom"
                 open={Boolean(expandedItem)}
-                onClose={() => setExpandedItem(null)}
+                onClose={() => {
+                    setExpandedItem(null);
+                    setNavStack([]);
+                }}
                 slotProps={{
                     paper: {
                         sx: {
@@ -340,111 +371,168 @@ const MobileNavbar = () => {
                 }}
             >
                 <Box sx={{ p: 0, display: 'flex', flexDirection: 'column', maxHeight: '85vh' }}>
-                    {/* Sub-menu Header */}
-                    <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        p: 1.5,
-                        borderBottom: '1px solid var(--border-color)',
-                        background: 'var(--bg-panel)'
-                    }}>
-                        <IconButton
-                            onClick={() => setExpandedItem(null)}
-                            sx={{
-                                color: 'var(--text-primary)',
-                                mr: 1,
-                                p: 0.8
-                            }}
-                        >
-                            <ArrowBack sx={{ fontSize: 22 }} />
-                        </IconButton>
-                        <Typography sx={{
-                            fontWeight: 700,
-                            color: 'var(--text-primary)',
-                            fontSize: '1.1rem'
-                        }}>
-                            {expandedItem?.text}
-                        </Typography>
-                    </Box>
+                    {(() => {
+                        const currentDrawerItem = navStack.length > 0 ? navStack[navStack.length - 1] : expandedItem;
+                        const handleDrawerBack = () => {
+                            if (navStack.length > 1) {
+                                setNavStack(prev => prev.slice(0, prev.length - 1));
+                            } else {
+                                setExpandedItem(null);
+                                setNavStack([]);
+                            }
+                        };
 
-                    <Box sx={{ px: 2, pt: 3, pb: 4, overflowY: 'auto', flex: 1 }}>
-                        {expandedItem?.nested?.map((sub, idx) => {
-                            const meta = SUB_ITEM_METADATA[sub.text] || {
-                                desc: `Manage ${sub.text} related information`,
-                                icon: expandedItem.icon,
-                                color: "#F3F4F6",
-                                iconColor: "#4B5563"
-                            };
-                            const isActive = location.pathname.startsWith(sub.path);
-
-                            return (
-                                <Card
-                                    key={idx}
-                                    elevation={0}
-                                    onClick={() => {
-                                        navigate(sub.path);
-                                        setExpandedItem(null);
-                                    }}
-                                    sx={{
-                                        borderRadius: '16px',
-                                        mb: 1.5,
-                                        border: '1px solid var(--border-color)',
-                                        background: 'var(--bg-panel)',
-                                        position: 'relative', // For absolute indicator
-                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                        cursor: 'pointer',
-                                        '&:active': { transform: 'scale(0.97)', background: 'var(--bg-accent-4)' },
-                                        boxShadow: isActive ? 'var(--shadow-premium)' : '0 2px 12px rgba(0,0,0,0.03)',
-                                        borderColor: isActive ? 'var(--color-primary)' : 'var(--border-color)',
-                                        overflow: 'hidden'
-                                    }}
-                                >
-                                    {/* Active Indicator Line like Sidebar */}
-                                    {isActive && (
-                                        <Box
-                                            sx={{
-                                                position: "absolute",
-                                                left: 0,
-                                                top: "25%",
-                                                height: "50%",
-                                                width: 4,
-                                                borderRadius: "0 4px 4px 0",
-                                                background: "var(--color-primary)",
-                                                boxShadow: '0 0 8px var(--color-primary-alpha)'
-                                            }}
-                                        />
-                                    )}
-
-                                    <Box sx={{ p: 1.5, display: 'flex', alignItems: 'center' }}>
-                                        <Box sx={{
-                                            width: 42,
-                                            height: 42,
-                                            borderRadius: '50%',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            background: meta.color,
-                                            color: meta.iconColor,
-                                            mr: 2,
-                                            flexShrink: 0
+                        return (
+                            <>
+                                {/* Sub-menu Header */}
+                                <Box sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    p: 1.5,
+                                    borderBottom: '1px solid var(--border-color)',
+                                    background: 'var(--bg-panel)'
+                                }}>
+                                    <IconButton
+                                        onClick={handleDrawerBack}
+                                        sx={{
+                                            color: 'var(--text-primary)',
+                                            mr: 1,
+                                            p: 0.8
+                                        }}
+                                    >
+                                        <ArrowBack sx={{ fontSize: 22 }} />
+                                    </IconButton>
+                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                        <Typography sx={{
+                                            fontWeight: 700,
+                                            color: 'var(--text-primary)',
+                                            fontSize: '1.1rem',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
                                         }}>
-                                            {React.cloneElement(meta.icon, { sx: { fontSize: 20 } })}
-                                        </Box>
-
-                                        <Box sx={{ flex: 1 }}>
+                                            {currentDrawerItem?.text}
+                                        </Typography>
+                                        {navStack.length > 1 && (
                                             <Typography sx={{
-                                                fontWeight: 700,
-                                                color: 'var(--text-primary)',
-                                                fontSize: '1rem',
+                                                fontSize: '0.72rem',
+                                                color: 'var(--color-primary)',
+                                                fontWeight: 600,
+                                                lineHeight: 1.2,
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap'
                                             }}>
-                                                {sub.text}
+                                                {navStack.map(i => i.text.trim()).join(' › ')}
                                             </Typography>
-                                        </Box>
+                                        )}
                                     </Box>
-                                </Card>
-                            );
-                        })}
-                    </Box>
+                                </Box>
+
+                                <Box sx={{ px: 2, pt: 2, pb: 4, overflowY: 'auto', flex: 1 }}>
+                                    {currentDrawerItem?.nested?.map((sub, idx) => {
+                                        const hasChildren = Boolean(sub.nested && sub.nested.length > 0);
+                                        const meta = SUB_ITEM_METADATA[sub.text] || {
+                                            desc: hasChildren ? `${sub.nested.length} options` : `Manage ${sub.text} related information`,
+                                            icon: sub.icon || currentDrawerItem?.icon,
+                                            color: "#F3F4F6",
+                                            iconColor: "#4B5563"
+                                        };
+                                        const isActive = isItemActive(sub, location.pathname);
+
+                                        return (
+                                            <Card
+                                                key={`${sub.text}-${idx}`}
+                                                elevation={0}
+                                                onClick={() => {
+                                                    if (hasChildren) {
+                                                        setNavStack(prev => [...prev, sub]);
+                                                    } else if (sub.path) {
+                                                        navigate(sub.path);
+                                                        setExpandedItem(null);
+                                                        setNavStack([]);
+                                                    }
+                                                }}
+                                                sx={{
+                                                    borderRadius: '16px',
+                                                    mb: 1.5,
+                                                    border: '1px solid var(--border-color)',
+                                                    background: 'var(--bg-panel)',
+                                                    position: 'relative',
+                                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    cursor: 'pointer',
+                                                    '&:active': { transform: 'scale(0.97)', background: 'var(--bg-accent-4)' },
+                                                    boxShadow: isActive ? 'var(--shadow-premium)' : '0 2px 12px rgba(0,0,0,0.03)',
+                                                    borderColor: isActive ? 'var(--color-primary)' : 'var(--border-color)',
+                                                    overflow: 'hidden'
+                                                }}
+                                            >
+                                                {/* Active Indicator Line like Sidebar */}
+                                                {isActive && (
+                                                    <Box
+                                                        sx={{
+                                                            position: "absolute",
+                                                            left: 0,
+                                                            top: "25%",
+                                                            height: "50%",
+                                                            width: 4,
+                                                            borderRadius: "0 4px 4px 0",
+                                                            background: "var(--color-primary)",
+                                                            boxShadow: '0 0 8px var(--color-primary-alpha)'
+                                                        }}
+                                                    />
+                                                )}
+
+                                                <Box sx={{ p: 1.5, display: 'flex', alignItems: 'center' }}>
+                                                    <Box sx={{
+                                                        width: 42,
+                                                        height: 42,
+                                                        borderRadius: '50%',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        background: meta.color,
+                                                        color: meta.iconColor,
+                                                        mr: 2,
+                                                        flexShrink: 0
+                                                    }}>
+                                                        {meta.icon ? React.cloneElement(meta.icon, { sx: { fontSize: 20 } }) : null}
+                                                    </Box>
+
+                                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                        <Typography sx={{
+                                                            fontWeight: 700,
+                                                            color: 'var(--text-primary)',
+                                                            fontSize: '1rem',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap'
+                                                        }}>
+                                                            {sub.text}
+                                                        </Typography>
+                                                        <Typography sx={{
+                                                            fontSize: '0.75rem',
+                                                            color: 'var(--text-secondary)',
+                                                            fontWeight: 500,
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis',
+                                                            whiteSpace: 'nowrap'
+                                                        }}>
+                                                            {meta.desc}
+                                                        </Typography>
+                                                    </Box>
+
+                                                    {hasChildren && (
+                                                        <ChevronRight sx={{ color: 'var(--text-secondary)', fontSize: 22, ml: 1, flexShrink: 0 }} />
+                                                    )}
+                                                </Box>
+                                            </Card>
+                                        );
+                                    })}
+                                </Box>
+                            </>
+                        );
+                    })()}
                 </Box>
             </Drawer>
 
