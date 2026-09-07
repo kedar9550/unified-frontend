@@ -685,11 +685,11 @@ const StudentEventAdminDashboard = () => {
                 </BarChart>
               </ResponsiveContainer>
             </Box>
-            <Box sx={{ mt: 2, textAlign: 'center', p: 1.5, borderRadius: '12px', background: 'var(--bg-glass)', border: '1px solid var(--border-color)' }}>
+            {/* <Box sx={{ mt: 2, textAlign: 'center', p: 1.5, borderRadius: '12px', background: 'var(--bg-glass)', border: '1px solid var(--border-color)' }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                Filtered Events: {fmt(filteredEventsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Teams: {fmt(filteredTeamsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Students: {fmt(filteredStudentsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Revenue: ₹{fmt(filteredRevenueTotal)}
+                Filtered Events : {fmt(filteredEventsTotal)}
               </Typography>
-            </Box>
+            </Box> */}
           </Paper>
 
 

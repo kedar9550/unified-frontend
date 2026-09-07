@@ -37,6 +37,7 @@ import {
   Hotel,
   Person,
   FlagCircleRounded,
+  PersonAdd,
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
@@ -495,6 +496,7 @@ export const ROLE_ROUTES = {
           ]
         },
         { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
+        { text: "Manual Adding", path: "/Eventveda/manual-adding", icon: <PersonAdd /> },
         { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
         {
           text: "Participants",
