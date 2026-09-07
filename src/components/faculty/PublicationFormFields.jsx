@@ -37,7 +37,10 @@ export function FacultyInfoRow({ faculty }) {
             "& .MuiAlert-icon": { color: "#f59e0b" }
           }}
         >
-          Missing Profile Details: {emptyFields.join(", ")}. Please update your profile to fill these details.
+          {faculty
+            ? `Note: The following details are missing in this faculty member's profile: ${emptyFields.join(", ")}.`
+            : `Missing Profile Details: ${emptyFields.join(", ")}. Please update your profile to fill these details.`
+          }
         </Alert>
       )}
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
