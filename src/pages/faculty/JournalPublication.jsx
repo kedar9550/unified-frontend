@@ -82,7 +82,7 @@ const getMatchedSdgBadgeList = (sdgInput) => {
 };
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const JOURNAL_TYPES = ["SCI", "SCIE", "ESCI", "WoS", "None"];
+const JOURNAL_TYPES = ["SCI", "SCIE", "ESCI", "None"];
 const QUARTILE_OPTIONS = ["Q1", "Q2", "Q3", "Q4", "None"];
 const INCENTIVE_OPTIONS = ["National", "International"];
 
@@ -180,6 +180,7 @@ export default function JournalPublication() {
     issn: "",
     eissn: "",
     isScopus: "No",
+    citations: "",
     // Author details
     totalAuthors: 1,
     userAuthorPosition: 1,
@@ -459,7 +460,8 @@ export default function JournalPublication() {
         journalType: data.journalType,
         issn: data.issn || "",
         eissn: data.eissn || "",
-        isScopus: data.isScopus || "No"
+        isScopus: data.isScopus || "No",
+        citations: data.citations || ""
       };
 
       Object.entries(map).forEach(([k, v]) => {
@@ -622,7 +624,7 @@ export default function JournalPublication() {
         "doi", "paperTitle", "journalName", "journalType",
         "vol", "issue", "agecReferencingNumbers", "applyIncentive", "publicationScope",
         "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor", "isStudentsInvolved",
-        "issn", "eissn", "isScopus"
+        "issn", "eissn", "isScopus", "citations"
       ];
       fields.forEach(k => {
         fd.append(k, form[k] ?? "");
@@ -697,6 +699,7 @@ export default function JournalPublication() {
       issn: pub.issn || "",
       eissn: pub.eissn || "",
       isScopus: pub.isScopus || "No",
+      citations: pub.citations || "",
       totalAuthors: pub.totalAuthors || 1,
       userAuthorPosition: pub.userAuthorPosition || 1,
       otherAuthors: pub.coAuthors?.map(ca => ({
@@ -1064,6 +1067,7 @@ export default function JournalPublication() {
           <Typography sx={labelStyle}>Number of References Belonging to AGEC :</Typography>
           <TextField size="small" fullWidth disabled value={form.numberOfReferencesBelongingToAGEC} />
         </Box>
+
       </Grid2>
 
       {/* ── Publication Date ── */}
