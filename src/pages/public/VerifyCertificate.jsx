@@ -13,8 +13,11 @@ const VerifyCertificate = () => {
   useEffect(() => {
     const fetchVerification = async () => {
       try {
-        const response = await API.get(`/api/razorpay/registrations?roll=${roll}`);
-        const payments = response.data?.payments || [];
+        const response = await API.get(`/api/razorpay/registrations?roll=${roll}&paymentStatus=PAID`);
+        let payments = (response.data?.payments || []).filter(p => {
+          const status = (p.paymentStatus || p.payment || '').toString().trim().toUpperCase();
+          return status === 'PAID';
+        });
         
         // Find the matching payment by receipt
         const payment = payments.find(p => p.receipt === receipt || p.teamId === receipt);

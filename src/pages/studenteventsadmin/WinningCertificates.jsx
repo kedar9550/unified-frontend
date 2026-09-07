@@ -89,8 +89,16 @@ const WinningCertificates = () => {
         allowedEventNames = userEvents.map(e => e.eventName);
       }
 
-      const response = await API.get('/api/razorpay/registrations');
+      const response = await API.get('/api/razorpay/registrations', {
+        params: { paymentStatus: 'PAID' }
+      });
       let fetchedPayments = response.data?.payments || [];
+
+      // Filter only PAID registrations for certificates
+      fetchedPayments = fetchedPayments.filter(p => {
+        const status = (p.paymentStatus || p.payment || '').toString().trim().toUpperCase();
+        return status === 'PAID';
+      });
 
       if (allowedEventNames) {
         fetchedPayments = fetchedPayments.filter(p => allowedEventNames.includes(p.eventName || p.category));

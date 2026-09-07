@@ -82,8 +82,16 @@ const ScanAccommodation = () => {
           allowedEventNames = userEvents.map(e => e.eventName);
         }
 
-        const response = await api.get('/api/razorpay/registrations');
+        const response = await api.get('/api/razorpay/registrations', {
+          params: { paymentStatus: 'PAID' }
+        });
         let payments = response.data.payments || [];
+
+        // Filter only PAID registrations
+        payments = payments.filter(p => {
+          const status = (p.paymentStatus || p.payment || '').toString().trim().toUpperCase();
+          return status === 'PAID';
+        });
 
         if (allowedEventNames) {
           payments = payments.filter(p => allowedEventNames.includes(p.eventName || p.category));

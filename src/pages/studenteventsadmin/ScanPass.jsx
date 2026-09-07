@@ -63,7 +63,7 @@ const ScanPass = () => {
     } catch (err) {
       setScanResult({
         type: 'error',
-        message: err.response?.data?.message || 'Invalid or Unregistered Pass Code',
+        message: err.response?.data?.error || err.response?.data?.message || 'Invalid or Unregistered Pass Code',
         data: null
       });
     } finally {
