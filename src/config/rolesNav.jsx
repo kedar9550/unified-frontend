@@ -360,10 +360,15 @@ export const ROLE_ROUTES = {
       text: "Special Data Entry",
       icon: <Description />,
       nested: [
-        {
-          text: "Journal",
-          path: "/research-data-entry/journal"
-        }
+        { text: "Journal", path: "/research-data-entry/journal" },
+        { text: "Conference", path: "/research-data-entry/conference" },
+        { text: "Book Chapter", path: "/research-data-entry/book-chapter" },
+        { text: "Textbook", path: "/research-data-entry/textbook" },
+        { text: "Patent", path: "/research-data-entry/patent" },
+        { text: "Funded Project", path: "/research-data-entry/funded-project" },
+        { text: "Consultancy", path: "/research-data-entry/consultancy" },
+        { text: "Ph.D. Scholars", path: "/research-data-entry/phd-scholars" },
+        { text: "Novel Products", path: "/research-data-entry/novel-products" }
       ]
     },
     { text: "Reference Journals", path: "/research-dean/reference-journals", icon: <LibraryBooks /> },
@@ -395,10 +400,15 @@ export const ROLE_ROUTES = {
       text: "Special Data Entry",
       icon: <Description />,
       nested: [
-        {
-          text: "Journal",
-          path: "/research-data-entry/journal"
-        }
+        { text: "Journal", path: "/research-data-entry/journal" },
+        { text: "Conference", path: "/research-data-entry/conference" },
+        { text: "Book Chapter", path: "/research-data-entry/book-chapter" },
+        { text: "Textbook", path: "/research-data-entry/textbook" },
+        { text: "Patent", path: "/research-data-entry/patent" },
+        { text: "Funded Project", path: "/research-data-entry/funded-project" },
+        { text: "Consultancy", path: "/research-data-entry/consultancy" },
+        { text: "Ph.D. Scholars", path: "/research-data-entry/phd-scholars" },
+        { text: "Novel Products", path: "/research-data-entry/novel-products" }
       ]
     },
     { text: "Reference Journals", path: "/research-coordinator/reference-journals", icon: <LibraryBooks /> },
