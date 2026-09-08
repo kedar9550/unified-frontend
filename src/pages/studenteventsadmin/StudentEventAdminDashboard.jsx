@@ -507,33 +507,6 @@ const StudentEventAdminDashboard = () => {
 
 
 
-          <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-              <TrendingUpIcon sx={{ color: REVENUE_COLOR }} />
-              <SectionTitle>Daily Revenue Trend</SectionTitle>
-            </Box>
-            {/* Revenue Trend Line */}
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 700, mb: 1.5, color: 'text.secondary' }}>Daily Revenue Trend (₹)</Typography>
-              {revenueByDateData.length === 0 ? (
-                <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
-                  <Typography variant="body2">No date-wise revenue data available yet.</Typography>
-                </Box>
-              ) : (
-                <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={revenueByDateData} margin={{ top: 25, right: 20, left: 0, bottom: 40 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" angle={-30} textAnchor="end" tick={{ fontSize: 10 }} interval={0} />
-                    <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${v}`} domain={[0, (dataMax) => Math.ceil(dataMax * 1.15)]} />
-                    <Tooltip formatter={(v) => [`₹${v}`, 'Revenue']} />
-                    <Line type="monotone" dataKey="₹ Revenue" stroke={REVENUE_COLOR} strokeWidth={2} dot={{ r: 5 }}>
-                      <LabelList dataKey="₹ Revenue" position="top" formatter={(v) => (v > 0 ? `₹${fmt(v)}` : '')} fill={REVENUE_COLOR} fontSize={10} fontWeight={700} />
-                    </Line>
-                  </LineChart>
-                </ResponsiveContainer>
-              )}
-            </Box>
-          </Paper>
         </>
       )}
 
