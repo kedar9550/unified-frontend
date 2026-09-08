@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination } from "@mui/material";
 import { toast } from "sonner";
-import { Close, Description, Download, AttachFile, Groups, School, Visibility } from "@mui/icons-material";
+import { Close, Description, Download, AttachFile, Groups, School, Visibility, Edit } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
@@ -38,6 +38,8 @@ export default function ConferencePublication() {
   const [loading, setLoading] = useState(false);
   const [doiFetching, setDoiFetching] = useState(false);
   const [doiFetched, setDoiFetched] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editId, setEditId] = useState(null);
 
   useEffect(() => {
     API.get("/api/research/conference").then(res => {
@@ -65,6 +67,56 @@ export default function ConferencePublication() {
       }
       return newForm;
     });
+  };
+
+  const handleEditClick = (pub) => {
+    setEditMode(true);
+    setEditId(pub._id);
+    setSelectedYear(pub.academicYear?._id || pub.academicYear);
+    
+    const mappedAuthors = [];
+    if (pub.coAuthors && pub.coAuthors.length > 0) {
+      let positionCounter = 1;
+      const total = parseInt(pub.totalAuthors) || 1;
+      const myPos = parseInt(pub.userAuthorPosition) || 1;
+      
+      for(let i=1; i<=total; i++){
+          if(i === myPos) continue;
+          const ca = pub.coAuthors[positionCounter - 1];
+          if(ca) {
+             const isInternal = ca.employeeId ? true : false;
+             mappedAuthors.push({
+                 authorPosition: i,
+                 affiliationType: isInternal ? "Aditya University" : "Others",
+                 empId: isInternal ? (ca.employeeId?.institutionId || ca.employeeId) : "",
+                 authorName: ca.name || "",
+                 affiliationName: ca.affiliation || ""
+             });
+             positionCounter++;
+          }
+      }
+    }
+
+    setForm({
+      doi: pub.doi || "",
+      title: pub.title || "",
+      conferenceName: pub.conferenceName || "",
+      scope: pub.scope || pub.level || "",
+      indexing: pub.indexing || "",
+      presentationType: pub.presentationType || "",
+      month: pub.month || "",
+      year: pub.year || "",
+      publisher: pub.publisher || "",
+      issnIsbn: pub.issnIsbn || "",
+      applyIncentive: pub.applyIncentive || "",
+      applyingSeedGrant: pub.applyingSeedGrant || "",
+      totalAuthors: pub.totalAuthors || 1,
+      userAuthorPosition: pub.userAuthorPosition || 1,
+      otherAuthors: mappedAuthors
+    });
+    setDoiFetched(!!pub.doi);
+    setFiles({ certificate: null, proceedings: null });
+    setViewMode("form");
   };
 
   // ── DOI Fetch via Backend (POST /api/research/conference/validate-doi) ───────
@@ -297,7 +349,7 @@ export default function ConferencePublication() {
       }
     }
 
-    if (!files.certificate) {
+    if (!editMode && !files.certificate) {
       toast.error("Please attach the presentation certificate");
       return;
     }
@@ -334,8 +386,11 @@ export default function ConferencePublication() {
       if (files.certificate) fd.append("certificate", files.certificate);
       if (files.proceedings) fd.append("proceedings", files.proceedings);
 
-      await API.post("/api/research/conference", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      toast.success("Conference paper submitted successfully!");
+      const url = editMode ? `/api/research/conference/${editId}` : "/api/research/conference";
+      const method = editMode ? "put" : "post";
+
+      await API[method](url, fd, { headers: { "Content-Type": "multipart/form-data" } });
+      toast.success(editMode ? "Conference paper updated successfully!" : "Conference paper submitted successfully!");
       setForm({
         doi: "",
         title: "", conferenceName: "", scope: "", indexing: "",
@@ -346,6 +401,8 @@ export default function ConferencePublication() {
       });
       setDoiFetched(false);
       setFiles({ certificate: null, proceedings: null });
+      setEditMode(false);
+      setEditId(null);
       setSelectedYear("");
       setViewMode("list");
     } catch (err) {
@@ -467,19 +524,36 @@ export default function ConferencePublication() {
                     </Typography>
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
-                    <Tooltip title="View Details" arrow>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleOpenDetails(pub)}
-                        sx={{
-                          color: "var(--color-primary)",
-                          "&:hover": { background: "var(--bg-accent-1)", transform: "scale(1.1)" },
-                          transition: "all 0.2s ease"
-                        }}
-                      >
-                        <Visibility fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Stack direction="row" spacing={1}>
+                      <Tooltip title="View Details" arrow>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenDetails(pub)}
+                          sx={{
+                            color: "var(--color-primary)",
+                            "&:hover": { background: "var(--bg-accent-1)", transform: "scale(1.1)" },
+                            transition: "all 0.2s ease"
+                          }}
+                        >
+                          <Visibility fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      {pub.status?.includes("Rejected") && pub.visibilityRole === "Applicant" && (
+                        <Tooltip title="Edit & Resubmit" arrow>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleEditClick(pub)}
+                            sx={{
+                              color: "#eab308",
+                              "&:hover": { background: "rgba(234,179,8,0.1)", transform: "scale(1.1)" },
+                              transition: "all 0.2s ease"
+                            }}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ))}
@@ -539,7 +613,7 @@ export default function ConferencePublication() {
           <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
             <Button
               variant="outlined"
-              onClick={() => setViewMode("list")}
+              onClick={() => { setViewMode("list"); setEditMode(false); setEditId(null); }}
               sx={{
                 textTransform: "none",
                 fontWeight: 600,
@@ -861,7 +935,7 @@ export default function ConferencePublication() {
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
         <Button
           variant="outlined"
-          onClick={() => setViewMode("list")}
+          onClick={() => { setViewMode("list"); setEditMode(false); setEditId(null); }}
           sx={{
             px: 4,
             height: "44px",
