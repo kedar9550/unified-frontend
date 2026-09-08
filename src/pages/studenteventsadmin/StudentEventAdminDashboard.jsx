@@ -49,7 +49,7 @@ import API from '../../api/axios';
 import { toast } from 'sonner';
 
 /* ─── Colour palettes ──────────────────────────────────────────────────────── */
-const DEPT_BAR_COLORS = { teams: '#0d9488', students: '#f59e0b', events: '#3b82f6' };
+const DEPT_BAR_COLORS = { teams: '#0d9488', students: '#f59e0b', events: '#3b82f6', participants: '#3b82f6' };
 const YEAR_COLORS = ['#16a34a', '#f59e0b', '#1d4ed8', '#06b6d4'];
 const GENDER_PIE = ['#4ade80', '#3b82f6', '#f97316'];
 const CAMPUS_GENDER_COLORS = { Male: '#ef4444', Female: '#1d4ed8', Others: '#f59e0b' };
@@ -141,9 +141,13 @@ const StudentEventAdminDashboard = () => {
     return stats?.schoolStats || [];
   }, [stats]);
 
+  const participantDeptStats = useMemo(() => {
+    return stats?.participantDeptStats || [];
+  }, [stats]);
+
   const deptOptions = useMemo(
-    () => ['ALL', ...deptStats.map((d) => d.name || d.dept)],
-    [deptStats]
+    () => ['ALL', ...participantDeptStats.map((d) => d.name || d.dept)],
+    [participantDeptStats]
   );
 
   const schoolOptions = useMemo(
@@ -151,21 +155,20 @@ const StudentEventAdminDashboard = () => {
     [schoolStats]
   );
 
-  // Department Bar Data
+  // Department Bar Data (Paid Participants by Department from MongoDB aggregation)
   const deptBarData = useMemo(() => {
-    if (!deptStats.length) return [];
+    if (!participantDeptStats.length) return [];
     const filtered =
       deptFilter === 'ALL'
-        ? deptStats
-        : deptStats.filter((d) => (d.name === deptFilter || d.dept === deptFilter));
+        ? participantDeptStats
+        : participantDeptStats.filter((d) => (d.name === deptFilter || d.dept === deptFilter));
     return filtered.map((d) => ({
       name: d.name || d.dept,
-      'Teams count': d.teamCount,
-      'Student count': d.studentCount,
-      'Events count': d.eventCount,
-      '₹ Revenue': d.revenue,
+      'Paid Participants': d.participantCount || 0,
+      'Participants count': d.participantCount || 0,
+      participantCount: d.participantCount || 0,
     }));
-  }, [deptStats, deptFilter]);
+  }, [participantDeptStats, deptFilter]);
 
   // Compute global stats based on filter
   const globalSummary = useMemo(() => {
@@ -566,7 +569,7 @@ const StudentEventAdminDashboard = () => {
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ background: 'var(--bg-glass)' }}>
-                    {['School Name', 'Events Count', 'Revenue (₹)', 'AUS', 'ACET', 'Other', 'Total Teams Registered', 'Total Students Registered', 'Participated Students'].map((h) => (
+                    {['School Name', 'Events Count', 'Revenue (₹)', 'Total Teams Registered', 'Total Students Registered', 'Participated Students'].map((h) => (
                       <TableCell key={h} sx={{ fontWeight: 800, whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>{h}</TableCell>
                     ))}
                   </TableRow>
@@ -577,9 +580,6 @@ const StudentEventAdminDashboard = () => {
                       <TableCell sx={{ fontWeight: 700, color: '#ea580c' }}>{row.name}</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>{row.eventCount}</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: '#7c3aed' }}>₹{fmt(row.revenue)}</TableCell>
-                      <TableCell>{fmt(row.aus)}</TableCell>
-                      <TableCell>{fmt(row.acet)}</TableCell>
-                      <TableCell>{fmt(row.other)}</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: '#ea580c' }}>{fmt(row.teamCount)}</TableCell>
                       <TableCell>{fmt(row.studentCount)}</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: '#d97706' }}>{fmt(row.participatedStudents)}</TableCell>
@@ -630,9 +630,9 @@ const StudentEventAdminDashboard = () => {
           <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
             <Box sx={{ display: 'flex', alignItems: { xs: 'stretch', sm: 'center' }, justifyContent: 'space-between', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, mb: 2 }}>
               <Box>
-                <SectionTitle>Events Count by Department</SectionTitle>
+                <SectionTitle>Participants Count by Department</SectionTitle>
                 <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>
-                  Aggregated across all departments from the event departments collection
+                  Total participants with payment status as PAID
                 </Typography>
               </Box>
               <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 220 } }}>
@@ -652,8 +652,8 @@ const StudentEventAdminDashboard = () => {
                   <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} domain={[0, (dataMax) => Math.ceil(dataMax * 1.15)]} />
                   <Tooltip formatter={(val, name) => [fmt(val), name]} />
                   <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: 10 }} />
-                  <Bar dataKey="Events count" fill={DEPT_BAR_COLORS.events} radius={[4, 4, 0, 0]}>
-                    <LabelList dataKey="Events count" position="top" formatter={(v) => (v > 0 ? fmt(v) : '')} fill="var(--text-primary)" fontSize={10} fontWeight={700} />
+                  <Bar dataKey="Paid Participants" fill={DEPT_BAR_COLORS.participants || '#3b82f6'} radius={[4, 4, 0, 0]}>
+                    <LabelList dataKey="Paid Participants" position="top" formatter={(v) => (v > 0 ? fmt(v) : '')} fill="var(--text-primary)" fontSize={10} fontWeight={700} />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -667,13 +667,13 @@ const StudentEventAdminDashboard = () => {
 
 
           {/* ── Section 4: Overall Department Synopsis Table ─────────────────────────── */}
-          <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)' }}>
+          <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)', display: 'none' }}>
             <SectionTitle>Overall Department Synopsis</SectionTitle>
             <Box sx={{ overflowX: 'auto' }}>
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ background: 'var(--bg-glass)' }}>
-                    {['Department', 'Events Count', 'AUS', 'ACET', 'Other', 'Total Teams Registered', 'Total Students Registered', 'Participated Students'].map((h) => (
+                    {['Department', 'Events Count', 'Total Teams Registered', 'Total Students Registered', 'Participated Students'].map((h) => (
                       <TableCell key={h} sx={{ fontWeight: 800, whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>{h}</TableCell>
                     ))}
                   </TableRow>
@@ -683,9 +683,6 @@ const StudentEventAdminDashboard = () => {
                     <TableRow key={idx} hover>
                       <TableCell sx={{ fontWeight: 700, color: 'var(--color-primary)' }}>{row.name || row.dept}</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>{row.eventCount}</TableCell>
-                      <TableCell>{fmt(row.aus)}</TableCell>
-                      <TableCell>{fmt(row.acet)}</TableCell>
-                      <TableCell>{fmt(row.other)}</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: 'var(--color-primary)' }}>{fmt(row.teamCount)}</TableCell>
                       <TableCell>{fmt(row.studentCount)}</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: '#d97706' }}>{fmt(row.participatedStudents)}</TableCell>

@@ -100,9 +100,9 @@ const Participants = ({ mode = 'all' }) => {
       if (activeRole === 'FACULTY_COORDINATOR' && user) {
         const userEvents = allEvents.filter(e => {
           const coords = e.facultyCoordinators || (e.facultyCoordinator ? [e.facultyCoordinator] : []);
-          return coords.some(c => 
-            c.employeeId === user.institutionId || 
-            c.employeeId === user.employeeId || 
+          return coords.some(c =>
+            c.employeeId === user.institutionId ||
+            c.employeeId === user.employeeId ||
             c.employeeId === user.employeeCode
           );
         });
@@ -111,7 +111,7 @@ const Participants = ({ mode = 'all' }) => {
 
       const response = await API.get('/api/razorpay/registrations');
       let fetchedPayments = response.data?.payments || [];
-      
+
       fetchedPayments = fetchedPayments.filter(p => p.paymentStatus === 'PAID' || p.verified === true);
       if (allowedEventNames) {
         fetchedPayments = fetchedPayments.filter(p => allowedEventNames.includes(p.eventName || p.category));
@@ -122,10 +122,10 @@ const Participants = ({ mode = 'all' }) => {
         return {
           ...p,
           venue: eventMatch ? (
-            eventMatch.venueType === 'Indoor' && eventMatch.building && eventMatch.floor 
-              ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.building.name || eventMatch.building} - ${eventMatch.floor.name || eventMatch.floor}` 
-              : eventMatch.venueType === 'Outdoor' && eventMatch.ground 
-                ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.ground.name || eventMatch.ground}` 
+            eventMatch.venueType === 'Indoor' && eventMatch.building && eventMatch.floor
+              ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.building.name || eventMatch.building} - ${eventMatch.floor.name || eventMatch.floor}`
+              : eventMatch.venueType === 'Outdoor' && eventMatch.ground
+                ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.ground.name || eventMatch.ground}`
                 : eventMatch.venue
           ) : null,
           eventGroup: eventMatch?.group?.name || eventMatch?.group || '-',
@@ -133,7 +133,7 @@ const Participants = ({ mode = 'all' }) => {
           eventSchool: eventMatch?.eventSchool?.name || p.category || p.schoolId || '-'
         };
       });
-      
+
       setPayments(fetchedPayments);
 
       const missingRolls = new Set();
@@ -323,18 +323,18 @@ const Participants = ({ mode = 'all' }) => {
       filtered.forEach(p => {
         const key = p.roll || p.email || p.id;
         if (!grouped[key]) {
-          grouped[key] = { 
-            ...p, 
-            eventNames: [p.eventName || ''], 
-            eventGroups: [p.eventGroup || ''], 
+          grouped[key] = {
+            ...p,
+            eventNames: [p.eventName || ''],
+            eventGroups: [p.eventGroup || ''],
             eventCategories: [p.eventCategory || ''],
-            combinedGroups: [`${p.eventGroup || ''} / ${p.eventCategory || ''}`] 
+            combinedGroups: [`${p.eventGroup || ''} / ${p.eventCategory || ''}`]
           };
         } else {
           if (!grouped[key].eventNames.includes(p.eventName)) grouped[key].eventNames.push(p.eventName || '');
           if (!grouped[key].eventGroups.includes(p.eventGroup)) grouped[key].eventGroups.push(p.eventGroup || '');
           if (!grouped[key].eventCategories.includes(p.eventCategory)) grouped[key].eventCategories.push(p.eventCategory || '');
-          
+
           const grpCat = `${p.eventGroup || ''} / ${p.eventCategory || ''}`;
           if (!grouped[key].combinedGroups.includes(grpCat)) grouped[key].combinedGroups.push(grpCat);
         }
@@ -386,13 +386,13 @@ const Participants = ({ mode = 'all' }) => {
     }
 
     const headers = [
-      'S.No', 'Name', 'Roll No', 'Team ID', 'School Name', 'Event Name', 'Event Department(s)', 
+      'S.No', 'Name', 'Roll No', 'Team ID', 'School Name', 'Event Name', 'Event Department(s)',
       'College', 'Branch', 'Student Department', 'Student Year', 'Gender', 'Mobile', 'Email', 'Attended'
     ];
 
     const colWidths = [
-      { wch: 6 }, { wch: 26 }, { wch: 16 }, { wch: 16 }, { wch: 22 }, 
-      { wch: 28 }, { wch: 32 }, { wch: 25 }, { wch: 16 }, { wch: 20 }, 
+      { wch: 6 }, { wch: 26 }, { wch: 16 }, { wch: 16 }, { wch: 22 },
+      { wch: 28 }, { wch: 32 }, { wch: 25 }, { wch: 16 }, { wch: 20 },
       { wch: 12 }, { wch: 10 }, { wch: 15 }, { wch: 28 }, { wch: 12 }
     ];
 
