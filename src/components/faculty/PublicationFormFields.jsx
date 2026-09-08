@@ -3,6 +3,7 @@ import { Box, Typography, TextField, MenuItem, Select, FormControl, InputLabel, 
 import { CloudUpload, Delete, Visibility, Close } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
+import { labelStyle, disabledField } from "./publicationConstants";
 
 // Reusable read-only faculty info row
 export function FacultyInfoRow({ faculty }) {
@@ -54,8 +55,6 @@ export function FacultyInfoRow({ faculty }) {
     </Box>
   );
 }
-
-import { labelStyle, disabledField, MONTHS, YEARS } from "./publicationConstants";
 
 // NoteBox
 export function NoteBox() {
@@ -311,7 +310,8 @@ export function Grid2({ children, sx }) {
 }
 
 // Section label
-export function SubLabel({ text }) {
+export function SubLabel({ text, children }) {
+  const content = text || children;
   return <Typography sx={{
     fontSize: 13,
     fontWeight: 800,
@@ -324,5 +324,14 @@ export function SubLabel({ text }) {
     borderLeft: "5px solid var(--color-primary)",
     textTransform: "uppercase",
     letterSpacing: "0.03em"
-  }}>{text}</Typography>;
+  }}>{content}</Typography>;
+}
+
+// Field label (used above inputs/selects)
+export function FieldLabel({ children, required }) {
+  return (
+    <Typography sx={labelStyle}>
+      {children} {required && <span style={{ color: "#ef4444", marginLeft: "2px" }}>*</span>}
+    </Typography>
+  );
 }

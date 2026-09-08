@@ -62,6 +62,14 @@ import StaffList from "./pages/hod/StaffList";
 import MyResearchMetrics from "./pages/faculty/MyResearchMetrics";
 import ManagementAppraisalEvaluation from "./pages/management/ManagementAppraisalEvaluation";
 import RndJournalDataEntry from "./pages/research/RndJournalDataEntry";
+import RndConferenceDataEntry from "./pages/research/RndConferenceDataEntry";
+import RndBookChapterDataEntry from "./pages/research/RndBookChapterDataEntry";
+import RndTextbookDataEntry from "./pages/research/RndTextbookDataEntry";
+import RndPatentDataEntry from "./pages/research/RndPatentDataEntry";
+import RndFundedProjectDataEntry from "./pages/research/RndFundedProjectDataEntry";
+import RndConsultancyDataEntry from "./pages/research/RndConsultancyDataEntry";
+import RndPhdScholarDataEntry from "./pages/research/RndPhdScholarDataEntry";
+import RndNovelProductDataEntry from "./pages/research/RndNovelProductDataEntry";
 
 
 // Utilities Modules
@@ -265,6 +273,14 @@ function App() {
         <Route path="/research-coordinator/author-citations" element={<ProtectedRoute element={<AuthorCitationsManagement />} />} />
 
         <Route path="/research-data-entry/journal" element={<ProtectedRoute element={<RndJournalDataEntry />} />} />
+        <Route path="/research-data-entry/conference" element={<ProtectedRoute element={<RndConferenceDataEntry />} />} />
+        <Route path="/research-data-entry/book-chapter" element={<ProtectedRoute element={<RndBookChapterDataEntry />} />} />
+        <Route path="/research-data-entry/textbook" element={<ProtectedRoute element={<RndTextbookDataEntry />} />} />
+        <Route path="/research-data-entry/patent" element={<ProtectedRoute element={<RndPatentDataEntry />} />} />
+        <Route path="/research-data-entry/funded-project" element={<ProtectedRoute element={<RndFundedProjectDataEntry />} />} />
+        <Route path="/research-data-entry/consultancy" element={<ProtectedRoute element={<RndConsultancyDataEntry />} />} />
+        <Route path="/research-data-entry/phd-scholars" element={<ProtectedRoute element={<RndPhdScholarDataEntry />} />} />
+        <Route path="/research-data-entry/novel-products" element={<ProtectedRoute element={<RndNovelProductDataEntry />} />} />
 
 
         {/* Utilities Routes */}
