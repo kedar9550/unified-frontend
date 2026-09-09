@@ -779,7 +779,6 @@ export const ROLE_ROUTES = {
         { text: "No Accommodation", path: "/Eventveda/participants/no-accommodation", icon: <Hotel /> }
       ]
     },
-    { text: "Scan for Accommodation", path: "/Eventveda/scan-accommodation", icon: <QrCode /> },
     { text: "Apply Accommodation", path: "/Eventveda/apply-accommodation", icon: <Hotel /> }
   ],
 
