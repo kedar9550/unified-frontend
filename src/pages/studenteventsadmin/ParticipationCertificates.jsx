@@ -703,6 +703,13 @@ const ParticipationCertificates = () => {
                   {`
                 @import url('https://fonts.googleapis.com/css2?family=Alex+Brush&family=Dancing+Script:wght@500;600;700&family=Great+Vibes&family=Montserrat:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,700;0,900;1,400;1,600&display=swap');
                 
+                #invoice-print-container,
+                #invoice-print-container *,
+                .certificate-box,
+                .certificate-box * {
+                  color-scheme: light !important;
+                }
+
                 @media print {
                   @page { size: A4 landscape; margin: 0; }
                   html, body { margin: 0 !important; padding: 0 !important; overflow: hidden !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }

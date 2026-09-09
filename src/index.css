@@ -154,20 +154,20 @@ body.dark-mode {
   color: var(--text-primary) !important;
 }
 
-body.dark-mode .MuiPaper-root {
+body.dark-mode .MuiPaper-root:not(#invoice-print-container) {
   background-color: var(--bg-paper) !important;
   color: var(--text-primary) !important;
 }
 
 /* Catch hardcoded white glassmorphism backgrounds and convert them to dark glass */
-body.dark-mode [style*="rgba(255, 255, 255"],
-body.dark-mode [style*="rgba(255,255,255"] {
+body.dark-mode [style*="rgba(255, 255, 255"]:not(.certificate-box *):not(#invoice-print-container *),
+body.dark-mode [style*="rgba(255,255,255"]:not(.certificate-box *):not(#invoice-print-container *) {
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.7)) !important;
   border-color: rgba(255, 255, 255, 0.05) !important;
 }
 
 /* Typography & General Text */
-body.dark-mode .MuiTypography-root {
+body.dark-mode .MuiTypography-root:not(.certificate-box *):not(#invoice-print-container *) {
   color: #e2e8f0 !important;
 }
 
@@ -185,6 +185,28 @@ body.dark-mode #printable-payslip div {
   color: #000000 !important;
   -webkit-text-fill-color: #000000 !important;
   opacity: 1 !important;
+}
+
+/* Ensure certificate preview container and elements preserve exact light design in dark mode */
+#invoice-print-container,
+#invoice-print-container *,
+.certificate-box,
+.certificate-box *,
+body.dark-mode #invoice-print-container,
+body.dark-mode #invoice-print-container *,
+body.dark-mode .certificate-box,
+body.dark-mode .certificate-box * {
+  color-scheme: light !important;
+}
+
+#invoice-print-container,
+body.dark-mode #invoice-print-container,
+body.dark-mode #invoice-print-container .MuiPaper-root,
+body.dark-mode #invoice-print-container .MuiDialogContent-root,
+.certificate-box,
+body.dark-mode .certificate-box {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
 }
 
 /* Specific elements like muted text should stay slightly muted */
@@ -305,19 +327,23 @@ body.dark-mode .MuiCheckbox-root {
     justify-content: space-between !important;
     gap: 4px;
   }
+
   .MuiTablePagination-selectLabel,
   .MuiTablePagination-displayedRows {
     font-size: 0.725rem !important;
     margin: 0 !important;
   }
+
   .MuiTablePagination-select {
     font-size: 0.725rem !important;
     padding-left: 4px !important;
     padding-right: 20px !important;
   }
+
   .MuiTablePagination-actions {
     margin-left: auto !important;
   }
+
   .MuiTablePagination-actions button {
     padding: 4px !important;
   }
