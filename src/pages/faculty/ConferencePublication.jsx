@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 
-import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination, Radio, RadioGroup, FormControlLabel } from "@mui/material";
 import { toast } from "sonner";
 import { Close, Description, Download, AttachFile, Groups, School, Visibility, Edit } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
@@ -32,14 +32,20 @@ export default function ConferencePublication() {
     presentationType: "", month: "", year: "",
     publisher: "", issnIsbn: "",
     applyIncentive: "", applyingSeedGrant: "",
+    isStudentsInvolved: "No",
     totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
   });
   const [files, setFiles] = useState({ certificate: null, proceedings: null });
   const [loading, setLoading] = useState(false);
   const [doiFetching, setDoiFetching] = useState(false);
   const [doiFetched, setDoiFetched] = useState(false);
+  const [doiFetchedFields, setDoiFetchedFields] = useState({});
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState(null);
+
+  const isFetched = (fieldName) => {
+    return doiFetched && Boolean(doiFetchedFields[fieldName]);
+  };
 
   useEffect(() => {
     API.get("/api/research/conference").then(res => {
@@ -64,6 +70,21 @@ export default function ConferencePublication() {
         newForm.month = "";
         newForm.indexing = "";
         setDoiFetched(false);
+        setDoiFetchedFields({});
+      }
+      if (k === "isStudentsInvolved") {
+        if (val === "No") {
+          newForm.otherAuthors = newForm.otherAuthors.map(a => ({
+            ...a,
+            CoAuthorType: "faculty",
+            studentId: "",
+            authorName: a.CoAuthorType === "student" ? "" : a.authorName,
+            empId: a.CoAuthorType === "student" ? "" : a.empId
+          }));
+          newForm.applyIncentive = "";
+        } else if (val === "Yes") {
+          newForm.applyIncentive = "No";
+        }
       }
       return newForm;
     });
@@ -73,27 +94,29 @@ export default function ConferencePublication() {
     setEditMode(true);
     setEditId(pub._id);
     setSelectedYear(pub.academicYear?._id || pub.academicYear);
-    
+
     const mappedAuthors = [];
     if (pub.coAuthors && pub.coAuthors.length > 0) {
       let positionCounter = 1;
       const total = parseInt(pub.totalAuthors) || 1;
       const myPos = parseInt(pub.userAuthorPosition) || 1;
-      
-      for(let i=1; i<=total; i++){
-          if(i === myPos) continue;
-          const ca = pub.coAuthors[positionCounter - 1];
-          if(ca) {
-             const isInternal = ca.employeeId ? true : false;
-             mappedAuthors.push({
-                 authorPosition: i,
-                 affiliationType: isInternal ? "Aditya University" : "Others",
-                 empId: isInternal ? (ca.employeeId?.institutionId || ca.employeeId) : "",
-                 authorName: ca.name || "",
-                 affiliationName: ca.affiliation || ""
-             });
-             positionCounter++;
-          }
+
+      for (let i = 1; i <= total; i++) {
+        if (i === myPos) continue;
+        const ca = pub.coAuthors[positionCounter - 1];
+        if (ca) {
+          const isInternal = (ca.employeeId || ca.studentId || ca.affiliation === "Aditya University");
+          mappedAuthors.push({
+            authorPosition: i,
+            CoAuthorType: ca.CoAuthorType || "faculty",
+            studentId: ca.studentId || "",
+            affiliationType: isInternal ? "Aditya University" : "Others",
+            empId: isInternal && ca.employeeId ? (ca.employeeId?.institutionId || ca.employeeId) : "",
+            authorName: ca.name || "",
+            affiliationName: ca.affiliation || ""
+          });
+          positionCounter++;
+        }
       }
     }
 
@@ -110,11 +133,19 @@ export default function ConferencePublication() {
       issnIsbn: pub.issnIsbn || "",
       applyIncentive: pub.applyIncentive || "",
       applyingSeedGrant: pub.applyingSeedGrant || "",
+      isStudentsInvolved: pub.isStudentsInvolved || "No",
       totalAuthors: pub.totalAuthors || 1,
       userAuthorPosition: pub.userAuthorPosition || 1,
       otherAuthors: mappedAuthors
     });
     setDoiFetched(!!pub.doi);
+    setDoiFetchedFields(pub.doi ? {
+      title: Boolean(pub.title),
+      publisher: Boolean(pub.publisher),
+      issnIsbn: Boolean(pub.issnIsbn),
+      conferenceName: Boolean(pub.conferenceName),
+      indexing: Boolean(pub.indexing)
+    } : {});
     setFiles({ certificate: null, proceedings: null });
     setViewMode("form");
   };
@@ -131,6 +162,7 @@ export default function ConferencePublication() {
 
     setDoiFetching(true);
     setDoiFetched(false);
+    setDoiFetchedFields({});
 
     try {
       // Single call to backend — backend handles Scopus Search + Abstract Retrieval
@@ -149,6 +181,14 @@ export default function ConferencePublication() {
         indexing: "Scopus Indexed",   // confirmed in Scopus as conference paper
       }));
 
+      const fetchedObj = {};
+      if (data.title) fetchedObj.title = true;
+      if (data.publisher) fetchedObj.publisher = true;
+      if (data.conferenceName) fetchedObj.conferenceName = true;
+      if (data.issnIsbn) fetchedObj.issnIsbn = true;
+      fetchedObj.indexing = true;
+
+      setDoiFetchedFields(fetchedObj);
       setDoiFetched(true);
 
       // Warn user if mandatory fields couldn't be auto-filled (rare, but possible)
@@ -166,7 +206,9 @@ export default function ConferencePublication() {
       const status = err?.response?.status;
       const message = err?.response?.data?.message;
 
-      if (status === 422) {
+      if (status === 400) {
+        toast.error(message || "A conference publication with this Title or DOI already exists.", { duration: 7000 });
+      } else if (status === 422) {
         // Journal article / non-conference paper
         toast.error(message || "Only conference papers are allowed. Journal publications are not accepted.", { duration: 7000 });
       } else if (status === 404) {
@@ -253,6 +295,8 @@ export default function ConferencePublication() {
         const existing = form.otherAuthors.find(a => a.authorPosition === i);
         newOtherAuthors.push(existing || {
           authorPosition: i,
+          CoAuthorType: "faculty",
+          studentId: "",
           affiliationType: "",
           empId: "",
           authorName: "",
@@ -288,14 +332,33 @@ export default function ConferencePublication() {
     const updated = form.otherAuthors.map(a => {
       if (a.authorPosition === pos) {
         const newA = { ...a, [field]: value };
+        if (field === "CoAuthorType") {
+          if (value === "faculty") {
+            newA.studentId = "";
+            if (a.CoAuthorType === "student") {
+              newA.authorName = "";
+              newA.empId = "";
+            }
+          } else if (value === "student") {
+            newA.empId = "";
+            newA.affiliationType = "Aditya University";
+            newA.affiliationName = "Aditya University";
+            if (a.CoAuthorType === "faculty") {
+              newA.authorName = "";
+            }
+          }
+        }
         if (field === "affiliationType") {
           if (value === "Aditya University") {
             newA.affiliationName = "Aditya University";
             newA.authorName = "";
+            newA.empId = "";
+            newA.studentId = "";
           } else {
             newA.affiliationName = "";
             newA.empId = "";
             newA.authorName = "";
+            newA.studentId = "";
           }
         }
         return newA;
@@ -307,7 +370,7 @@ export default function ConferencePublication() {
 
     if (field === "empId" && value.length >= 3) {
       const author = updated.find(a => a.authorPosition === pos);
-      if (author && author.affiliationType === "Aditya University") {
+      if (author && author.affiliationType === "Aditya University" && author.CoAuthorType !== "student") {
         fetchCoAuthorName(pos, value);
       }
     }
@@ -342,9 +405,26 @@ export default function ConferencePublication() {
 
     if (total > 1) {
       for (const a of form.otherAuthors) {
-        if (!a.affiliationType || (a.affiliationType === 'Others' && (!a.authorName || !a.affiliationName)) || (a.affiliationType === 'Aditya University' && (!a.empId || !a.authorName))) {
+        if (!a.affiliationType) {
+          toast.error(`Please select affiliation type for Author Position ${a.authorPosition}`);
+          return;
+        }
+        if (a.affiliationType === 'Others' && (!a.authorName || !a.affiliationName)) {
           toast.error(`Please complete details for Author Position ${a.authorPosition}`);
           return;
+        }
+        if (a.affiliationType === 'Aditya University') {
+          if (a.CoAuthorType === 'student') {
+            if (!a.studentId || !a.authorName) {
+              toast.error(`Please provide Student Roll No and Name for Author Position ${a.authorPosition}`);
+              return;
+            }
+          } else {
+            if (!a.empId || !a.authorName) {
+              toast.error(`Please provide Employee ID and verify Name for Author Position ${a.authorPosition}`);
+              return;
+            }
+          }
         }
       }
     }
@@ -361,7 +441,10 @@ export default function ConferencePublication() {
       const coAuthorsList = form.otherAuthors.map(a => ({
         name: a.authorName || "",
         affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliationName || ""),
-        employeeId: a.affiliationType === "Aditya University" ? a.empId : null
+        employeeId: (a.affiliationType === "Aditya University" && a.CoAuthorType !== "student") ? a.empId : null,
+        studentId: (a.affiliationType === "Aditya University" && a.CoAuthorType === "student") ? a.studentId : null,
+        CoAuthorType: form.isStudentsInvolved === "Yes" ? (a.CoAuthorType || "faculty") : "faculty",
+        authorPosition: a.authorPosition
       })).filter(ca => ca.name && ca.affiliation);
 
       fd.append("doi", form.doi || "");
@@ -375,6 +458,7 @@ export default function ConferencePublication() {
       fd.append("totalAuthors", String(total));
       fd.append("userAuthorPosition", String(form.userAuthorPosition));
       fd.append("coAuthors", JSON.stringify(coAuthorsList));
+      fd.append("isStudentsInvolved", form.isStudentsInvolved || "No");
       fd.append("month", form.month);
       fd.append("year", form.year);
       fd.append("applyIncentive", form.applyIncentive);
@@ -397,6 +481,7 @@ export default function ConferencePublication() {
         presentationType: "", month: "", year: "",
         publisher: "", issnIsbn: "",
         applyIncentive: "", applyingSeedGrant: "",
+        isStudentsInvolved: "No",
         totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
       });
       setDoiFetched(false);
@@ -404,7 +489,6 @@ export default function ConferencePublication() {
       setEditMode(false);
       setEditId(null);
       setSelectedYear("");
-      setViewMode("list");
     } catch (err) {
       toast.error(err?.response?.data?.message || "Submission failed");
     } finally {
@@ -423,7 +507,7 @@ export default function ConferencePublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Conference Publications</Typography>
-        {/* <Button
+        <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -448,7 +532,7 @@ export default function ConferencePublication() {
           }}
         >
           Apply New
-        </Button> */}
+        </Button>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -583,15 +667,15 @@ export default function ConferencePublication() {
         priorYearStr = `${parseInt(parts[0], 10) - 1}-${parseInt(parts[1], 10) - 1}`;
       }
     }
-    
+
     // Only show Active and Prior year
     let filteredYears = academicYears.filter(y => y._id === activeYearDoc?._id || y.year === priorYearStr);
-    
+
     // Ensure active is first
     filteredYears.sort((a, b) => {
-        if (a._id === activeYearDoc?._id) return -1;
-        if (b._id === activeYearDoc?._id) return 1;
-        return 0;
+      if (a._id === activeYearDoc?._id) return -1;
+      if (b._id === activeYearDoc?._id) return 1;
+      return 0;
     });
 
     return (
@@ -720,11 +804,11 @@ export default function ConferencePublication() {
       <Grid2>
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
           <Typography sx={labelStyle}>Title of the Research Paper : *</Typography>
-          <TextField size="small" fullWidth value={form.title} onChange={set("title")} placeholder="Enter research paper title" />
+          <TextField size="small" fullWidth value={form.title} onChange={set("title")} placeholder="Enter research paper title" disabled={isFetched("title")} sx={isFetched("title") ? disabledField : {}} />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Publisher : *</Typography>
-          <TextField size="small" fullWidth value={form.publisher} onChange={set("publisher")} placeholder="e.g. Springer, IEEE" />
+          <TextField size="small" fullWidth value={form.publisher} onChange={set("publisher")} placeholder="e.g. Springer, IEEE" disabled={isFetched("publisher")} sx={isFetched("publisher") ? disabledField : {}} />
         </Box>
         <Box>
           <Typography sx={labelStyle}>ISSN / ISBN Number :</Typography>
@@ -738,13 +822,15 @@ export default function ConferencePublication() {
               if (/^[0-9X-]*$/i.test(val)) setForm(p => ({ ...p, issnIsbn: val }));
             }}
             slotProps={{ htmlInput: { inputMode: 'numeric' } }}
+            disabled={isFetched("issnIsbn")}
+            sx={isFetched("issnIsbn") ? disabledField : {}}
           />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Year :</Typography>
           <Select size="small" fullWidth displayEmpty value={form.year} onChange={(e) => {
             setForm(p => ({ ...p, year: e.target.value, month: "" }));
-          }}>
+          }} disabled={isFetched("year")} sx={isFetched("year") ? disabledField : {}}>
             <MenuItem value="">Select Year</MenuItem>
             {(form.year && !YEARS.includes(String(form.year))
               ? [...YEARS, String(form.year)].sort((a, b) => Number(b) - Number(a))
@@ -754,7 +840,7 @@ export default function ConferencePublication() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Month :</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year}>
+          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={(!form.year) || (isFetched("month") && !!form.month)} sx={(isFetched("month") && !!form.month) ? disabledField : {}}>
             <MenuItem value="">Select Month</MenuItem>
             {(form.month && !getAvailableMonths().includes(form.month)
               ? [...getAvailableMonths(), form.month]
@@ -764,7 +850,7 @@ export default function ConferencePublication() {
         </Box>
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
           <Typography sx={labelStyle}>Name of the Conference : *</Typography>
-          <TextField size="small" fullWidth value={form.conferenceName} onChange={set("conferenceName")} placeholder="Enter conference name" />
+          <TextField size="small" fullWidth value={form.conferenceName} onChange={set("conferenceName")} placeholder="Enter conference name" disabled={isFetched("conferenceName")} sx={isFetched("conferenceName") ? disabledField : {}} />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Conference Scope : *</Typography>
@@ -775,12 +861,11 @@ export default function ConferencePublication() {
           </Select>
         </Box>
         <Box>
-          <Typography sx={labelStyle}>Category of Conference : *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.indexing} onChange={set("indexing")}>
-            <MenuItem value="" disabled>Select Category</MenuItem>
+          <Typography sx={labelStyle}>Indexing : *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.indexing} onChange={set("indexing")} disabled={isFetched("indexing")} sx={isFetched("indexing") ? disabledField : {}}>
+            <MenuItem value="" disabled>Select Indexing</MenuItem>
             <MenuItem value="Scopus Indexed">Scopus Indexed</MenuItem>
             <MenuItem value="Not Scopus Indexed">Not Scopus Indexed</MenuItem>
-            <MenuItem value="Others">Others</MenuItem>
           </Select>
         </Box>
         <Box>
@@ -798,6 +883,13 @@ export default function ConferencePublication() {
       <Box sx={{ mt: 3, p: 2, borderRadius: "12px", border: "1px solid var(--border-color)", background: "var(--bg-panel)" }}>
         <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", mb: 2 }}>Author Details</Typography>
         <Grid2>
+          <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+            <Typography sx={{ ...labelStyle, mb: 0 }}>Are students involved in this work as co-authors? *</Typography>
+            <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={set("isStudentsInvolved")}>
+              <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+              <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+            </RadioGroup>
+          </Box>
           <Box>
             <Typography sx={labelStyle}>Total Number of Authors :</Typography>
             <TextField size="small" fullWidth type="number" value={form.totalAuthors} onChange={set("totalAuthors")} slotProps={{ htmlInput: { min: 1 } }} />
@@ -823,54 +915,98 @@ export default function ConferencePublication() {
                 sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)" }}
               >
                 <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", sm: "nowrap" }, alignItems: "center" }}>
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "30px", height: "30px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, flexShrink: 0 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minWidth: "30px", height: "30px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, fontSize: 14 }}>
                     {ca.authorPosition}
                   </Box>
-                  <Box sx={{ flex: 1, minWidth: "150px" }}>
+
+                  {form.isStudentsInvolved === "Yes" && (
+                    <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "130px" } }}>
+                      <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR TYPE</Typography>
+                      <Select
+                        size="small"
+                        fullWidth
+                        displayEmpty
+                        value={ca.CoAuthorType || "faculty"}
+                        onChange={(e) => handleCoAuthorChange(ca.authorPosition, "CoAuthorType", e.target.value)}
+                      >
+                        <MenuItem value="faculty">Faculty</MenuItem>
+                        <MenuItem value="student">Student</MenuItem>
+                      </Select>
+                    </Box>
+                  )}
+
+                  <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "150px" } }}>
                     <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE</Typography>
                     <Select
                       size="small"
                       fullWidth
-                      value={ca.affiliationType}
+                      value={ca.CoAuthorType === "student" ? "Aditya University" : ca.affiliationType}
                       onChange={(e) => handleCoAuthorChange(ca.authorPosition, "affiliationType", e.target.value)}
                       displayEmpty
                     >
                       <MenuItem value="" disabled>Select Affiliation</MenuItem>
                       <MenuItem value="Aditya University">Aditya University</MenuItem>
-                      <MenuItem value="Others">Others</MenuItem>
+                      {ca.CoAuthorType !== "student" && (
+                        <MenuItem value="Others">Others</MenuItem>
+                      )}
                     </Select>
                   </Box>
 
                   {ca.affiliationType === "Aditya University" ? (
-                    <>
-                      <Box sx={{ flex: 1, minWidth: "120px" }}>
-                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          value={ca.empId}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (/^\d*$/.test(val)) handleCoAuthorChange(ca.authorPosition, "empId", val);
-                          }}
-                          placeholder="e.g. 5741"
-                        />
-                      </Box>
-                      <Box sx={{ flex: 2, minWidth: "200px" }}>
-                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          value={ca.authorName}
-                          disabled
-                          placeholder="Fetched from API"
-                          sx={{ background: "rgba(0,0,0,0.02)" }}
-                        />
-                      </Box>
-                    </>
+                    ca.CoAuthorType === "student" ? (
+                      <>
+                        <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT ROLL NO</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.studentId || ""}
+                            onChange={(e) => handleCoAuthorChange(ca.authorPosition, "studentId", e.target.value)}
+                            placeholder="e.g. 21A91A0501"
+                          />
+                        </Box>
+                        <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT NAME</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.authorName}
+                            onChange={(e) => handleCoAuthorChange(ca.authorPosition, "authorName", e.target.value)}
+                            placeholder="Full Name"
+                          />
+                        </Box>
+                      </>
+                    ) : (
+                      <>
+                        <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.empId}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (/^\d*$/.test(val)) handleCoAuthorChange(ca.authorPosition, "empId", val);
+                            }}
+                            placeholder="e.g. 5741"
+                          />
+                        </Box>
+                        <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.authorName}
+                            disabled
+                            placeholder="Fetched from eCap"
+                            sx={{ background: "rgba(0,0,0,0.02)" }}
+                          />
+                        </Box>
+                      </>
+                    )
                   ) : (
                     <>
-                      <Box sx={{ flex: 1, minWidth: "180px" }}>
+                      <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "180px" } }}>
                         <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
                         <TextField
                           size="small"
@@ -883,7 +1019,7 @@ export default function ConferencePublication() {
                           placeholder="Full Name"
                         />
                       </Box>
-                      <Box sx={{ flex: 2, minWidth: "200px" }}>
+                      <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
                         <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION</Typography>
                         <TextField
                           size="small"
@@ -917,7 +1053,7 @@ export default function ConferencePublication() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>
+          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"} sx={form.isStudentsInvolved === "Yes" ? disabledField : {}}>
             <MenuItem value="" disabled>Select</MenuItem>
             <MenuItem value="Yes">Yes</MenuItem>
             <MenuItem value="No">No</MenuItem>
@@ -983,7 +1119,7 @@ export default function ConferencePublication() {
       });
       if (res.data.success) {
         setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: claimantId }));
-        API.get("/api/research/conference").then(r => setPublicationsList(r.data?.data || r.data || [])).catch(()=>{});
+        API.get("/api/research/conference").then(r => setPublicationsList(r.data?.data || r.data || [])).catch(() => { });
         toast.success("Appraisal claimant successfully updated!");
       }
     } catch (err) {
@@ -1181,23 +1317,23 @@ export default function ConferencePublication() {
                     );
 
                     if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1) {
-                        return (
-                            <Select
-                                size="small"
-                                fullWidth
-                                value=""
-                                displayEmpty
-                                onChange={(e) => handleResolveClaim(data._id, "Conference", e.target.value)}
-                                sx={{ mt: 0.5, backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
-                            >
-                                <MenuItem value="" disabled>Select Claimant</MenuItem>
-                                {uniqueClaimants.map(c => (
-                                    <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
-                                        {c.name} ({c.institutionId})
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        );
+                      return (
+                        <Select
+                          size="small"
+                          fullWidth
+                          value=""
+                          displayEmpty
+                          onChange={(e) => handleResolveClaim(data._id, "Conference", e.target.value)}
+                          sx={{ mt: 0.5, backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
+                        >
+                          <MenuItem value="" disabled>Select Claimant</MenuItem>
+                          {uniqueClaimants.map(c => (
+                            <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
+                              {c.name} ({c.institutionId})
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      );
                     }
 
                     return (
@@ -1225,6 +1361,7 @@ export default function ConferencePublication() {
                     <TableRow>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)", width: 80 }}>POSITION</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AUTHOR TYPE</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
                     </TableRow>
                   </TableHead>
@@ -1250,6 +1387,7 @@ export default function ConferencePublication() {
                               </Box>
                             </TableCell>
                             <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.name}</TableCell>
+                            <TableCell sx={{ color: "var(--text-secondary)", textTransform: "capitalize" }}>{author.CoAuthorType || "-"}</TableCell>
                             <TableCell sx={{ color: "var(--text-secondary)" }}>{author.affiliation}</TableCell>
                           </TableRow>
                         );
@@ -1299,10 +1437,10 @@ export default function ConferencePublication() {
 
   return (
     <Box>
-      <PageHeader 
-        title="Conference Publications" 
-        subtitle="Manage and submit your conference publications" 
-        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined} 
+      <PageHeader
+        title="Conference Publications"
+        subtitle="Manage and submit your conference publications"
+        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined}
       />
 
       {viewMode === "list" && renderList()}

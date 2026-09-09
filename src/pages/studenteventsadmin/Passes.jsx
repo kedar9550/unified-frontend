@@ -50,7 +50,17 @@ const Passes = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [eventFilter, setEventFilter] = useState('ALL');
 
-  const fetchPayments = useCallback(async () => {
+  const handleSearch = () => {
+    if (!searchQuery.trim()) {
+      setPayments([]);
+      return;
+    }
+    fetchPayments();
+  };
+
+  const fetchPayments = async () => {
+    if (!searchQuery.trim()) return;
+    
     setLoading(true);
     try {
       const eventsRes = await API.get('/api/events');
@@ -70,7 +80,11 @@ const Passes = () => {
       }
 
       const response = await API.get('/api/razorpay/registrations', {
-        params: { paymentStatus: 'PAID' }
+        params: { 
+          paymentStatus: 'PAID',
+          search: searchQuery.trim(),
+          select: '_id,receipt,teamId,eventName,category,schoolId,razorpayPaymentId,razorpayOrderId,amount,amountRupees,createdAt,paidAt,venue,participants.name,participants.roll,participants.email,participants.mobile,participants.college,participants.otherCollege,participants.attended,paymentStatus,payment'
+        }
       });
       let fetchedPayments = response.data?.payments || [];
 
@@ -106,11 +120,7 @@ const Passes = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeRole, user]);
-
-  useEffect(() => {
-    fetchPayments();
-  }, [fetchPayments]);
+  };
 
   // Flatten all participants across payment registrations
   const allParticipants = useMemo(() => {
@@ -150,35 +160,8 @@ const Passes = () => {
 
   // Apply filters
   const filteredParticipants = useMemo(() => {
-    return allParticipants.filter((p) => {
-      // Event filter
-      if (eventFilter !== 'ALL' && p.eventName !== eventFilter) return false;
-
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        const name = (p.name || '').toLowerCase();
-        const roll = (p.roll || '').toLowerCase();
-        const email = (p.email || '').toLowerCase();
-        const mobile = (p.mobile || '').toLowerCase();
-        const college = (p.college || '').toLowerCase();
-        const eventName = (p.eventName || '').toLowerCase();
-        const receipt = (p.receipt || '').toLowerCase();
-
-        return (
-          name.includes(query) ||
-          roll.includes(query) ||
-          email.includes(query) ||
-          mobile.includes(query) ||
-          college.includes(query) ||
-          eventName.includes(query) ||
-          receipt.includes(query)
-        );
-      }
-
-      return true;
-    });
-  }, [allParticipants, eventFilter, searchQuery]);
+    return allParticipants;
+  }, [allParticipants]);
 
   const handleDownloadPdf = () => {
     if (filteredParticipants.length === 0) {
@@ -216,7 +199,7 @@ const Passes = () => {
         <PageHeader
           title="Bulk Passes"
           subtitle={`Total Passes: ${filteredParticipants.length}`}
-          action={
+          /* action={
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
                 variant="outlined"
@@ -234,7 +217,7 @@ const Passes = () => {
                 Download PDF
               </ActionButton>
             </Box>
-          }
+          } */
         />
 
         {/* Glassmorphic Filters Bar */}
@@ -261,10 +244,22 @@ const Passes = () => {
             size="small"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSearch();
+              }
+            }}
             sx={{ width: { xs: '100%', sm: 260 }, flex: { sm: 1 } }}
           />
+          <Button 
+            variant="contained" 
+            onClick={handleSearch}
+            disabled={loading}
+          >
+            Search
+          </Button>
 
-          <TextField
+          {/* <TextField
             select
             label="Filter by Event"
             value={eventFilter}
@@ -278,7 +273,7 @@ const Passes = () => {
                 {event}
               </MenuItem>
             ))}
-          </TextField>
+          </TextField> */}
         </Paper>
       </Box>
 

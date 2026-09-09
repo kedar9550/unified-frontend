@@ -127,3 +127,11 @@
   font-style: italic;
   font-display: swap;
 }
+
+@font-face {
+  font-family: 'Dulcelin';
+  src: url('/fonts/Dulcelin.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}

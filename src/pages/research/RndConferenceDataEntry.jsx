@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
-  Box, TextField, MenuItem, Select, Typography, Button, Paper, Grid, Card, Divider
+  Box, TextField, MenuItem, Select, Typography, Button, Paper, Grid, Card, Divider, Radio, RadioGroup, FormControlLabel
 } from "@mui/material";
 import { toast } from "sonner";
 import { Search, AttachFile, Groups, School, Person } from "@mui/icons-material";
@@ -33,6 +33,7 @@ export default function RndConferenceDataEntry() {
     presentationType: "", month: "", year: "",
     publisher: "", issnIsbn: "",
     applyIncentive: "", applyingSeedGrant: "",
+    isStudentsInvolved: "No",
     totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
   });
   const [files, setFiles] = useState({ certificate: null, proceedings: null });
@@ -63,6 +64,20 @@ export default function RndConferenceDataEntry() {
         newForm.month = "";
         newForm.indexing = "";
         setDoiFetched(false);
+      }
+      if (k === "isStudentsInvolved") {
+        if (val === "No") {
+          newForm.otherAuthors = newForm.otherAuthors.map(a => ({
+            ...a,
+            CoAuthorType: "faculty",
+            studentId: "",
+            authorName: a.CoAuthorType === "student" ? "" : a.authorName,
+            empId: a.CoAuthorType === "student" ? "" : a.empId
+          }));
+          newForm.applyIncentive = "";
+        } else if (val === "Yes") {
+          newForm.applyIncentive = "No";
+        }
       }
       return newForm;
     });
@@ -145,6 +160,8 @@ export default function RndConferenceDataEntry() {
         const existing = form.otherAuthors.find(a => a.authorPosition === i);
         newOthers.push(existing || {
           authorPosition: i,
+          CoAuthorType: "faculty",
+          studentId: "",
           affiliationType: "",
           empId: "",
           authorName: "",
@@ -161,15 +178,33 @@ export default function RndConferenceDataEntry() {
       otherAuthors: p.otherAuthors.map(a => {
         if (a.authorPosition !== pos) return a;
         const newA = { ...a, [field]: val };
+        if (field === "CoAuthorType") {
+          if (val === "faculty") {
+            newA.studentId = "";
+            if (a.CoAuthorType === "student") {
+              newA.authorName = "";
+              newA.empId = "";
+            }
+          } else if (val === "student") {
+            newA.empId = "";
+            newA.affiliationType = "Aditya University";
+            newA.affiliationName = "Aditya University";
+            if (a.CoAuthorType === "faculty") {
+              newA.authorName = "";
+            }
+          }
+        }
         if (field === "affiliationType") {
           if (val === "Aditya University") {
             newA.affiliationName = "Aditya University";
             newA.authorName = "";
             newA.empId = "";
+            newA.studentId = "";
           } else {
             newA.affiliationName = "";
             newA.empId = "";
             newA.authorName = "";
+            newA.studentId = "";
           }
         }
         return newA;
@@ -201,7 +236,9 @@ export default function RndConferenceDataEntry() {
           const coAuthorsList = form.otherAuthors.map(a => ({
             name: a.authorName || "",
             affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliationName || ""),
-            employeeId: a.affiliationType === "Aditya University" ? a.empId : null,
+            employeeId: (a.affiliationType === "Aditya University" && a.CoAuthorType !== "student") ? a.empId : null,
+            studentId: (a.affiliationType === "Aditya University" && a.CoAuthorType === "student") ? a.studentId : null,
+            CoAuthorType: form.isStudentsInvolved === "Yes" ? (a.CoAuthorType || "faculty") : "faculty",
             authorPosition: a.authorPosition
           })).filter(ca => ca.name && ca.affiliation);
           fd.append("coAuthors", JSON.stringify(coAuthorsList));
@@ -222,7 +259,7 @@ export default function RndConferenceDataEntry() {
       setForm({
         doi: "", title: "", conferenceName: "", scope: "", indexing: "",
         presentationType: "", month: "", year: "", publisher: "", issnIsbn: "",
-        applyIncentive: "", applyingSeedGrant: "", totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
+        applyIncentive: "", applyingSeedGrant: "", isStudentsInvolved: "No", totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
       });
       setFiles({ certificate: null, proceedings: null });
       setTargetFacultyEmpId("");
@@ -335,11 +372,8 @@ export default function RndConferenceDataEntry() {
           <Grid item xs={12} sm={6} md={4}>
             <FieldLabel required>Indexing</FieldLabel>
             <Select fullWidth size="small" value={form.indexing} onChange={set("indexing")}>
-              <MenuItem value="Scopus">Scopus</MenuItem>
-              <MenuItem value="Web of Science">Web of Science</MenuItem>
-              <MenuItem value="IEEE">IEEE</MenuItem>
-              <MenuItem value="Springer">Springer</MenuItem>
-              <MenuItem value="Others">Others</MenuItem>
+              <MenuItem value="Scopus Indexed">Scopus Indexed</MenuItem>
+              <MenuItem value="Not Scopus Indexed">Not Scopus Indexed</MenuItem>
             </Select>
           </Grid>
 
@@ -378,7 +412,7 @@ export default function RndConferenceDataEntry() {
 
           <Grid item xs={12} sm={6} md={4}>
             <FieldLabel required>Apply Incentive?</FieldLabel>
-            <Select fullWidth size="small" value={form.applyIncentive} onChange={set("applyIncentive")}>
+            <Select fullWidth size="small" value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"} sx={form.isStudentsInvolved === "Yes" ? disabledField : {}}>
               <MenuItem value="Yes">Yes</MenuItem>
               <MenuItem value="No">No</MenuItem>
             </Select>
@@ -392,6 +426,168 @@ export default function RndConferenceDataEntry() {
             </Select>
           </Grid>
         </Grid>
+
+        {/* Dynamic Author Details Block */}
+        <Box sx={{ mt: 3, p: 2, borderRadius: "12px", border: "1px solid var(--border-color)", background: "var(--bg-panel)" }}>
+          <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", mb: 2 }}>Author Details</Typography>
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            <Grid item xs={12} sx={{ mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+              <FieldLabel required sx={{ mb: 0 }}>Are students involved in this work as co-authors?</FieldLabel>
+              <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={set("isStudentsInvolved")}>
+                <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+                <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+              </RadioGroup>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FieldLabel>Total Number of Authors</FieldLabel>
+              <TextField size="small" fullWidth type="number" value={form.totalAuthors} onChange={set("totalAuthors")} slotProps={{ htmlInput: { min: 1 } }} />
+            </Grid>
+            {parseInt(form.totalAuthors) > 1 && (
+              <Grid item xs={12} sm={6}>
+                <FieldLabel>Applicant Author Position</FieldLabel>
+                <Select size="small" fullWidth value={form.userAuthorPosition} onChange={set("userAuthorPosition")}>
+                  {Array.from({ length: parseInt(form.totalAuthors) || 1 }, (_, i) => (
+                    <MenuItem key={i + 1} value={i + 1}>{i + 1}</MenuItem>
+                  ))}
+                </Select>
+              </Grid>
+            )}
+          </Grid>
+
+          {parseInt(form.totalAuthors) > 1 && (
+            <Box sx={{ mt: 2 }}>
+              <FieldLabel sx={{ mb: 1 }}>Name & Affiliation of Co-Author(s)</FieldLabel>
+              {form.otherAuthors.map((ca) => (
+                <Box
+                  key={ca.authorPosition}
+                  sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)" }}
+                >
+                  <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", sm: "nowrap" }, alignItems: "center" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minWidth: "30px", height: "30px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, fontSize: 14 }}>
+                      {ca.authorPosition}
+                    </Box>
+
+                    {form.isStudentsInvolved === "Yes" && (
+                      <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "130px" } }}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR TYPE</Typography>
+                        <Select
+                          size="small"
+                          fullWidth
+                          displayEmpty
+                          value={ca.CoAuthorType || "faculty"}
+                          onChange={(e) => handleCoAuthorChange(ca.authorPosition, "CoAuthorType", e.target.value)}
+                        >
+                          <MenuItem value="faculty">Faculty</MenuItem>
+                          <MenuItem value="student">Student</MenuItem>
+                        </Select>
+                      </Box>
+                    )}
+
+                    <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "150px" } }}>
+                      <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE</Typography>
+                      <Select
+                        size="small"
+                        fullWidth
+                        displayEmpty
+                        value={ca.CoAuthorType === "student" ? "Aditya University" : ca.affiliationType}
+                        onChange={(e) => handleCoAuthorChange(ca.authorPosition, "affiliationType", e.target.value)}
+                      >
+                        <MenuItem value="" disabled>Select Affiliation</MenuItem>
+                        <MenuItem value="Aditya University">Aditya University</MenuItem>
+                        {ca.CoAuthorType !== "student" && (
+                          <MenuItem value="Others">Others</MenuItem>
+                        )}
+                      </Select>
+                    </Box>
+
+                    {ca.affiliationType === "Aditya University" ? (
+                      ca.CoAuthorType === "student" ? (
+                        <>
+                          <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT ROLL NO</Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              value={ca.studentId || ""}
+                              onChange={(e) => handleCoAuthorChange(ca.authorPosition, "studentId", e.target.value)}
+                              placeholder="e.g. 21A91A0501"
+                            />
+                          </Box>
+                          <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT NAME</Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              value={ca.authorName}
+                              onChange={(e) => handleCoAuthorChange(ca.authorPosition, "authorName", e.target.value)}
+                              placeholder="Full Name"
+                            />
+                          </Box>
+                        </>
+                      ) : (
+                        <>
+                          <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              value={ca.empId}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (/^\d*$/.test(val)) handleCoAuthorChange(ca.authorPosition, "empId", val);
+                              }}
+                              placeholder="e.g. 5741"
+                            />
+                          </Box>
+                          <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              value={ca.authorName}
+                              disabled
+                              placeholder="Fetched from eCap"
+                              sx={{ background: "rgba(0,0,0,0.02)" }}
+                            />
+                          </Box>
+                        </>
+                      )
+                    ) : (
+                      <>
+                        <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "180px" } }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.authorName}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (!/\d/.test(val)) handleCoAuthorChange(ca.authorPosition, "authorName", val);
+                            }}
+                            placeholder="Full Name"
+                          />
+                        </Box>
+                        <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.affiliationName}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (!/\d/.test(val)) handleCoAuthorChange(ca.authorPosition, "affiliationName", val);
+                            }}
+                            placeholder="College / Organization"
+                          />
+                        </Box>
+                      </>
+                    )}
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          )}
+        </Box>
       </FormCard>
 
       {/* Attachments */}
