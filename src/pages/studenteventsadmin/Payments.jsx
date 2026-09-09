@@ -33,6 +33,7 @@ import {
   Refresh as RefreshIcon,
   Visibility as VisibilityIcon,
   PersonAdd as PersonAddIcon,
+  HourglassEmpty as HourglassEmptyIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { TextField, MenuItem } from '@mui/material';
@@ -411,14 +412,15 @@ const Payments = () => {
         title="VEDA Event Payments"
         subtitle="View Razorpay payment registrations and invoices for student events"
         action={
-          <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
             <Button
-              variant="contained"
-              onClick={() => navigate('/Eventveda/manual-adding')}
-              startIcon={<PersonAddIcon />}
-              sx={{ borderRadius: '12px', textTransform: 'none', px: 2.5, py: 1, background: 'var(--gradient-primary)' }}
+              variant="outlined"
+              color="warning"
+              onClick={() => navigate('/Eventveda/manual-adding/pending')}
+              startIcon={<HourglassEmptyIcon />}
+              sx={{ borderRadius: '12px', textTransform: 'none', px: 2, py: 1, fontWeight: 700 }}
             >
-              Manual Adding
+              Pending
             </Button>
             <Button
               variant="outlined"
@@ -774,10 +776,10 @@ const Payments = () => {
       </Dialog>
 
       {/* Add Missing Participant Dialog */}
-      <Dialog 
-        open={addParticipantDialogOpen} 
-        onClose={() => !addParticipantLoading && setAddParticipantDialogOpen(false)} 
-        maxWidth="md" 
+      <Dialog
+        open={addParticipantDialogOpen}
+        onClose={() => !addParticipantLoading && setAddParticipantDialogOpen(false)}
+        maxWidth="md"
         fullWidth
         PaperProps={{ sx: { borderRadius: '16px' } }}
       >
@@ -803,106 +805,106 @@ const Payments = () => {
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
-                  <TextField 
-                    label="Roll Number" 
-                    fullWidth 
-                    size="small" 
-                    value={p.roll} 
-                    onChange={(e) => handleParticipantChange(idx, 'roll', e.target.value)} 
+                  <TextField
+                    label="Roll Number"
+                    fullWidth
+                    size="small"
+                    value={p.roll}
+                    onChange={(e) => handleParticipantChange(idx, 'roll', e.target.value)}
                     required
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextField 
-                    label="Name" 
-                    fullWidth 
-                    size="small" 
-                    value={p.name} 
-                    onChange={(e) => handleParticipantChange(idx, 'name', e.target.value)} 
+                  <TextField
+                    label="Name"
+                    fullWidth
+                    size="small"
+                    value={p.name}
+                    onChange={(e) => handleParticipantChange(idx, 'name', e.target.value)}
                     required
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextField 
-                    label="College" 
+                  <TextField
+                    label="College"
                     select
-                    fullWidth 
-                    size="small" 
-                    value={p.college} 
-                    onChange={(e) => handleParticipantChange(idx, 'college', e.target.value)} 
+                    fullWidth
+                    size="small"
+                    value={p.college}
+                    onChange={(e) => handleParticipantChange(idx, 'college', e.target.value)}
                   >
                     <MenuItem value="Aditya University">Aditya University</MenuItem>
                     <MenuItem value="Other College">Other College</MenuItem>
                   </TextField>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextField 
-                    label="Gender" 
+                  <TextField
+                    label="Gender"
                     select
-                    fullWidth 
-                    size="small" 
-                    value={p.gender} 
-                    onChange={(e) => handleParticipantChange(idx, 'gender', e.target.value)} 
+                    fullWidth
+                    size="small"
+                    value={p.gender}
+                    onChange={(e) => handleParticipantChange(idx, 'gender', e.target.value)}
                   >
                     <MenuItem value="Male">Male</MenuItem>
                     <MenuItem value="Female">Female</MenuItem>
                   </TextField>
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextField 
-                    label="Mobile" 
-                    fullWidth 
-                    size="small" 
-                    value={p.mobile} 
-                    onChange={(e) => handleParticipantChange(idx, 'mobile', e.target.value)} 
+                  <TextField
+                    label="Mobile"
+                    fullWidth
+                    size="small"
+                    value={p.mobile}
+                    onChange={(e) => handleParticipantChange(idx, 'mobile', e.target.value)}
                     required
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <TextField 
-                    label="Email" 
+                  <TextField
+                    label="Email"
                     type="email"
-                    fullWidth 
-                    size="small" 
-                    value={p.email} 
-                    onChange={(e) => handleParticipantChange(idx, 'email', e.target.value)} 
+                    fullWidth
+                    size="small"
+                    value={p.email}
+                    onChange={(e) => handleParticipantChange(idx, 'email', e.target.value)}
                     required
                   />
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                  <TextField 
-                    label="Year of Study" 
-                    fullWidth 
-                    size="small" 
-                    value={p.year} 
-                    onChange={(e) => handleParticipantChange(idx, 'year', e.target.value)} 
+                  <TextField
+                    label="Year of Study"
+                    fullWidth
+                    size="small"
+                    value={p.year}
+                    onChange={(e) => handleParticipantChange(idx, 'year', e.target.value)}
                   />
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                  <TextField 
-                    label="Department" 
-                    fullWidth 
-                    size="small" 
-                    value={p.department} 
-                    onChange={(e) => handleParticipantChange(idx, 'department', e.target.value)} 
+                  <TextField
+                    label="Department"
+                    fullWidth
+                    size="small"
+                    value={p.department}
+                    onChange={(e) => handleParticipantChange(idx, 'department', e.target.value)}
                   />
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                  <TextField 
-                    label="Branch" 
-                    fullWidth 
-                    size="small" 
-                    value={p.branch} 
-                    onChange={(e) => handleParticipantChange(idx, 'branch', e.target.value)} 
+                  <TextField
+                    label="Branch"
+                    fullWidth
+                    size="small"
+                    value={p.branch}
+                    onChange={(e) => handleParticipantChange(idx, 'branch', e.target.value)}
                   />
                 </Grid>
                 <Grid item xs={12} sm={12}>
-                  <TextField 
-                    label="Location" 
-                    fullWidth 
-                    size="small" 
-                    value={p.location} 
-                    onChange={(e) => handleParticipantChange(idx, 'location', e.target.value)} 
+                  <TextField
+                    label="Location"
+                    fullWidth
+                    size="small"
+                    value={p.location}
+                    onChange={(e) => handleParticipantChange(idx, 'location', e.target.value)}
                   />
                 </Grid>
               </Grid>
@@ -910,18 +912,18 @@ const Payments = () => {
           ))}
         </DialogContent>
         <DialogActions sx={{ p: 2, background: '#fff' }}>
-          <Button 
-            onClick={() => setAddParticipantDialogOpen(false)} 
+          <Button
+            onClick={() => setAddParticipantDialogOpen(false)}
             disabled={addParticipantLoading}
-            variant="outlined" 
+            variant="outlined"
             sx={{ textTransform: 'none', borderRadius: '8px' }}
           >
             Cancel
           </Button>
-          <Button 
-            onClick={handleSaveParticipants} 
+          <Button
+            onClick={handleSaveParticipants}
             disabled={addParticipantLoading}
-            variant="contained" 
+            variant="contained"
             sx={{ textTransform: 'none', borderRadius: '8px', px: 3 }}
           >
             {addParticipantLoading ? <CircularProgress size={24} color="inherit" /> : 'Save Participants & Generate Team ID'}

@@ -779,7 +779,7 @@ const RoleManagement = () => {
         // Populate HOD departments if they exist
         const hod = userRoles.find(r => r.name === "HOD" || r.key === "HOD");
         if (hod && hod.departments && hod.departments.length > 0) {
-            setSelectedHodDepts(allDepartments.filter(d => hod.departments.some(hd => hd.toString() === d._id.toString())));
+            setSelectedHodDepts(allDepartments.filter(d => hod.departments.some(hd => (hd._id ? hd._id.toString() : hd.toString()) === d._id.toString())));
         } else {
             setSelectedHodDepts([]);
         }
@@ -787,7 +787,7 @@ const RoleManagement = () => {
         // Populate SCHOOL_DEAN schools if they exist
         const dean = userRoles.find(r => r.key === "SCHOOL_DEAN" || r.name === "SCHOOL_DEAN");
         if (dean && dean.schools && dean.schools.length > 0) {
-            setSelectedDeanSchools(allSchools.filter(s => dean.schools.some(ds => ds.toString() === s._id.toString())));
+            setSelectedDeanSchools(allSchools.filter(s => dean.schools.some(ds => (ds._id ? ds._id.toString() : ds.toString()) === s._id.toString())));
         } else {
             setSelectedDeanSchools([]);
         }
@@ -882,7 +882,10 @@ const RoleManagement = () => {
         if (!selectedUser) return;
 
         // Validation for HOD role
-        const isHodSelected = assignedRoleIds.some(rid => roles.find(r => r._id === rid)?.name === 'HOD');
+        const isHodSelected = assignedRoleIds.some(rid => {
+            const r = roles.find(role => role._id.toString() === rid.toString());
+            return r?.name === 'HOD' || r?.key === 'HOD';
+        });
         if (isHodSelected && selectedHodDepts.length === 0) {
             toast.error("Please select at least one serving department for the HOD role");
             return;
@@ -893,7 +896,7 @@ const RoleManagement = () => {
             for (const dept of selectedHodDepts) {
                 const existingHod = allEmployees.find(emp =>
                     emp._id !== selectedUser._id &&
-                    emp.roles?.some(r => r.name === 'HOD' && r.departments?.includes(dept._id))
+                    emp.roles?.some(r => (r.name === 'HOD' || r.key === 'HOD') && r.departments?.some(d => (d._id ? d._id.toString() : d.toString()) === dept._id.toString()))
                 );
                 if (existingHod) {
                     conflictMsg = `Department "${dept.name}" already has an HOD (${existingHod.name}). Continuing will replace them. Are you sure?`;
@@ -908,7 +911,10 @@ const RoleManagement = () => {
         }
 
         // Validation for SCHOOL_DEAN role
-        const isDeanSelected = assignedRoleIds.some(rid => roles.find(r => r._id === rid)?.key === 'SCHOOL_DEAN');
+        const isDeanSelected = assignedRoleIds.some(rid => {
+            const r = roles.find(role => role._id.toString() === rid.toString());
+            return r?.key === 'SCHOOL_DEAN' || r?.name === 'SCHOOL_DEAN';
+        });
         if (isDeanSelected && selectedDeanSchools.length === 0) {
             toast.error("Please select at least one school for the SCHOOL_DEAN role");
             return;
@@ -919,7 +925,7 @@ const RoleManagement = () => {
             for (const school of selectedDeanSchools) {
                 const existingDean = allEmployees.find(emp =>
                     emp._id !== selectedUser._id &&
-                    emp.roles?.some(r => r.name === 'SCHOOL_DEAN' && r.schools?.includes(school._id))
+                    emp.roles?.some(r => (r.name === 'SCHOOL_DEAN' || r.key === 'SCHOOL_DEAN') && r.schools?.some(s => (s._id ? s._id.toString() : s.toString()) === school._id.toString()))
                 );
                 if (existingDean) {
                     conflictMsg = `School "${school.name}" already has a Dean (${existingDean.name}). Continuing will replace them. Are you sure?`;

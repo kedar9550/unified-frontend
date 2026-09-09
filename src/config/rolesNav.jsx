@@ -38,6 +38,7 @@ import {
   Person,
   FlagCircleRounded,
   PersonAdd,
+  HourglassEmpty,
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
@@ -361,10 +362,15 @@ export const ROLE_ROUTES = {
       text: "Special Data Entry",
       icon: <Description />,
       nested: [
-        {
-          text: "Journal",
-          path: "/research-data-entry/journal"
-        }
+        { text: "Journal", path: "/research-data-entry/journal" },
+        { text: "Conference", path: "/research-data-entry/conference" },
+        { text: "Book Chapter", path: "/research-data-entry/book-chapter" },
+        { text: "Textbook", path: "/research-data-entry/textbook" },
+        { text: "Patent", path: "/research-data-entry/patent" },
+        { text: "Funded Project", path: "/research-data-entry/funded-project" },
+        { text: "Consultancy", path: "/research-data-entry/consultancy" },
+        { text: "Ph.D. Scholars", path: "/research-data-entry/phd-scholars" },
+        { text: "Novel Products", path: "/research-data-entry/novel-products" }
       ]
     },
     { text: "Reference Journals", path: "/research-dean/reference-journals", icon: <LibraryBooks /> },
@@ -396,10 +402,15 @@ export const ROLE_ROUTES = {
       text: "Special Data Entry",
       icon: <Description />,
       nested: [
-        {
-          text: "Journal",
-          path: "/research-data-entry/journal"
-        }
+        { text: "Journal", path: "/research-data-entry/journal" },
+        { text: "Conference", path: "/research-data-entry/conference" },
+        { text: "Book Chapter", path: "/research-data-entry/book-chapter" },
+        { text: "Textbook", path: "/research-data-entry/textbook" },
+        { text: "Patent", path: "/research-data-entry/patent" },
+        { text: "Funded Project", path: "/research-data-entry/funded-project" },
+        { text: "Consultancy", path: "/research-data-entry/consultancy" },
+        { text: "Ph.D. Scholars", path: "/research-data-entry/phd-scholars" },
+        { text: "Novel Products", path: "/research-data-entry/novel-products" }
       ]
     },
     { text: "Reference Journals", path: "/research-coordinator/reference-journals", icon: <LibraryBooks /> },
@@ -426,6 +437,7 @@ export const ROLE_ROUTES = {
       ]
     }
   ],
+
 
   TECHNICAL_STAFF: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
@@ -498,10 +510,11 @@ export const ROLE_ROUTES = {
         },
         {
           text: "Payments",
-          icon: <Groups />,
+          icon: <Payment />,
           nested: [
             { text: "List", path: "/Eventveda/payments", icon: <Payment /> },
             { text: "Manual Adding", path: "/Eventveda/manual-adding", icon: <PersonAdd /> },
+            { text: "Pending", path: "/Eventveda/manual-adding/pending", icon: <HourglassEmpty /> },
           ]
         },
         { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
@@ -575,6 +588,69 @@ export const ROLE_ROUTES = {
           ]
         },
         { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> }
+      ]
+    },
+  ],
+
+  VEDA_ADMIN: [
+    {
+      text: "VEDA EVENT ",
+      icon: <SupportAgent />,
+      nested: [
+        {
+          text: "Schools",
+          icon: <School />,
+          nested: [
+            { text: "List", path: "/Eventveda/event-schools", icon: <School /> },
+            { text: "School Coordinators", path: "/Eventveda/event-schools/coordinators", icon: <Person /> }
+          ]
+        },
+        {
+          text: "Events",
+          icon: <EventAvailable />,
+          nested: [
+            { text: "List", path: "/Eventveda/events", icon: <EventAvailable /> },
+            { text: "Faculty Coordinators", path: "/Eventveda/events/coordinators", icon: <Person /> },
+            { text: "Student Coordinators", path: "/Eventveda/events/student-coordinators", icon: <Person /> }
+          ]
+        },
+        // { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
+        { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+        {
+          text: "Participants",
+          icon: <Groups />,
+          nested: [
+            { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
+          ]
+        },
+        {
+          text: "Certificates",
+          icon: <WorkspacePremium />,
+          nested: [
+            { text: "Winning Certificates", path: "/Eventveda/winning-certificates", icon: <WorkspacePremium /> },
+            { text: "Participation Certificates", path: "/Eventveda/participation-certificates", icon: <WorkspacePremium /> }
+          ]
+        },
+        { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> }
+      ]
+    },
+  ],
+
+  VEDA_HOD: [
+    {
+      text: "VEDA EVENT ",
+      icon: <SupportAgent />,
+      nested: [
+
+        // { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
+        { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+        {
+          text: "Participants",
+          icon: <Groups />,
+          nested: [
+            { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
+          ]
+        }
       ]
     },
   ],

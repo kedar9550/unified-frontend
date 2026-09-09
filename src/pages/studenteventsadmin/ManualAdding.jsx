@@ -25,7 +25,8 @@ import {
   Payment as PaymentIcon,
   Event as EventIcon,
   CreditCard as CreditCardIcon,
-  AutoAwesome as AutoAwesomeIcon
+  AutoAwesome as AutoAwesomeIcon,
+  HourglassEmpty as HourglassEmptyIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
@@ -505,7 +506,16 @@ const ManualAdding = () => {
         title="Manual Adding & Payment Mapping"
         subtitle="Verify Razorpay payment by ID and map participant details into the database"
         action={
-          <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+            <Button
+              variant="outlined"
+              color="warning"
+              onClick={() => navigate('/Eventveda/manual-adding/pending')}
+              startIcon={<HourglassEmptyIcon />}
+              sx={{ borderRadius: '12px', textTransform: 'none', px: 2, fontWeight: 700 }}
+            >
+              Pending Registrations
+            </Button>
             <Button
               variant="outlined"
               onClick={() => navigate('/Eventveda/payments')}

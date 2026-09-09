@@ -96,7 +96,7 @@ const Registrations = () => {
 
       const response = await API.get('/api/razorpay/registrations');
       let fetchedPayments = response.data?.payments || [];
-      
+
       // Only display registrations with PAID status
       fetchedPayments = fetchedPayments.filter(p => p.paymentStatus === 'PAID' || p.verified === true);
 
