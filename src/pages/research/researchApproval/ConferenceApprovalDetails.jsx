@@ -269,7 +269,7 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                         <LabelValue label="DOI" value={data.doi || "-"} horizontal />
                         <LabelValue label="Name of Conference" value={data.conferenceName} horizontal />
                         <LabelValue label="Publication Scope" value={data.level} horizontal />
-                        <LabelValue label="Category of Conference" value={data.indexing} horizontal />
+                        <LabelValue label="Indexing" value={data.indexing} horizontal />
                         <LabelValue label="Presentation Type" value={data.presentationType || "N/A"} horizontal />
                         <LabelValue 
                             label="Applicant Position" 

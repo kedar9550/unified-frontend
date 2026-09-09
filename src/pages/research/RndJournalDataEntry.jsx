@@ -568,6 +568,8 @@ export default function RndJournalDataEntry() {
       if (field === "CoAuthorType") {
         if (value === "student") {
           newA.empId = "";
+          newA.affiliationType = "Aditya University";
+          newA.affiliationName = "Aditya University";
           newA.authorName = "";
         } else {
           newA.studentId = "";
@@ -1066,12 +1068,14 @@ export default function RndJournalDataEntry() {
                           size="small"
                           fullWidth
                           displayEmpty
-                          value={ca.affiliationType}
+                          value={ca.CoAuthorType === "student" ? "Aditya University" : ca.affiliationType}
                           onChange={(e) => handleCoAuthorChange(ca.authorPosition, "affiliationType", e.target.value)}
                         >
                           <MenuItem value="" disabled>Select Affiliation</MenuItem>
                           <MenuItem value="Aditya University">Aditya University</MenuItem>
-                          <MenuItem value="Others">Others</MenuItem>
+                          {ca.CoAuthorType !== "student" && (
+                            <MenuItem value="Others">Others</MenuItem>
+                          )}
                         </Select>
                       </Box>
 
