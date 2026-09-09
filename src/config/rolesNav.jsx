@@ -522,8 +522,10 @@ export const ROLE_ROUTES = {
           icon: <Groups />,
           nested: [
             { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
+            // { text: "Apply Accommodation", path: "/Eventveda/apply-accommodation", icon: <Hotel /> }
           ]
         },
+        { text: "Apply Accommodation", path: "/Eventveda/apply-accommodation", icon: <Hotel /> },
         {
           text: "Student Passes",
           icon: <SupportAgent />,
@@ -541,7 +543,8 @@ export const ROLE_ROUTES = {
             { text: "Participation Certificates", path: "/Eventveda/participation-certificates", icon: <WorkspacePremium /> }
           ]
         },
-        { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> }
+        { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> },
+        { text: "Scan for Accommodation", path: "/Eventveda/scan-accommodation", icon: <QrCode /> }
       ]
     },
   ],
@@ -586,54 +589,55 @@ export const ROLE_ROUTES = {
             { text: "Participation Certificates", path: "/Eventveda/participation-certificates", icon: <WorkspacePremium /> }
           ]
         },
-        { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> }
+        { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> },
+        { text: "Apply Accommodation", path: "/Eventveda/apply-accommodation", icon: <Hotel /> }
       ]
     },
   ],
 
-  VEDA_ADMIN: [
-    {
-      text: "VEDA EVENT ",
-      icon: <SupportAgent />,
-      nested: [
-        {
-          text: "Schools",
-          icon: <School />,
-          nested: [
-            { text: "List", path: "/Eventveda/event-schools", icon: <School /> },
-            { text: "School Coordinators", path: "/Eventveda/event-schools/coordinators", icon: <Person /> }
-          ]
-        },
-        {
-          text: "Events",
-          icon: <EventAvailable />,
-          nested: [
-            { text: "List", path: "/Eventveda/events", icon: <EventAvailable /> },
-            { text: "Faculty Coordinators", path: "/Eventveda/events/coordinators", icon: <Person /> },
-            { text: "Student Coordinators", path: "/Eventveda/events/student-coordinators", icon: <Person /> }
-          ]
-        },
-        // { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
-        { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
-        {
-          text: "Participants",
-          icon: <Groups />,
-          nested: [
-            { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
-          ]
-        },
-        {
-          text: "Certificates",
-          icon: <WorkspacePremium />,
-          nested: [
-            { text: "Winning Certificates", path: "/Eventveda/winning-certificates", icon: <WorkspacePremium /> },
-            { text: "Participation Certificates", path: "/Eventveda/participation-certificates", icon: <WorkspacePremium /> }
-          ]
-        },
-        { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> }
-      ]
-    },
-  ],
+  // VEDA_ADMIN: [
+  //   {
+  //     text: "VEDA EVENT ",
+  //     icon: <SupportAgent />,
+  //     nested: [
+  //       {
+  //         text: "Schools",
+  //         icon: <School />,
+  //         nested: [
+  //           { text: "List", path: "/Eventveda/event-schools", icon: <School /> },
+  //           { text: "School Coordinators", path: "/Eventveda/event-schools/coordinators", icon: <Person /> }
+  //         ]
+  //       },
+  //       {
+  //         text: "Events",
+  //         icon: <EventAvailable />,
+  //         nested: [
+  //           { text: "List", path: "/Eventveda/events", icon: <EventAvailable /> },
+  //           { text: "Faculty Coordinators", path: "/Eventveda/events/coordinators", icon: <Person /> },
+  //           { text: "Student Coordinators", path: "/Eventveda/events/student-coordinators", icon: <Person /> }
+  //         ]
+  //       },
+  //       // { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
+  //       { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+  //       {
+  //         text: "Participants",
+  //         icon: <Groups />,
+  //         nested: [
+  //           { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
+  //         ]
+  //       },
+  //       {
+  //         text: "Certificates",
+  //         icon: <WorkspacePremium />,
+  //         nested: [
+  //           { text: "Winning Certificates", path: "/Eventveda/winning-certificates", icon: <WorkspacePremium /> },
+  //           { text: "Participation Certificates", path: "/Eventveda/participation-certificates", icon: <WorkspacePremium /> }
+  //         ]
+  //       },
+  //       { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> }
+  //     ]
+  //   },
+  // ],
 
   VEDA_HOD: [
     {
@@ -749,8 +753,7 @@ export const ROLE_ROUTES = {
       icon: <SupportAgent />,
       nested: [
         { text: "Scan for Attendance", path: "/Eventveda/scan-pass", icon: <QrCode /> },
-        // { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> },
-        // { text: "Update Passes", path: "/Eventveda/update-passes", icon: <CardMembership /> }
+        { text: "Update Passes", path: "/Eventveda/update-passes", icon: <CardMembership /> }
       ]
     },
     {
@@ -765,19 +768,19 @@ export const ROLE_ROUTES = {
   ],
 
   // ACCOMMODATION Coordinator
-  // ACCOMMODATION_COORDINATOR: [
-  //   { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
-  //   {
-  //     text: "Participants",
-  //     icon: <Groups />,
-  //     nested: [
-  //       { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
-  //       { text: "Accommodation", path: "/Eventveda/participants/accommodation", icon: <Hotel /> },
-  //       { text: "No Accommodation", path: "/Eventveda/participants/no-accommodation", icon: <Hotel /> }
-  //     ]
-  //   },
-  //   { text: "Scan for Accommodation", path: "/Eventveda/scan-accommodation", icon: <QrCode /> }
-  // ],
+  ACCOMMODATION_COORDINATOR: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Participants",
+      icon: <Groups />,
+      nested: [
+        { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
+        { text: "Accommodation", path: "/Eventveda/participants/accommodation", icon: <Hotel /> },
+        { text: "No Accommodation", path: "/Eventveda/participants/no-accommodation", icon: <Hotel /> }
+      ]
+    },
+    { text: "Scan for Accommodation", path: "/Eventveda/scan-accommodation", icon: <QrCode /> }
+  ],
 
 
 };
