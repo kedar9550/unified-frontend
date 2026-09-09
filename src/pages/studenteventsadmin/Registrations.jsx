@@ -29,6 +29,7 @@ import {
   Email as EmailIcon,
   Event as EventIcon,
   Badge as BadgeIcon,
+  PersonAdd as PersonAddIcon,
 } from '@mui/icons-material';
 import * as XLSX from 'xlsx-js-style';
 import { useNavigate } from 'react-router-dom';
@@ -603,13 +604,17 @@ const Registrations = () => {
           { label: 'Student Event Admin', path: '/dashboard' },
           { label: 'Registrations' },
         ]}
-        actions={
-          <ActionButton
-            label="Payments"
-            icon={<PaymentIcon />}
-            variant="secondary"
-            onClick={() => navigate('/Eventveda/payments')}
-          />
+        action={
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <ActionButton
+              startIcon={<PersonAddIcon />}
+              variant="contained"
+              color="primary"
+              onClick={() => navigate('/Eventveda/registrations/add-member')}
+            >
+              Add Team Member
+            </ActionButton>
+          </Box>
         }
       />
 
