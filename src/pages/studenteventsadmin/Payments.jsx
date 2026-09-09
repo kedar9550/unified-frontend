@@ -15,6 +15,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   IconButton,
@@ -34,6 +35,9 @@ import {
   Visibility as VisibilityIcon,
   PersonAdd as PersonAddIcon,
   HourglassEmpty as HourglassEmptyIcon,
+  CloudUpload as CloudUploadIcon,
+  FileUpload as FileUploadIcon,
+  Error as ErrorOutlineIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { TextField, MenuItem } from '@mui/material';
@@ -73,6 +77,45 @@ const Payments = () => {
   const [selectedPaymentForAdd, setSelectedPaymentForAdd] = useState(null);
   const [participantFormData, setParticipantFormData] = useState([]);
   const [addParticipantLoading, setAddParticipantLoading] = useState(false);
+
+  // Bulk Excel Upload states
+  const [bulkUploadDialogOpen, setBulkUploadDialogOpen] = useState(false);
+  const [selectedExcelFile, setSelectedExcelFile] = useState(null);
+  const [uploadingExcel, setUploadingExcel] = useState(false);
+  const [uploadReport, setUploadReport] = useState(null);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [reportTabFilter, setReportTabFilter] = useState('ALL');
+
+  const handleBulkExcelUpload = async () => {
+    if (!selectedExcelFile) {
+      toast.error('Please select an Excel or CSV file first');
+      return;
+    }
+
+    setUploadingExcel(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedExcelFile);
+
+      const res = await API.post('/api/razorpay/registrations/bulk-update-excel', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (res.data.ok) {
+        toast.success(res.data.message || 'Bulk payment update completed');
+        setUploadReport(res.data);
+        setBulkUploadDialogOpen(false);
+        setSelectedExcelFile(null);
+        setReportTabFilter('ALL');
+        setReportDialogOpen(true);
+        fetchPayments();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to upload Excel file');
+    } finally {
+      setUploadingExcel(false);
+    }
+  };
 
   const handleManualApprove = async (id) => {
     try {
@@ -174,7 +217,7 @@ const Payments = () => {
   const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
-      const eventsRes = await API.get('/api/events');
+      const eventsRes = await API.get('/api/events', { skipGlobalLoader: true });
       const events = eventsRes.data?.events || [];
       setAllEvents(events);
 
@@ -191,7 +234,7 @@ const Payments = () => {
         allowedEventNames = userEvents.map(e => e.eventName);
       }
 
-      const response = await API.get('/api/razorpay/registrations');
+      const response = await API.get('/api/razorpay/registrations', { skipGlobalLoader: true });
       let fetchedPayments = response.data?.payments || [];
 
       if (allowedEventNames) {
@@ -413,6 +456,15 @@ const Payments = () => {
         subtitle="View Razorpay payment registrations and invoices for student events"
         action={
           <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => setBulkUploadDialogOpen(true)}
+              startIcon={<FileUploadIcon />}
+              sx={{ borderRadius: '12px', textTransform: 'none', px: 2.5, py: 1, fontWeight: 700, boxShadow: '0 4px 12px rgba(99,102,241,0.2)' }}
+            >
+              Bulk Payment Update
+            </Button>
             <Button
               variant="outlined"
               color="warning"
@@ -927,6 +979,238 @@ const Payments = () => {
             sx={{ textTransform: 'none', borderRadius: '8px', px: 3 }}
           >
             {addParticipantLoading ? <CircularProgress size={24} color="inherit" /> : 'Save Participants & Generate Team ID'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Bulk Excel Upload Dialog ── */}
+      <Dialog
+        open={bulkUploadDialogOpen}
+        onClose={() => !uploadingExcel && setBulkUploadDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        slotProps={{ paper: { sx: { borderRadius: '16px', p: 1 } } }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 800 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <CloudUploadIcon color="primary" />
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>Bulk Excel Payment Update</Typography>
+          </Box>
+          <IconButton onClick={() => setBulkUploadDialogOpen(false)} disabled={uploadingExcel}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+            Upload an Excel (`.xlsx`, `.xls`) or CSV file containing <strong>teamId</strong> to update payment status and Razorpay details.
+          </Typography>
+
+          <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', mb: 2.5 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'primary.main', mb: 1 }}>
+              Required Excel Columns:
+            </Typography>
+            <Typography variant="caption" component="div" sx={{ color: 'text.secondary', fontFamily: 'monospace', lineHeight: 1.8 }}>
+              • <strong>teamId</strong> (Required, e.g. VD26-T82SQB)<br />
+              • <strong>razorpayOrderId</strong> (Optional, e.g. order_TZoTqxajkdEwEX)<br />
+              • <strong>razorpayPaymentId</strong> (Optional, e.g. pay_TZoU4DHIJzJCcV)<br />
+              • <strong>paymentStatus</strong> (Optional: PAID / PENDING / FAILED, defaults to PAID)
+            </Typography>
+          </Box>
+
+          <Box
+            sx={{
+              border: '2px dashed #cbd5e1',
+              borderRadius: '16px',
+              p: 4,
+              textAlign: 'center',
+              bgcolor: selectedExcelFile ? 'rgba(99, 102, 241, 0.04)' : '#fafafa',
+              cursor: 'pointer',
+              '&:hover': { borderColor: 'primary.main', bgcolor: 'rgba(99, 102, 241, 0.06)' },
+              transition: 'all 0.2s'
+            }}
+            onClick={() => document.getElementById('excel-file-input').click()}
+          >
+            <input
+              id="excel-file-input"
+              type="file"
+              accept=".xlsx, .xls, .csv"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                if (e.target.files && e.target.files[0]) {
+                  setSelectedExcelFile(e.target.files[0]);
+                }
+              }}
+            />
+            <CloudUploadIcon sx={{ fontSize: 48, color: selectedExcelFile ? 'primary.main' : 'text.disabled', mb: 1 }} />
+            {selectedExcelFile ? (
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                  {selectedExcelFile.name}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  {(selectedExcelFile.size / 1024).toFixed(1)} KB • Click to change file
+                </Typography>
+              </Box>
+            ) : (
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                  Click to browse or drag & drop Excel / CSV file
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Supports .xlsx, .xls, and .csv files
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setBulkUploadDialogOpen(false)} disabled={uploadingExcel}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            disabled={!selectedExcelFile || uploadingExcel}
+            onClick={handleBulkExcelUpload}
+            startIcon={uploadingExcel ? <CircularProgress size={16} color="inherit" /> : <FileUploadIcon />}
+            sx={{ borderRadius: '10px', px: 3, fontWeight: 700 }}
+          >
+            {uploadingExcel ? 'Processing File...' : 'Upload & Process'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── Post-Completion Detailed Report Modal ── */}
+      <Dialog
+        open={reportDialogOpen}
+        onClose={() => setReportDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+        slotProps={{ paper: { sx: { borderRadius: '16px', maxHeight: '90vh' } } }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 800 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <ReceiptIcon color="primary" />
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>Bulk Update Completion Report</Typography>
+          </Box>
+          <IconButton onClick={() => setReportDialogOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 3 }}>
+          {uploadReport && (
+            <Box>
+              {/* Summary Stats Banner */}
+              <Grid container spacing={2} sx={{ mb: 3 }}>
+                <Grid item xs={12} sm={4}>
+                  <Paper sx={{ p: 2, textAlign: 'center', bgcolor: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase' }}>Total Processed</Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 900, color: 'text.primary', mt: 0.5 }}>
+                      {uploadReport.summary?.totalRows || 0}
+                    </Typography>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Paper sx={{ p: 2, textAlign: 'center', bgcolor: 'rgba(16, 185, 129, 0.08)', borderRadius: '12px', border: '1px solid #10b981' }}>
+                    <Typography variant="caption" sx={{ color: '#047857', fontWeight: 700, textTransform: 'uppercase' }}>Successfully Updated</Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 900, color: '#047857', mt: 0.5 }}>
+                      {uploadReport.summary?.successCount || 0}
+                    </Typography>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Paper sx={{ p: 2, textAlign: 'center', bgcolor: (uploadReport.summary?.errorCount || 0) > 0 ? 'rgba(239, 68, 68, 0.08)' : '#f8fafc', borderRadius: '12px', border: (uploadReport.summary?.errorCount || 0) > 0 ? '1px solid #ef4444' : '1px solid #e2e8f0' }}>
+                    <Typography variant="caption" sx={{ color: (uploadReport.summary?.errorCount || 0) > 0 ? '#b91c1c' : 'text.secondary', fontWeight: 700, textTransform: 'uppercase' }}>Failed / Errors</Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 900, color: (uploadReport.summary?.errorCount || 0) > 0 ? '#b91c1c' : 'text.primary', mt: 0.5 }}>
+                      {uploadReport.summary?.errorCount || 0}
+                    </Typography>
+                  </Paper>
+                </Grid>
+              </Grid>
+
+              {/* Tabs for Filtering */}
+              <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <ToggleButtonGroup
+                  value={reportTabFilter}
+                  exclusive
+                  onChange={(e, next) => next && setReportTabFilter(next)}
+                  size="small"
+                  sx={{ mb: 1 }}
+                >
+                  <ToggleButton value="ALL" sx={{ fontWeight: 700, px: 2 }}>
+                    All ({uploadReport.results?.length || 0})
+                  </ToggleButton>
+                  <ToggleButton value="SUCCESS" sx={{ fontWeight: 700, px: 2, color: '#047857' }}>
+                    Success ({uploadReport.summary?.successCount || 0})
+                  </ToggleButton>
+                  <ToggleButton value="ERRORS" sx={{ fontWeight: 700, px: 2, color: '#b91c1c' }}>
+                    Errors ({uploadReport.summary?.errorCount || 0})
+                  </ToggleButton>
+                </ToggleButtonGroup>
+              </Box>
+
+              {/* Detailed Results Table */}
+              <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: '12px', maxHeight: '350px', overflowY: 'auto' }}>
+                <Table size="small" stickyHeader>
+                  <TableHead>
+                    <TableRow sx={{ '& th': { fontWeight: 800, bgcolor: '#f1f5f9' } }}>
+                      <TableCell>Row #</TableCell>
+                      <TableCell>Team ID</TableCell>
+                      <TableCell>Razorpay Payment ID</TableCell>
+                      <TableCell>Razorpay Order ID</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Details / Message</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {uploadReport.results
+                      ?.filter(res => {
+                        if (reportTabFilter === 'SUCCESS') return res.status === 'SUCCESS';
+                        if (reportTabFilter === 'ERRORS') return res.status === 'ERROR';
+                        return true;
+                      })
+                      .map((res, idx) => (
+                        <TableRow key={idx} sx={{ bgcolor: res.status === 'ERROR' ? 'rgba(239, 68, 68, 0.03)' : 'inherit' }}>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Row {res.row}</TableCell>
+                          <TableCell sx={{ fontWeight: 700 }}>{res.teamId}</TableCell>
+                          <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{res.razorpayPaymentId}</TableCell>
+                          <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{res.razorpayOrderId}</TableCell>
+                          <TableCell>
+                            <Chip
+                              icon={res.status === 'SUCCESS' ? <CheckCircleIcon sx={{ fontSize: '14px !important' }} /> : <ErrorOutlineIcon sx={{ fontSize: '14px !important' }} />}
+                              label={res.status === 'SUCCESS' ? 'Success' : 'Failed'}
+                              color={res.status === 'SUCCESS' ? 'success' : 'error'}
+                              size="small"
+                              sx={{ fontWeight: 700, borderRadius: '6px' }}
+                            />
+                          </TableCell>
+                          <TableCell sx={{ fontSize: '0.8rem', color: res.status === 'ERROR' ? 'error.main' : 'text.secondary', fontWeight: res.status === 'ERROR' ? 600 : 400 }}>
+                            {res.message}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    {uploadReport.results?.filter(res => {
+                      if (reportTabFilter === 'SUCCESS') return res.status === 'SUCCESS';
+                      if (reportTabFilter === 'ERRORS') return res.status === 'ERROR';
+                      return true;
+                    }).length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                          No records found for this filter tab.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
+          <Typography variant="caption" sx={{ color: 'text.secondary', ml: 1 }}>
+            Note: All successfully updated payment registrations are now set to PAID & Verified.
+          </Typography>
+          <Button variant="contained" onClick={() => setReportDialogOpen(false)} sx={{ borderRadius: '10px', px: 3, fontWeight: 700 }}>
+            Close & View Payments
           </Button>
         </DialogActions>
       </Dialog>
