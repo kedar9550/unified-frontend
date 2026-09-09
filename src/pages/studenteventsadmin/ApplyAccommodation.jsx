@@ -18,6 +18,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Divider,
 } from '@mui/material';
 import {
   Hotel as HotelIcon,
@@ -28,11 +29,12 @@ import {
   Refresh as RefreshIcon,
   FilterAlt as FilterAltIcon,
   FilterAltOff as FilterAltOffIcon,
-  School as SchoolIcon,
   Male as MaleIcon,
   Female as FemaleIcon,
   Phone as PhoneIcon,
   Email as EmailIcon,
+  Payment as PaymentIcon,
+  LocalAtm as CashIcon,
 } from '@mui/icons-material';
 import * as XLSX from 'xlsx-js-style';
 import PageHeader from '../../components/common/PageHeader';
@@ -44,6 +46,7 @@ import { toast } from 'sonner';
 const MALE_LIMIT = 100;
 const FEMALE_LIMIT = 50;
 const OVERALL_LIMIT = 150;
+const RATE_PER_DAY = 1;
 
 const isOtherCollege = (college) => {
   if (!college) return false;
@@ -61,6 +64,20 @@ const normalizeGender = (gender) => {
   return 'MALE';
 };
 
+const loadRazorpaySDK = () => {
+  return new Promise((resolve) => {
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 const ApplyAccommodation = () => {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -70,16 +87,19 @@ const ApplyAccommodation = () => {
     total: 0,
     limits: { male: MALE_LIMIT, female: FEMALE_LIMIT, total: OVERALL_LIMIT },
   });
-  const [applyingParticipantId, setApplyingParticipantId] = useState(null);
 
-  // Filters
-  const [schoolFilter, setSchoolFilter] = useState('ALL');
-  const [eventFilter, setEventFilter] = useState('ALL');
+  // Filters (Schools and Events removed - Team ID filter only)
   const [teamIdFilter, setTeamIdFilter] = useState('ALL');
   const [genderFilter, setGenderFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [exporting, setExporting] = useState(false);
+
+  // Apply Accommodation Dialog State
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedParticipant, setSelectedParticipant] = useState(null);
+  const [selectedDays, setSelectedDays] = useState(1);
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   // Revoke confirmation dialog state
   const [revokeDialog, setRevokeDialog] = useState({ open: false, participant: null });
@@ -168,63 +188,27 @@ const ApplyAccommodation = () => {
     return list;
   }, [payments]);
 
-  // Extract dropdown options based on other college participants
-  const schoolOptions = useMemo(() => {
-    const set = new Set();
-    otherCollegeParticipants.forEach((p) => {
-      if (p.schoolName && p.schoolName !== '-') set.add(p.schoolName);
-    });
-    return Array.from(set).sort();
-  }, [otherCollegeParticipants]);
-
-  const eventOptions = useMemo(() => {
-    const set = new Set();
-    otherCollegeParticipants.forEach((p) => {
-      if (schoolFilter === 'ALL' || p.schoolName === schoolFilter) {
-        if (p.eventName && p.eventName !== '-') set.add(p.eventName);
-      }
-    });
-    return Array.from(set).sort();
-  }, [otherCollegeParticipants, schoolFilter]);
-
+  // Extract unique Team IDs
   const teamIdOptions = useMemo(() => {
     const set = new Set();
     otherCollegeParticipants.forEach((p) => {
-      const matchSchool = schoolFilter === 'ALL' || p.schoolName === schoolFilter;
-      const matchEvent = eventFilter === 'ALL' || p.eventName === eventFilter;
-      if (matchSchool && matchEvent && p.teamId && p.teamId !== '-') {
+      if (p.teamId && p.teamId !== '-') {
         set.add(p.teamId);
       }
     });
     return Array.from(set).sort();
-  }, [otherCollegeParticipants, schoolFilter, eventFilter]);
-
-  // Reset dependent filters when parent dropdown changes
-  const handleSchoolChange = (val) => {
-    setSchoolFilter(val);
-    setEventFilter('ALL');
-    setTeamIdFilter('ALL');
-  };
-
-  const handleEventChange = (val) => {
-    setEventFilter(val);
-    setTeamIdFilter('ALL');
-  };
+  }, [otherCollegeParticipants]);
 
   const handleResetFilters = () => {
-    setSchoolFilter('ALL');
-    setEventFilter('ALL');
     setTeamIdFilter('ALL');
     setGenderFilter('ALL');
     setStatusFilter('ALL');
     setSearchQuery('');
   };
 
-  // Filter participants
+  // Filter participants by teamId, gender, status, search
   const filteredParticipants = useMemo(() => {
     return otherCollegeParticipants.filter((p) => {
-      if (schoolFilter !== 'ALL' && p.schoolName !== schoolFilter) return false;
-      if (eventFilter !== 'ALL' && p.eventName !== eventFilter) return false;
       if (teamIdFilter !== 'ALL' && p.teamId !== teamIdFilter) return false;
       if (genderFilter !== 'ALL' && p.normalizedGender !== genderFilter) return false;
 
@@ -240,82 +224,320 @@ const ApplyAccommodation = () => {
         const mobile = (p.mobile || '').toLowerCase();
         const email = (p.email || '').toLowerCase();
         const team = (p.teamId || '').toLowerCase();
-        const event = (p.eventName || '').toLowerCase();
         return (
           name.includes(q) ||
           roll.includes(q) ||
           college.includes(q) ||
           mobile.includes(q) ||
           email.includes(q) ||
-          team.includes(q) ||
-          event.includes(q)
+          team.includes(q)
         );
       }
 
       return true;
     });
-  }, [otherCollegeParticipants, schoolFilter, eventFilter, teamIdFilter, genderFilter, statusFilter, searchQuery]);
+  }, [otherCollegeParticipants, teamIdFilter, genderFilter, statusFilter, searchQuery]);
 
-  // Apply or Revoke accommodation
-  const handleToggleAccommodation = async (participant, newStatus) => {
-    const isYes = newStatus === 'YES';
-
-    // Client-side limit checks when applying
-    if (isYes) {
-      if (quotaStats.total >= OVERALL_LIMIT) {
-        toast.error(`Overall accommodation limit of ${OVERALL_LIMIT} has been reached! Cannot allocate more.`);
-        return;
-      }
-      if (participant.normalizedGender === 'MALE' && quotaStats.male >= MALE_LIMIT) {
-        toast.error(`Male accommodation limit of ${MALE_LIMIT} has been reached!`);
-        return;
-      }
-      if (participant.normalizedGender === 'FEMALE' && quotaStats.female >= FEMALE_LIMIT) {
-        toast.error(`Girl accommodation limit of ${FEMALE_LIMIT} has been reached!`);
-        return;
-      }
+  // Check limits
+  const isLimitReachedFor = (participant) => {
+    if (quotaStats.total >= OVERALL_LIMIT) return { reached: true, reason: 'Overall Limit (150) Reached' };
+    if (participant.normalizedGender === 'MALE' && quotaStats.male >= MALE_LIMIT) {
+      return { reached: true, reason: 'Male Limit (100) Reached' };
     }
+    if (participant.normalizedGender === 'FEMALE' && quotaStats.female >= FEMALE_LIMIT) {
+      return { reached: true, reason: 'Girl Limit (50) Reached' };
+    }
+    return { reached: false, reason: '' };
+  };
 
-    setApplyingParticipantId(participant.uniqueKey);
+  // Open apply dialog
+  const handleOpenApplyDialog = (participant) => {
+    const limitCheck = isLimitReachedFor(participant);
+    if (limitCheck.reached) {
+      toast.error(limitCheck.reason);
+      return;
+    }
+    setSelectedParticipant(participant);
+    setSelectedDays(1);
+    setPaymentDialogOpen(true);
+  };
+
+  // Process Online Razorpay Payment
+  const handlePayOnlineRazorpay = async () => {
+    if (!selectedParticipant) return;
+    setProcessingPayment(true);
+
+    const totalAmountRupees = selectedDays * RATE_PER_DAY;
+    const amountInPaise = totalAmountRupees * 100;
+
+    try {
+      const isLoaded = await loadRazorpaySDK();
+      if (!isLoaded) {
+        toast.error('Failed to load Razorpay payment SDK. Please check your internet connection.');
+        setProcessingPayment(false);
+        return;
+      }
+
+      // 1. Create order on backend
+      const orderRes = await API.post('/api/razorpay/accommodation/create-order', {
+        amount: amountInPaise,
+        receipt: `acc_${selectedParticipant.roll || selectedParticipant.teamId}_${Date.now()}`.substring(0, 40),
+      });
+
+      const orderData = orderRes.data;
+      if (!orderData?.orderId) {
+        throw new Error('Failed to create Razorpay accommodation order');
+      }
+
+      // 2. Open Razorpay modal
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY || 'rzp_live_Kmh34Xa4jArEXT',
+        amount: amountInPaise,
+        currency: 'INR',
+        name: 'Eventveda Accommodation',
+        description: `Accommodation Fee for ${selectedDays} Day(s)`,
+        order_id: orderData.orderId,
+        prefill: {
+          name: selectedParticipant.name || '',
+          email: selectedParticipant.email || '',
+          contact: selectedParticipant.mobile || '',
+        },
+        theme: {
+          color: '#2563eb',
+        },
+        handler: async function (response) {
+          try {
+            // 3. Save accommodation status and payment raw data to backend
+            const saveRes = await API.put('/api/razorpay/accommodation/apply', {
+              teamId: selectedParticipant.teamId,
+              roll: selectedParticipant.roll,
+              rollnumber: selectedParticipant.roll,
+              email: selectedParticipant.email,
+              registrationId: selectedParticipant.paymentId,
+              participantBarcode: selectedParticipant.barcode,
+              participantIndex: selectedParticipant.participantIndex,
+              days: selectedDays,
+              dayscount: selectedDays,
+              daysCount: selectedDays,
+              amount: totalAmountRupees,
+              payment: response,
+              accommodation: 'Yes',
+              paymentMethod: 'RAZORPAY',
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+              rawPaymentData: response,
+            });
+
+            if (saveRes.data?.ok) {
+              toast.success(
+                `Payment of ₹${totalAmountRupees} successful! Accommodation allocated for ${selectedParticipant.name || 'Student'}`
+              );
+
+              // Update in-memory state
+              setPayments((prev) =>
+                prev.map((reg) => {
+                  if (reg._id === selectedParticipant.paymentId) {
+                    const updatedParts = reg.participants.map((p) => {
+                      if (
+                        (p.roll && String(p.roll).trim() === String(selectedParticipant.roll).trim()) ||
+                        (p.barcode && p.barcode === selectedParticipant.barcode)
+                      ) {
+                        return {
+                          ...p,
+                          accommodation: 'Yes',
+                          days: selectedDays,
+                          dayscount: selectedDays,
+                          daysCount: selectedDays,
+                          payment: response,
+                          accommodationPayment: {
+                            paid: true,
+                            amount: totalAmountRupees,
+                            days: selectedDays,
+                            dayscount: selectedDays,
+                            daysCount: selectedDays,
+                            payment: response,
+                            razorpayOrderId: response.razorpay_order_id,
+                            razorpayPaymentId: response.razorpay_payment_id,
+                            paidAt: new Date(),
+                            rawPaymentData: response,
+                          },
+                        };
+                      }
+                      return p;
+                    });
+                    return { ...reg, participants: updatedParts };
+                  }
+                  return reg;
+                })
+              );
+
+              setPaymentDialogOpen(false);
+              await fetchQuotaStats();
+            }
+          } catch (saveErr) {
+            console.error('Error saving accommodation payment:', saveErr);
+            toast.error(saveErr.response?.data?.error || 'Payment succeeded but failed to update status');
+          } finally {
+            setProcessingPayment(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setProcessingPayment(false);
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (resp) {
+        toast.error(`Payment failed: ${resp.error?.description || 'Gateway error'}`);
+        setProcessingPayment(false);
+      });
+      rzp.open();
+    } catch (err) {
+      console.error('Payment initiation error:', err);
+      toast.error(err.response?.data?.error || 'Failed to initiate accommodation payment');
+      setProcessingPayment(false);
+    }
+  };
+
+  // Process Direct Cash / Manual Payment
+  const handlePayCashManual = async () => {
+    if (!selectedParticipant) return;
+    setProcessingPayment(true);
+
+    const totalAmountRupees = selectedDays * RATE_PER_DAY;
+    const manualPaymentData = {
+      paymentMethod: 'CASH',
+      days: selectedDays,
+      dayscount: selectedDays,
+      daysCount: selectedDays,
+      amount: totalAmountRupees,
+      collectedAt: new Date(),
+      teamId: selectedParticipant.teamId,
+      roll: selectedParticipant.roll,
+      rollnumber: selectedParticipant.roll,
+    };
+
     try {
       const res = await API.put('/api/razorpay/accommodation/apply', {
-        registrationId: participant.paymentId,
-        participantBarcode: participant.barcode,
-        roll: participant.roll,
-        accommodation: newStatus,
+        teamId: selectedParticipant.teamId,
+        roll: selectedParticipant.roll,
+        rollnumber: selectedParticipant.roll,
+        email: selectedParticipant.email,
+        registrationId: selectedParticipant.paymentId,
+        participantBarcode: selectedParticipant.barcode,
+        participantIndex: selectedParticipant.participantIndex,
+        days: selectedDays,
+        dayscount: selectedDays,
+        daysCount: selectedDays,
+        amount: totalAmountRupees,
+        payment: manualPaymentData,
+        accommodation: 'Yes',
+        paymentMethod: 'CASH',
+        razorpayOrderId: `MANUAL_ORDER_${Date.now()}`,
+        razorpayPaymentId: `CASH_${Date.now()}`,
+        rawPaymentData: manualPaymentData,
       });
 
       if (res.data?.ok) {
         toast.success(
-          isYes
-            ? `Accommodation APPROVED for ${participant.name || 'Student'} (${participant.normalizedGender === 'FEMALE' ? 'Girl' : 'Male'})`
-            : `Accommodation revoked for ${participant.name || 'Student'}`
+          `Cash payment of ₹${totalAmountRupees} recorded! Accommodation allocated for ${selectedParticipant.name || 'Student'}`
         );
 
-        // Update in-memory state immediately
+        // Update in-memory state
         setPayments((prev) =>
           prev.map((reg) => {
-            if (reg._id === participant.paymentId) {
-              const updatedParticipants = reg.participants.map((p) => {
-                if ((p.barcode && p.barcode === participant.barcode) || (p.roll && p.roll === participant.roll)) {
-                  return { ...p, accommodation: newStatus };
+            if (reg._id === selectedParticipant.paymentId) {
+              const updatedParts = reg.participants.map((p) => {
+                if (
+                  (p.roll && String(p.roll).trim() === String(selectedParticipant.roll).trim()) ||
+                  (p.barcode && p.barcode === selectedParticipant.barcode)
+                ) {
+                  return {
+                    ...p,
+                    accommodation: 'Yes',
+                    days: selectedDays,
+                    dayscount: selectedDays,
+                    daysCount: selectedDays,
+                    payment: manualPaymentData,
+                    accommodationPayment: {
+                      paid: true,
+                      amount: totalAmountRupees,
+                      days: selectedDays,
+                      dayscount: selectedDays,
+                      daysCount: selectedDays,
+                      payment: manualPaymentData,
+                      razorpayPaymentId: `CASH_${Date.now()}`,
+                      paidAt: new Date(),
+                      rawPaymentData: manualPaymentData,
+                    },
+                  };
                 }
                 return p;
               });
-              return { ...reg, participants: updatedParticipants };
+              return { ...reg, participants: updatedParts };
             }
             return reg;
           })
         );
 
-        // Refresh quota stats
+        setPaymentDialogOpen(false);
         await fetchQuotaStats();
       }
     } catch (err) {
-      console.error('Error applying accommodation:', err);
-      toast.error(err.response?.data?.error || 'Failed to update accommodation status');
+      console.error('Manual payment error:', err);
+      toast.error(err.response?.data?.error || 'Failed to record accommodation payment');
     } finally {
-      setApplyingParticipantId(null);
+      setProcessingPayment(false);
+    }
+  };
+
+  // Revoke accommodation
+  const handleRevokeAccommodation = async (participant) => {
+    try {
+      const res = await API.put('/api/razorpay/accommodation/apply', {
+        teamId: participant.teamId,
+        roll: participant.roll,
+        rollnumber: participant.roll,
+        email: participant.email,
+        registrationId: participant.paymentId,
+        participantBarcode: participant.barcode,
+        participantIndex: participant.participantIndex,
+        accommodation: 'No',
+      });
+
+      if (res.data?.ok) {
+        toast.success(`Accommodation revoked for ${participant.name || 'Student'}`);
+
+        setPayments((prev) =>
+          prev.map((reg) => {
+            if (reg._id === participant.paymentId) {
+              const updatedParts = reg.participants.map((p) => {
+                if (
+                  (p.roll && String(p.roll).trim() === String(participant.roll).trim()) ||
+                  (p.barcode && p.barcode === participant.barcode)
+                ) {
+                  return {
+                    ...p,
+                    accommodation: 'No',
+                    accommodationPayment: { ...(p.accommodationPayment || {}), paid: false },
+                  };
+                }
+                return p;
+              });
+              return { ...reg, participants: updatedParts };
+            }
+            return reg;
+          })
+        );
+
+        await fetchQuotaStats();
+      }
+    } catch (err) {
+      console.error('Error revoking accommodation:', err);
+      toast.error(err.response?.data?.error || 'Failed to revoke accommodation');
     }
   };
 
@@ -334,13 +556,12 @@ const ApplyAccommodation = () => {
         'Gender',
         'College Name',
         'Branch',
-        'Year',
         'Mobile',
         'Email',
         'Team ID',
-        'School Name',
-        'Event Name',
         'Accommodation Status',
+        'Days Booked',
+        'Amount Paid',
       ];
 
       const rows = filteredParticipants.map((p, idx) => [
@@ -350,19 +571,18 @@ const ApplyAccommodation = () => {
         p.normalizedGender === 'FEMALE' ? 'Girl / Female' : 'Male',
         p.collegeDisplay || '-',
         p.branch || '-',
-        p.year || '-',
         p.mobile || '-',
         p.email || '-',
         p.teamId || '-',
-        p.schoolName || '-',
-        p.eventName || '-',
         (p.accommodation || '').toUpperCase() === 'YES' ? 'YES' : 'NO',
+        p.accommodationPayment?.days || '-',
+        p.accommodationPayment?.amount ? `₹${p.accommodationPayment.amount}` : '-',
       ]);
 
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-      XLSX.utils.book_append_sheet(wb, ws, 'Other College Accommodation');
-      XLSX.writeFile(wb, `Other_College_Accommodation_${new Date().toISOString().split('T')[0]}.xlsx`);
+      XLSX.utils.book_append_sheet(wb, ws, 'Accommodation List');
+      XLSX.writeFile(wb, `Accommodation_${new Date().toISOString().split('T')[0]}.xlsx`);
       toast.success('Accommodation list exported successfully');
     } catch (err) {
       console.error('Export error:', err);
@@ -372,25 +592,12 @@ const ApplyAccommodation = () => {
     }
   };
 
-  // Check if button should be disabled for a participant
-  const isLimitReachedFor = (participant) => {
-    if (quotaStats.total >= OVERALL_LIMIT) return { reached: true, reason: 'Overall Limit (150) Reached' };
-    if (participant.normalizedGender === 'MALE' && quotaStats.male >= MALE_LIMIT) {
-      return { reached: true, reason: 'Male Limit (100) Reached' };
-    }
-    if (participant.normalizedGender === 'FEMALE' && quotaStats.female >= FEMALE_LIMIT) {
-      return { reached: true, reason: 'Girl Limit (50) Reached' };
-    }
-    return { reached: false, reason: '' };
-  };
-
-  // Table columns definition
+  // Columns definition
   const columns = [
     'S.No',
     'Participant Name & Roll',
     'Gender',
     'College Name',
-    'School & Event',
     'Team ID',
     'Contact Info',
     'Accommodation Status',
@@ -400,7 +607,6 @@ const ApplyAccommodation = () => {
   const tableRows = useMemo(() => {
     return filteredParticipants.map((p, index) => {
       const isAccommodated = (p.accommodation || '').toUpperCase() === 'YES';
-      const isApplying = applyingParticipantId === p.uniqueKey;
       const limitCheck = isLimitReachedFor(p);
 
       return [
@@ -461,22 +667,9 @@ const ApplyAccommodation = () => {
               />
               {p.branch && (
                 <Typography variant="caption" display="block" sx={{ color: '#64748b', mt: 0.5 }}>
-                  {p.branch} {p.year ? `(${p.year})` : ''}
+                  {p.branch}
                 </Typography>
               )}
-            </Box>
-          ),
-        },
-        {
-          value: `${p.schoolName} ${p.eventName}`,
-          display: (
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 600, color: '#334155' }}>
-                {p.eventName}
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#64748b' }}>
-                {p.schoolName}
-              </Typography>
             </Box>
           ),
         },
@@ -515,17 +708,24 @@ const ApplyAccommodation = () => {
         {
           value: isAccommodated ? 'YES' : 'NO',
           display: isAccommodated ? (
-            <Chip
-              icon={<CheckCircleIcon sx={{ fontSize: '14px !important', color: '#15803d !important' }} />}
-              label="YES"
-              size="small"
-              sx={{
-                fontWeight: 800,
-                color: '#15803d',
-                backgroundColor: 'rgba(34, 197, 94, 0.14)',
-                border: '1px solid rgba(34, 197, 94, 0.3)',
-              }}
-            />
+            <Box>
+              <Chip
+                icon={<CheckCircleIcon sx={{ fontSize: '14px !important', color: '#15803d !important' }} />}
+                label="YES"
+                size="small"
+                sx={{
+                  fontWeight: 800,
+                  color: '#15803d',
+                  backgroundColor: 'rgba(34, 197, 94, 0.14)',
+                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                }}
+              />
+              {p.accommodationPayment?.days && (
+                <Typography variant="caption" display="block" sx={{ color: '#059669', fontWeight: 700, mt: 0.25 }}>
+                  {p.accommodationPayment.days} Day(s) • ₹{p.accommodationPayment.amount || p.accommodationPayment.days * 100}
+                </Typography>
+              )}
+            </Box>
           ) : (
             <Chip
               icon={<CancelIcon sx={{ fontSize: '14px !important', color: '#94a3b8 !important' }} />}
@@ -555,7 +755,6 @@ const ApplyAccommodation = () => {
                 size="small"
                 variant="text"
                 color="error"
-                disabled={isApplying}
                 onClick={() => setRevokeDialog({ open: true, participant: p })}
                 sx={{ textTransform: 'none', fontSize: '0.75rem', p: 0.5, minWidth: 0 }}
               >
@@ -563,20 +762,14 @@ const ApplyAccommodation = () => {
               </Button>
             </Stack>
           ) : (
-            <Tooltip title={limitCheck.reached ? limitCheck.reason : 'Allocate accommodation to this participant'}>
+            <Tooltip title={limitCheck.reached ? limitCheck.reason : 'Click to select days and pay accommodation'}>
               <span>
                 <Button
                   size="small"
                   variant="contained"
-                  disabled={limitCheck.reached || isApplying}
-                  onClick={() => handleToggleAccommodation(p, 'YES')}
-                  startIcon={
-                    isApplying ? (
-                      <CircularProgress size={14} color="inherit" />
-                    ) : (
-                      <HotelIcon sx={{ fontSize: 16 }} />
-                    )
-                  }
+                  disabled={limitCheck.reached}
+                  onClick={() => handleOpenApplyDialog(p)}
+                  startIcon={<HotelIcon sx={{ fontSize: 16 }} />}
                   sx={{
                     borderRadius: '8px',
                     textTransform: 'none',
@@ -598,7 +791,7 @@ const ApplyAccommodation = () => {
                     },
                   }}
                 >
-                  {isApplying ? 'Applying...' : limitCheck.reached ? 'Limit Full' : 'Apply Accommodation'}
+                  {limitCheck.reached ? 'Limit Full' : 'Apply Accommodation'}
                 </Button>
               </span>
             </Tooltip>
@@ -606,11 +799,13 @@ const ApplyAccommodation = () => {
         },
       ];
     });
-  }, [filteredParticipants, applyingParticipantId, quotaStats]);
+  }, [filteredParticipants, quotaStats]);
 
   const malePercent = Math.min(100, Math.round((quotaStats.male / MALE_LIMIT) * 100));
   const femalePercent = Math.min(100, Math.round((quotaStats.female / FEMALE_LIMIT) * 100));
   const totalPercent = Math.min(100, Math.round((quotaStats.total / OVERALL_LIMIT) * 100));
+
+  const totalPayable = selectedDays * RATE_PER_DAY;
 
   return (
     <PageContainer sx={{ px: { xs: 1.5, md: 3 }, py: { xs: 2, md: 3 } }}>
@@ -831,7 +1026,6 @@ const ApplyAccommodation = () => {
                 Other College Pool
               </Typography>
               <Chip
-                icon={<SchoolIcon sx={{ fontSize: '13px !important' }} />}
                 label="Paid Only"
                 size="small"
                 sx={{ fontWeight: 700, fontSize: '0.72rem', backgroundColor: '#f1f5f9' }}
@@ -841,13 +1035,13 @@ const ApplyAccommodation = () => {
               {otherCollegeParticipants.length}
             </Typography>
             <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'block' }}>
-              Paid participants eligible for accommodation from non-Aditya campuses.
+              Paid participants eligible for accommodation from other colleges.
             </Typography>
           </CardContent>
         </Card>
       </Box>
 
-      {/* Filter Toolbar */}
+      {/* Filter Toolbar (Schools & Events removed - Team ID filter only) */}
       <Paper
         elevation={0}
         sx={{
@@ -863,7 +1057,7 @@ const ApplyAccommodation = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <FilterAltIcon sx={{ fontSize: 20, color: '#2563eb' }} />
             <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0f172a' }}>
-              Filter Participants
+              Filter by Team ID
             </Typography>
             <Chip
               label={`${filteredParticipants.length} of ${otherCollegeParticipants.length} Shown`}
@@ -872,70 +1066,31 @@ const ApplyAccommodation = () => {
             />
           </Box>
 
-          {(schoolFilter !== 'ALL' ||
-            eventFilter !== 'ALL' ||
-            teamIdFilter !== 'ALL' ||
-            genderFilter !== 'ALL' ||
-            statusFilter !== 'ALL' ||
-            searchQuery) && (
-              <Button
-                size="small"
-                variant="text"
-                color="error"
-                onClick={handleResetFilters}
-                startIcon={<FilterAltOffIcon sx={{ fontSize: 16 }} />}
-                sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.8rem' }}
-              >
-                Reset Filters
-              </Button>
-            )}
+          {(teamIdFilter !== 'ALL' || genderFilter !== 'ALL' || statusFilter !== 'ALL' || searchQuery) && (
+            <Button
+              size="small"
+              variant="text"
+              color="error"
+              onClick={handleResetFilters}
+              startIcon={<FilterAltOffIcon sx={{ fontSize: 16 }} />}
+              sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.8rem' }}
+            >
+              Reset Filters
+            </Button>
+          )}
         </Box>
 
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-          {/* School Dropdown */}
+          {/* Team ID Dropdown Filter (Exclusive primary dropdown) */}
           <TextField
             select
             size="small"
-            label="School"
-            value={schoolFilter}
-            onChange={(e) => handleSchoolChange(e.target.value)}
-            sx={{ minWidth: 200, flex: 1 }}
-          >
-            <MenuItem value="ALL">All Schools</MenuItem>
-            {schoolOptions.map((sch) => (
-              <MenuItem key={sch} value={sch}>
-                {sch}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          {/* Events Dropdown */}
-          <TextField
-            select
-            size="small"
-            label="Event"
-            value={eventFilter}
-            onChange={(e) => handleEventChange(e.target.value)}
-            sx={{ minWidth: 220, flex: 1.2 }}
-          >
-            <MenuItem value="ALL">All Events</MenuItem>
-            {eventOptions.map((ev) => (
-              <MenuItem key={ev} value={ev}>
-                {ev}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          {/* Team ID Dropdown */}
-          <TextField
-            select
-            size="small"
-            label="Team ID"
+            label="Filter Team ID"
             value={teamIdFilter}
             onChange={(e) => setTeamIdFilter(e.target.value)}
-            sx={{ minWidth: 160, flex: 0.8 }}
+            sx={{ minWidth: 260, flex: 1.5 }}
           >
-            <MenuItem value="ALL">All Teams</MenuItem>
+            <MenuItem value="ALL">All Teams ({teamIdOptions.length} Teams)</MenuItem>
             {teamIdOptions.map((tid) => (
               <MenuItem key={tid} value={tid}>
                 {tid}
@@ -950,7 +1105,7 @@ const ApplyAccommodation = () => {
             label="Gender"
             value={genderFilter}
             onChange={(e) => setGenderFilter(e.target.value)}
-            sx={{ minWidth: 140 }}
+            sx={{ minWidth: 150 }}
           >
             <MenuItem value="ALL">All Genders</MenuItem>
             <MenuItem value="MALE">Male</MenuItem>
@@ -961,10 +1116,10 @@ const ApplyAccommodation = () => {
           <TextField
             select
             size="small"
-            label="Accommodation"
+            label="Accommodation Status"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            sx={{ minWidth: 160 }}
+            sx={{ minWidth: 180 }}
           >
             <MenuItem value="ALL">All Status</MenuItem>
             <MenuItem value="YES">Accommodated (YES)</MenuItem>
@@ -990,17 +1145,188 @@ const ApplyAccommodation = () => {
       ) : filteredParticipants.length === 0 ? (
         <EmptyState
           title="No Participants Found"
-          description="No eligible other college paid participants match your selected filters."
+          description="No eligible other college paid participants match your selected filter."
         />
       ) : (
         <DataTable
           columns={columns}
           rows={tableRows}
-          nonSortableColumns={[0, 8]}
-          alignments={['center', 'left', 'center', 'left', 'left', 'center', 'left', 'center', 'center']}
+          nonSortableColumns={[0, 7]}
+          alignments={['center', 'left', 'center', 'left', 'center', 'left', 'center', 'center']}
           defaultRowsPerPage={20}
         />
       )}
+
+      {/* Accommodation Payment Popup Dialog */}
+      <Dialog
+        open={paymentDialogOpen}
+        onClose={() => !processingPayment && setPaymentDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: '20px', p: 1 },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, fontSize: '1.25rem', color: '#1e3a8a', pb: 1 }}>
+          Apply Accommodation & Payment
+        </DialogTitle>
+
+        <DialogContent dividers sx={{ py: 2.5 }}>
+          {selectedParticipant && (
+            <Box>
+              {/* Participant Summary Card */}
+              <Box
+                sx={{
+                  p: 2,
+                  mb: 2.5,
+                  borderRadius: '12px',
+                  backgroundColor: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0f172a', mb: 0.5 }}>
+                  {selectedParticipant.name || 'Student Name'}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#475569', mb: 0.5 }}>
+                  Roll No: <strong>{selectedParticipant.roll || '-'}</strong> | Team ID: <strong>{selectedParticipant.teamId}</strong>
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#475569' }}>
+                  College: <strong>{selectedParticipant.collegeDisplay}</strong>
+                </Typography>
+                <Box sx={{ mt: 1 }}>
+                  <Chip
+                    icon={
+                      selectedParticipant.normalizedGender === 'FEMALE' ? (
+                        <FemaleIcon sx={{ fontSize: '14px !important', color: '#db2777 !important' }} />
+                      ) : (
+                        <MaleIcon sx={{ fontSize: '14px !important', color: '#2563eb !important' }} />
+                      )
+                    }
+                    label={selectedParticipant.normalizedGender === 'FEMALE' ? 'Girl' : 'Male'}
+                    size="small"
+                    sx={{
+                      fontWeight: 700,
+                      backgroundColor:
+                        selectedParticipant.normalizedGender === 'FEMALE'
+                          ? 'rgba(236, 72, 153, 0.12)'
+                          : 'rgba(59, 130, 246, 0.12)',
+                      color: selectedParticipant.normalizedGender === 'FEMALE' ? '#be185d' : '#1d4ed8',
+                    }}
+                  />
+                </Box>
+              </Box>
+
+              {/* Days Selection Dropdown */}
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1e293b', mb: 1 }}>
+                Select Accommodation Duration:
+              </Typography>
+              <TextField
+                select
+                fullWidth
+                size="small"
+                label="Number of Days"
+                value={selectedDays}
+                onChange={(e) => setSelectedDays(Number(e.target.value))}
+                sx={{ mb: 2.5 }}
+              >
+                <MenuItem value={1}>1 Day (₹{RATE_PER_DAY} per head)</MenuItem>
+                <MenuItem value={2}>2 Days (₹{RATE_PER_DAY * 2} per head)</MenuItem>
+              </TextField>
+
+              {/* Amount Breakdown Card */}
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+                  border: '1px solid #86efac',
+                }}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="body2" sx={{ color: '#166534', fontWeight: 600 }}>
+                    Rate per head / day:
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#166534', fontWeight: 700 }}>
+                    ₹{RATE_PER_DAY}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                  <Typography variant="body2" sx={{ color: '#166534', fontWeight: 600 }}>
+                    Selected Duration:
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#166534', fontWeight: 700 }}>
+                    {selectedDays} Day{selectedDays > 1 ? 's' : ''}
+                  </Typography>
+                </Box>
+                <Divider sx={{ my: 1, borderColor: '#86efac' }} />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="subtitle1" sx={{ color: '#14532d', fontWeight: 800 }}>
+                    Total Payable Amount:
+                  </Typography>
+                  <Typography variant="h5" sx={{ color: '#15803d', fontWeight: 900 }}>
+                    ₹{totalPayable}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2.5, gap: 1, flexWrap: 'wrap' }}>
+          <Button
+            onClick={() => setPaymentDialogOpen(false)}
+            variant="outlined"
+            disabled={processingPayment}
+            sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600 }}
+          >
+            Cancel
+          </Button>
+
+          {/* Cash / Manual Payment Button */}
+          <Button
+            variant="outlined"
+            color="success"
+            disabled={processingPayment}
+            onClick={handlePayCashManual}
+            startIcon={processingPayment ? <CircularProgress size={16} color="inherit" /> : <CashIcon />}
+            sx={{
+              borderRadius: '10px',
+              textTransform: 'none',
+              fontWeight: 700,
+              borderColor: '#10b981',
+              color: '#059669',
+              '&:hover': {
+                borderColor: '#059669',
+                backgroundColor: 'rgba(16, 185, 129, 0.08)',
+              },
+            }}
+          >
+            Cash / Direct Pay (₹{totalPayable})
+          </Button>
+
+          {/* Online Razorpay Payment Button */}
+          <Button
+            variant="contained"
+            disabled={processingPayment}
+            onClick={handlePayOnlineRazorpay}
+            startIcon={processingPayment ? <CircularProgress size={16} color="inherit" /> : <PaymentIcon />}
+            sx={{
+              borderRadius: '10px',
+              textTransform: 'none',
+              fontWeight: 800,
+              px: 2.5,
+              py: 1,
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)',
+              },
+            }}
+          >
+            {processingPayment ? 'Processing...' : `Pay Online with Razorpay (₹${totalPayable})`}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Revoke Confirmation Dialog */}
       <Dialog
@@ -1014,7 +1340,7 @@ const ApplyAccommodation = () => {
           <DialogContentText sx={{ color: '#334155' }}>
             Are you sure you want to change the accommodation status of{' '}
             <strong>{revokeDialog.participant?.name || 'this participant'}</strong> back to <strong>"NO"</strong>?
-            This will free up one slot in the accommodation quota.
+            This will mark accommodation as unpaid and free up one quota slot.
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
@@ -1029,7 +1355,7 @@ const ApplyAccommodation = () => {
             onClick={() => {
               const p = revokeDialog.participant;
               setRevokeDialog({ open: false, participant: null });
-              if (p) handleToggleAccommodation(p, 'No');
+              if (p) handleRevokeAccommodation(p);
             }}
             variant="contained"
             color="error"
