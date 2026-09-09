@@ -46,7 +46,7 @@ import { toast } from 'sonner';
 const MALE_LIMIT = 100;
 const FEMALE_LIMIT = 50;
 const OVERALL_LIMIT = 150;
-const RATE_PER_DAY = 1;
+const RATE_PER_DAY = 200;
 
 const isOtherCollege = (college) => {
   if (!college) return false;
