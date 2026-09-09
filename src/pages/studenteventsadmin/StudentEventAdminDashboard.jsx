@@ -25,6 +25,7 @@ import {
   Business as BusinessIcon,
   CurrencyRupee as CurrencyRupeeIcon,
   TrendingUp as TrendingUpIcon,
+  Hotel as HotelIcon,
 } from '@mui/icons-material';
 import {
   BarChart,
@@ -47,6 +48,8 @@ import StatCard from '../../components/common/StatCard';
 import StatCardGrid from '../../components/common/StatCardGrid';
 import API from '../../api/axios';
 import { toast } from 'sonner';
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 /* ─── Colour palettes ──────────────────────────────────────────────────────── */
 const DEPT_BAR_COLORS = { teams: '#0d9488', students: '#f59e0b', events: '#3b82f6', participants: '#3b82f6' };
@@ -105,6 +108,14 @@ const SectionTitle = ({ children }) => (
 
 /* ─── Main Component ─────────────────────────────────────────────────────── */
 const StudentEventAdminDashboard = () => {
+  const { activeRole } = useAuth();
+  const navigate = useNavigate();
+
+  const isEventAdmin = useMemo(() => {
+    const r = String(activeRole || '').trim().toUpperCase();
+    return ['STUDENT_EVENT_ADMIN', 'STUDENT EVENT ADMIN', 'VEDA_ADMIN', 'VEDA ADMIN'].includes(r);
+  }, [activeRole]);
+
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deptFilter, setDeptFilter] = useState('ALL');
@@ -179,7 +190,10 @@ const StudentEventAdminDashboard = () => {
         attended: stats?.totalAttended || 0,
         revenue: stats?.revenue?.total || 0,
         schools: schoolStats?.length || 0,
-        departments: deptStats?.length || 0
+        departments: deptStats?.length || 0,
+        accommodationYes: stats?.accommodation?.yes || 0,
+        accommodationBoys: stats?.accommodation?.genderBreakdown?.male || 0,
+        accommodationGirls: stats?.accommodation?.genderBreakdown?.female || 0,
       };
     }
     const dStats = deptStats.find(d => (d.name === globalDeptFilter || d.dept === globalDeptFilter)) || {};
@@ -189,7 +203,10 @@ const StudentEventAdminDashboard = () => {
       attended: dStats.participatedStudents || 0,
       revenue: dStats.revenue || 0,
       schools: '-',
-      departments: 1
+      departments: 1,
+      accommodationYes: stats?.accommodation?.yes || 0,
+      accommodationBoys: stats?.accommodation?.genderBreakdown?.male || 0,
+      accommodationGirls: stats?.accommodation?.genderBreakdown?.female || 0,
     };
   }, [globalDeptFilter, stats, deptStats, schoolStats]);
 
@@ -346,10 +363,24 @@ const StudentEventAdminDashboard = () => {
       {currentTab === 0 && (
         <>
           {/* ── Summary Cards ─────────────────────────────────────────────── */}
-          <StatCardGrid columns={{ xs: 1, sm: 2, md: 3 }}>
+          <StatCardGrid columns={{ xs: 1, sm: 2, md: 3, lg: isEventAdmin ? 4 : 3 }}>
             <StatCard title="Total Teams" value={globalSummary.teams} color="#0d9488" icon={<GroupsIcon />} />
             <StatCard title="Total Students" value={globalSummary.students} color="#2563eb" icon={<PeopleIcon />} />
             <StatCard title="Total Revenue" value={`₹${fmt(globalSummary.revenue)}`} color="#7c3aed" icon={<CurrencyRupeeIcon />} />
+            {isEventAdmin && (
+              <StatCard
+                title="Accommodation (YES)"
+                value={globalSummary.accommodationYes}
+                subtitle={
+                  globalSummary.accommodationYes > 0
+                    ? `${globalSummary.accommodationBoys} Boys • ${globalSummary.accommodationGirls} Girls`
+                    : 'Paid Participants'
+                }
+                color="#059669"
+                icon={<HotelIcon />}
+                onClick={() => navigate('/Eventveda/apply-accommodation')}
+              />
+            )}
             <StatCard title="Total Attended" value={globalSummary.attended} color="#16a34a" icon={<PeopleIcon />} />
             <StatCard title="Schools (Groups)" value={globalSummary.schools} color="#ea580c" icon={<SchoolIcon />} />
             <StatCard title="Departments" value={globalSummary.departments} color="#9333ea" icon={<BusinessIcon />} />

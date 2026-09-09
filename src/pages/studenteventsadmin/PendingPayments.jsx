@@ -46,7 +46,8 @@ import {
   Payment as PaymentIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  Download as DownloadIcon
+  Download as DownloadIcon,
+  Sync as SyncIcon
 } from '@mui/icons-material';
 import * as XLSX from 'xlsx-js-style';
 import { useNavigate } from 'react-router-dom';
@@ -98,6 +99,7 @@ const PendingPayments = () => {
   const [branchMap, setBranchMap] = useState({});
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [verifyingAll, setVerifyingAll] = useState(false);
 
   // Filter states
   const [filterTeamId, setFilterTeamId] = useState('');
@@ -211,6 +213,31 @@ const PendingPayments = () => {
       }
     } catch (err) {
       toast.error(err.response?.data?.error || 'Gateway verification failed');
+    }
+  };
+
+  // Handle batch verify all pending via gateway
+  const handleVerifyAllGateway = async () => {
+    if (verifyingAll) return;
+    setVerifyingAll(true);
+    try {
+      const res = await API.post('/api/razorpay/registrations/verify-all-gateway?limit=100');
+      const summary = res.data?.summary;
+      if (summary) {
+        if (summary.verifiedToPaid > 0) {
+          toast.success(`Verification complete: ${summary.verifiedToPaid} payment(s) verified and updated to PAID!`);
+        } else {
+          toast.info(`Checked ${summary.totalFound} pending order(s). No new captured payments found.`);
+        }
+        fetchData();
+      } else {
+        toast.info(res.data?.message || 'Gateway check completed');
+      }
+    } catch (err) {
+      console.error('Error verifying all gateway:', err);
+      toast.error(err.response?.data?.error || 'Failed to verify pending payments from gateway');
+    } finally {
+      setVerifyingAll(false);
     }
   };
 
@@ -882,6 +909,33 @@ const PendingPayments = () => {
                 Clear Filters
               </Button>
             )}
+
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleVerifyAllGateway}
+              disabled={verifyingAll || payments.length === 0}
+              startIcon={verifyingAll ? <CircularProgress size={16} color="inherit" /> : <SyncIcon />}
+              sx={{
+                borderRadius: '10px',
+                textTransform: 'none',
+                fontWeight: 700,
+                fontSize: '0.82rem',
+                px: 2,
+                py: 0.75,
+                background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                },
+                '&.Mui-disabled': {
+                  background: '#e2e8f0',
+                  color: '#94a3b8'
+                }
+              }}
+            >
+              {verifyingAll ? 'Verifying Gateway...' : 'Verify All via Gateway'}
+            </Button>
 
             <Button
               variant="contained"

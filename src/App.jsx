@@ -111,6 +111,7 @@ import ManualAdding from "./pages/studenteventsadmin/ManualAdding";
 import PendingPayments from "./pages/studenteventsadmin/PendingPayments";
 import Registrations from "./pages/studenteventsadmin/Registrations";
 import Participants from "./pages/studenteventsadmin/Participants";
+import ApplyAccommodation from "./pages/studenteventsadmin/ApplyAccommodation";
 import ScanPass from "./pages/studenteventsadmin/ScanPass";
 import ScanAccommodation from "./pages/studenteventsadmin/ScanAccommodation";
 import Passes from "./pages/studenteventsadmin/Passes";
@@ -338,6 +339,7 @@ function App() {
         <Route path="/Eventveda/participants/all" element={<ProtectedRoute element={<Participants mode="all" />} />} />
         <Route path="/Eventveda/participants/accommodation" element={<ProtectedRoute element={<Participants mode="accommodation" />} />} />
         <Route path="/Eventveda/participants/no-accommodation" element={<ProtectedRoute element={<Participants mode="no-accommodation" />} />} />
+        <Route path="/Eventveda/apply-accommodation" element={<ProtectedRoute element={<ApplyAccommodation />} />} />
         <Route path="/Eventveda/scan-pass" element={<ProtectedRoute element={<ScanPass />} />} />
         <Route path="/Eventveda/scan-accommodation" element={<ProtectedRoute element={<ScanAccommodation />} />} />
         <Route path="/Eventveda/passes" element={<ProtectedRoute element={<Passes />} />} />
