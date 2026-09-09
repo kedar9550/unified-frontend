@@ -70,6 +70,7 @@ import GenerateQR from "./pages/utilities/GenerateQR";
 import ManageShortenUrl from "./pages/utilities/ManageShortenUrl";
 import ManageQR from "./pages/utilities/ManageQR";
 import RedirectHandler from "./pages/utilities/RedirectHandler";
+import Payslips from "./pages/Payslips/Payslips";
 
 // Service Desk Modules
 import RaiseTicket from "./pages/serviceDesk/RaiseTicket";
@@ -272,6 +273,9 @@ function App() {
         <Route path="/utilities/generate-qr" element={<ProtectedRoute element={<GenerateQR />} />} />
         <Route path="/utilities/manage-shorten-url" element={<ProtectedRoute element={<ManageShortenUrl />} />} />
         <Route path="/utilities/manage-qr" element={<ProtectedRoute element={<ManageQR />} />} />
+
+        {/* Payslips Routes */}
+        <Route path="/payslips" element={<ProtectedRoute element={<Payslips />} />} />
 
         {/* Public Redirect Route */}
         <Route path="/go/:shortCode" element={<RedirectHandler />} />

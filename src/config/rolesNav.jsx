@@ -93,6 +93,7 @@ export const ROLE_ROUTES = {
         { text: "Shorten URL", path: "/utilities/shorten-url", icon: <Link /> },
         { text: "Generate QR Code", path: "/utilities/generate-qr", icon: <QrCode /> },
         { text: "SDG's", path: "/research/sdg" },
+        // { text: "Payslips", path: "/payslips", icon: <Payment /> },
       ]
     },
     {
