@@ -882,7 +882,7 @@ const PendingPayments = () => {
                 border: '1px solid rgba(14, 165, 233, 0.25)',
               }}
             />
-            {totalPendingAmount > 0 && (
+            {/* {totalPendingAmount > 0 && (
               <Chip
                 label={`Total: ₹ ${totalPendingAmount.toLocaleString('en-IN')}`}
                 size="small"
@@ -893,7 +893,7 @@ const PendingPayments = () => {
                   border: '1px solid #e2e8f0',
                 }}
               />
-            )}
+            )} */}
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
@@ -967,7 +967,7 @@ const PendingPayments = () => {
         </Box>
 
         <Grid container spacing={2}>
-          <Grid item xs={12} md={4}>
+          <Grid size={{ xs: 12, sm: 12, md: 4 }}>
             <TextField
               fullWidth
               size="small"
@@ -975,6 +975,7 @@ const PendingPayments = () => {
               placeholder="e.g. VD26-XXXX or order_xxx"
               value={filterTeamId}
               onChange={(e) => setFilterTeamId(e.target.value)}
+              sx={{ width: '100%' }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -986,7 +987,7 @@ const PendingPayments = () => {
             />
           </Grid>
 
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <TextField
               fullWidth
               select
@@ -997,6 +998,7 @@ const PendingPayments = () => {
                 setFilterSchoolName(e.target.value);
                 setFilterEventName('');
               }}
+              sx={{ width: '100%' }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -1013,7 +1015,7 @@ const PendingPayments = () => {
             </TextField>
           </Grid>
 
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <TextField
               fullWidth
               select
@@ -1021,6 +1023,7 @@ const PendingPayments = () => {
               label="Filter by Event Name"
               value={filterEventName}
               onChange={(e) => setFilterEventName(e.target.value)}
+              sx={{ width: '100%' }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -1147,7 +1150,7 @@ const PendingPayments = () => {
 
           <DialogContent dividers sx={{ p: { xs: 2.5, sm: 4 }, background: '#ffffff' }}>
             <Grid container spacing={2.5} sx={{ mb: 3 }}>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px', background: '#f8fafc' }}>
                   <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700, fontSize: '0.68rem' }}>
                     Team ID
@@ -1158,7 +1161,7 @@ const PendingPayments = () => {
                 </Paper>
               </Grid>
 
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px', background: '#f8fafc' }}>
                   <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700, fontSize: '0.68rem' }}>
                     Razorpay Order ID
@@ -1169,7 +1172,7 @@ const PendingPayments = () => {
                 </Paper>
               </Grid>
 
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px', background: '#f8fafc' }}>
                   <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700, fontSize: '0.68rem' }}>
                     Payment ID
@@ -1180,7 +1183,7 @@ const PendingPayments = () => {
                 </Paper>
               </Grid>
 
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                 <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px', background: '#f8fafc' }}>
                   <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700, fontSize: '0.68rem' }}>
                     Initiated At
@@ -1204,7 +1207,7 @@ const PendingPayments = () => {
               }}
             >
               <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} md={7}>
+                <Grid size={{ xs: 12, md: 7 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                     <EventIcon color="warning" fontSize="small" />
                     <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
@@ -1216,7 +1219,7 @@ const PendingPayments = () => {
                   </Typography>
                 </Grid>
 
-                <Grid item xs={12} md={5} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
+                <Grid size={{ xs: 12, md: 5 }} sx={{ textAlign: { xs: 'left', md: 'right' } }}>
                   <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
                     Expected Amount
                   </Typography>
@@ -1340,7 +1343,7 @@ const PendingPayments = () => {
                     Participant {index + 1} {index === 0 && '(Team Lead)'}
                   </Typography>
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         size="small"
@@ -1349,7 +1352,7 @@ const PendingPayments = () => {
                         onChange={(e) => handleParticipantChange(index, 'name', e.target.value)}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         size="small"
@@ -1358,7 +1361,7 @@ const PendingPayments = () => {
                         onChange={(e) => handleParticipantChange(index, 'roll', e.target.value)}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         size="small"
@@ -1367,7 +1370,7 @@ const PendingPayments = () => {
                         onChange={(e) => handleParticipantChange(index, 'mobile', e.target.value)}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         size="small"
@@ -1377,7 +1380,7 @@ const PendingPayments = () => {
                         onChange={(e) => handleParticipantChange(index, 'email', e.target.value)}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         select
@@ -1393,7 +1396,7 @@ const PendingPayments = () => {
                         ))}
                       </TextField>
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         select
@@ -1410,7 +1413,7 @@ const PendingPayments = () => {
                         ))}
                       </TextField>
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         size="small"
@@ -1419,7 +1422,7 @@ const PendingPayments = () => {
                         onChange={(e) => handleParticipantChange(index, 'branch', e.target.value)}
                       />
                     </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         select
