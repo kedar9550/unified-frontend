@@ -61,7 +61,7 @@ const Payslips = () => {
     const { user } = useAuth();
 
     // Logged in user details
-    const empId = user?.institutionId || user?.empId || user?.empid;
+    const empId = user?.institutionId || user?.empId || user?.empid || user?.employeeId;
     const empName = user?.name || user?.fullName || user?.employeeName || "-";
     const dept = user?.department?.name || user?.department || user?.dept || "-";
     const college = user?.college || user?.institution || "-";
@@ -97,14 +97,11 @@ const Payslips = () => {
         fetchAvailableYears();
     }, [empId]);
 
-    // Fetch real payslips data from backend API
+    // Fetch real payslips data from backend API (all payslips for employee)
     const fetchPayslips = async () => {
         try {
             const params = {};
             if (empId) params.empId = empId;
-            if (fromMonth) params.fromMonth = fromMonth;
-            if (toMonth) params.toMonth = toMonth;
-            if (year) params.year = year;
 
             const res = await axios.get("/api/payslips", { params });
             if (res.data && Array.isArray(res.data.data)) {
@@ -128,7 +125,7 @@ const Payslips = () => {
 
     useEffect(() => {
         fetchPayslips();
-    }, [fromMonth, toMonth, year, empId]);
+    }, [empId]);
 
     const validateInputs = () => {
         if (!fromMonth) {
@@ -167,182 +164,229 @@ const Payslips = () => {
         }
     };
 
-    const generatePayslipPdf = async (row) => {
+    const generateSinglePayslipHtml = (row) => {
         const targetName = row.name || empName;
         const targetEmpId = row.empId || empId;
         const targetDept = row.department || dept;
         const targetMonth = row.month || "Payslip";
         const targetYear = row.year || "";
 
-        const element = document.createElement("div");
-        element.style.padding = "25px";
-        element.style.background = "#ffffff";
-        element.style.color = "#000000";
-        element.style.fontFamily = "'Stem', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-        element.style.width = "720px";
-        element.style.margin = "0 auto";
-
-        element.innerHTML = `
-            <div style="text-align: center; margin-bottom: 18px;">
-                <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 6px;">
-                    <img src="/AUS Long Logo.png" alt="Aditya University Logo" style="max-width: 100%; height: 58px; width: auto; object-fit: contain;" />
+        return `
+            <div style="padding: 25px; background: #ffffff; color: #000000; font-family: 'Stem', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; width: 720px; margin: 0 auto; box-sizing: border-box;">
+                <div style="text-align: center; margin-bottom: 18px;">
+                    <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 6px;">
+                        <img src="/AUS Long Logo.png" alt="Aditya University Logo" style="max-width: 100%; height: 58px; width: auto; object-fit: contain;" />
+                    </div>
+                    <p style="font-size: 13px; font-weight: 600; margin: 2px 0 0 0; color: #222222;">Aditya Nagar, ADB Road,Surampalem,E.G.Dist, A.P,533437</p>
+                    <h4 style="font-size: 15px; font-weight: 800; margin: 12px 0 0 0; color: #000000;">Pay Slip for the Month of ${targetMonth} - ${targetYear}</h4>
                 </div>
-                <p style="font-size: 13px; font-weight: 600; margin: 2px 0 0 0; color: #222222;">Aditya Nagar, ADB Road,Surampalem,E.G.Dist, A.P,533437</p>
-                <h4 style="font-size: 15px; font-weight: 800; margin: 12px 0 0 0; color: #000000;">Pay Slip for the Month of ${targetMonth} - ${targetYear}</h4>
+
+                <table style="width: 100%; border-collapse: collapse; border: 1px solid #000000; font-size: 13px; margin-bottom: 16px;">
+                    <tbody>
+                        <tr>
+                            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold; width: 20%;">Employee Name</td>
+                            <td style="border: 1px solid #000000; padding: 6px 10px; width: 30%;">${targetName}</td>
+                            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold; width: 20%;">Bank A/c No</td>
+                            <td style="border: 1px solid #000000; padding: 6px 10px; width: 30%;">${row.account_number || "-"}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold;">Employee ID</td>
+                            <td style="border: 1px solid #000000; padding: 6px 10px;">${targetEmpId}</td>
+                            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold;">Bank Name</td>
+                            <td style="border: 1px solid #000000; padding: 6px 10px;">${row.bank_name || "-"}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold;">Designation</td>
+                            <td style="border: 1px solid #000000; padding: 6px 10px;">${row.designation || "-"}</td>
+                            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold;">EPFO No</td>
+                            <td style="border: 1px solid #000000; padding: 6px 10px;">${row.pf_number || "-"}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold;">Department</td>
+                            <td style="border: 1px solid #000000; padding: 6px 10px;">${targetDept}</td>
+                            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold;">ESIC No</td>
+                            <td style="border: 1px solid #000000; padding: 6px 10px;">${row.esic_number || "-"}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <table style="width: 100%; border-collapse: collapse; border: 1px solid #000000; font-size: 13px;">
+                    <thead>
+                        <tr>
+                            <th colspan="2" style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 14px; font-weight: bold;">Earnings</th>
+                            <th colspan="2" style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 14px; font-weight: bold;">Deductions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="border: 1px solid #000000; padding: 5px 10px; width: 30%;">Basic Pay</td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right; width: 20%;">${Number(row.basic_salary || row.basicPay || 0).toFixed(2)}</td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px; width: 30%;">Loss of Pay</td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right; width: 20%;">${Number(row.loss_of_pay || 0).toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;">DA</td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.da || 0).toFixed(2)}</td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;">Professional Tax</td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.professional_tax || 0).toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;">House Rent Allowance</td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.house_rent_allowance || 0).toFixed(2)}</td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;">EPFO</td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.epf || 0).toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;">Others</td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.earnings_others || 0).toFixed(2)}</td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;">Group Insurance</td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.group_insurance || 0).toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;">Canteen</td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.canteen || 0).toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;">Advance</td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.advance || 0).toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;">TDS</td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.tds || 0).toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;">Contribution</td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.contribution || 0).toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;">ESIC</td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.esi || 0).toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px;">Others</td>
+                            <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.others || 0).toFixed(2)}</td>
+                        </tr>
+                        <tr>
+                            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold;">Total Earnings</td>
+                            <td style="border: 1px solid #000000; padding: 6px 10px; text-align: right; font-weight: bold;">${Number(row.total_earnings || row.grossAmount || 0).toFixed(2)}</td>
+                            <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold;">Total Deductions</td>
+                            <td style="border: 1px solid #000000; padding: 6px 10px; text-align: right; font-weight: bold;">${Number(row.total_deductions || row.deductions || 0).toFixed(2)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="margin-top: 15px; text-align: right;">
+                    <span style="font-weight: 800; font-size: 14px; margin-right: 20px;">Net Salary</span>
+                    <span style="font-weight: 800; font-size: 15px;">${Number(row.net_salary || row.netSalary || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+
+                <div style="margin-top: 12px; font-size: 13px;">
+                    <strong>In Words : </strong> <span>${numberToWords(row.net_salary || row.netSalary)}</span>
+                </div>
+
+                <div style="margin-top: 20px; display: flex; justify-content: flex-start; align-items: center;">
+                    <img src="/payslip_stamp%20and%20sign.jpg" alt="Stamp and Signature" style="height: 150px; max-width: 360px; object-fit: contain;" />
+                </div>
             </div>
+        `;
+    };
 
-            <table style="width: 100%; border-collapse: collapse; border: 1px solid #000000; font-size: 13px; margin-bottom: 16px;">
-                <tbody>
-                    <tr>
-                        <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold; width: 20%;">Employee Name</td>
-                        <td style="border: 1px solid #000000; padding: 6px 10px; width: 30%;">${targetName}</td>
-                        <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold; width: 20%;">Bank A/c No</td>
-                        <td style="border: 1px solid #000000; padding: 6px 10px; width: 30%;">${row.account_number || "-"}</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold;">Employee ID</td>
-                        <td style="border: 1px solid #000000; padding: 6px 10px;">${targetEmpId}</td>
-                        <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold;">Bank Name</td>
-                        <td style="border: 1px solid #000000; padding: 6px 10px;">${row.bank_name || "-"}</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold;">Designation</td>
-                        <td style="border: 1px solid #000000; padding: 6px 10px;">${row.designation || "-"}</td>
-                        <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold;">EPFO No</td>
-                        <td style="border: 1px solid #000000; padding: 6px 10px;">${row.pf_number || "-"}</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold;">Department</td>
-                        <td style="border: 1px solid #000000; padding: 6px 10px;">${targetDept}</td>
-                        <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold;">ESIC No</td>
-                        <td style="border: 1px solid #000000; padding: 6px 10px;">${row.esic_number || "-"}</td>
-                    </tr>
-                </tbody>
-            </table>
+    const generateCombinedPayslipsPdf = async (records, fileName) => {
+        if (!records || records.length === 0) return;
 
-            <table style="width: 100%; border-collapse: collapse; border: 1px solid #000000; font-size: 13px;">
-                <thead>
-                    <tr>
-                        <th colspan="2" style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 14px; font-weight: bold;">Earnings</th>
-                        <th colspan="2" style="border: 1px solid #000000; padding: 8px; text-align: center; font-size: 14px; font-weight: bold;">Deductions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td style="border: 1px solid #000000; padding: 5px 10px; width: 30%;">Basic Pay</td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right; width: 20%;">${Number(row.basic_salary || row.basicPay || 0).toFixed(2)}</td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px; width: 30%;">Loss of Pay</td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right; width: 20%;">${Number(row.loss_of_pay || 0).toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;">DA</td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.da || 0).toFixed(2)}</td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;">Professional Tax</td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.professional_tax || 0).toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;">House Rent Allowance</td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.house_rent_allowance || 0).toFixed(2)}</td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;">EPFO</td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.epf || 0).toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;">Others</td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.earnings_others || 0).toFixed(2)}</td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;">Group Insurance</td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.group_insurance || 0).toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;">Canteen</td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.canteen || 0).toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;">Advance</td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.advance || 0).toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;">TDS</td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.tds || 0).toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;">Contribution</td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.contribution || 0).toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;">ESIC</td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.esi || 0).toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;"></td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px;">Others</td>
-                        <td style="border: 1px solid #000000; padding: 5px 10px; text-align: right;">${Number(row.others || 0).toFixed(2)}</td>
-                    </tr>
-                    <tr>
-                        <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold;">Total Earnings</td>
-                        <td style="border: 1px solid #000000; padding: 6px 10px; text-align: right; font-weight: bold;">${Number(row.total_earnings || row.grossAmount || 0).toFixed(2)}</td>
-                        <td style="border: 1px solid #000000; padding: 6px 10px; font-weight: bold;">Total Deductions</td>
-                        <td style="border: 1px solid #000000; padding: 6px 10px; text-align: right; font-weight: bold;">${Number(row.total_deductions || row.deductions || 0).toFixed(2)}</td>
-                    </tr>
-                </tbody>
-            </table>
+        const container = document.createElement("div");
+        container.style.width = "720px";
+        container.style.margin = "0 auto";
 
-            <div style="margin-top: 15px; text-align: right;">
-                <span style="font-weight: 800; font-size: 14px; margin-right: 20px;">Net Salary</span>
-                <span style="font-weight: 800; font-size: 15px;">${Number(row.net_salary || row.netSalary || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
-
-            <div style="margin-top: 12px; font-size: 13px;">
-                <strong>In Words : </strong> <span>${numberToWords(row.net_salary || row.netSalary)}</span>
-            </div>
-
-            <div style="margin-top: 20px; display: flex; justify-content: flex-start; align-items: center;">
-                <img src="/payslip_stamp%20and%20sign.jpg" alt="Stamp and Signature" style="height: 150px; max-width: 360px; object-fit: contain;" />
-            </div>
-        </div>
-    `;
+        records.forEach((row, idx) => {
+            const wrapper = document.createElement("div");
+            if (idx < records.length - 1) {
+                wrapper.style.pageBreakAfter = "always";
+                wrapper.style.breakAfter = "page";
+            }
+            wrapper.innerHTML = generateSinglePayslipHtml(row);
+            container.appendChild(wrapper);
+        });
 
         const opt = {
             margin: 8,
-            filename: `Payslip_${targetEmpId}_${targetMonth}_${targetYear}.pdf`,
+            filename: fileName,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['css', 'legacy'] }
         };
 
         const html2pdfModule = (await import('html2pdf.js')).default;
-        await html2pdfModule().set(opt).from(element).save();
+        await html2pdfModule().set(opt).from(container).save();
+    };
+
+    const generatePayslipPdf = async (row) => {
+        const targetMonth = row.month || "Payslip";
+        const targetYear = row.year || "";
+        const targetEmpId = row.empId || empId;
+        const fileName = `Payslip_${targetEmpId}_${targetMonth}_${targetYear}.pdf`;
+        await generateCombinedPayslipsPdf([row], fileName);
     };
 
     const handleDownload = async () => {
         if (!validateInputs()) return;
         setDownloading(true);
         try {
-            const targetPayslip = payslipsData.find(p => p.month === fromMonth && String(p.year) === String(year)) || payslipsData[0];
-            if (targetPayslip) {
-                toast.info(`Generating PDF for ${targetPayslip.month} ${targetPayslip.year}...`);
-                await generatePayslipPdf(targetPayslip);
-                toast.success(`Payslip PDF downloaded for ${targetPayslip.month} ${targetPayslip.year}!`);
+            const fromIdx = monthsList.findIndex(m => m.toLowerCase() === String(fromMonth).trim().toLowerCase());
+            const toIdx = monthsList.findIndex(m => m.toLowerCase() === String(toMonth).trim().toLowerCase());
+
+            // Filter payslips within selected month range & year
+            let recordsToDownload = payslipsData.filter(p => {
+                const isYearMatch = !year || String(p.year).trim() === String(year).trim();
+                const pMonth = p.month ? String(p.month).trim() : '';
+                const mIdx = monthsList.findIndex(m => m.toLowerCase() === pMonth.toLowerCase());
+                const isMonthInRange = (fromIdx !== -1 && toIdx !== -1)
+                    ? (mIdx >= fromIdx && mIdx <= toIdx)
+                    : true;
+                return isYearMatch && isMonthInRange;
+            });
+
+            // Sort chronologically from fromMonth to toMonth
+            recordsToDownload.sort((a, b) => {
+                const pMonthA = a.month ? String(a.month).trim() : '';
+                const pMonthB = b.month ? String(b.month).trim() : '';
+                return monthsList.findIndex(m => m.toLowerCase() === pMonthA.toLowerCase()) - monthsList.findIndex(m => m.toLowerCase() === pMonthB.toLowerCase());
+            });
+
+            // Fallback: If state doesn't have it yet, query backend directly
+            if (recordsToDownload.length === 0) {
+                const res = await axios.get("/api/payslips", {
+                    params: { empId, fromMonth, toMonth, year }
+                });
+                if (res.data && Array.isArray(res.data.data)) {
+                    recordsToDownload = res.data.data;
+                }
+            }
+
+            if (recordsToDownload.length > 0) {
+                toast.info(`Generating combined PDF for ${fromMonth} - ${toMonth} ${year} (${recordsToDownload.length} month(s))...`);
+                const fileName = `Payslips_${empId}_${fromMonth}_to_${toMonth}_${year}.pdf`;
+                await generateCombinedPayslipsPdf(recordsToDownload, fileName);
+                toast.success(`Downloaded combined PDF containing ${recordsToDownload.length} month(s) payslips!`);
             } else {
-                const downloadUrl = `http://localhost:8000/download.php?from=${fromMonth}&to=${toMonth}&year=${year}&empId=${empId}`;
-                window.open(downloadUrl, "_blank");
-                toast.success("Downloading payslips...");
+                toast.error(`No payslip data found for ${fromMonth} - ${toMonth} ${year}`);
             }
         } catch (err) {
             console.error("Download PDF error:", err);
-            toast.error("Failed to download payslip PDF. Opening fallback...");
-            const downloadUrl = `http://localhost:8000/download.php?from=${fromMonth}&to=${toMonth}&year=${year}&empId=${empId}`;
-            window.open(downloadUrl, "_blank");
+            toast.error("Failed to download combined payslips PDF.");
         } finally {
             setDownloading(false);
         }
