@@ -523,7 +523,6 @@ export const ROLE_ROUTES = {
           icon: <Groups />,
           nested: [
             { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
-            // { text: "Apply Accommodation", path: "/Eventveda/apply-accommodation", icon: <Hotel /> }
           ]
         },
         { text: "Apply Accommodation", path: "/Eventveda/apply-accommodation", icon: <Hotel /> },
@@ -532,7 +531,7 @@ export const ROLE_ROUTES = {
           icon: <SupportAgent />,
           nested: [
             { text: "Scan for Attendance", path: "/Eventveda/scan-pass", icon: <QrCode /> },
-            { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> },
+            // { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> },
             { text: "Update Passes", path: "/Eventveda/update-passes", icon: <CardMembership /> }
           ]
         },
@@ -545,7 +544,7 @@ export const ROLE_ROUTES = {
           ]
         },
         { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> },
-        { text: "Scan for Accommodation", path: "/Eventveda/scan-accommodation", icon: <QrCode /> }
+        { text: "Apply Accommodation", path: "/Eventveda/apply-accommodation", icon: <Hotel /> }
       ]
     },
   ],
@@ -591,7 +590,7 @@ export const ROLE_ROUTES = {
           ]
         },
         { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> },
-        { text: "Apply Accommodation", path: "/Eventveda/apply-accommodation", icon: <Hotel /> }
+        // { text: "Apply Accommodation", path: "/Eventveda/apply-accommodation", icon: <Hotel /> }
       ]
     },
   ],
@@ -780,7 +779,8 @@ export const ROLE_ROUTES = {
         { text: "No Accommodation", path: "/Eventveda/participants/no-accommodation", icon: <Hotel /> }
       ]
     },
-    { text: "Scan for Accommodation", path: "/Eventveda/scan-accommodation", icon: <QrCode /> }
+    { text: "Scan for Accommodation", path: "/Eventveda/scan-accommodation", icon: <QrCode /> },
+    { text: "Apply Accommodation", path: "/Eventveda/apply-accommodation", icon: <Hotel /> }
   ],
 
 
