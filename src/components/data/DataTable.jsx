@@ -18,8 +18,9 @@ import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import GridViewIcon from "@mui/icons-material/GridView";
+import { useAuth } from "../../context/AuthContext";
 
-export default function DataTable({ columns, rows, toolbarLeft, nonSortableColumns = [], alignments = [], columnWidths = [], defaultRowsPerPage = 10 }) {
+export default function DataTable({ columns, rows, toolbarLeft, nonSortableColumns = [], alignments = [], columnWidths = [], defaultRowsPerPage = 10, showViewModeSwitcher }) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
   const [search, setSearch] = useState("");
@@ -28,6 +29,18 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
 
   // View Mode: "table" (list) or "grid" (card)
   const [viewMode, setViewMode] = useState("table");
+
+  // Restrict View Mode switcher to STUDENT_EVENT_ADMIN and VEDA_ADMIN roles
+  const auth = useAuth?.() || {};
+  const { activeRole, user } = auth;
+  const normalizedActiveRole = (activeRole || "").toString().trim().toUpperCase();
+  const allowedRoles = ["STUDENT_EVENT_ADMIN", "STUDENT EVENT ADMIN", "VEDA_ADMIN", "VEDA ADMIN"];
+  const isAllowedRole =
+    allowedRoles.includes(normalizedActiveRole) ||
+    Boolean(user?.roles?.some((r) => allowedRoles.includes((r.role || "").toString().trim().toUpperCase())));
+
+  const canSwitchViewMode = showViewModeSwitcher !== undefined ? Boolean(showViewModeSwitcher) : isAllowedRole;
+  const effectiveViewMode = canSwitchViewMode ? viewMode : "table";
 
   // Horizontal Scroll & Overflow States
   const [hasOverflow, setHasOverflow] = useState(false);
@@ -390,77 +403,79 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
             }}
           />
 
-          {/* View Mode Switcher Buttons */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 0.5,
-              height: "40px",
-              background: "var(--bg-glass)",
-              p: "3px",
-              borderRadius: "99px",
-              border: "1px solid var(--border-color)",
-              backdropFilter: "blur(10px)",
-              flexShrink: 0,
-              boxSizing: "border-box",
-            }}
-          >
-            {/* Table / List View Button */}
-            <IconButton
-              aria-label="Table View"
-              onClick={() => setViewMode("table")}
-              size="small"
+          {/* View Mode Switcher Buttons - visible only for STUDENT_EVENT_ADMIN and VEDA_ADMIN */}
+          {canSwitchViewMode && (
+            <Box
               sx={{
-                width: 32,
-                height: 32,
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
+                height: "40px",
+                background: "var(--bg-glass)",
+                p: "3px",
                 borderRadius: "99px",
-                transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
-                background: viewMode === "table" ? "var(--gradient-primary)" : "transparent",
-                color: viewMode === "table" ? "#ffffff" : "var(--text-secondary)",
-                boxShadow: viewMode === "table" ? "0 4px 14px rgba(190, 147, 55, 0.35)" : "none",
-                "& .MuiSvgIcon-root": {
-                  color: viewMode === "table" ? "#ffffff !important" : "inherit",
-                },
-                "&:hover": {
-                  background: viewMode === "table" ? "var(--gradient-primary)" : "var(--bg-accent-1)",
-                  color: viewMode === "table" ? "#ffffff" : "var(--text-primary)",
-                },
+                border: "1px solid var(--border-color)",
+                backdropFilter: "blur(10px)",
+                flexShrink: 0,
+                boxSizing: "border-box",
               }}
             >
-              <FormatListBulletedIcon sx={{ fontSize: "1.15rem", color: viewMode === "table" ? "#ffffff !important" : "inherit" }} />
-            </IconButton>
+              {/* Table / List View Button */}
+              <IconButton
+                aria-label="Table View"
+                onClick={() => setViewMode("table")}
+                size="small"
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "99px",
+                  transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+                  background: effectiveViewMode === "table" ? "var(--gradient-primary)" : "transparent",
+                  color: effectiveViewMode === "table" ? "#ffffff" : "var(--text-secondary)",
+                  boxShadow: effectiveViewMode === "table" ? "0 4px 14px rgba(190, 147, 55, 0.35)" : "none",
+                  "& .MuiSvgIcon-root": {
+                    color: effectiveViewMode === "table" ? "#ffffff !important" : "inherit",
+                  },
+                  "&:hover": {
+                    background: effectiveViewMode === "table" ? "var(--gradient-primary)" : "var(--bg-accent-1)",
+                    color: effectiveViewMode === "table" ? "#ffffff" : "var(--text-primary)",
+                  },
+                }}
+              >
+                <FormatListBulletedIcon sx={{ fontSize: "1.15rem", color: effectiveViewMode === "table" ? "#ffffff !important" : "inherit" }} />
+              </IconButton>
 
-            {/* Grid / Card View Button */}
-            <IconButton
-              aria-label="Grid View"
-              onClick={() => setViewMode("grid")}
-              size="small"
-              sx={{
-                width: 32,
-                height: 32,
-                borderRadius: "99px",
-                transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
-                background: viewMode === "grid" ? "var(--gradient-primary)" : "transparent",
-                color: viewMode === "grid" ? "#ffffff" : "var(--text-secondary)",
-                boxShadow: viewMode === "grid" ? "0 4px 14px rgba(190, 147, 55, 0.35)" : "none",
-                "& .MuiSvgIcon-root": {
-                  color: viewMode === "grid" ? "#ffffff !important" : "inherit",
-                },
-                "&:hover": {
-                  background: viewMode === "grid" ? "var(--gradient-primary)" : "var(--bg-accent-1)",
-                  color: viewMode === "grid" ? "#ffffff" : "var(--text-primary)",
-                },
-              }}
-            >
-              <GridViewIcon sx={{ fontSize: "1.15rem", color: viewMode === "grid" ? "#ffffff !important" : "inherit" }} />
-            </IconButton>
-          </Box>
+              {/* Grid / Card View Button */}
+              <IconButton
+                aria-label="Grid View"
+                onClick={() => setViewMode("grid")}
+                size="small"
+                sx={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: "99px",
+                  transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+                  background: effectiveViewMode === "grid" ? "var(--gradient-primary)" : "transparent",
+                  color: effectiveViewMode === "grid" ? "#ffffff" : "var(--text-secondary)",
+                  boxShadow: effectiveViewMode === "grid" ? "0 4px 14px rgba(190, 147, 55, 0.35)" : "none",
+                  "& .MuiSvgIcon-root": {
+                    color: effectiveViewMode === "grid" ? "#ffffff !important" : "inherit",
+                  },
+                  "&:hover": {
+                    background: effectiveViewMode === "grid" ? "var(--gradient-primary)" : "var(--bg-accent-1)",
+                    color: effectiveViewMode === "grid" ? "#ffffff" : "var(--text-primary)",
+                  },
+                }}
+              >
+                <GridViewIcon sx={{ fontSize: "1.15rem", color: effectiveViewMode === "grid" ? "#ffffff !important" : "inherit" }} />
+              </IconButton>
+            </Box>
+          )}
         </Box>
       </Box>
 
       {/*  TABLE VIEW */}
-      {viewMode === "table" && (
+      {effectiveViewMode === "table" && (
         <>
           <Box
             ref={tableContainerRef}
@@ -780,7 +795,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
       )}
 
       {/* GRID / CARD VIEW */}
-      {viewMode === "grid" && (
+      {effectiveViewMode === "grid" && (
         <Box
           sx={{
             display: "grid",
