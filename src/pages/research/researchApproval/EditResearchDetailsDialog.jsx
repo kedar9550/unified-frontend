@@ -579,16 +579,6 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                             <TextField fullWidth label="Indexing" name="indexing" value={formData.indexing || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
-                            <FormControl fullWidth size="small">
-                                <InputLabel>Presentation Type</InputLabel>
-                                <Select label="Presentation Type" name="presentationType" value={formData.presentationType || ""} onChange={handleChange}>
-                                    <MenuItem value="Oral">Oral</MenuItem>
-                                    <MenuItem value="Poster">Poster</MenuItem>
-                                    <MenuItem value="Keynote">Keynote</MenuItem>
-                                </Select>
-                            </FormControl>
-                        </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" } }}>
                             <TextField fullWidth label="Total Authors" name="totalAuthors" type="number" value={formData.totalAuthors || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
