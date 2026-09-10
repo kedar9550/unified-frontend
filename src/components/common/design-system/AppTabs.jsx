@@ -50,6 +50,10 @@ export default function AppTabs({
             textTransform: "none",
             px: { xs: 1.5, sm: 3 },
             fontSize: { xs: "0.85rem", sm: "0.95rem" },
+            textAlign: "center",
+            justifyContent: "center",
+            alignItems: "center",
+            display: "inline-flex",
             "&:hover": {
               color: "var(--text-primary)",
               background: "var(--bg-hover)",

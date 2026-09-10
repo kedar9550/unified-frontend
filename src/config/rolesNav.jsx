@@ -517,7 +517,14 @@ export const ROLE_ROUTES = {
             { text: "Pending", path: "/Eventveda/manual-adding/pending", icon: <HourglassEmpty /> },
           ]
         },
-        { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+        {
+          text: "Registrations",
+          icon: <PeopleAlt />,
+          nested: [
+            { text: "List", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+            { text: "Add Team Member", path: "/Eventveda/registrations/add-member", icon: <PersonAdd /> }
+          ]
+        },
         {
           text: "Participants",
           icon: <Groups />,
@@ -573,7 +580,14 @@ export const ROLE_ROUTES = {
           ]
         },
         // { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
-        { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+        {
+          text: "Registrations",
+          icon: <PeopleAlt />,
+          nested: [
+            { text: "List", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+            { text: "Add Team Member", path: "/Eventveda/registrations/add-member", icon: <PersonAdd /> }
+          ]
+        },
         {
           text: "Participants",
           icon: <Groups />,
@@ -646,7 +660,14 @@ export const ROLE_ROUTES = {
       nested: [
 
         // { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
-        { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+        {
+          text: "Registrations",
+          icon: <PeopleAlt />,
+          nested: [
+            { text: "List", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+            { text: "Add Team Member", path: "/Eventveda/registrations/add-member", icon: <PersonAdd /> }
+          ]
+        },
         {
           text: "Participants",
           icon: <Groups />,
@@ -721,7 +742,14 @@ export const ROLE_ROUTES = {
       ]
     },
     // { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
-    { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+    {
+      text: "Registrations",
+      icon: <PeopleAlt />,
+      nested: [
+        { text: "List", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+        { text: "Add Team Member", path: "/Eventveda/registrations/add-member", icon: <PersonAdd /> }
+      ]
+    },
     {
       text: "Participants",
       icon: <Groups />,
@@ -746,7 +774,14 @@ export const ROLE_ROUTES = {
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Events", path: "/Eventveda/events", icon: <EventAvailable /> },
     // { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
-    { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+    {
+      text: "Registrations",
+      icon: <PeopleAlt />,
+      nested: [
+        { text: "List", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+        { text: "Add Team Member", path: "/Eventveda/registrations/add-member", icon: <PersonAdd /> }
+      ]
+    },
     { text: "Participants", path: "/Eventveda/participants", icon: <Groups /> },
     {
       text: "Student Passes",
