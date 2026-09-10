@@ -94,6 +94,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
     const [citations, setCitations] = useState("");
     const [quartile, setQuartile] = useState("");
     const [journalType, setJournalType] = useState("");
+    const [issn, setIssn] = useState("");
+    const [eissn, setEissn] = useState("");
     const [appraisalEligible, setAppraisalEligible] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
@@ -229,6 +231,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                     if (journal.journalQuartile) setQuartile(journal.journalQuartile);
                     else if (journal.categoryOfJournal) setQuartile(journal.categoryOfJournal);
                     if (journal.journalType) setJournalType(journal.journalType);
+                    if (journal.issn) setIssn(journal.issn);
+                    if (journal.eissn) setEissn(journal.eissn);
                     if (journal.appraisalEligible) setAppraisalEligible(journal.appraisalEligible);
 
                     const jcrIFValue = journal.jcrImpactFactor || journal.impactFactor;
@@ -312,7 +316,9 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 jcrImpactFactor,
                 citations,
                 journalQuartile: quartile,
-                journalType
+                journalType,
+                issn,
+                eissn
             });
             if (res.data?.success) {
                 toast.success("Journal metrics updated successfully");
@@ -323,6 +329,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 if (res.data.data.citations) setCitations(res.data.data.citations);
                 if (res.data.data.journalQuartile) setQuartile(res.data.data.journalQuartile);
                 if (res.data.data.journalType) setJournalType(res.data.data.journalType);
+                if (res.data.data.issn) setIssn(res.data.data.issn);
+                if (res.data.data.eissn) setEissn(res.data.data.eissn);
             }
         } catch (error) {
             console.error("Update metrics failed", error);
@@ -621,6 +629,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                 { key: "journalQuartile", label: "Journal Quartile", value: data.journalQuartile || data.categoryOfJournal || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Q1", "Q2", "Q3", "Q4", "None"] },
                                 { key: "isScopus", label: "Scopus", value: data.isScopus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
                                 { key: "journalType", label: "Journal Type", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["SCI", "SCIE", "ESCI", "None"] },
+                                { key: "issn", label: "ISSN", value: data.issn || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
+                                { key: "eissn", label: "e-ISSN", value: data.eissn || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
                                 { key: "vol", label: "Volume", value: data.vol || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
                                 { key: "issue", label: "Issue", value: data.issue || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
                                 { key: "publishedYear", label: "Published Year", value: data.publishedYear || data.year || "-", icon: <CalendarTodayIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
