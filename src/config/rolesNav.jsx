@@ -550,8 +550,7 @@ export const ROLE_ROUTES = {
             { text: "Participation Certificates", path: "/Eventveda/participation-certificates", icon: <WorkspacePremium /> }
           ]
         },
-        { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> },
-        { text: "Apply Accommodation", path: "/Eventveda/apply-accommodation", icon: <Hotel /> }
+        { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> }
       ]
     },
   ],
@@ -604,7 +603,7 @@ export const ROLE_ROUTES = {
             { text: "Participation Certificates", path: "/Eventveda/participation-certificates", icon: <WorkspacePremium /> }
           ]
         },
-        { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> },
+        // { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> },
         // { text: "Apply Accommodation", path: "/Eventveda/apply-accommodation", icon: <Hotel /> }
       ]
     },
@@ -789,7 +788,7 @@ export const ROLE_ROUTES = {
       icon: <SupportAgent />,
       nested: [
         { text: "Scan for Attendance", path: "/Eventveda/scan-pass", icon: <QrCode /> },
-        { text: "Update Passes", path: "/Eventveda/update-passes", icon: <CardMembership /> }
+        // { text: "Update Passes", path: "/Eventveda/update-passes", icon: <CardMembership /> }
       ]
     },
     {
@@ -797,10 +796,10 @@ export const ROLE_ROUTES = {
       icon: <WorkspacePremium />,
       nested: [
         { text: "Winning Certificates", path: "/Eventveda/winning-certificates", icon: <WorkspacePremium /> },
-        { text: "Participation Certificates", path: "/Eventveda/participation-certificates", icon: <WorkspacePremium /> }
+        // { text: "Participation Certificates", path: "/Eventveda/participation-certificates", icon: <WorkspacePremium /> }
       ]
     },
-    { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> }
+    // { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> }
   ],
 
   // ACCOMMODATION Coordinator
