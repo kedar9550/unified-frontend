@@ -1,16 +1,20 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
-  Box, TextField, MenuItem, Select, Typography, Button, Grid
+  Box, TextField, MenuItem, Select, Typography, Button
 } from "@mui/material";
 import { toast } from "sonner";
-import { Search, AttachFile, Person } from "@mui/icons-material";
+import { Search, AttachFile } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import PageContainer from "../../components/common/design-system/PageContainer";
 import {
-  FormCard, FieldLabel, FileField, SubmitBtn
+  FormCard, Grid2, FileField, SubmitBtn
 } from "../../components/faculty/PublicationFormFields";
+import { labelStyle } from "../../components/faculty/publicationConstants";
 import API from "../../api/axios";
+
+const SCHOLAR_STATUSES = ["Pursuing", "Awarded"];
+const SCHOLAR_TYPES = ["Full-Time", "Part-Time"];
 
 export default function RndPhdScholarDataEntry() {
   const { user } = useAuth();
@@ -24,10 +28,19 @@ export default function RndPhdScholarDataEntry() {
   const [targetFacultyDetails, setTargetFacultyDetails] = useState(null);
 
   const [form, setForm] = useState({
-    scholarName: "", rollNo: "", researchTopic: "", guideType: "Main Guide",
-    university: "", registrationYear: "", status: "Ongoing", awardYear: "", applyIncentive: "No"
+    rollNumber: "",
+    studentName: "",
+    course: "Ph.D.",
+    branch: "",
+    scholarStatus: "Pursuing",
+    admissionOrAwardDate: "",
+    scholarType: "Full-Time",
+    universitySelect: "Aditya University",
+    universityText: "",
+    applyIncentive: "No"
   });
-  const [files, setFiles] = useState({ proofDoc: null });
+
+  const [files, setFiles] = useState({ document: null });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -60,14 +73,17 @@ export default function RndPhdScholarDataEntry() {
         } else {
           toast.error("Faculty record found but is inactive.");
           setIsTargetFacultyValid(false);
+          setTargetFacultyDetails(null);
         }
       } else {
         toast.error("Faculty not found with given Employee ID");
         setIsTargetFacultyValid(false);
+        setTargetFacultyDetails(null);
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to verify faculty");
       setIsTargetFacultyValid(false);
+      setTargetFacultyDetails(null);
     } finally {
       setVerifyingFaculty(false);
     }
@@ -78,7 +94,7 @@ export default function RndPhdScholarDataEntry() {
       toast.error("Please verify a valid Target Faculty Employee ID first");
       return;
     }
-    if (!form.scholarName || !form.researchTopic || !form.guideType) {
+    if (!form.studentName || !form.rollNumber || !form.admissionOrAwardDate) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -92,15 +108,15 @@ export default function RndPhdScholarDataEntry() {
       fd.append("isDirectEntry", "true");
       fd.append("targetFacultyEmpId", targetFacultyEmpId);
 
-      if (files.proofDoc) fd.append("proofDoc", files.proofDoc);
+      if (files.document) fd.append("document", files.document);
 
       await API.post("/api/research/phd-scholar", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Ph.D. Scholar record added directly for faculty!");
       setForm({
-        scholarName: "", rollNo: "", researchTopic: "", guideType: "Main Guide",
-        university: "", registrationYear: "", status: "Ongoing", awardYear: "", applyIncentive: "No"
+        rollNumber: "", studentName: "", course: "Ph.D.", branch: "", scholarStatus: "Pursuing",
+        admissionOrAwardDate: "", scholarType: "Full-Time", universitySelect: "Aditya University", universityText: "", applyIncentive: "No"
       });
-      setFiles({ proofDoc: null });
+      setFiles({ document: null });
       setTargetFacultyEmpId("");
       setIsTargetFacultyValid(false);
       setTargetFacultyDetails(null);
@@ -115,96 +131,133 @@ export default function RndPhdScholarDataEntry() {
     <PageContainer>
       <PageHeader
         title="Ph.D. Scholar Data Entry (R&D Direct Entry)"
-        subtitle="Add Ph.D. scholar records directly on behalf of faculty members"
+        subtitle="Add Ph.D. scholar records directly on behalf of faculty members with immediate approval"
       />
 
-      <FormCard title="1. Target Faculty Identification">
-        <Grid container spacing={2.5} alignItems="center">
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel required>Target Faculty Employee ID</FieldLabel>
+      {/* Target Faculty Section */}
+      <FormCard title="Target Faculty Identification">
+        <Grid2>
+          <Box>
+            <Typography sx={{ ...labelStyle, mb: 0.5 }}>TARGET FACULTY EMPLOYEE ID : <span style={{ color: 'red' }}>*</span></Typography>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                size="small"
+                fullWidth
+                placeholder="Enter Employee ID (e.g., ADITYA123)"
+                value={targetFacultyEmpId}
+                onChange={(e) => {
+                  setTargetFacultyEmpId(e.target.value);
+                  setIsTargetFacultyValid(false);
+                  setTargetFacultyName("");
+                  setTargetFacultyDetails(null);
+                }}
+              />
+              <Button
+                variant="contained"
+                onClick={handleVerifyFaculty}
+                disabled={verifyingFaculty || !targetFacultyEmpId}
+                startIcon={<Search />}
+                sx={{ background: "var(--gradient-primary)", color: "#fff", textTransform: "none", fontWeight: 700, px: 3, whiteSpace: "nowrap" }}
+              >
+                {verifyingFaculty ? "Verifying..." : "Verify"}
+              </Button>
+            </Box>
+          </Box>
+          <Box>
+            <Typography sx={{ ...labelStyle, mb: 0.5 }}>VERIFIED FACULTY NAME :</Typography>
             <TextField
-              fullWidth size="small" placeholder="e.g. 10024"
-              value={targetFacultyEmpId}
-              onChange={(e) => {
-                setTargetFacultyEmpId(e.target.value);
-                setIsTargetFacultyValid(false);
-                setTargetFacultyDetails(null);
-              }}
+              size="small"
+              fullWidth
+              disabled
+              value={targetFacultyName}
+              placeholder="Verified faculty name will appear here"
+              sx={{ background: "rgba(0,0,0,0.02)" }}
             />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3} sx={{ mt: 2.5 }}>
-            <Button
-              variant="contained"
-              onClick={handleVerifyFaculty}
-              disabled={verifyingFaculty || !targetFacultyEmpId}
-              startIcon={<Search />}
-              sx={{ background: "var(--gradient-primary)", color: "#fff", textTransform: "none", fontWeight: 700 }}
-            >
-              {verifyingFaculty ? "Verifying..." : "Verify Faculty"}
-            </Button>
-          </Grid>
-          {isTargetFacultyValid && targetFacultyDetails && (
-            <Grid item xs={12}>
-              <Box sx={{ p: 2, background: "rgba(16, 185, 129, 0.08)", border: "1px solid #10b981", borderRadius: "10px" }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#065f46" }}>
-                  ✓ Verified: {targetFacultyDetails.name} ({targetFacultyDetails.designation || "Faculty"} - {targetFacultyDetails.department || "Dept"})
-                </Typography>
-              </Box>
-            </Grid>
-          )}
-        </Grid>
+          </Box>
+        </Grid2>
+        {isTargetFacultyValid && targetFacultyDetails && (
+          <Box sx={{ mt: 2, p: 2, background: "rgba(16, 185, 129, 0.08)", border: "1px solid #10b981", borderRadius: "10px" }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#065f46" }}>
+              ✓ Verified: {targetFacultyDetails.name} ({targetFacultyDetails.designation || "Faculty"} - {targetFacultyDetails.department || "Dept"})
+            </Typography>
+          </Box>
+        )}
       </FormCard>
 
-      <FormCard title="2. Scholar Details">
-        <Grid container spacing={2.5}>
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel>Academic Year</FieldLabel>
+      {/* Scholar Details */}
+      <FormCard title="Ph.D. Scholar Details">
+        <Grid2>
+          <Box>
+            <Typography sx={labelStyle}>Academic Year :</Typography>
             <Select fullWidth size="small" value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
-              {academicYears.map(y => <MenuItem key={y._id} value={y._id}>{y.yearRange}</MenuItem>)}
+              {academicYears.map(y => <MenuItem key={y._id} value={y._id}>{y.yearRange || y.year}</MenuItem>)}
             </Select>
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel required>Scholar Name</FieldLabel>
-            <TextField fullWidth size="small" value={form.scholarName} onChange={set("scholarName")} />
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel>Roll No / Registration ID</FieldLabel>
-            <TextField fullWidth size="small" value={form.rollNo} onChange={set("rollNo")} />
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel required>Research Topic</FieldLabel>
-            <TextField fullWidth size="small" value={form.researchTopic} onChange={set("researchTopic")} />
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel required>Guide Type</FieldLabel>
-            <Select fullWidth size="small" value={form.guideType} onChange={set("guideType")}>
-              <MenuItem value="Main Guide">Main Guide</MenuItem>
-              <MenuItem value="Co-Guide">Co-Guide</MenuItem>
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>University :</Typography>
+            <Select fullWidth size="small" value={form.universitySelect} onChange={set("universitySelect")}>
+              <MenuItem value="Aditya University">Aditya University</MenuItem>
+              <MenuItem value="Other">Other University</MenuItem>
             </Select>
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel required>Status</FieldLabel>
-            <Select fullWidth size="small" value={form.status} onChange={set("status")}>
-              <MenuItem value="Ongoing">Ongoing</MenuItem>
-              <MenuItem value="Submitted">Submitted</MenuItem>
-              <MenuItem value="Awarded">Awarded</MenuItem>
+          </Box>
+          {form.universitySelect === "Other" && (
+            <Box>
+              <Typography sx={labelStyle}>Specify University Name :</Typography>
+              <TextField fullWidth size="small" value={form.universityText} onChange={set("universityText")} placeholder="University Name" />
+            </Box>
+          )}
+          <Box>
+            <Typography sx={labelStyle}>Scholar Roll No / Reg ID : <span style={{ color: 'red' }}>*</span></Typography>
+            <TextField fullWidth size="small" value={form.rollNumber} onChange={set("rollNumber")} placeholder="e.g. 21PHD001" />
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>Scholar Name : <span style={{ color: 'red' }}>*</span></Typography>
+            <TextField fullWidth size="small" value={form.studentName} onChange={set("studentName")} placeholder="Full Name of the Scholar" />
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>Course / Program :</Typography>
+            <TextField fullWidth size="small" value={form.course} onChange={set("course")} placeholder="e.g. Ph.D." />
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>Branch / Specialization :</Typography>
+            <TextField fullWidth size="small" value={form.branch} onChange={set("branch")} placeholder="e.g. Computer Science" />
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>Scholar Type :</Typography>
+            <Select fullWidth size="small" value={form.scholarType} onChange={set("scholarType")}>
+              {SCHOLAR_TYPES.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
             </Select>
-          </Grid>
-        </Grid>
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>Scholar Status :</Typography>
+            <Select fullWidth size="small" value={form.scholarStatus} onChange={set("scholarStatus")}>
+              {SCHOLAR_STATUSES.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+            </Select>
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>Admission / Award Date : <span style={{ color: 'red' }}>*</span></Typography>
+            <TextField fullWidth type="date" size="small" value={form.admissionOrAwardDate} onChange={set("admissionOrAwardDate")} slotProps={{ inputLabel: { shrink: true } }} />
+          </Box>
+        </Grid2>
       </FormCard>
 
-      <FormCard title="3. Attachments" icon={<AttachFile sx={{ color: "var(--color-primary)" }} />}>
-        <Grid container spacing={2.5}>
-          <Grid item xs={12} sm={6}>
-            <FieldLabel required>Registration / Proof Document</FieldLabel>
-            <FileField onChange={(e) => setFiles(p => ({ ...p, proofDoc: e.target.files[0] }))} />
-          </Grid>
-        </Grid>
+      {/* Attachments Section */}
+      <FormCard title="Attachments & Options" icon={<AttachFile sx={{ color: "var(--color-primary)" }} />}>
+        <Grid2>
+          <FileField label="Supporting Document / Registration Copy:" onChange={(e) => setFiles(p => ({ ...p, document: e.target.files[0] }))} />
+          <Box>
+            <Typography sx={labelStyle}>Apply for Incentive?</Typography>
+            <Select size="small" fullWidth value={form.applyIncentive} onChange={set("applyIncentive")}>
+              <MenuItem value="Yes">Yes</MenuItem>
+              <MenuItem value="No">No</MenuItem>
+            </Select>
+          </Box>
+        </Grid2>
       </FormCard>
 
       <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
         <SubmitBtn onClick={handleSubmit} disabled={loading || !isTargetFacultyValid}>
-          {loading ? "Submitting..." : "Submit Record Directly"}
+          {loading ? "Submitting..." : "Submit Ph.D. Scholar Record Directly"}
         </SubmitBtn>
       </Box>
     </PageContainer>

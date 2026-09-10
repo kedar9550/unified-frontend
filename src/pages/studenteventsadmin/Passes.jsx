@@ -60,7 +60,7 @@ const Passes = () => {
 
   const fetchPayments = async () => {
     if (!searchQuery.trim()) return;
-    
+
     setLoading(true);
     try {
       const eventsRes = await API.get('/api/events');
@@ -80,10 +80,12 @@ const Passes = () => {
       }
 
       const response = await API.get('/api/razorpay/registrations', {
-        params: { 
+        params: {
           paymentStatus: 'PAID',
           search: searchQuery.trim(),
-          select: '_id,receipt,teamId,eventName,category,schoolId,razorpayPaymentId,razorpayOrderId,amount,amountRupees,createdAt,paidAt,venue,participants.name,participants.roll,participants.email,participants.mobile,participants.college,participants.otherCollege,participants.attended,paymentStatus,payment'
+         // select: '_id,receipt,teamId,eventName,category,schoolId,razorpayPaymentId,razorpayOrderId,amount,amountRupees,createdAt,paidAt,venue,participants.name,participants.roll,participants.email,participants.mobile,participants.college,participants.otherCollege,participants.attended,paymentStatus,payment'
+          select: '_id,receipt,teamId,eventName,category,schoolId,razorpayPaymentId,razorpayOrderId,amount,amountRupees,createdAt,paidAt,venue,participants.name,participants.roll,participants.email,participants.mobile,participants.college,participants.otherCollege,participants.attended,participants.barcode,paymentStatus,payment'
+
         }
       });
       let fetchedPayments = response.data?.payments || [];
@@ -199,7 +201,7 @@ const Passes = () => {
         <PageHeader
           title="Bulk Passes"
           subtitle={`Total Passes: ${filteredParticipants.length}`}
-          /* action={
+           action={
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
                 variant="outlined"
@@ -217,8 +219,9 @@ const Passes = () => {
                 Download PDF
               </ActionButton>
             </Box>
-          } */
+          } 
         />
+
 
         {/* Glassmorphic Filters Bar */}
         <Paper
@@ -251,8 +254,8 @@ const Passes = () => {
             }}
             sx={{ width: { xs: '100%', sm: 260 }, flex: { sm: 1 } }}
           />
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             onClick={handleSearch}
             disabled={loading}
           >
@@ -319,7 +322,7 @@ const Passes = () => {
               >
                 {/* Premium Gradient Accent */}
                 <Box sx={{ height: '6px', width: '100%', background: 'linear-gradient(90deg, #2563eb, #7c3aed, #db2777)', backgroundSize: '200% auto', animation: 'gradientShift 3s ease infinite' }} />
-                
+
                 <style>
                   {`
                     @keyframes gradientShift {

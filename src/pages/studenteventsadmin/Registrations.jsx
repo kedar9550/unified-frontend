@@ -604,18 +604,6 @@ const Registrations = () => {
           { label: 'Student Event Admin', path: '/dashboard' },
           { label: 'Registrations' },
         ]}
-        action={
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <ActionButton
-              startIcon={<PersonAddIcon />}
-              variant="contained"
-              color="primary"
-              onClick={() => navigate('/Eventveda/registrations/add-member')}
-            >
-              Add Team Member
-            </ActionButton>
-          </Box>
-        }
       />
 
       {/* Metrics Cards */}

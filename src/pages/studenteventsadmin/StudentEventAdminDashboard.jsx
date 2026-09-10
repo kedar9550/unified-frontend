@@ -14,8 +14,6 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  Tabs,
-  Tab,
   Typography,
 } from '@mui/material';
 import {
@@ -44,6 +42,7 @@ import {
   LabelList,
 } from 'recharts';
 import PageHeader from '../../components/common/PageHeader';
+import { CustomTabs } from '../../components/common';
 import StatCard from '../../components/common/StatCard';
 import StatCardGrid from '../../components/common/StatCardGrid';
 import API from '../../api/axios';
@@ -112,9 +111,12 @@ const StudentEventAdminDashboard = () => {
   const navigate = useNavigate();
 
   const isEventAdmin = useMemo(() => {
-    const r = String(activeRole || '').trim().toUpperCase();
-    return ['STUDENT_EVENT_ADMIN', 'STUDENT EVENT ADMIN', 'VEDA_ADMIN', 'VEDA ADMIN'].includes(r);
+    const r = String(activeRole || '').trim().toUpperCase().replace(/[\s_]+/g, '');
+    return ['STUDENTEVENTADMIN', 'VEDAADMIN'].includes(r);
   }, [activeRole]);
+
+  // Display revenue card & charts only for STUDENTEVENT_ADMIN and VEDA_ADMIN
+  const canViewRevenue = isEventAdmin;
 
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -350,14 +352,16 @@ const StudentEventAdminDashboard = () => {
       />
 
 
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3, px: { xs: 2, sm: 0 } }}>
-        <Tabs value={currentTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile sx={{ '& .MuiTab-root': { fontWeight: 600, fontSize: '1rem', textTransform: 'none' } }}>
-          <Tab label="All" />
-          <Tab label="Schools" />
-          <Tab label="Departments" />
-          <Tab label="Events" />
-        </Tabs>
-      </Box>
+      <CustomTabs
+        value={currentTab}
+        onChange={(e, newValue) => setCurrentTab(newValue)}
+        tabs={[
+          { label: 'All' },
+          { label: 'Schools' },
+          { label: 'Departments' },
+          { label: 'Events' },
+        ]}
+      />
 
       {/* ── TAB 0: ALL ─────────────────────────────────────────────── */}
       {currentTab === 0 && (
@@ -366,7 +370,9 @@ const StudentEventAdminDashboard = () => {
           <StatCardGrid columns={{ xs: 1, sm: 2, md: 3, lg: isEventAdmin ? 4 : 3 }}>
             <StatCard title="Total Teams" value={globalSummary.teams} color="#0d9488" icon={<GroupsIcon />} />
             <StatCard title="Total Students" value={globalSummary.students} color="#2563eb" icon={<PeopleIcon />} />
-            <StatCard title="Total Revenue" value={`₹${fmt(globalSummary.revenue)}`} color="#7c3aed" icon={<CurrencyRupeeIcon />} />
+            {canViewRevenue && (
+              <StatCard title="Total Revenue" value={`₹${fmt(globalSummary.revenue)}`} color="#7c3aed" icon={<CurrencyRupeeIcon />} />
+            )}
             {isEventAdmin && (
               <StatCard
                 title="Accommodation (YES)"
@@ -587,7 +593,7 @@ const StudentEventAdminDashboard = () => {
             </Box>
             <Box sx={{ mt: 2, textAlign: 'center', p: 1.5, borderRadius: '12px', background: 'var(--bg-glass)', border: '1px solid var(--border-color)' }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                Filtered Teams: {fmt(groupFilteredTeamsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Students: {fmt(groupFilteredStudentsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Revenue: ₹{fmt(groupFilteredRevenueTotal)}
+                Filtered Teams: {fmt(groupFilteredTeamsTotal)}&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Students: {fmt(groupFilteredStudentsTotal)}{canViewRevenue ? <>&nbsp;&nbsp;|&nbsp;&nbsp;Filtered Revenue: ₹{fmt(groupFilteredRevenueTotal)}</> : ''}
               </Typography>
             </Box>
           </Paper>
@@ -600,7 +606,7 @@ const StudentEventAdminDashboard = () => {
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ background: 'var(--bg-glass)' }}>
-                    {['School Name', 'Events Count', 'Revenue (₹)', 'Total Teams Registered', 'Total Students Registered', 'Participated Students'].map((h) => (
+                    {['School Name', 'Events Count', ...(canViewRevenue ? ['Revenue (₹)'] : []), 'Total Teams Registered', 'Total Students Registered', 'Participated Students'].map((h) => (
                       <TableCell key={h} sx={{ fontWeight: 800, whiteSpace: 'nowrap', color: 'var(--text-primary)' }}>{h}</TableCell>
                     ))}
                   </TableRow>
@@ -610,7 +616,9 @@ const StudentEventAdminDashboard = () => {
                     <TableRow key={idx} hover>
                       <TableCell sx={{ fontWeight: 700, color: '#ea580c' }}>{row.name}</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>{row.eventCount}</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: '#7c3aed' }}>₹{fmt(row.revenue)}</TableCell>
+                      {canViewRevenue && (
+                        <TableCell sx={{ fontWeight: 700, color: '#7c3aed' }}>₹{fmt(row.revenue)}</TableCell>
+                      )}
                       <TableCell sx={{ fontWeight: 700, color: '#ea580c' }}>{fmt(row.teamCount)}</TableCell>
                       <TableCell>{fmt(row.studentCount)}</TableCell>
                       <TableCell sx={{ fontWeight: 700, color: '#d97706' }}>{fmt(row.participatedStudents)}</TableCell>
@@ -622,35 +630,37 @@ const StudentEventAdminDashboard = () => {
           </Paper>
 
 
-          <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-              <TrendingUpIcon sx={{ color: REVENUE_COLOR }} />
-              <SectionTitle>Revenue by School</SectionTitle>
-            </Box>
-            {/* Revenue by Group (filtered by schoolFilter) */}
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 700, mb: 1.5, color: 'text.secondary' }}>
-                Revenue by School (₹) {schoolFilter !== 'ALL' ? `— ${schoolFilter}` : ''}
-              </Typography>
-              {groupRevenueData.length === 0 ? (
-                <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
-                  <Typography variant="body2">No group revenue data available.</Typography>
-                </Box>
-              ) : (
-                <ResponsiveContainer width="100%" height={270}>
-                  <BarChart data={groupRevenueData} margin={{ top: 25, right: 20, left: 0, bottom: 45 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                    <XAxis dataKey="name" angle={-15} textAnchor="end" tick={{ fontSize: 10 }} interval={0} />
-                    <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${v}`} domain={[0, (dataMax) => Math.ceil(dataMax * 1.15)]} />
-                    <Tooltip formatter={(v, name) => [`₹${fmt(v)}`, name]} />
-                    <Bar dataKey="₹ Revenue" fill={REVENUE_COLOR} radius={[4, 4, 0, 0]}>
-                      <LabelList dataKey="₹ Revenue" position="top" formatter={(v) => `₹${fmt(v)}`} fill="var(--text-primary)" fontSize={11} fontWeight={700} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </Box>
-          </Paper>
+          {canViewRevenue && (
+            <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <TrendingUpIcon sx={{ color: REVENUE_COLOR }} />
+                <SectionTitle>Revenue by School</SectionTitle>
+              </Box>
+              {/* Revenue by Group (filtered by schoolFilter) */}
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 700, mb: 1.5, color: 'text.secondary' }}>
+                  Revenue by School (₹) {schoolFilter !== 'ALL' ? `— ${schoolFilter}` : ''}
+                </Typography>
+                {groupRevenueData.length === 0 ? (
+                  <Box sx={{ p: 3, textAlign: 'center', color: 'text.secondary' }}>
+                    <Typography variant="body2">No group revenue data available.</Typography>
+                  </Box>
+                ) : (
+                  <ResponsiveContainer width="100%" height={270}>
+                    <BarChart data={groupRevenueData} margin={{ top: 25, right: 20, left: 0, bottom: 45 }}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                      <XAxis dataKey="name" angle={-15} textAnchor="end" tick={{ fontSize: 10 }} interval={0} />
+                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${v}`} domain={[0, (dataMax) => Math.ceil(dataMax * 1.15)]} />
+                      <Tooltip formatter={(v, name) => [`₹${fmt(v)}`, name]} />
+                      <Bar dataKey="₹ Revenue" fill={REVENUE_COLOR} radius={[4, 4, 0, 0]}>
+                        <LabelList dataKey="₹ Revenue" position="top" formatter={(v) => `₹${fmt(v)}`} fill="var(--text-primary)" fontSize={11} fontWeight={700} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </Box>
+            </Paper>
+          )}
         </>
       )}
 
@@ -729,33 +739,35 @@ const StudentEventAdminDashboard = () => {
       {/* ── TAB 3: EVENTS ─────────────────────────────────────────────── */}
       {currentTab === 3 && (
         <>
-          <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-              <TrendingUpIcon sx={{ color: REVENUE_COLOR }} />
-              <SectionTitle>Revenue by Event</SectionTitle>
-            </Box>
-            {/* Revenue by Event */}
-            {revenueByEventData.length > 0 && (
-              <Box>
-                <Typography variant="body2" sx={{ fontWeight: 700, mb: 1.5, color: 'text.secondary' }}>Revenue by Event (₹)</Typography>
-                <ResponsiveContainer width="100%" height={Math.max(360, revenueByEventData.length * 36)}>
-                  <BarChart layout="vertical" data={revenueByEventData} margin={{ top: 10, right: 65, left: 10, bottom: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                    <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} tickFormatter={(v) => `₹${v}`} />
-                    <YAxis type="category" dataKey="event" width={220} tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} interval={0} />
-                    <Tooltip formatter={(v, name) => [name === 'Teams' ? v : `₹${v}`, name]} />
-                    <Legend verticalAlign="top" wrapperStyle={{ paddingBottom: 15 }} />
-                    <Bar dataKey="₹ Revenue" fill={REVENUE_COLOR} radius={[0, 4, 4, 0]}>
-                      <LabelList dataKey="₹ Revenue" position="right" formatter={(v) => (v > 0 ? `₹${fmt(v)}` : '')} fill={REVENUE_COLOR} fontSize={10} fontWeight={700} />
-                    </Bar>
-                    <Bar dataKey="Teams" fill="#0d9488" radius={[0, 4, 4, 0]}>
-                      <LabelList dataKey="Teams" position="right" formatter={(v) => (v > 0 ? fmt(v) : '')} fill="#0d9488" fontSize={10} fontWeight={600} />
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+          {canViewRevenue && (
+            <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <TrendingUpIcon sx={{ color: REVENUE_COLOR }} />
+                <SectionTitle>Revenue by Event</SectionTitle>
               </Box>
-            )}
-          </Paper>
+              {/* Revenue by Event */}
+              {revenueByEventData.length > 0 && (
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 700, mb: 1.5, color: 'text.secondary' }}>Revenue by Event (₹)</Typography>
+                  <ResponsiveContainer width="100%" height={Math.max(360, revenueByEventData.length * 36)}>
+                    <BarChart layout="vertical" data={revenueByEventData} margin={{ top: 10, right: 65, left: 10, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
+                      <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} tickFormatter={(v) => `₹${v}`} />
+                      <YAxis type="category" dataKey="event" width={220} tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} interval={0} />
+                      <Tooltip formatter={(v, name) => [name === 'Teams' ? v : `₹${v}`, name]} />
+                      <Legend verticalAlign="top" wrapperStyle={{ paddingBottom: 15 }} />
+                      <Bar dataKey="₹ Revenue" fill={REVENUE_COLOR} radius={[0, 4, 4, 0]}>
+                        <LabelList dataKey="₹ Revenue" position="right" formatter={(v) => (v > 0 ? `₹${fmt(v)}` : '')} fill={REVENUE_COLOR} fontSize={10} fontWeight={700} />
+                      </Bar>
+                      <Bar dataKey="Teams" fill="#0d9488" radius={[0, 4, 4, 0]}>
+                        <LabelList dataKey="Teams" position="right" formatter={(v) => (v > 0 ? fmt(v) : '')} fill="#0d9488" fontSize={10} fontWeight={600} />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
+              )}
+            </Paper>
+          )}
         </>
       )}
 

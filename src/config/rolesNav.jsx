@@ -517,7 +517,14 @@ export const ROLE_ROUTES = {
             { text: "Pending", path: "/Eventveda/manual-adding/pending", icon: <HourglassEmpty /> },
           ]
         },
-        { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+        {
+          text: "Registrations",
+          icon: <PeopleAlt />,
+          nested: [
+            { text: "List", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+            { text: "Add Team Member", path: "/Eventveda/registrations/add-member", icon: <PersonAdd /> }
+          ]
+        },
         {
           text: "Participants",
           icon: <Groups />,
@@ -532,7 +539,7 @@ export const ROLE_ROUTES = {
           icon: <SupportAgent />,
           nested: [
             { text: "Scan for Attendance", path: "/Eventveda/scan-pass", icon: <QrCode /> },
-            // { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> },
+            { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> },
             { text: "Update Passes", path: "/Eventveda/update-passes", icon: <CardMembership /> }
           ]
         },
@@ -544,11 +551,11 @@ export const ROLE_ROUTES = {
             { text: "Participation Certificates", path: "/Eventveda/participation-certificates", icon: <WorkspacePremium /> }
           ]
         },
-        { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> },
-        { text: "Apply Accommodation", path: "/Eventveda/apply-accommodation", icon: <Hotel /> }
+        { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> }
       ]
     },
   ],
+
 
   VEDA_ADMIN: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
@@ -574,7 +581,14 @@ export const ROLE_ROUTES = {
           ]
         },
         // { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
-        { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+        {
+          text: "Registrations",
+          icon: <PeopleAlt />,
+          nested: [
+            { text: "List", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+            { text: "Add Team Member", path: "/Eventveda/registrations/add-member", icon: <PersonAdd /> }
+          ]
+        },
         {
           text: "Participants",
           icon: <Groups />,
@@ -647,7 +661,14 @@ export const ROLE_ROUTES = {
       nested: [
 
         // { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
-        { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+        {
+          text: "Registrations",
+          icon: <PeopleAlt />,
+          nested: [
+            { text: "List", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+            { text: "Add Team Member", path: "/Eventveda/registrations/add-member", icon: <PersonAdd /> }
+          ]
+        },
         {
           text: "Participants",
           icon: <Groups />,
@@ -724,7 +745,14 @@ export const ROLE_ROUTES = {
       ]
     },
     // { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
-    { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+    {
+      text: "Registrations",
+      icon: <PeopleAlt />,
+      nested: [
+        { text: "List", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+        { text: "Add Team Member", path: "/Eventveda/registrations/add-member", icon: <PersonAdd /> }
+      ]
+    },
     {
       text: "Participants",
       icon: <Groups />,
@@ -751,7 +779,14 @@ export const ROLE_ROUTES = {
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Events", path: "/Eventveda/events", icon: <EventAvailable /> },
     // { text: "Payments", path: "/Eventveda/payments", icon: <Payment /> },
-    { text: "Registrations", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+    {
+      text: "Registrations",
+      icon: <PeopleAlt />,
+      nested: [
+        { text: "List", path: "/Eventveda/registrations", icon: <PeopleAlt /> },
+        { text: "Add Team Member", path: "/Eventveda/registrations/add-member", icon: <PersonAdd /> }
+      ]
+    },
     {
       text: "Participants",
       icon: <Groups />,
@@ -766,7 +801,7 @@ export const ROLE_ROUTES = {
       icon: <SupportAgent />,
       nested: [
         { text: "Scan for Attendance", path: "/Eventveda/scan-pass", icon: <QrCode /> },
-        { text: "Update Passes", path: "/Eventveda/update-passes", icon: <CardMembership /> }
+        // { text: "Update Passes", path: "/Eventveda/update-passes", icon: <CardMembership /> }
       ]
     },
     {
@@ -774,10 +809,10 @@ export const ROLE_ROUTES = {
       icon: <WorkspacePremium />,
       nested: [
         { text: "Winning Certificates", path: "/Eventveda/winning-certificates", icon: <WorkspacePremium /> },
-        { text: "Participation Certificates", path: "/Eventveda/participation-certificates", icon: <WorkspacePremium /> }
+        // { text: "Participation Certificates", path: "/Eventveda/participation-certificates", icon: <WorkspacePremium /> }
       ]
     },
-    { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> }
+    // { text: "Enquiries", path: "/Eventveda/enquiries", icon: <EmailIcon /> }
   ],
 
   // ACCOMMODATION Coordinator

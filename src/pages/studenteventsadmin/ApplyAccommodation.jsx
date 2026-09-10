@@ -245,7 +245,7 @@ const ApplyAccommodation = () => {
       return { reached: true, reason: 'Male Limit (100) Reached' };
     }
     if (participant.normalizedGender === 'FEMALE' && quotaStats.female >= FEMALE_LIMIT) {
-      return { reached: true, reason: 'Girl Limit (50) Reached' };
+      return { reached: true, reason: 'Female Limit (50) Reached' };
     }
     return { reached: false, reason: '' };
   };
@@ -920,7 +920,7 @@ const ApplyAccommodation = () => {
           <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
               <Typography variant="body2" sx={{ fontWeight: 800, color: '#9d174d' }}>
-                Girl Accommodation
+                Female Accommodation
               </Typography>
               <Chip
                 icon={<FemaleIcon sx={{ fontSize: '14px !important', color: '#9d174d !important' }} />}
@@ -954,7 +954,7 @@ const ApplyAccommodation = () => {
               }}
             />
             <Typography variant="caption" sx={{ color: '#475569', mt: 0.5, display: 'block', fontWeight: 600 }}>
-              {femalePercent}% allocated (Limit: {FEMALE_LIMIT} girls)
+              {femalePercent}% allocated (Limit: {FEMALE_LIMIT} female)
             </Typography>
           </CardContent>
         </Card>
@@ -1109,7 +1109,7 @@ const ApplyAccommodation = () => {
           >
             <MenuItem value="ALL">All Genders</MenuItem>
             <MenuItem value="MALE">Male</MenuItem>
-            <MenuItem value="FEMALE">Girl / Female</MenuItem>
+            <MenuItem value="FEMALE">Female</MenuItem>
           </TextField>
 
           {/* Accommodation Status Dropdown */}
