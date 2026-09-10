@@ -5,7 +5,7 @@ export default function CustomTabs({
   tabs = [],
   value = 0,
   onChange,
-  variant = "fullWidth",
+  variant,
   sx = {},
   ...props
 }) {
@@ -15,43 +15,79 @@ export default function CustomTabs({
       sx={{
         mt: 3,
         mb: 3,
+        mx: { xs: 0, md: "auto" },
         borderRadius: "16px",
         border: "1px solid var(--border-color)",
         background: "var(--bg-paper)",
         overflow: "hidden",
         boxShadow: "0 2px 12px rgba(0, 0, 0, 0.03)",
+        display: "flex",
+        width: { xs: "100%", md: "fit-content" },
+        maxWidth: "100%",
+        boxSizing: "border-box",
         ...sx,
       }}
     >
       <Tabs
         value={value}
         onChange={onChange}
-        variant={variant}
-        scrollButtons="auto"
-        allowScrollButtonsMobile
+        variant={variant || "scrollable"}
+        scrollButtons={false}
+        allowScrollButtonsMobile={false}
         {...props}
         sx={{
-          minHeight: { xs: "50px", sm: "56px" },
+          width: "100%",
+          minHeight: { xs: "46px", sm: "52px" },
+          "& .MuiTabs-scroller": {
+            display: "flex",
+            overflowX: "auto !important",
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
+          },
+          "& .MuiTabs-flexContainer": {
+            display: "flex",
+            width: "100%",
+          },
           "& .MuiTabs-indicator": {
             display: "none",
           },
+          "& .MuiTabs-scrollButtons": {
+            display: "none !important",
+          },
           "& .MuiTab-root": {
-            minHeight: { xs: "50px", sm: "56px" },
-            py: { xs: 1, sm: 1.5 },
-            px: { xs: 1, sm: 2, md: 3 },
+            flex: "0 0 auto",
+            flexGrow: 0,
+            flexShrink: 0,
+            width: "auto",
+            maxWidth: "none",
+            minWidth: "auto",
+            minHeight: { xs: "46px", sm: "52px" },
+            py: { xs: 1, sm: 1.25 },
+            px: { xs: 2, sm: 2.5, md: 3.5 },
             textTransform: "none",
             fontWeight: 700,
-            fontSize: { xs: "0.75rem", sm: "0.85rem", md: "0.925rem" },
-            whiteSpace: { xs: "normal", md: "nowrap" },
+            fontSize: { xs: "0.825rem", sm: "0.875rem", md: "0.925rem" },
+            whiteSpace: "nowrap !important",
+            wordBreak: "normal !important",
             lineHeight: 1.25,
-            textAlign: "center",
-            wordBreak: "break-word",
+            textAlign: "center !important",
+            justifyContent: "center !important",
+            alignItems: "center !important",
+            display: "inline-flex !important",
+            flexDirection: "row !important",
             color: "var(--text-secondary)",
             borderRight: "1px solid var(--border-color)",
             transition: "all 0.2s ease",
             position: "relative",
             "&:last-of-type": {
               borderRight: "none",
+            },
+            "& span, & div": {
+              display: "inline-flex !important",
+              alignItems: "center !important",
+              justifyContent: "center !important",
+              textAlign: "center !important",
+              whiteSpace: "nowrap !important",
             },
             "&.Mui-selected": {
               background: "var(--bg-accent-4)",
