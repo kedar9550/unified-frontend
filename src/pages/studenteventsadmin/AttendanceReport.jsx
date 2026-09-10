@@ -15,44 +15,41 @@ import {
   MenuItem,
   TextField,
   IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   People as PeopleIcon,
-  Payment as PaymentIcon,
   Refresh as RefreshIcon,
   Download as DownloadIcon,
   Visibility as ViewIcon,
   Close as CloseIcon,
   School as SchoolIcon,
-  Hotel as AccommodationIcon,
-  Phone as PhoneIcon,
-  Email as EmailIcon,
   Event as EventIcon,
   Badge as BadgeIcon,
   CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon,
+  QrCode as QrCodeIcon,
   AssignmentTurnedIn as AssignmentTurnedInIcon,
   Groups as GroupsIcon,
   EmojiEvents as TrophyIcon,
 } from '@mui/icons-material';
 import * as XLSX from 'xlsx-js-style';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
 import { PageContainer, EmptyState } from '../../components/common/design-system';
-import ActionButton from '../../components/common/ActionButton';
 import StatCard from '../../components/common/StatCard';
 import StatCardGrid from '../../components/common/StatCardGrid';
 import API from '../../api/axios';
 import { fetchEventDepartments } from '../../api/eventDepartmentApi';
 import { toast } from 'sonner';
-import { QRCodeSVG } from 'qrcode.react';
 import { useAuth } from '../../context/AuthContext';
 import EventPassCard from '../../components/EventPass/EventPassCard';
 
-const Participants = ({ mode = 'all' }) => {
+const AttendanceReport = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { activeRole, user } = useAuth();
+
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState(null);
@@ -68,46 +65,26 @@ const Participants = ({ mode = 'all' }) => {
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [eventFilter, setEventFilter] = useState('ALL');
-  const [accommodationFilter, setAccommodationFilter] = useState(
-    mode === 'accommodation' ? 'YES' : mode === 'no-accommodation' ? 'NO' : 'ALL'
-  );
-  const [attendanceFilter, setAttendanceFilter] = useState('ALL');
   const [genderFilter, setGenderFilter] = useState('ALL');
   const [schoolFilter, setSchoolFilter] = useState('ALL');
   const [departmentFilter, setDepartmentFilter] = useState('ALL');
   const [branchMap, setBranchMap] = useState({});
 
-  useEffect(() => {
-    if (mode === 'accommodation') {
-      setAccommodationFilter('YES');
-      setAttendanceFilter('ALL');
-    } else if (mode === 'no-accommodation') {
-      setAccommodationFilter('NO');
-      setAttendanceFilter('ALL');
-    } else if (mode === 'attendance' || mode === 'attendance-report') {
-      setAccommodationFilter('ALL');
-      setAttendanceFilter('PRESENT');
-    } else {
-      setAccommodationFilter('ALL');
-      setAttendanceFilter('ALL');
-    }
-  }, [mode]);
-
-  const fetchPayments = useCallback(async () => {
+  const fetchAttendedParticipants = useCallback(async () => {
     setLoading(true);
     try {
       const [eventsRes, deptsRes] = await Promise.all([
         API.get('/api/events'),
         fetchEventDepartments().catch(() => ({ data: { departments: [] } })),
       ]);
-      const allEvents = eventsRes.data?.events || [];
+      const fetchedEvents = eventsRes.data?.events || [];
       const fetchedDepts = deptsRes.data?.departments || [];
-      setAllEvents(allEvents);
+      setAllEvents(fetchedEvents);
       setAllDepartments(fetchedDepts);
 
       let allowedEventNames = null;
       if (activeRole === 'FACULTY_COORDINATOR' && user) {
-        const userEvents = allEvents.filter(e => {
+        const userEvents = fetchedEvents.filter(e => {
           const coords = e.facultyCoordinators || (e.facultyCoordinator ? [e.facultyCoordinator] : []);
           return coords.some(c =>
             c.employeeId === user.institutionId ||
@@ -118,7 +95,8 @@ const Participants = ({ mode = 'all' }) => {
         allowedEventNames = userEvents.map(e => e.eventName);
       }
 
-      const response = await API.get('/api/razorpay/registrations');
+      // Query razorpay registrations with attended filter
+      const response = await API.get('/api/razorpay/registrations?attended=true');
       let fetchedPayments = response.data?.payments || [];
 
       fetchedPayments = fetchedPayments.filter(p => p.paymentStatus === 'PAID' || p.verified === true);
@@ -127,7 +105,7 @@ const Participants = ({ mode = 'all' }) => {
       }
 
       fetchedPayments = fetchedPayments.map(p => {
-        const eventMatch = allEvents.find(e => e.eventName === (p.eventName || p.category));
+        const eventMatch = fetchedEvents.find(e => e.eventName === (p.eventName || p.category));
         return {
           ...p,
           venue: eventMatch ? (
@@ -145,11 +123,12 @@ const Participants = ({ mode = 'all' }) => {
 
       setPayments(fetchedPayments);
 
+      // Branch resolution for rolls missing branch
       const missingRolls = new Set();
       fetchedPayments.forEach(pay => {
         if (Array.isArray(pay.participants)) {
           pay.participants.forEach(p => {
-            if (!p.branch && p.roll && p.roll.length > 5 && (!p.college || p.college.toLowerCase().includes('aditya'))) {
+            if (p.attended && !p.branch && p.roll && p.roll.length > 5 && (!p.college || p.college.toLowerCase().includes('aditya'))) {
               missingRolls.add(p.roll.toUpperCase());
             }
           });
@@ -177,16 +156,16 @@ const Participants = ({ mode = 'all' }) => {
       }
 
     } catch (error) {
-      console.error('Error fetching event participants:', error);
-      toast.error(error.response?.data?.message || 'Failed to load participants');
+      console.error('Error fetching attended participants:', error);
+      toast.error(error.response?.data?.message || 'Failed to load attendance report');
     } finally {
       setLoading(false);
     }
   }, [activeRole, user]);
 
   useEffect(() => {
-    fetchPayments();
-  }, [fetchPayments]);
+    fetchAttendedParticipants();
+  }, [fetchAttendedParticipants]);
 
   const deptLookupMap = useMemo(() => {
     const map = {};
@@ -222,31 +201,35 @@ const Participants = ({ mode = 'all' }) => {
     return rawBranch || '';
   }, [deptLookupMap]);
 
-  const allParticipants = useMemo(() => {
+  // Extract ONLY participants who have attended (attended === true)
+  const allAttendedParticipants = useMemo(() => {
     const list = [];
     payments.forEach((payment) => {
       if (Array.isArray(payment.participants)) {
         payment.participants.forEach((participant, pIdx) => {
-          list.push({
-            ...participant,
-            id: `${payment._id || payment.receipt}-${pIdx}`,
-            paymentId: payment._id,
-            receipt: payment.receipt,
-            eventName: payment.eventName || payment.category || 'Event',
-            category: payment.category,
-            schoolId: payment.schoolId,
-            eventId: payment.eventId,
-            razorpayPaymentId: payment.razorpayPaymentId,
-            razorpayOrderId: payment.razorpayOrderId,
-            amount: payment.amountRupees ?? payment.amount,
-            paidAt: payment.createdAt || payment.paidAt,
-            venue: payment.venue,
-            eventGroup: payment.eventGroup || '-',
-            eventCategory: payment.eventCategory || '-',
-            eventSchool: payment.eventSchool || '-',
-            teamId: payment.teamId,
-            computedBranch: participant.branch || branchMap[participant.roll?.toUpperCase()] || '',
-          });
+          // Strictly filter for attended participants
+          if (participant.attended === true || participant.attended === 'true' || participant.attended === 1) {
+            list.push({
+              ...participant,
+              id: `${payment._id || payment.receipt}-${pIdx}`,
+              paymentId: payment._id,
+              receipt: payment.receipt,
+              eventName: payment.eventName || payment.category || 'Event',
+              category: payment.category,
+              schoolId: payment.schoolId,
+              eventId: payment.eventId,
+              razorpayPaymentId: payment.razorpayPaymentId,
+              razorpayOrderId: payment.razorpayOrderId,
+              amount: payment.amountRupees ?? payment.amount,
+              paidAt: payment.createdAt || payment.paidAt,
+              venue: payment.venue,
+              eventGroup: payment.eventGroup || '-',
+              eventCategory: payment.eventCategory || '-',
+              eventSchool: payment.eventSchool || '-',
+              teamId: payment.teamId,
+              computedBranch: participant.branch || branchMap[participant.roll?.toUpperCase()] || '',
+            });
+          }
         });
       }
     });
@@ -255,40 +238,36 @@ const Participants = ({ mode = 'all' }) => {
 
   const uniqueEvents = useMemo(() => {
     const eventsSet = new Set();
-    allParticipants.forEach((p) => {
+    allAttendedParticipants.forEach((p) => {
       if (p.eventName) eventsSet.add(p.eventName);
     });
     return Array.from(eventsSet).sort();
-  }, [allParticipants]);
+  }, [allAttendedParticipants]);
 
   const uniqueSchools = useMemo(() => {
     const set = new Set();
-    allParticipants.forEach(p => {
+    allAttendedParticipants.forEach(p => {
       const school = p.eventSchool || p.category || p.schoolId;
       if (school && school !== '-') set.add(school);
     });
     return Array.from(set).sort();
-  }, [allParticipants]);
+  }, [allAttendedParticipants]);
 
   const uniqueDepartments = useMemo(() => {
     const set = new Set(['AIML', 'AIDS', 'CE', 'CSE', 'ECE', 'EEE', 'FS', 'IT', 'ME', 'PT', 'MinE', 'AgE', 'BBA', 'BCA', 'MCA', 'MBA']);
     allDepartments.forEach(d => {
       if (d?.name) set.add(d.name.trim());
     });
-    allParticipants.forEach(p => {
+    allAttendedParticipants.forEach(p => {
       const dept = resolveStudentDepartment(p);
       if (dept) set.add(dept);
     });
     return Array.from(set).filter(Boolean).sort((a, b) => a.localeCompare(b));
-  }, [allDepartments, allParticipants, resolveStudentDepartment]);
+  }, [allDepartments, allAttendedParticipants, resolveStudentDepartment]);
 
   const filteredParticipants = useMemo(() => {
-    let filtered = allParticipants.filter((p) => {
+    return allAttendedParticipants.filter((p) => {
       if (eventFilter !== 'ALL' && p.eventName !== eventFilter) return false;
-      if (accommodationFilter === 'YES' && p.accommodation?.toLowerCase() !== 'yes') return false;
-      if (accommodationFilter === 'NO' && p.accommodation?.toLowerCase() === 'yes') return false;
-      if (attendanceFilter === 'PRESENT' && !p.attended) return false;
-      if (attendanceFilter === 'ABSENT' && p.attended) return false;
       if (genderFilter !== 'ALL' && p.gender?.toLowerCase() !== genderFilter.toLowerCase()) return false;
 
       if (schoolFilter !== 'ALL') {
@@ -311,6 +290,8 @@ const Participants = ({ mode = 'all' }) => {
         const dept = (resolveStudentDepartment(p) || p.department || '').toLowerCase();
         const eventName = (p.eventName || '').toLowerCase();
         const receipt = (p.receipt || '').toLowerCase();
+        const teamId = (p.teamId || '').toLowerCase();
+        const barcode = (p.barcode || '').toLowerCase();
 
         return (
           name.includes(query) ||
@@ -320,65 +301,23 @@ const Participants = ({ mode = 'all' }) => {
           college.includes(query) ||
           dept.includes(query) ||
           eventName.includes(query) ||
-          receipt.includes(query)
+          receipt.includes(query) ||
+          teamId.includes(query) ||
+          barcode.includes(query)
         );
       }
 
       return true;
     });
-
-    if (mode === 'accommodation') {
-      const grouped = {};
-      filtered.forEach(p => {
-        const key = p.roll || p.email || p.id;
-        if (!grouped[key]) {
-          grouped[key] = {
-            ...p,
-            eventNames: [p.eventName || ''],
-            eventGroups: [p.eventGroup || ''],
-            eventCategories: [p.eventCategory || ''],
-            combinedGroups: [`${p.eventGroup || ''} / ${p.eventCategory || ''}`]
-          };
-        } else {
-          if (!grouped[key].eventNames.includes(p.eventName)) grouped[key].eventNames.push(p.eventName || '');
-          if (!grouped[key].eventGroups.includes(p.eventGroup)) grouped[key].eventGroups.push(p.eventGroup || '');
-          if (!grouped[key].eventCategories.includes(p.eventCategory)) grouped[key].eventCategories.push(p.eventCategory || '');
-
-          const grpCat = `${p.eventGroup || ''} / ${p.eventCategory || ''}`;
-          if (!grouped[key].combinedGroups.includes(grpCat)) grouped[key].combinedGroups.push(grpCat);
-        }
-      });
-      filtered = Object.values(grouped).map(g => ({
-        ...g,
-        eventName: g.eventNames.filter(Boolean).join(', '),
-        eventGroup: g.eventGroups.filter(Boolean).join(', '),
-        eventCategory: g.eventCategories.filter(Boolean).join(', '),
-        eventGroupString: g.combinedGroups.filter(Boolean).join(', ')
-      }));
-    }
-
-    return filtered;
-  }, [allParticipants, eventFilter, accommodationFilter, attendanceFilter, genderFilter, schoolFilter, departmentFilter, searchQuery, mode, allEvents, resolveStudentDepartment]);
-
-  const accommodationCount = useMemo(() => {
-    return allParticipants.filter((p) => p.accommodation?.toLowerCase() === 'yes').length;
-  }, [allParticipants]);
+  }, [allAttendedParticipants, eventFilter, genderFilter, schoolFilter, departmentFilter, searchQuery, resolveStudentDepartment]);
 
   const uniqueCollegesCount = useMemo(() => {
     const set = new Set();
-    allParticipants.forEach((p) => {
+    allAttendedParticipants.forEach((p) => {
       if (p.college) set.add(p.college);
     });
     return set.size;
-  }, [allParticipants]);
-
-  const presentCount = useMemo(() => {
-    return allParticipants.filter((p) => p.attended).length;
-  }, [allParticipants]);
-
-  const absentCount = useMemo(() => {
-    return allParticipants.filter((p) => !p.attended).length;
-  }, [allParticipants]);
+  }, [allAttendedParticipants]);
 
   const maleCount = useMemo(() => {
     return filteredParticipants.filter((p) => p.gender?.toLowerCase() === 'male').length;
@@ -388,21 +327,22 @@ const Participants = ({ mode = 'all' }) => {
     return filteredParticipants.filter((p) => p.gender?.toLowerCase() === 'female').length;
   }, [filteredParticipants]);
 
+  // Export to Excel with xlsx-js-style
   const handleExportExcel = () => {
     if (filteredParticipants.length === 0) {
-      toast.error('No participants data to export.');
+      toast.error('No attended participants data to export.');
       return;
     }
 
     const headers = [
       'S.No', 'Name', 'Roll No', 'Team ID', 'School Name', 'Event Name', 'Event Department(s)',
-      'College', 'Branch', 'Student Department', 'Student Year', 'Gender', 'Mobile', 'Email', 'Attended'
+      'College', 'Branch', 'Student Department', 'Student Year', 'Gender', 'Mobile', 'Email', 'Attended', 'Barcode'
     ];
 
     const colWidths = [
       { wch: 6 }, { wch: 26 }, { wch: 16 }, { wch: 16 }, { wch: 22 },
-      { wch: 28 }, { wch: 32 }, { wch: 25 }, { wch: 16 }, { wch: 20 },
-      { wch: 12 }, { wch: 10 }, { wch: 15 }, { wch: 28 }, { wch: 12 }
+      { wch: 28 }, { wch: 32 }, { wch: 26 }, { wch: 16 }, { wch: 20 },
+      { wch: 14 }, { wch: 10 }, { wch: 16 }, { wch: 28 }, { wch: 14 }, { wch: 14 }
     ];
 
     const applySheetStyles = (ws, headerColsCount) => {
@@ -412,7 +352,7 @@ const Participants = ({ mode = 'all' }) => {
         if (ws[cellRef]) {
           ws[cellRef].s = {
             font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
-            fill: { fgColor: { rgb: '1E3A8A' } },
+            fill: { fgColor: { rgb: '166534' } }, // Rich emerald green for Attendance Report
             alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
             border: {
               top: { style: 'thin', color: { rgb: 'CBD5E1' } },
@@ -438,16 +378,19 @@ const Participants = ({ mode = 'all' }) => {
       return [
         idx + 1, p.name || '', p.roll || '', p.teamId || '', schoolCategory,
         p.eventName || '', eventDepartmentStr, collegeName, p.computedBranch || p.branch || '',
-        studentDept, p.year || '', p.gender || '', p.mobile || '', p.email || '', p.attended ? 'Yes' : 'No'
+        studentDept, p.year || '', p.gender || '', p.mobile || '', p.email || '', 'Yes', p.barcode || ''
       ];
     };
 
     const workbook = XLSX.utils.book_new();
+
+    // Master Sheet: All Attended Participants
     const allRows = [headers, ...filteredParticipants.map((p, idx) => mapParticipantToRow(p, idx))];
     const allWs = XLSX.utils.aoa_to_sheet(allRows);
     applySheetStyles(allWs, headers.length);
-    XLSX.utils.book_append_sheet(workbook, allWs, 'All Participants');
+    XLSX.utils.book_append_sheet(workbook, allWs, 'All Attended');
 
+    // Group by Student Department
     const deptMap = {};
     filteredParticipants.forEach((p) => {
       const deptKey = resolveStudentDepartment(p) || 'Other Dept';
@@ -455,7 +398,7 @@ const Participants = ({ mode = 'all' }) => {
       deptMap[deptKey].push(p);
     });
 
-    const usedSheetNames = new Set(['all participants']);
+    const usedSheetNames = new Set(['all attended']);
     const sortedDeptKeys = Object.keys(deptMap).sort((a, b) => a.localeCompare(b));
 
     sortedDeptKeys.forEach((deptKey) => {
@@ -475,11 +418,26 @@ const Participants = ({ mode = 'all' }) => {
       XLSX.utils.book_append_sheet(workbook, deptWs, uniqueName);
     });
 
-    XLSX.writeFile(workbook, `VEDA_Event_Participants_${new Date().toISOString().slice(0, 10)}.xlsx`);
-    toast.success('Participants exported to Excel successfully!');
+    // Write file
+    const dateStr = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(workbook, `VEDA_Attendance_Report_${dateStr}.xlsx`);
+    toast.success(`Attendance report exported successfully (${filteredParticipants.length} participants)`);
   };
 
-  const columns = ['S.No', 'Name', 'Roll Number', 'Team ID', 'School Name', 'EVENT NAME', 'Department(s)', 'College', 'Branch & Dept / Year', 'Contact Info', 'Attended'];
+  const columns = [
+    'S.No',
+    'Name',
+    'Roll Number',
+    'Team ID',
+    'School Name',
+    'EVENT NAME',
+    'Department(s)',
+    'College',
+    'Branch & Dept / Year',
+    'Contact Info',
+    'Attendance',
+    'Actions'
+  ];
 
   const handleOpenDetails = (participant) => {
     setSelectedParticipant(participant);
@@ -500,7 +458,13 @@ const Participants = ({ mode = 'all' }) => {
         departmentNode = {
           value: 'All Departments',
           display: (
-            <span style={{ color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer' }} onClick={() => { setDepartmentsToView(relatedEvent.department); setDepartmentsDialogOpen(true); }}>
+            <span
+              style={{ color: '#3b82f6', textDecoration: 'underline', cursor: 'pointer' }}
+              onClick={() => {
+                setDepartmentsToView(relatedEvent.department);
+                setDepartmentsDialogOpen(true);
+              }}
+            >
               All Departments
             </span>
           )
@@ -518,44 +482,99 @@ const Participants = ({ mode = 'all' }) => {
         value: p.name || '-',
         display: (
           <Box>
-            <Typography variant="body2" sx={{ fontWeight: 700, color: 'var(--text-primary)' }}>{p.name || '-'}</Typography>
-            {p.gender ? <Typography variant="caption" color="text.secondary">Gender: {p.gender}</Typography> : null}
+            <Typography variant="body2" sx={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+              {p.name || '-'}
+            </Typography>
+            {p.gender ? (
+              <Typography variant="caption" color="text.secondary">
+                Gender: {p.gender}
+              </Typography>
+            ) : null}
           </Box>
         ),
       },
-      p.roll ? <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>{p.roll}</Typography> : '-',
+      p.roll ? (
+        <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 700, bgcolor: 'action.hover', px: 1, py: 0.25, borderRadius: '6px', display: 'inline-block' }}>
+          {p.roll}
+        </Typography>
+      ) : '-',
       p.teamId || '-',
       schoolCategory,
       p.eventName || '-',
       departmentNode,
       p.college ? (p.college === 'Other College' && p.otherCollege ? p.otherCollege : p.college) : '-',
       <Box>
-        {p.computedBranch && <Typography variant="body2" sx={{ fontWeight: 600 }}>Branch: {p.computedBranch}</Typography>}
-        <Typography variant="body2">{resolvedDept ? `Dept: ${resolvedDept}${p.year ? ' | Yr: ' + p.year : ''}` : (p.year ? `Yr: ${p.year}` : '-')}</Typography>
+        {p.computedBranch && (
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            Branch: {p.computedBranch}
+          </Typography>
+        )}
+        <Typography variant="body2">
+          {resolvedDept ? `Dept: ${resolvedDept}${p.year ? ' | Yr: ' + p.year : ''}` : (p.year ? `Yr: ${p.year}` : '-')}
+        </Typography>
       </Box>,
       <Box>
         {p.mobile ? <Typography variant="caption" sx={{ display: 'block', fontWeight: 600 }}>Ph: {p.mobile}</Typography> : null}
         {p.email ? <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{p.email}</Typography> : null}
       </Box>,
       {
-        value: p.attended ? 'Yes' : 'No',
-        display: <Chip label={p.attended ? 'Yes' : 'No'} color={p.attended ? 'success' : 'error'} size="small" sx={{ fontWeight: 700, borderRadius: '6px' }} />,
+        value: 'Attended',
+        display: (
+          <Chip
+            icon={<CheckCircleIcon sx={{ fontSize: '16px !important' }} />}
+            label="Attended"
+            color="success"
+            size="small"
+            sx={{
+              fontWeight: 700,
+              borderRadius: '8px',
+              px: 0.5,
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              color: '#ffffff',
+              boxShadow: '0 2px 6px rgba(16, 185, 129, 0.25)'
+            }}
+          />
+        ),
       },
+      {
+        value: 'Actions',
+        display: (
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <Tooltip title="View Student Profile">
+              <IconButton size="small" onClick={() => handleOpenDetails(p)} sx={{ color: '#2563eb' }}>
+                <ViewIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="View Event Pass">
+              <IconButton size="small" onClick={() => handleOpenPass(p)} sx={{ color: '#059669' }}>
+                <QrCodeIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        )
+      }
     ];
   });
 
   return (
     <PageContainer>
       <PageHeader
-        title="Participants List"
-        subtitle="View all event participants and their attendance status"
+        title="Attendance Report"
+        subtitle="Report of participants who have attended the events (Attended: Yes)"
         action={
-          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
             <Button
               variant="contained"
-              onClick={fetchPayments}
+              onClick={fetchAttendedParticipants}
               startIcon={<RefreshIcon />}
-              sx={{ borderRadius: '12px', textTransform: 'none', px: 2.5, py: 1 }}
+              sx={{
+                borderRadius: '12px',
+                textTransform: 'none',
+                px: 2.5,
+                py: 1,
+                bgcolor: '#3b82f6',
+                '&:hover': { bgcolor: '#2563eb' }
+              }}
             >
               Refresh
             </Button>
@@ -563,7 +582,7 @@ const Participants = ({ mode = 'all' }) => {
         }
       />
 
-      {/* Top Navigation Switcher */}
+      {/* Top Navigation Tabs Switcher */}
       <Box
         sx={{
           display: 'flex',
@@ -577,38 +596,37 @@ const Participants = ({ mode = 'all' }) => {
         }}
       >
         <Button
-          variant={mode === 'all' ? 'contained' : 'text'}
+          variant="text"
           startIcon={<GroupsIcon />}
           onClick={() => navigate('/Eventveda/participants/all')}
-          sx={{
-            borderRadius: '10px',
-            textTransform: 'none',
-            fontWeight: 700,
-            px: 2,
-            py: 0.75,
-            ...(mode === 'all'
-              ? { bgcolor: '#2563eb', color: '#fff', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)' }
-              : { color: 'text.secondary', '&:hover': { bgcolor: 'action.hover' } }),
-          }}
-        >
-          All Participants
-        </Button>
-        <Button
-          variant={mode === 'attendance' || mode === 'attendance-report' ? 'contained' : 'text'}
-          startIcon={<AssignmentTurnedInIcon />}
-          onClick={() => navigate('/Eventveda/participants/attendance-report')}
           sx={{
             borderRadius: '10px',
             textTransform: 'none',
             fontWeight: 600,
             px: 2,
             py: 0.75,
-            ...(mode === 'attendance' || mode === 'attendance-report'
-              ? { bgcolor: '#16a34a', color: '#fff', boxShadow: '0 4px 12px rgba(22, 163, 74, 0.25)' }
-              : { color: 'text.secondary', '&:hover': { bgcolor: 'action.hover', color: '#16a34a' } }),
+            color: 'text.secondary',
+            '&:hover': { bgcolor: 'action.hover' }
           }}
         >
-          Attendance Report ({presentCount})
+          All Participants
+        </Button>
+        <Button
+          variant="contained"
+          startIcon={<AssignmentTurnedInIcon />}
+          sx={{
+            borderRadius: '10px',
+            textTransform: 'none',
+            fontWeight: 700,
+            px: 2.2,
+            py: 0.75,
+            bgcolor: '#16a34a',
+            color: '#fff',
+            boxShadow: '0 4px 12px rgba(22, 163, 74, 0.25)',
+            '&:hover': { bgcolor: '#15803d' }
+          }}
+        >
+          Attendance Report ({allAttendedParticipants.length})
         </Button>
         <Button
           variant="text"
@@ -621,88 +639,50 @@ const Participants = ({ mode = 'all' }) => {
             px: 2,
             py: 0.75,
             color: 'text.secondary',
-            '&:hover': { bgcolor: 'action.hover', color: '#f59e0b' },
+            '&:hover': { bgcolor: 'action.hover', color: '#f59e0b' }
           }}
         >
           Winners Report
         </Button>
-        {mode === 'accommodation' && (
-          <Button
-            variant="contained"
-            startIcon={<AccommodationIcon />}
-            sx={{
-              borderRadius: '10px',
-              textTransform: 'none',
-              fontWeight: 700,
-              px: 2,
-              py: 0.75,
-              bgcolor: '#0891b2',
-              color: '#fff',
-            }}
-          >
-            Accommodation
-          </Button>
-        )}
-        {mode === 'no-accommodation' && (
-          <Button
-            variant="contained"
-            startIcon={<AccommodationIcon />}
-            sx={{
-              borderRadius: '10px',
-              textTransform: 'none',
-              fontWeight: 700,
-              px: 2,
-              py: 0.75,
-              bgcolor: '#64748b',
-              color: '#fff',
-            }}
-          >
-            No Accommodation
-          </Button>
-        )}
       </Box>
 
       {/* Summary Cards */}
       <StatCardGrid sx={{ mt: 1, mb: 3 }}>
         <StatCard
-          title={mode === 'all' ? 'Filtered Participants' : mode === 'accommodation' ? 'Accommodation Needed' : 'No Accommodation'}
+          title="Total Attended"
+          value={allAttendedParticipants.length}
+          color="#16a34a"
+          icon={<CheckCircleIcon />}
+        />
+        {/* <StatCard
+          title="Filtered Attended"
           value={filteredParticipants.length}
           color="#d97706"
           icon={<PeopleIcon />}
         />
-        {mode !== 'all' && (
-          <>
-            <StatCard
-              title="Male Participants"
-              value={maleCount}
-              color="#2563eb"
-              icon={<PeopleIcon />}
-            />
-            <StatCard
-              title="Female Participants"
-              value={femaleCount}
-              color="#db2777"
-              icon={<PeopleIcon />}
-            />
-          </>
-        )}
         <StatCard
-          title="Events"
+          title="Events Represented"
           value={uniqueEvents.length}
           color="#9333ea"
           icon={<EventIcon />}
         />
         <StatCard
-          title="Present"
-          value={presentCount}
-          color="#16a34a"
-          icon={<CheckCircleIcon />}
+          title="Colleges Represented"
+          value={uniqueCollegesCount}
+          color="#2563eb"
+          icon={<SchoolIcon />}
+        /> */}
+        <StatCard
+          title="Male Attended"
+          value={maleCount}
+          color="#0284c7"
+          icon={<PeopleIcon />}
         />
         <StatCard
-          title="Absent"
-          value={absentCount}
-          color="#dc2626"
-          icon={<CancelIcon />}
+          title="Female Attended"
+          value={femaleCount}
+          color="#db2777"
+          icon={<PeopleIcon />}
         />
       </StatCardGrid>
 
@@ -721,11 +701,11 @@ const Participants = ({ mode = 'all' }) => {
         }}
       >
         <TextField
-          placeholder="Search by name, roll no, email..."
+          placeholder="Search by name, roll no, team ID, email..."
           size="small"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{ width: { xs: '100%', sm: 260 }, flex: { sm: 1 } }}
+          sx={{ width: { xs: '100%', sm: 280 }, flex: { sm: 1 } }}
         />
 
         <TextField
@@ -778,19 +758,6 @@ const Participants = ({ mode = 'all' }) => {
 
         <TextField
           select
-          size="small"
-          label="Attendance"
-          value={attendanceFilter}
-          onChange={(e) => setAttendanceFilter(e.target.value)}
-          sx={{ width: { xs: '100%', sm: 160 } }}
-        >
-          <MenuItem value="ALL">All Status</MenuItem>
-          <MenuItem value="PRESENT">Present</MenuItem>
-          <MenuItem value="ABSENT">Absent</MenuItem>
-        </TextField>
-
-        <TextField
-          select
           label="Gender"
           size="small"
           value={genderFilter}
@@ -815,11 +782,12 @@ const Participants = ({ mode = 'all' }) => {
               py: 0.8,
               fontWeight: 700,
               width: { xs: '100%', sm: 'auto' },
-              background: 'var(--gradient-primary)',
+              background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
               color: '#ffffff',
-              boxShadow: '0 4px 14px rgba(59, 130, 246, 0.35)',
+              boxShadow: '0 4px 14px rgba(22, 163, 74, 0.35)',
               '&:hover': {
-                boxShadow: '0 6px 20px rgba(59, 130, 246, 0.5)',
+                background: 'linear-gradient(135deg, #15803d 0%, #166534 100%)',
+                boxShadow: '0 6px 20px rgba(22, 163, 74, 0.5)',
               },
               '&.Mui-disabled': {
                 background: 'rgba(148, 163, 184, 0.12)',
@@ -828,7 +796,7 @@ const Participants = ({ mode = 'all' }) => {
               },
             }}
           >
-            Export Excel
+            Download Excel ({filteredParticipants.length})
           </Button>
         </Box>
       </Paper>
@@ -836,21 +804,21 @@ const Participants = ({ mode = 'all' }) => {
       {/* DataTable */}
       {loading ? (
         <Box sx={{ display: 'grid', placeItems: 'center', py: 10 }}>
-          <CircularProgress size={32} />
+          <CircularProgress size={36} color="success" />
         </Box>
       ) : (
         <Box sx={{ mt: 2 }}>
           {filteredParticipants.length === 0 ? (
             <EmptyState
-              title="No Participants found"
-              description="Try adjusting your search query or filter criteria."
+              title="No Attended Participants Found"
+              description="Either no participants have been marked as attended yet, or try adjusting your search/filter criteria."
             />
           ) : (
             <DataTable
               columns={columns}
               rows={rows}
-              nonSortableColumns={[0, 9]}
-              alignments={['center', 'left', 'left', 'center', 'left', 'left', 'left', 'left', 'left', 'left', 'center']}
+              nonSortableColumns={[0, 10, 11]}
+              alignments={['center', 'left', 'left', 'center', 'left', 'left', 'left', 'left', 'left', 'left', 'center', 'center']}
             />
           )}
         </Box>
@@ -881,7 +849,7 @@ const Participants = ({ mode = 'all' }) => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <BadgeIcon sx={{ color: '#38bdf8' }} />
               <Typography variant="h6" sx={{ fontWeight: 800, color: '#fff' }}>
-                Student Profile
+                Attended Participant Profile
               </Typography>
             </Box>
             <IconButton
@@ -893,13 +861,22 @@ const Participants = ({ mode = 'all' }) => {
           </DialogTitle>
 
           <DialogContent dividers sx={{ p: 3, background: 'var(--bg-panel, #ffffff)' }}>
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>
-                {selectedParticipant.name || '-'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Roll Number: <strong>{selectedParticipant.roll || '-'}</strong> | Gender: <strong>{selectedParticipant.gender || '-'}</strong>
-              </Typography>
+            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <Box>
+                <Typography variant="h5" sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>
+                  {selectedParticipant.name || '-'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Roll Number: <strong>{selectedParticipant.roll || '-'}</strong> | Gender: <strong>{selectedParticipant.gender || '-'}</strong>
+                </Typography>
+              </Box>
+              <Chip
+                icon={<CheckCircleIcon sx={{ fontSize: '16px !important' }} />}
+                label="Attended"
+                color="success"
+                size="small"
+                sx={{ fontWeight: 700 }}
+              />
             </Box>
 
             <Divider sx={{ my: 2 }} />
@@ -911,6 +888,15 @@ const Participants = ({ mode = 'all' }) => {
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700, mt: 0.5 }}>
                   {selectedParticipant.eventName || '-'}
+                </Typography>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
+                  Team ID
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, fontFamily: 'monospace', mt: 0.5 }}>
+                  {selectedParticipant.teamId || '-'}
                 </Typography>
               </Grid>
 
@@ -961,25 +947,11 @@ const Participants = ({ mode = 'all' }) => {
 
               <Grid item xs={12} sm={6}>
                 <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  Location / City
+                  Barcode
                 </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>
-                  {selectedParticipant.location || '-'}
+                <Typography variant="body2" sx={{ fontWeight: 700, fontFamily: 'monospace', mt: 0.5 }}>
+                  {selectedParticipant.barcode || '-'}
                 </Typography>
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontWeight: 700 }}>
-                  Accommodation Requested
-                </Typography>
-                <Box sx={{ mt: 0.5 }}>
-                  <Chip
-                    label={selectedParticipant.accommodation || 'No'}
-                    color={selectedParticipant.accommodation?.toLowerCase() === 'yes' ? 'primary' : 'default'}
-                    size="small"
-                    sx={{ fontWeight: 700 }}
-                  />
-                </Box>
               </Grid>
             </Grid>
           </DialogContent>
@@ -1017,7 +989,7 @@ const Participants = ({ mode = 'all' }) => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <BadgeIcon sx={{ color: '#38bdf8' }} />
               <Typography variant="h6" sx={{ fontWeight: 800, color: '#fff' }}>
-                Event Pass
+                Event Pass (Attended)
               </Typography>
             </Box>
             <IconButton
@@ -1034,6 +1006,7 @@ const Participants = ({ mode = 'all' }) => {
         </Dialog>
       )}
 
+      {/* Departments Modal */}
       <Dialog open={departmentsDialogOpen} onClose={() => setDepartmentsDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>All Departments</DialogTitle>
         <DialogContent dividers>
@@ -1053,4 +1026,4 @@ const Participants = ({ mode = 'all' }) => {
   );
 };
 
-export default Participants;
+export default AttendanceReport;

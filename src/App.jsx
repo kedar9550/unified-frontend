@@ -111,6 +111,8 @@ import ManualAdding from "./pages/studenteventsadmin/ManualAdding";
 import PendingPayments from "./pages/studenteventsadmin/PendingPayments";
 import Registrations from "./pages/studenteventsadmin/Registrations";
 import Participants from "./pages/studenteventsadmin/Participants";
+import AttendanceReport from "./pages/studenteventsadmin/AttendanceReport";
+import WinnersReport from "./pages/studenteventsadmin/WinnersReport";
 import AddTeamMember from "./pages/studenteventsadmin/AddTeamMember";
 import ApplyAccommodation from "./pages/studenteventsadmin/ApplyAccommodation";
 import ScanPass from "./pages/studenteventsadmin/ScanPass";
@@ -339,6 +341,10 @@ function App() {
         <Route path="/Eventveda/registrations/add-member" element={<ProtectedRoute element={<AddTeamMember />} />} />
         <Route path="/Eventveda/participants" element={<ProtectedRoute element={<Participants mode="all" />} />} />
         <Route path="/Eventveda/participants/all" element={<ProtectedRoute element={<Participants mode="all" />} />} />
+        <Route path="/Eventveda/participants/attendance-report" element={<ProtectedRoute element={<AttendanceReport />} />} />
+        <Route path="/Eventveda/participants/attendance" element={<ProtectedRoute element={<AttendanceReport />} />} />
+        <Route path="/Eventveda/participants/winners-report" element={<ProtectedRoute element={<WinnersReport />} />} />
+        <Route path="/Eventveda/participants/attendance-report/winners" element={<ProtectedRoute element={<WinnersReport />} />} />
         <Route path="/Eventveda/participants/accommodation" element={<ProtectedRoute element={<Participants mode="accommodation" />} />} />
         <Route path="/Eventveda/participants/no-accommodation" element={<ProtectedRoute element={<Participants mode="no-accommodation" />} />} />
         <Route path="/Eventveda/apply-accommodation" element={<ProtectedRoute element={<ApplyAccommodation />} />} />
