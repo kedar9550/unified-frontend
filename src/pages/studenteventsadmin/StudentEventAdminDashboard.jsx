@@ -14,8 +14,6 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  Tabs,
-  Tab,
   Typography,
 } from '@mui/material';
 import {
@@ -44,6 +42,7 @@ import {
   LabelList,
 } from 'recharts';
 import PageHeader from '../../components/common/PageHeader';
+import { CustomTabs } from '../../components/common';
 import StatCard from '../../components/common/StatCard';
 import StatCardGrid from '../../components/common/StatCardGrid';
 import API from '../../api/axios';
@@ -350,14 +349,16 @@ const StudentEventAdminDashboard = () => {
       />
 
 
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3, px: { xs: 2, sm: 0 } }}>
-        <Tabs value={currentTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile sx={{ '& .MuiTab-root': { fontWeight: 600, fontSize: '1rem', textTransform: 'none' } }}>
-          <Tab label="All" />
-          <Tab label="Schools" />
-          <Tab label="Departments" />
-          <Tab label="Events" />
-        </Tabs>
-      </Box>
+      <CustomTabs
+        value={currentTab}
+        onChange={(e, newValue) => setCurrentTab(newValue)}
+        tabs={[
+          { label: 'All' },
+          { label: 'Schools' },
+          { label: 'Departments' },
+          { label: 'Events' },
+        ]}
+      />
 
       {/* ── TAB 0: ALL ─────────────────────────────────────────────── */}
       {currentTab === 0 && (

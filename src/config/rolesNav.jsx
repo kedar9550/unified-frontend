@@ -538,7 +538,7 @@ export const ROLE_ROUTES = {
           icon: <SupportAgent />,
           nested: [
             { text: "Scan for Attendance", path: "/Eventveda/scan-pass", icon: <QrCode /> },
-            // { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> },
+            { text: "Passes", path: "/Eventveda/passes", icon: <CardMembership /> },
             { text: "Update Passes", path: "/Eventveda/update-passes", icon: <CardMembership /> }
           ]
         },
