@@ -35,6 +35,53 @@ const AddTeamMember = () => {
   // Form state
   const [forms, setForms] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [rollLookupLoading, setRollLookupLoading] = useState({});
+  const [fetchedRolls, setFetchedRolls] = useState({});
+
+  const handleLookupRoll = async (index, roll) => {
+    const cleanRoll = roll?.trim().toUpperCase();
+    if (!cleanRoll || cleanRoll.length < 5) return;
+    if (fetchedRolls[index] === cleanRoll) return;
+
+    setRollLookupLoading(prev => ({ ...prev, [index]: true }));
+    try {
+      const res = await API.get(`/api/razorpay/registrations/branch/${cleanRoll}`);
+      const data = res.data;
+      
+      const student = Array.isArray(data) && data.length > 0 ? data[0] : null;
+
+      if (student && student.rollno) {
+        const studentName = student.studentname || student.NAME || '';
+        const branch = student.branch || student.BRANCH || '';
+        const year = student.current_year || student.YEAR || '';
+        const mobile = student.mobilenumber || student.STUDENTMOBILE || '';
+        const email = student.emailid || student.STUDENTEMAIL || '';
+        const gender = student.gender || student.GENDER || '';
+
+        setForms(prev => {
+          const updated = [...prev];
+          updated[index] = {
+            ...updated[index],
+            name: studentName || updated[index].name,
+            branch: branch || updated[index].branch,
+            department: branch || updated[index].department,
+            year: year ? `${year} Year` : updated[index].year,
+            mobile: mobile || updated[index].mobile,
+            email: email || updated[index].email,
+            gender: gender ? (gender.toUpperCase().startsWith('F') ? 'FEMALE' : 'MALE') : updated[index].gender,
+            college: 'Aditya University'
+          };
+          return updated;
+        });
+
+        setFetchedRolls(prev => ({ ...prev, [index]: cleanRoll }));
+      }
+    } catch (err) {
+      console.warn('Roll lookup error:', err);
+    } finally {
+      setRollLookupLoading(prev => ({ ...prev, [index]: false }));
+    }
+  };
 
   const processTeamSelection = async (matchedPayment) => {
     setTeamFound(matchedPayment);
@@ -290,10 +337,26 @@ const AddTeamMember = () => {
                   </Typography>
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
-                      <TextField label="Full Name" size="small" fullWidth value={form.name} onChange={(e) => updateForm(index, 'name', e.target.value)} required />
+                      <TextField
+                        label="Roll Number"
+                        size="small"
+                        fullWidth
+                        value={form.roll}
+                        onChange={(e) => {
+                          updateForm(index, 'roll', e.target.value);
+                          if (e.target.value.trim().length === 10) {
+                            handleLookupRoll(index, e.target.value);
+                          }
+                        }}
+                        onBlur={(e) => handleLookupRoll(index, e.target.value)}
+                        required
+                        InputProps={{
+                          endAdornment: rollLookupLoading[index] ? <CircularProgress size={20} /> : null
+                        }}
+                      />
                     </Grid>
                     <Grid item xs={12} sm={6}>
-                      <TextField label="Roll Number" size="small" fullWidth value={form.roll} onChange={(e) => updateForm(index, 'roll', e.target.value)} required />
+                      <TextField label="Full Name" size="small" fullWidth value={form.name} onChange={(e) => updateForm(index, 'name', e.target.value)} required />
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <TextField label="Email Address" size="small" fullWidth type="email" value={form.email} onChange={(e) => updateForm(index, 'email', e.target.value)} required />
