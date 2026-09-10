@@ -83,7 +83,9 @@ const Passes = () => {
         params: { 
           paymentStatus: 'PAID',
           search: searchQuery.trim(),
-          select: '_id,receipt,teamId,eventName,category,schoolId,razorpayPaymentId,razorpayOrderId,amount,amountRupees,createdAt,paidAt,venue,participants.name,participants.roll,participants.email,participants.mobile,participants.college,participants.otherCollege,participants.attended,paymentStatus,payment'
+         // select: '_id,receipt,teamId,eventName,category,schoolId,razorpayPaymentId,razorpayOrderId,amount,amountRupees,createdAt,paidAt,venue,participants.name,participants.roll,participants.email,participants.mobile,participants.college,participants.otherCollege,participants.attended,paymentStatus,payment'
+          select: '_id,receipt,teamId,eventName,category,schoolId,razorpayPaymentId,razorpayOrderId,amount,amountRupees,createdAt,paidAt,venue,participants.name,participants.roll,participants.email,participants.mobile,participants.college,participants.otherCollege,participants.attended,participants.barcode,paymentStatus,payment'
+
         }
       });
       let fetchedPayments = response.data?.payments || [];
@@ -199,7 +201,7 @@ const Passes = () => {
         <PageHeader
           title="Bulk Passes"
           subtitle={`Total Passes: ${filteredParticipants.length}`}
-          /* action={
+           action={
             <Box sx={{ display: 'flex', gap: 2 }}>
               <Button
                 variant="outlined"
@@ -217,7 +219,7 @@ const Passes = () => {
                 Download PDF
               </ActionButton>
             </Box>
-          } */
+          } 
         />
 
         {/* Glassmorphic Filters Bar */}
