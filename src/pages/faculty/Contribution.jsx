@@ -1005,6 +1005,34 @@ export default function Contribution() {
               Expertise / Contribution Records
             </Typography>
           </Box>
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+            {activeDrafts.length > 0 && (
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={handleBulkSubmit}
+                disabled={loading}
+              >
+                Submit All Drafts
+              </Button>
+            )}
+            <Button
+              variant="contained"
+              startIcon={<AddCircle />}
+              onClick={handleOpenAddModal}
+              sx={{
+                background: "linear-gradient(135deg, var(--color-primary) 0%, #1e3a8a 100%)",
+                "&:hover": { background: "linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%)" },
+                fontWeight: 700,
+                textTransform: "none",
+                borderRadius: "10px",
+                px: 3,
+                boxShadow: "0 4px 12px rgba(37, 99, 235, 0.2)"
+              }}
+            >
+              Add Contribution
+            </Button>
+          </Box>
         </Box>
 
         {contributionsList.length === 0 ? (
