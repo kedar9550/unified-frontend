@@ -187,6 +187,12 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                             <TextField fullWidth label="Issue" name="issue" value={formData.issue || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                            <TextField fullWidth label="ISSN" name="issn" value={formData.issn || ""} onChange={handleChange} variant="outlined" size="small" placeholder="23644176" />
+                        </Box>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                            <TextField fullWidth label="e-ISSN" name="eissn" value={formData.eissn || ""} onChange={handleChange} variant="outlined" size="small" placeholder="23644184" />
+                        </Box>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                             <TextField fullWidth label="SDGs (comma-separated)" name="sdgs" value={formData.sdgs || ""} onChange={handleChange} variant="outlined" size="small" placeholder="SDG-3, SDG-4" />
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
@@ -572,16 +578,6 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                             <TextField fullWidth label="Indexing" name="indexing" value={formData.indexing || ""} onChange={handleChange} variant="outlined" size="small" />
-                        </Box>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
-                            <FormControl fullWidth size="small">
-                                <InputLabel>Presentation Type</InputLabel>
-                                <Select label="Presentation Type" name="presentationType" value={formData.presentationType || ""} onChange={handleChange}>
-                                    <MenuItem value="Oral">Oral</MenuItem>
-                                    <MenuItem value="Poster">Poster</MenuItem>
-                                    <MenuItem value="Keynote">Keynote</MenuItem>
-                                </Select>
-                            </FormControl>
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" } }}>
                             <TextField fullWidth label="Total Authors" name="totalAuthors" type="number" value={formData.totalAuthors || ""} onChange={handleChange} variant="outlined" size="small" />

@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { useLoading } from "../../context/LoadingContext";
 import {
-  Box, TextField, MenuItem, Select, Typography, Button, Paper, Grid, Card, Divider, Radio, RadioGroup, FormControlLabel
+  Box, TextField, MenuItem, Select, Typography, Button,
+  Radio, RadioGroup, FormControlLabel
 } from "@mui/material";
 import { toast } from "sonner";
-import { Search, AttachFile, Groups, School, Person } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import PageContainer from "../../components/common/design-system/PageContainer";
 import {
-  FacultyInfoRow, FormCard, Grid2, FieldLabel, NoteBox, FileField, SubmitBtn
+  FacultyInfoRow, FormCard, Grid2, SubLabel, FileField, SubmitBtn
 } from "../../components/faculty/PublicationFormFields";
 import {
   labelStyle, disabledField, MONTHS, YEARS
@@ -17,38 +18,56 @@ import API from "../../api/axios";
 
 export default function RndConferenceDataEntry() {
   const { user } = useAuth();
+  const { startLoading, stopLoading } = useLoading();
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
 
-  // Target Faculty Verification State
+  // Target Faculty Identification
   const [targetFacultyEmpId, setTargetFacultyEmpId] = useState("");
   const [targetFacultyName, setTargetFacultyName] = useState("");
   const [isTargetFacultyValid, setIsTargetFacultyValid] = useState(false);
   const [verifyingFaculty, setVerifyingFaculty] = useState(false);
   const [targetFacultyDetails, setTargetFacultyDetails] = useState(null);
 
-  const [form, setForm] = useState({
-    doi: "",
-    title: "", conferenceName: "", scope: "", indexing: "",
-    presentationType: "", month: "", year: "",
-    publisher: "", issnIsbn: "",
-    applyIncentive: "", applyingSeedGrant: "",
-    isStudentsInvolved: "No",
-    totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
-  });
-  const [files, setFiles] = useState({ certificate: null, proceedings: null });
-  const [loading, setLoading] = useState(false);
+  // DOI fetch state
   const [doiFetching, setDoiFetching] = useState(false);
   const [doiFetched, setDoiFetched] = useState(false);
 
+  const emptyForm = {
+    doi: "",
+    title: "",
+    conferenceName: "",
+    scope: "",
+    indexing: "",
+    month: "",
+    year: "",
+    publisher: "",
+    issnIsbn: "",
+    applyIncentive: "",
+    applyingSeedGrant: "",
+    isStudentsInvolved: "No",
+    totalAuthors: 1,
+    userAuthorPosition: 1,
+    otherAuthors: [],
+  };
+
+  const [form, setForm] = useState(emptyForm);
+  const [files, setFiles] = useState({ certificate: null, proceedings: null });
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
-    API.get("/api/academic-years").then(res => {
-      const years = res.data?.years || res.data?.data || [];
-      setAcademicYears(years);
-      const activeYear = years.find(y => y.isActive);
-      if (activeYear) setSelectedYear(activeYear._id);
-      else if (years.length > 0) setSelectedYear(years[0]._id);
-    }).catch(err => console.log("Failed to fetch academic years", err));
+    API.get("/api/academic-years")
+      .then(res => {
+        const years = res.data?.years || res.data?.data || [];
+        setAcademicYears(years);
+        const activeYear = years.find(y => y.isActive);
+        if (activeYear) {
+          setSelectedYear(activeYear._id);
+        } else if (years.length > 0) {
+          setSelectedYear(years[0]._id);
+        }
+      })
+      .catch(() => { });
   }, []);
 
   const set = (k) => (e) => {
@@ -83,7 +102,17 @@ export default function RndConferenceDataEntry() {
     });
   };
 
-  const handleVerifyFaculty = async () => {
+  const getAvailableMonths = () => {
+    const selectedYearVal = parseInt(form.year);
+    const currentYear = new Date().getFullYear();
+    if (selectedYearVal === currentYear) {
+      const currentMonthIndex = new Date().getMonth();
+      return MONTHS.filter((_, idx) => idx <= currentMonthIndex);
+    }
+    return MONTHS;
+  };
+
+  const verifyFaculty = async () => {
     if (!targetFacultyEmpId.trim()) {
       toast.error("Please enter Employee ID");
       return;
@@ -99,18 +128,21 @@ export default function RndConferenceDataEntry() {
           setTargetFacultyDetails(emp);
           toast.success(`Faculty Verified: ${emp.name}`);
         } else {
-          toast.error("Faculty record found but is inactive.");
+          setTargetFacultyName("Inactive Faculty");
           setIsTargetFacultyValid(false);
           setTargetFacultyDetails(null);
+          toast.error("This faculty member is inactive and cannot be selected.");
         }
       } else {
-        toast.error("Faculty not found with given Employee ID");
+        setTargetFacultyName("Not Found");
         setIsTargetFacultyValid(false);
         setTargetFacultyDetails(null);
+        toast.error("Faculty not found. Ensure the exact Employee ID is entered.");
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to verify faculty");
+      toast.error(err?.response?.data?.message || "Faculty not found");
       setIsTargetFacultyValid(false);
+      setTargetFacultyName("Not Found");
       setTargetFacultyDetails(null);
     } finally {
       setVerifyingFaculty(false);
@@ -118,11 +150,17 @@ export default function RndConferenceDataEntry() {
   };
 
   const fetchDOIData = async () => {
-    if (!form.doi.trim()) return;
+    if (!form.doi.trim()) { toast.warning("Please enter a DOI first"); return; }
     setDoiFetching(true);
+    startLoading();
     try {
-      const res = await API.get(`/api/research/conference/fetch-doi?doi=${encodeURIComponent(form.doi.trim())}`);
-      const data = res.data?.data || res.data;
+      const res = await API.post("/api/research/conference/validate-doi", { doi: form.doi.trim() });
+      const data = res.data?.data;
+
+      if (!data) {
+        throw new Error("No metadata returned for this DOI");
+      }
+
       setForm(prev => ({
         ...prev,
         title: data.title || prev.title,
@@ -131,14 +169,16 @@ export default function RndConferenceDataEntry() {
         issnIsbn: data.issnIsbn || prev.issnIsbn,
         year: data.year || prev.year,
         month: data.month || prev.month,
-        indexing: data.indexing || prev.indexing
+        indexing: "Scopus Indexed"
       }));
+
       setDoiFetched(true);
-      toast.success("DOI details fetched!");
+      toast.success("Conference paper details fetched successfully!");
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to fetch DOI details");
+      toast.error(err.response?.data?.message || err.message || "Failed to fetch DOI details");
     } finally {
       setDoiFetching(false);
+      stopLoading();
     }
   };
 
@@ -170,46 +210,74 @@ export default function RndConferenceDataEntry() {
       }
     }
     setForm(p => ({ ...p, otherAuthors: newOthers }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.totalAuthors, form.userAuthorPosition]);
 
-  const handleCoAuthorChange = (pos, field, val) => {
-    setForm(p => ({
-      ...p,
-      otherAuthors: p.otherAuthors.map(a => {
-        if (a.authorPosition !== pos) return a;
-        const newA = { ...a, [field]: val };
-        if (field === "CoAuthorType") {
-          if (val === "faculty") {
-            newA.studentId = "";
-            if (a.CoAuthorType === "student") {
-              newA.authorName = "";
-              newA.empId = "";
-            }
-          } else if (val === "student") {
-            newA.empId = "";
-            newA.affiliationType = "Aditya University";
-            newA.affiliationName = "Aditya University";
-            if (a.CoAuthorType === "faculty") {
-              newA.authorName = "";
-            }
-          }
+  const fetchCoAuthorName = async (pos, empId) => {
+    try {
+      const res = await API.get(`/api/employees/staff/${empId}`);
+      if (res.data?.success) {
+        const name = res.data.data?.employeename || res.data.data?.EmployeeName || "";
+        setForm(prev => ({
+          ...prev,
+          otherAuthors: prev.otherAuthors.map(a =>
+            a.authorPosition === pos ? { ...a, authorName: name, affiliationName: "Aditya University" } : a
+          ),
+        }));
+      }
+    } catch (_) { }
+  };
+
+  const handleCoAuthorChange = (pos, field, value) => {
+    const updated = form.otherAuthors.map(a => {
+      if (a.authorPosition !== pos) return a;
+      const newA = { ...a, [field]: value };
+
+      if (field === "CoAuthorType") {
+        if (value === "student") {
+          newA.empId = "";
+          newA.affiliationType = "Aditya University";
+          newA.affiliationName = "Aditya University";
+          newA.authorName = "";
+        } else {
+          newA.studentId = "";
+          newA.authorName = "";
         }
-        if (field === "affiliationType") {
-          if (val === "Aditya University") {
-            newA.affiliationName = "Aditya University";
-            newA.authorName = "";
-            newA.empId = "";
-            newA.studentId = "";
-          } else {
-            newA.affiliationName = "";
-            newA.empId = "";
-            newA.authorName = "";
-            newA.studentId = "";
-          }
+      }
+
+      if (field === "affiliationType") {
+        if (value === "Aditya University") {
+          newA.affiliationName = "Aditya University";
+          newA.authorName = "";
+          newA.empId = "";
+        } else {
+          newA.affiliationName = "";
+          newA.empId = "";
+          newA.authorName = "";
         }
-        return newA;
-      })
-    }));
+      }
+      return newA;
+    });
+    setForm(p => ({ ...p, otherAuthors: updated }));
+
+    if (field === "empId" && value.length >= 3) {
+      const author = updated.find(a => a.authorPosition === pos);
+      if (author?.affiliationType === "Aditya University") fetchCoAuthorName(pos, value);
+    }
+  };
+
+  const validateFile = (file) => {
+    if (!file) return true;
+    const allowed = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
+    if (!allowed.includes(file.type)) { toast.error("Only PDF, JPG, and PNG files are allowed"); return false; }
+    if (file.size > 500 * 1024) { toast.error("File size exceeds 500KB limit"); return false; }
+    return true;
+  };
+
+  const setFile = (k) => (e) => {
+    const file = e.target.files[0];
+    if (file && validateFile(file)) setFiles(p => ({ ...p, [k]: file }));
+    else e.target.value = null;
   };
 
   const handleSubmit = async () => {
@@ -218,8 +286,8 @@ export default function RndConferenceDataEntry() {
       return;
     }
 
-    if (!form.title || !form.conferenceName || !form.scope || !form.indexing || !form.presentationType) {
-      toast.error("Please fill in all mandatory fields.");
+    if (!form.title.trim() || !form.conferenceName.trim() || !form.scope || !form.indexing || !form.year || !form.month) {
+      toast.error("Please fill in all required fields marked with *");
       return;
     }
 
@@ -231,23 +299,31 @@ export default function RndConferenceDataEntry() {
     setLoading(true);
     try {
       const fd = new FormData();
-      Object.keys(form).forEach(k => {
-        if (k === "otherAuthors") {
-          const coAuthorsList = form.otherAuthors.map(a => ({
-            name: a.authorName || "",
-            affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliationName || ""),
-            employeeId: (a.affiliationType === "Aditya University" && a.CoAuthorType !== "student") ? a.empId : null,
-            studentId: (a.affiliationType === "Aditya University" && a.CoAuthorType === "student") ? a.studentId : null,
-            CoAuthorType: form.isStudentsInvolved === "Yes" ? (a.CoAuthorType || "faculty") : "faculty",
-            authorPosition: a.authorPosition
-          })).filter(ca => ca.name && ca.affiliation);
-          fd.append("coAuthors", JSON.stringify(coAuthorsList));
-        } else {
-          fd.append(k, form[k]);
-        }
+
+      const coAuthorsList = form.otherAuthors.map(a => ({
+        name: a.authorName || "",
+        affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliationName || ""),
+        employeeId: (a.affiliationType === "Aditya University" && a.CoAuthorType !== "student") ? a.empId : null,
+        studentId: (a.affiliationType === "Aditya University" && a.CoAuthorType === "student") ? a.studentId : null,
+        CoAuthorType: form.isStudentsInvolved === "Yes" ? (a.CoAuthorType || "faculty") : "faculty",
+        authorPosition: a.authorPosition
+      })).filter(ca => ca.name && ca.affiliation);
+
+      const fields = [
+        "doi", "title", "conferenceName", "scope", "indexing",
+        "publisher", "issnIsbn", "applyIncentive", "applyingSeedGrant",
+        "totalAuthors", "userAuthorPosition", "isStudentsInvolved"
+      ];
+      fields.forEach(k => {
+        fd.append(k, form[k] ?? "");
       });
 
+      fd.append("month", form.month);
+      fd.append("year", form.year);
+      fd.append("coAuthors", JSON.stringify(coAuthorsList));
       fd.append("academicYear", selectedYear);
+      fd.append("college", targetFacultyDetails?.college || user?.college || "");
+      fd.append("panNumber", targetFacultyDetails?.panNumber || user?.panNumber || "");
       fd.append("isDirectEntry", "true");
       fd.append("targetFacultyEmpId", targetFacultyEmpId);
 
@@ -256,16 +332,14 @@ export default function RndConferenceDataEntry() {
 
       await API.post("/api/research/conference", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Conference record added directly for faculty!");
-      setForm({
-        doi: "", title: "", conferenceName: "", scope: "", indexing: "",
-        presentationType: "", month: "", year: "", publisher: "", issnIsbn: "",
-        applyIncentive: "", applyingSeedGrant: "", isStudentsInvolved: "No", totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
-      });
+
+      setForm(emptyForm);
       setFiles({ certificate: null, proceedings: null });
       setTargetFacultyEmpId("");
       setTargetFacultyName("");
       setIsTargetFacultyValid(false);
       setTargetFacultyDetails(null);
+      setDoiFetched(false);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to submit conference publication");
     } finally {
@@ -273,342 +347,407 @@ export default function RndConferenceDataEntry() {
     }
   };
 
-  return (
-    <PageContainer>
-      <PageHeader
-        title="Conference Data Entry (R&D Direct Entry)"
-        subtitle="Add conference publication records directly on behalf of faculty members"
-      />
+  const renderForm = () => (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
 
-      {/* Target Faculty Verification Card */}
-      <FormCard title="1. Target Faculty Identification" icon={<Person sx={{ color: "var(--color-primary)" }} />}>
-        <Grid container spacing={2.5} alignItems="center">
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel required>Target Faculty Employee ID</FieldLabel>
-            <TextField
-              fullWidth
-              size="small"
-              placeholder="e.g. 10024"
-              value={targetFacultyEmpId}
-              onChange={(e) => {
-                setTargetFacultyEmpId(e.target.value);
-                setIsTargetFacultyValid(false);
-                setTargetFacultyName("");
-                setTargetFacultyDetails(null);
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3} sx={{ mt: 2.5 }}>
-            <Button
-              variant="contained"
-              onClick={handleVerifyFaculty}
-              disabled={verifyingFaculty || !targetFacultyEmpId}
-              startIcon={<Search />}
-              sx={{ background: "var(--gradient-primary)", color: "#fff", textTransform: "none", fontWeight: 700 }}
-            >
-              {verifyingFaculty ? "Verifying..." : "Verify Faculty"}
-            </Button>
-          </Grid>
-          {isTargetFacultyValid && targetFacultyDetails && (
-            <Grid item xs={12}>
-              <Box sx={{ p: 2, background: "rgba(16, 185, 129, 0.08)", border: "1px solid #10b981", borderRadius: "10px" }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#065f46" }}>
-                  ✓ Verified: {targetFacultyDetails.name} ({targetFacultyDetails.designation || "Faculty"} - {targetFacultyDetails.department || "Dept"})
-                </Typography>
-                <Typography variant="caption" sx={{ color: "#047857" }}>
-                  College: {targetFacultyDetails.college || "-"} | PAN: {targetFacultyDetails.panNumber || "-"}
-                </Typography>
-              </Box>
-            </Grid>
-          )}
-        </Grid>
-      </FormCard>
-
-      {/* Conference Publication Form */}
-      <FormCard title="2. Conference Details" icon={<School sx={{ color: "var(--color-primary)" }} />}>
-        <Grid container spacing={2.5}>
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel>Academic Year</FieldLabel>
-            <Select
-              fullWidth
-              size="small"
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-            >
-              {academicYears.map(y => (
-                <MenuItem key={y._id} value={y._id}>{y.yearRange} {y.isActive ? "(Active)" : ""}</MenuItem>
-              ))}
-            </Select>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel>DOI (Optional)</FieldLabel>
-            <Box sx={{ display: "flex", gap: 1 }}>
-              <TextField fullWidth size="small" value={form.doi} onChange={set("doi")} placeholder="10.xxxx/xxxxx" />
-              <Button variant="outlined" onClick={fetchDOIData} disabled={doiFetching || !form.doi} sx={{ minWidth: "80px" }}>
-                {doiFetching ? "Fetching" : "Fetch"}
+      {/* Target Faculty Section */}
+      <FormCard title="Target Faculty Identification">
+        <Grid2>
+          <Box>
+            <Typography sx={{ ...labelStyle, mb: 0.5 }}>TARGET FACULTY EMPLOYEE ID : <span style={{ color: 'red' }}>*</span></Typography>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                size="small"
+                fullWidth
+                placeholder="Enter Employee ID (e.g., ADITYA123)"
+                value={targetFacultyEmpId}
+                onChange={(e) => {
+                  setTargetFacultyEmpId(e.target.value);
+                  setIsTargetFacultyValid(false);
+                  setTargetFacultyName("");
+                  setTargetFacultyDetails(null);
+                }}
+              />
+              <Button
+                variant="contained"
+                onClick={verifyFaculty}
+                disabled={verifyingFaculty || !targetFacultyEmpId}
+                sx={{ whiteSpace: 'nowrap', textTransform: 'none' }}
+              >
+                {verifyingFaculty ? "Verifying..." : "Verify"}
               </Button>
             </Box>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel required>Paper Title</FieldLabel>
-            <TextField fullWidth size="small" value={form.title} onChange={set("title")} />
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel required>Conference Name</FieldLabel>
-            <TextField fullWidth size="small" value={form.conferenceName} onChange={set("conferenceName")} />
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel required>Conference Scope</FieldLabel>
-            <Select fullWidth size="small" value={form.scope} onChange={set("scope")}>
-              <MenuItem value="National">National</MenuItem>
-              <MenuItem value="International">International</MenuItem>
-            </Select>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel required>Indexing</FieldLabel>
-            <Select fullWidth size="small" value={form.indexing} onChange={set("indexing")}>
-              <MenuItem value="Scopus Indexed">Scopus Indexed</MenuItem>
-              <MenuItem value="Not Scopus Indexed">Not Scopus Indexed</MenuItem>
-            </Select>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel required>Presentation Type</FieldLabel>
-            <Select fullWidth size="small" value={form.presentationType} onChange={set("presentationType")}>
-              <MenuItem value="Oral">Oral</MenuItem>
-              <MenuItem value="Poster">Poster</MenuItem>
-              <MenuItem value="Keynote">Keynote</MenuItem>
-            </Select>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel required>Month</FieldLabel>
-            <Select fullWidth size="small" value={form.month} onChange={set("month")}>
-              {MONTHS.map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
-            </Select>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel required>Year</FieldLabel>
-            <Select fullWidth size="small" value={form.year} onChange={set("year")}>
-              {YEARS.map(y => <MenuItem key={y} value={y}>{y}</MenuItem>)}
-            </Select>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel>Publisher</FieldLabel>
-            <TextField fullWidth size="small" value={form.publisher} onChange={set("publisher")} />
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel>ISSN/ISBN</FieldLabel>
-            <TextField fullWidth size="small" value={form.issnIsbn} onChange={set("issnIsbn")} />
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel required>Apply Incentive?</FieldLabel>
-            <Select fullWidth size="small" value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"} sx={form.isStudentsInvolved === "Yes" ? disabledField : {}}>
-              <MenuItem value="Yes">Yes</MenuItem>
-              <MenuItem value="No">No</MenuItem>
-            </Select>
-          </Grid>
-
-          <Grid item xs={12} sm={6} md={4}>
-            <FieldLabel required>Seed Grant Work?</FieldLabel>
-            <Select fullWidth size="small" value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")}>
-              <MenuItem value="Yes">Yes</MenuItem>
-              <MenuItem value="No">No</MenuItem>
-            </Select>
-          </Grid>
-        </Grid>
-
-        {/* Dynamic Author Details Block */}
-        <Box sx={{ mt: 3, p: 2, borderRadius: "12px", border: "1px solid var(--border-color)", background: "var(--bg-panel)" }}>
-          <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", mb: 2 }}>Author Details</Typography>
-          <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid item xs={12} sx={{ mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-              <FieldLabel required sx={{ mb: 0 }}>Are students involved in this work as co-authors?</FieldLabel>
-              <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={set("isStudentsInvolved")}>
-                <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
-                <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
-              </RadioGroup>
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <FieldLabel>Total Number of Authors</FieldLabel>
-              <TextField size="small" fullWidth type="number" value={form.totalAuthors} onChange={set("totalAuthors")} slotProps={{ htmlInput: { min: 1 } }} />
-            </Grid>
-            {parseInt(form.totalAuthors) > 1 && (
-              <Grid item xs={12} sm={6}>
-                <FieldLabel>Applicant Author Position</FieldLabel>
-                <Select size="small" fullWidth value={form.userAuthorPosition} onChange={set("userAuthorPosition")}>
-                  {Array.from({ length: parseInt(form.totalAuthors) || 1 }, (_, i) => (
-                    <MenuItem key={i + 1} value={i + 1}>{i + 1}</MenuItem>
-                  ))}
-                </Select>
-              </Grid>
+            {targetFacultyName && (
+              <Typography variant="caption" color={isTargetFacultyValid ? "success.main" : "error.main"} sx={{ mt: 1, display: 'block' }}>
+                {isTargetFacultyValid ? `✓ Validated: ${targetFacultyName}` : `✗ ${targetFacultyName}`}
+              </Typography>
             )}
-          </Grid>
+          </Box>
+        </Grid2>
+      </FormCard>
 
-          {parseInt(form.totalAuthors) > 1 && (
-            <Box sx={{ mt: 2 }}>
-              <FieldLabel sx={{ mb: 1 }}>Name & Affiliation of Co-Author(s)</FieldLabel>
-              {form.otherAuthors.map((ca) => (
-                <Box
-                  key={ca.authorPosition}
-                  sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)" }}
+      {isTargetFacultyValid && (
+        <>
+          <FormCard title="1. Digital Object Identifier (DOI) Verification">
+            {/* Academic Year Selection */}
+            <Box sx={{ mb: 3, display: "flex", alignItems: "center", gap: 2 }}>
+              <Typography sx={{ ...labelStyle, mb: 0 }}>Academic Year :</Typography>
+              <Select
+                size="small"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                sx={{ minWidth: 150, background: "var(--bg-panel)" }}
+                disabled={false}
+              >
+                {academicYears.map(y => (
+                  <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
+                ))}
+              </Select>
+            </Box>
+
+            <FacultyInfoRow faculty={targetFacultyDetails} />
+
+            {/* ── DOI Section ── */}
+            <Box sx={{ mb: 2.5, p: 2.5, borderRadius: "12px", border: "2px solid var(--color-primary)", background: "var(--bg-accent-1)", boxShadow: "0 2px 12px rgba(var(--color-primary-rgb,99,102,241),0.08)" }}>
+              <Typography sx={{ ...labelStyle, color: "var(--color-primary)", mb: 1 }}>
+                DOI (Digital Object Identifier) :
+                <span style={{ fontWeight: 400, textTransform: "none", fontSize: 10, opacity: 0.7 }}> — Enter DOI to auto-fill details (optional)</span>
+              </Typography>
+              <Box sx={{ display: "flex", gap: 1.5, flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "stretch", sm: "flex-start" } }}>
+                <TextField
+                  size="small"
+                  fullWidth
+                  value={form.doi}
+                  onChange={set("doi")}
+                  placeholder="e.g. 10.1109/ICCR55977.2022.9995935"
+                  onKeyDown={(e) => { if (e.key === "Enter") fetchDOIData(); }}
+                  slotProps={{
+                    input: {
+                      sx: { background: "var(--bg-panel)" },
+                      endAdornment: doiFetched ? (
+                        <Box component="span" sx={{ display: "flex", alignItems: "center", color: "#10b981", fontSize: 18, mr: 0.5 }}>✓</Box>
+                      ) : null
+                    }
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  onClick={fetchDOIData}
+                  disabled={doiFetching || !form.doi.trim()}
+                  sx={{
+                    width: { xs: "100%", sm: "auto" },
+                    minWidth: 110,
+                    height: "40px",
+                    background: "var(--gradient-primary)",
+                    textTransform: "none",
+                    fontWeight: 700,
+                    flexShrink: 0,
+                    "&:hover": { opacity: 0.9 },
+                    "&.Mui-disabled": { opacity: 0.5 }
+                  }}
                 >
-                  <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", sm: "nowrap" }, alignItems: "center" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minWidth: "30px", height: "30px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, fontSize: 14 }}>
-                      {ca.authorPosition}
-                    </Box>
+                  {doiFetching ? "Fetching..." : "Fetch Details"}
+                </Button>
+              </Box>
+              {doiFetched && (
+                <Typography sx={{ mt: 1, fontSize: 11, color: "#10b981", fontWeight: 700 }}>
+                  ✓ Details auto-filled from Scopus/Crossref. Review and complete any remaining fields below.
+                </Typography>
+              )}
+            </Box>
+          </FormCard>
 
-                    {form.isStudentsInvolved === "Yes" && (
-                      <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "130px" } }}>
-                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR TYPE</Typography>
+          {/* ── Conference Paper Details ── */}
+          <SubLabel text="Details of the Conference Paper:" />
+
+          <Grid2 sx={{ mt: 1 }}>
+            {/* Title */}
+            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+              <Typography sx={labelStyle}>Title of the Research Paper : *</Typography>
+              <TextField size="small" fullWidth multiline rows={2} value={form.title} onChange={set("title")} placeholder="Enter or auto-fill from DOI" />
+            </Box>
+
+            {/* Conference Name */}
+            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+              <Typography sx={labelStyle}>Name of the Conference : *</Typography>
+              <TextField size="small" fullWidth value={form.conferenceName} onChange={set("conferenceName")} placeholder="Enter or auto-fill from DOI" />
+            </Box>
+
+            {/* Publisher */}
+            <Box>
+              <Typography sx={labelStyle}>Publisher : *</Typography>
+              <TextField size="small" fullWidth value={form.publisher} onChange={set("publisher")} placeholder="e.g. IEEE, Springer" />
+            </Box>
+
+            {/* ISSN/ISBN */}
+            <Box>
+              <Typography sx={labelStyle}>ISSN / ISBN Number :</Typography>
+              <TextField size="small" fullWidth value={form.issnIsbn} onChange={(e) => {
+                const val = e.target.value;
+                if (/^[0-9X-]*$/i.test(val)) setForm(p => ({ ...p, issnIsbn: val }));
+              }} placeholder="e.g. 1234-5678" />
+            </Box>
+
+            {/* Scope */}
+            <Box>
+              <Typography sx={labelStyle}>Conference Scope : *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.scope} onChange={set("scope")}>
+                <MenuItem value="">Select Scope</MenuItem>
+                <MenuItem value="National">National</MenuItem>
+                <MenuItem value="International">International</MenuItem>
+              </Select>
+            </Box>
+
+            {/* Indexing */}
+            <Box>
+              <Typography sx={labelStyle}>Indexing : *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.indexing} onChange={set("indexing")}>
+                <MenuItem value="">Select Indexing</MenuItem>
+                <MenuItem value="Scopus Indexed">Scopus Indexed</MenuItem>
+                <MenuItem value="Not Scopus Indexed">Not Scopus Indexed</MenuItem>
+              </Select>
+            </Box>
+          </Grid2>
+
+          {/* ── Publication Date ── */}
+          <SubLabel text="Date of the Publication:" />
+          <Grid2>
+            <Box>
+              <Typography sx={labelStyle}>Year : *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.year} onChange={(e) => {
+                setForm(p => ({ ...p, year: e.target.value, month: "" }));
+              }}>
+                <MenuItem value="">Select Year</MenuItem>
+                {(form.year && !YEARS.includes(String(form.year))
+                  ? [...YEARS, String(form.year)].sort((a, b) => Number(b) - Number(a))
+                  : YEARS
+                ).map(y => <MenuItem key={y} value={y}>{y}</MenuItem>)}
+              </Select>
+            </Box>
+            <Box>
+              <Typography sx={labelStyle}>Month : *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year}>
+                <MenuItem value="">Select Month</MenuItem>
+                {getAvailableMonths().map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+              </Select>
+            </Box>
+          </Grid2>
+
+          {/* ── Author Details ── */}
+          <Box sx={{ mt: 3, p: 2, borderRadius: "12px", border: "1px solid var(--border-color)", background: "var(--bg-panel)" }}>
+            <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", mb: 2 }}>Author Details</Typography>
+            <Grid2>
+              <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                <Typography sx={{ ...labelStyle, mb: 0 }}>Are students involved in this work as co-authors? *</Typography>
+                <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={set("isStudentsInvolved")}>
+                  <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+                  <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+                </RadioGroup>
+              </Box>
+              <Box>
+                <Typography sx={labelStyle}>Total Number of Authors :</Typography>
+                <TextField size="small" fullWidth type="number" value={form.totalAuthors} onChange={set("totalAuthors")} slotProps={{ htmlInput: { min: 1 } }} />
+              </Box>
+              {parseInt(form.totalAuthors) > 1 && (
+                <Box>
+                  <Typography sx={labelStyle}>Applicant Author Position :</Typography>
+                  <Select size="small" fullWidth value={form.userAuthorPosition} onChange={set("userAuthorPosition")}>
+                    {Array.from({ length: parseInt(form.totalAuthors) || 1 }, (_, i) => (
+                      <MenuItem key={i + 1} value={i + 1}>{i + 1}</MenuItem>
+                    ))}
+                  </Select>
+                </Box>
+              )}
+            </Grid2>
+
+            {parseInt(form.totalAuthors) > 1 && (
+              <Box sx={{ mt: 3 }}>
+                <Typography sx={{ ...labelStyle, mb: 1 }}>Name & Affiliation of Co-Author(s) :</Typography>
+                {form.otherAuthors.map((ca) => (
+                  <Box
+                    key={ca.authorPosition}
+                    sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)" }}
+                  >
+                    <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", sm: "nowrap" }, alignItems: "center" }}>
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minWidth: "30px", height: "30px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, fontSize: 14 }}>
+                        {ca.authorPosition}
+                      </Box>
+
+                      {form.isStudentsInvolved === "Yes" && (
+                        <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "130px" } }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR TYPE</Typography>
+                          <Select
+                            size="small"
+                            fullWidth
+                            displayEmpty
+                            value={ca.CoAuthorType || "faculty"}
+                            onChange={(e) => handleCoAuthorChange(ca.authorPosition, "CoAuthorType", e.target.value)}
+                          >
+                            <MenuItem value="faculty">Faculty</MenuItem>
+                            <MenuItem value="student">Student</MenuItem>
+                          </Select>
+                        </Box>
+                      )}
+
+                      <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "150px" } }}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE</Typography>
                         <Select
                           size="small"
                           fullWidth
                           displayEmpty
-                          value={ca.CoAuthorType || "faculty"}
-                          onChange={(e) => handleCoAuthorChange(ca.authorPosition, "CoAuthorType", e.target.value)}
+                          value={ca.CoAuthorType === "student" ? "Aditya University" : ca.affiliationType}
+                          onChange={(e) => handleCoAuthorChange(ca.authorPosition, "affiliationType", e.target.value)}
                         >
-                          <MenuItem value="faculty">Faculty</MenuItem>
-                          <MenuItem value="student">Student</MenuItem>
+                          <MenuItem value="" disabled>Select Affiliation</MenuItem>
+                          <MenuItem value="Aditya University">Aditya University</MenuItem>
+                          {ca.CoAuthorType !== "student" && (
+                            <MenuItem value="Others">Others</MenuItem>
+                          )}
                         </Select>
                       </Box>
-                    )}
 
-                    <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "150px" } }}>
-                      <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE</Typography>
-                      <Select
-                        size="small"
-                        fullWidth
-                        displayEmpty
-                        value={ca.CoAuthorType === "student" ? "Aditya University" : ca.affiliationType}
-                        onChange={(e) => handleCoAuthorChange(ca.authorPosition, "affiliationType", e.target.value)}
-                      >
-                        <MenuItem value="" disabled>Select Affiliation</MenuItem>
-                        <MenuItem value="Aditya University">Aditya University</MenuItem>
-                        {ca.CoAuthorType !== "student" && (
-                          <MenuItem value="Others">Others</MenuItem>
-                        )}
-                      </Select>
-                    </Box>
-
-                    {ca.affiliationType === "Aditya University" ? (
-                      ca.CoAuthorType === "student" ? (
-                        <>
-                          <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
-                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT ROLL NO</Typography>
-                            <TextField
-                              size="small"
-                              fullWidth
-                              value={ca.studentId || ""}
-                              onChange={(e) => handleCoAuthorChange(ca.authorPosition, "studentId", e.target.value)}
-                              placeholder="e.g. 21A91A0501"
-                            />
-                          </Box>
-                          <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
-                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT NAME</Typography>
-                            <TextField
-                              size="small"
-                              fullWidth
-                              value={ca.authorName}
-                              onChange={(e) => handleCoAuthorChange(ca.authorPosition, "authorName", e.target.value)}
-                              placeholder="Full Name"
-                            />
-                          </Box>
-                        </>
+                      {ca.affiliationType === "Aditya University" ? (
+                        ca.CoAuthorType === "student" ? (
+                          <>
+                            <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
+                              <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT ROLL NO</Typography>
+                              <TextField
+                                size="small"
+                                fullWidth
+                                value={ca.studentId || ""}
+                                onChange={(e) => handleCoAuthorChange(ca.authorPosition, "studentId", e.target.value)}
+                                placeholder="e.g. 21A91A0501"
+                              />
+                            </Box>
+                            <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
+                              <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT NAME</Typography>
+                              <TextField
+                                size="small"
+                                fullWidth
+                                value={ca.authorName}
+                                onChange={(e) => handleCoAuthorChange(ca.authorPosition, "authorName", e.target.value)}
+                                placeholder="Full Name"
+                              />
+                            </Box>
+                          </>
+                        ) : (
+                          <>
+                            <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
+                              <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
+                              <TextField
+                                size="small"
+                                fullWidth
+                                value={ca.empId}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  if (/^\d*$/.test(val)) handleCoAuthorChange(ca.authorPosition, "empId", val);
+                                }}
+                                placeholder="e.g. 5741"
+                              />
+                            </Box>
+                            <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
+                              <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
+                              <TextField
+                                size="small"
+                                fullWidth
+                                value={ca.authorName}
+                                disabled
+                                placeholder="Fetched from eCap"
+                                sx={{ background: "rgba(0,0,0,0.02)" }}
+                              />
+                            </Box>
+                          </>
+                        )
                       ) : (
                         <>
-                          <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
-                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
-                            <TextField
-                              size="small"
-                              fullWidth
-                              value={ca.empId}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (/^\d*$/.test(val)) handleCoAuthorChange(ca.authorPosition, "empId", val);
-                              }}
-                              placeholder="e.g. 5741"
-                            />
-                          </Box>
-                          <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
+                          <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "180px" } }}>
                             <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
                             <TextField
                               size="small"
                               fullWidth
                               value={ca.authorName}
-                              disabled
-                              placeholder="Fetched from eCap"
-                              sx={{ background: "rgba(0,0,0,0.02)" }}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (!/\d/.test(val)) handleCoAuthorChange(ca.authorPosition, "authorName", val);
+                              }}
+                              placeholder="Full Name"
+                            />
+                          </Box>
+                          <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION</Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              value={ca.affiliationName}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (!/\d/.test(val)) handleCoAuthorChange(ca.authorPosition, "affiliationName", val);
+                              }}
+                              placeholder="College / Organization"
                             />
                           </Box>
                         </>
-                      )
-                    ) : (
-                      <>
-                        <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "180px" } }}>
-                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
-                          <TextField
-                            size="small"
-                            fullWidth
-                            value={ca.authorName}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (!/\d/.test(val)) handleCoAuthorChange(ca.authorPosition, "authorName", val);
-                            }}
-                            placeholder="Full Name"
-                          />
-                        </Box>
-                        <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
-                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION</Typography>
-                          <TextField
-                            size="small"
-                            fullWidth
-                            value={ca.affiliationName}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (!/\d/.test(val)) handleCoAuthorChange(ca.authorPosition, "affiliationName", val);
-                            }}
-                            placeholder="College / Organization"
-                          />
-                        </Box>
-                      </>
-                    )}
+                      )}
+                    </Box>
                   </Box>
-                </Box>
-              ))}
+                ))}
+              </Box>
+            )}
+          </Box>
+
+          {/* ── Incentive & Funding Options ── */}
+          <SubLabel text="Incentive & Funding Options:" />
+          <Grid2>
+            <Box>
+              <Typography sx={labelStyle}>Applying Seed Grant Work? : *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")}>
+                <MenuItem value="">Select Option</MenuItem>
+                <MenuItem value="Yes">Yes</MenuItem>
+                <MenuItem value="No">No</MenuItem>
+              </Select>
             </Box>
-          )}
-        </Box>
-      </FormCard>
+            <Box>
+              <Typography sx={labelStyle}>Apply For Incentive? : *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"} sx={form.isStudentsInvolved === "Yes" ? disabledField : {}}>
+                <MenuItem value="">Select Option</MenuItem>
+                <MenuItem value="Yes">Yes</MenuItem>
+                <MenuItem value="No">No</MenuItem>
+              </Select>
+            </Box>
+          </Grid2>
 
-      {/* Attachments */}
-      <FormCard title="3. Attachments" icon={<AttachFile sx={{ color: "var(--color-primary)" }} />}>
-        <Grid container spacing={2.5}>
-          <Grid item xs={12} sm={6}>
-            <FieldLabel required>Certificate of Presentation (PDF/Image, max 500KB)</FieldLabel>
-            <FileField onChange={(e) => setFiles(p => ({ ...p, certificate: e.target.files[0] }))} />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <FieldLabel required>Conference Proceedings Page (PDF/Image, max 500KB)</FieldLabel>
-            <FileField onChange={(e) => setFiles(p => ({ ...p, proceedings: e.target.files[0] }))} />
-          </Grid>
-        </Grid>
-      </FormCard>
+          {/* ── Attachments ── */}
+          <SubLabel text="Upload Required Documents:" />
+          <FormCard title="File Attachments (PDF or Images, Max 500KB each)">
+            <Grid2>
+              <Box>
+                <Typography sx={labelStyle}>Certificate of Presentation : *</Typography>
+                <FileField onChange={setFile("certificate")} label="Attach Presentation Certificate" file={files.certificate} />
+              </Box>
+              <Box>
+                <Typography sx={labelStyle}>Conference Proceedings Page : *</Typography>
+                <FileField onChange={setFile("proceedings")} label="Attach Proceedings Page" file={files.proceedings} />
+              </Box>
+            </Grid2>
+          </FormCard>
 
-      <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
-        <SubmitBtn onClick={handleSubmit} disabled={loading || !isTargetFacultyValid}>
-          {loading ? "Submitting..." : "Submit Record Directly"}
-        </SubmitBtn>
-      </Box>
+          <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
+            <SubmitBtn onClick={handleSubmit} disabled={loading || !isTargetFacultyValid}>
+              {loading ? "Submitting Record..." : "Submit Record Directly"}
+            </SubmitBtn>
+          </Box>
+        </>
+      )}
+    </Box>
+  );
+
+  return (
+    <PageContainer>
+      <PageHeader
+        title="Conference Data Entry (R&D Direct Entry)"
+        subtitle="Directly submit approved conference records on behalf of faculty members"
+      />
+      {renderForm()}
     </PageContainer>
   );
 }

@@ -29,7 +29,7 @@ export default function ConferencePublication() {
   const [form, setForm] = useState({
     doi: "",
     title: "", conferenceName: "", scope: "", indexing: "",
-    presentationType: "", month: "", year: "",
+    month: "", year: "",
     publisher: "", issnIsbn: "",
     applyIncentive: "", applyingSeedGrant: "",
     isStudentsInvolved: "No",
@@ -126,7 +126,6 @@ export default function ConferencePublication() {
       conferenceName: pub.conferenceName || "",
       scope: pub.scope || pub.level || "",
       indexing: pub.indexing || "",
-      presentationType: pub.presentationType || "",
       month: pub.month || "",
       year: pub.year || "",
       publisher: pub.publisher || "",
@@ -454,7 +453,6 @@ export default function ConferencePublication() {
       fd.append("indexing", form.indexing);
       fd.append("publisher", form.publisher);
       fd.append("issnIsbn", form.issnIsbn || "");
-      fd.append("presentationType", form.presentationType);
       fd.append("totalAuthors", String(total));
       fd.append("userAuthorPosition", String(form.userAuthorPosition));
       fd.append("coAuthors", JSON.stringify(coAuthorsList));
@@ -478,7 +476,7 @@ export default function ConferencePublication() {
       setForm({
         doi: "",
         title: "", conferenceName: "", scope: "", indexing: "",
-        presentationType: "", month: "", year: "",
+        month: "", year: "",
         publisher: "", issnIsbn: "",
         applyIncentive: "", applyingSeedGrant: "",
         isStudentsInvolved: "No",
@@ -868,15 +866,6 @@ export default function ConferencePublication() {
             <MenuItem value="Not Scopus Indexed">Not Scopus Indexed</MenuItem>
           </Select>
         </Box>
-        <Box>
-          <Typography sx={labelStyle}>Presentation Type :</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.presentationType} onChange={set("presentationType")}>
-            <MenuItem value="">Select Type</MenuItem>
-            <MenuItem value="Oral">Oral</MenuItem>
-            <MenuItem value="Poster">Poster</MenuItem>
-            <MenuItem value="Keynote">Keynote</MenuItem>
-          </Select>
-        </Box>
       </Grid2>
 
       {/* Dynamic Author Details Block */}
@@ -1264,7 +1253,6 @@ export default function ConferencePublication() {
             </Box>
 
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Indexing" value={data.indexing} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Presentation Type" value={data.presentationType || "-"} /></Box>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="DOI" value={data.doi || "N/A"} /></Box>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Publisher" value={data.publisher || "N/A"} /></Box>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="ISSN/ISBN" value={data.issnIsbn || "N/A"} /></Box>

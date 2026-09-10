@@ -913,6 +913,18 @@ export default function RndJournalDataEntry() {
               <TextField size="small" fullWidth value={form.journalName} onChange={set("journalName")} placeholder="Enter or auto-fill from DOI" />
             </Box>
 
+            {/* ISSN */}
+            <Box>
+              <Typography sx={labelStyle}>ISSN :</Typography>
+              <TextField size="small" fullWidth value={form.issn || ""} onChange={set("issn")} placeholder="e.g. 23644176" />
+            </Box>
+
+            {/* e-ISSN */}
+            <Box>
+              <Typography sx={labelStyle}>e-ISSN :</Typography>
+              <TextField size="small" fullWidth value={form.eissn || ""} onChange={set("eissn")} placeholder="e.g. 23644184" />
+            </Box>
+
             {/* Quartile */}
             <Box>
               <Typography sx={labelStyle}>Journal Quartile : *</Typography>
