@@ -122,6 +122,25 @@ const ParticipationCertificates = () => {
       // Filter out any teams that have won a prize
       fetchedPayments = fetchedPayments.filter(p => !p.isFirstWinner && !p.isSecondWinner && !p.isThirdWinner);
 
+      // Helper to check attended status
+      const isParticipantAttended = (part) => {
+        if (!part) return false;
+        if (part.attended === true || part.attended === 1) return true;
+        if (typeof part.attended === 'string') {
+          const s = part.attended.trim().toLowerCase();
+          return s === 'true' || s === 'yes' || s === '1' || s === 'present';
+        }
+        return false;
+      };
+
+      // Filter each payment to only include participants who attended
+      fetchedPayments = fetchedPayments
+        .map(payment => ({
+          ...payment,
+          participants: (payment.participants || []).filter(isParticipantAttended)
+        }))
+        .filter(payment => payment.participants.length > 0);
+
       setPayments(fetchedPayments);
     } catch (error) {
       console.error('Error fetching event payments:', error);
@@ -137,7 +156,7 @@ const ParticipationCertificates = () => {
 
   const stats = {
     teamCount: payments.length,
-    participantCount: payments.reduce((acc, curr) => acc + (curr.teamSize || 1), 0),
+    participantCount: payments.reduce((acc, curr) => acc + (curr.participants?.length || 0), 0),
   };
 
   const columns = [
@@ -181,7 +200,7 @@ const ParticipationCertificates = () => {
         `"${payment.eventName || '-'}"`,
         `"${eventDepartmentStr}"`,
         `"${teamId}"`,
-        payment.teamSize || 1
+        payment.participants?.length || payment.teamSize || 1
       ];
 
       if (payment.participants && payment.participants.length > 0) {
@@ -693,7 +712,18 @@ const ParticipationCertificates = () => {
                       position: 'relative'
                     }}>
                       {/* Left: Convener */}
-                      <Box sx={{ textAlign: 'center', width: '22cqh' }}>
+                      <Box sx={{ textAlign: 'center', width: '22cqh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <Box
+                          component="img"
+                          src="/dr_kishore_signature.png?v=2"
+                          alt="Dr. D. Kishore Digital Signature"
+                          sx={{
+                            height: '5.6cqh',
+                            maxWidth: '20cqh',
+                            objectFit: 'contain',
+                            mb: '0.4cqh'
+                          }}
+                        />
                         <Typography sx={{ color: '#E75A24', fontWeight: 800, fontSize: '2.2cqh', letterSpacing: '0.2px', lineHeight: 1.2 }}>
                           Dr. D. Kishore
                         </Typography>
@@ -744,7 +774,18 @@ const ParticipationCertificates = () => {
                       </Box>
 
                       {/* Right: Registrar */}
-                      <Box sx={{ textAlign: 'center', width: '22cqh' }}>
+                      <Box sx={{ textAlign: 'center', width: '22cqh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <Box
+                          component="img"
+                          src="/dr_suresh_signature.png?v=2"
+                          alt="Dr. G. Suresh Digital Signature"
+                          sx={{
+                            height: '9.5cqh',
+                            maxWidth: '20cqh',
+                            objectFit: 'contain',
+                            mb: '0.4cqh'
+                          }}
+                        />
                         <Typography sx={{ color: '#E75A24', fontWeight: 800, fontSize: '2.2cqh', letterSpacing: '0.2px', lineHeight: 1.2 }}>
                           Dr. G. Suresh
                         </Typography>
