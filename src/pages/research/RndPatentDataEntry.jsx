@@ -482,7 +482,27 @@ export default function RndPatentDataEntry() {
           </Box>
           <Box>
             <Typography sx={labelStyle}>Apply for Incentive?</Typography>
-            <Select size="small" fullWidth value={form.applyIncentive} onChange={set("applyIncentive")}>
+            <Select size="small" fullWidth value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"}>
+              <MenuItem value="Yes">Yes</MenuItem>
+              <MenuItem value="No">No</MenuItem>
+            </Select>
+          </Box>
+          {form.applyIncentive === "Yes" && (
+            <Box>
+              <Typography sx={labelStyle}>Approved Incentive Amount (₹) : *</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                type="number"
+                placeholder="Enter approved amount"
+                value={form.approvedAmount}
+                onChange={set("approvedAmount")}
+              />
+            </Box>
+          )}
+          <Box>
+            <Typography sx={labelStyle}>Article Eligibility for Appraisal : *</Typography>
+            <Select size="small" fullWidth displayEmpty value={form.appraisalEligible} onChange={set("appraisalEligible")}>
               <MenuItem value="Yes">Yes</MenuItem>
               <MenuItem value="No">No</MenuItem>
             </Select>

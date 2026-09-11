@@ -728,7 +728,7 @@ export default function RndConferenceDataEntry() {
               </Select>
             </Box>
             <Box>
-              <Typography sx={labelStyle}>Appraisal Eligible? : *</Typography>
+              <Typography sx={labelStyle}>Article Eligibility for Appraisal : *</Typography>
               <Select size="small" fullWidth displayEmpty value={form.appraisalEligible} onChange={set("appraisalEligible")}>
                 <MenuItem value="">Select Option</MenuItem>
                 <MenuItem value="Yes">Yes</MenuItem>
