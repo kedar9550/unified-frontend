@@ -204,16 +204,16 @@ export const ROLE_ROUTES = {
           path: "/hod/research-approvals",
           icon: <Science />
         },
-        {
-          text: "Resource Utilization",
-          path: "/hod/value-addition/resource-utilization",
-          icon: <Assignment />
-        },
-        {
-          text: "Contribution",
-          path: "/hod/value-addition/contribution",
-          icon: <WorkspacePremium />
-        }
+        // {
+        //   text: "Resource Utilization",
+        //   path: "/hod/value-addition/resource-utilization",
+        //   icon: <Assignment />
+        // },
+        // {
+        //   text: "Contribution",
+        //   path: "/hod/value-addition/contribution",
+        //   icon: <WorkspacePremium />
+        // }
       ]
     },
     // {
@@ -247,16 +247,16 @@ export const ROLE_ROUTES = {
           path: "/hod/research-approvals",
           icon: <Science />
         },
-        {
-          text: "Resource Utilization",
-          path: "/hod/value-addition/resource-utilization",
-          icon: <Assignment />
-        },
-        {
-          text: "Contribution",
-          path: "/hod/value-addition/contribution",
-          icon: <WorkspacePremium />
-        }
+        // {
+        //   text: "Resource Utilization",
+        //   path: "/hod/value-addition/resource-utilization",
+        //   icon: <Assignment />
+        // },
+        // {
+        //   text: "Contribution",
+        //   path: "/hod/value-addition/contribution",
+        //   icon: <WorkspacePremium />
+        // }
       ]
     },
     {
