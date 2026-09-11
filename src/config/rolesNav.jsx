@@ -196,13 +196,23 @@ export const ROLE_ROUTES = {
   "HOD": [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     {
-      text: "Submissions (Info)",
+      text: "Submissions",
       icon: <Verified />,
       nested: [
         {
           text: "Research",
           path: "/hod/research-approvals",
           icon: <Science />
+        },
+        {
+          text: "Resource Utilization",
+          path: "/hod/value-addition/resource-utilization",
+          icon: <Assignment />
+        },
+        {
+          text: "Contribution",
+          path: "/hod/value-addition/contribution",
+          icon: <WorkspacePremium />
         }
       ]
     },
@@ -229,13 +239,23 @@ export const ROLE_ROUTES = {
   "SCHOOL_DEAN": [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     {
-      text: "Submissions (Info)",
+      text: "Submissions",
       icon: <Verified />,
       nested: [
         {
           text: "Research",
           path: "/hod/research-approvals",
           icon: <Science />
+        },
+        {
+          text: "Resource Utilization",
+          path: "/hod/value-addition/resource-utilization",
+          icon: <Assignment />
+        },
+        {
+          text: "Contribution",
+          path: "/hod/value-addition/contribution",
+          icon: <WorkspacePremium />
         }
       ]
     },
@@ -261,42 +281,132 @@ export const ROLE_ROUTES = {
   // Common Management appraisal layout
   PRO_VICE_CHANCELLOR_E_S: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Submissions",
+      icon: <Verified />,
+      nested: [
+
+        { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
+        { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
+      ]
+    },
     { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
   ],
   PRO_VICE_CHANCELLOR_A: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Submissions",
+      icon: <Verified />,
+      nested: [
+
+        { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
+        { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
+      ]
+    },
     { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
   ],
   PRO_VICE_CHANCELLOR_S_P: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Submissions",
+      icon: <Verified />,
+      nested: [
+
+        { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
+        { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
+      ]
+    },
     { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
   ],
   VICE_CHANCELLOR: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Submissions",
+      icon: <Verified />,
+      nested: [
+
+        { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
+        { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
+      ]
+    },
     { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
   ],
   DY_PRO_CHANCELLOR: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Submissions",
+      icon: <Verified />,
+      nested: [
+
+        { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
+        { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
+      ]
+    },
     { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
   ],
   REGISTRAR: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Submissions",
+      icon: <Verified />,
+      nested: [
+
+        { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
+        { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
+      ]
+    },
     { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
   ],
   CONTROLLER_OF_EXAMINATIONS: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Submissions",
+      icon: <Verified />,
+      nested: [
+
+        { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
+        { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
+      ]
+    },
     { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
   ],
   "CONTROLLER OF EXAMINATIONS": [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Submissions",
+      icon: <Verified />,
+      nested: [
+
+        { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
+        { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
+      ]
+    },
     { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
   ],
   DEAN_IQAC: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Submissions",
+      icon: <Verified />,
+      nested: [
+
+        { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
+        { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
+      ]
+    },
     { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
   ],
   DEAN_ADMISSIONS: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Submissions",
+      icon: <Verified />,
+      nested: [
+
+        { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
+        { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
+      ]
+    },
     { text: "Appraisal", icon: <ManageAccounts />, nested: [{ text: "Appraisal Verification", path: "/appraisal/management-evaluate", icon: <Verified /> }, { text: "Appraisal Reports", path: "/appraisal-reports", icon: <Assessment /> }] }
   ],
 
