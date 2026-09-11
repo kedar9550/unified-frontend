@@ -1456,30 +1456,39 @@ export default function ConferencePublication() {
           <Divider sx={{ my: 3 }} />
 
           {/* Co-Authors table */}
-          {data.coAuthors && data.coAuthors.length > 0 && (
-            <Card sx={{ p: 0, overflow: "hidden", mb: 3, border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)" }}>
-              <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid var(--border-color)" }}>
-                <Groups sx={{ color: "var(--color-primary)" }} />
-                <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Authors & Affiliations</Typography>
-              </Box>
-              <TableContainer>
-                <Table size="small">
-                  <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)", width: 80 }}>POSITION</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AUTHOR TYPE</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {(() => {
-                      const total = parseInt(data.totalAuthors) || 0;
-                      const applicantPos = parseInt(data.userAuthorPosition) || 0;
-                      const derivedPositions = total > 0
-                        ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
-                        : [];
-                      return data.coAuthors.map((author, idx) => {
+          {(() => {
+            const applicantPos = parseInt(data.userAuthorPosition || data.authorPosition) || 0;
+            const filteredCoAuthors = (data.coAuthors || []).filter((ca) => {
+              const caPos = parseInt(ca.authorPosition);
+              const isApplicantName = ca.name && user?.name && ca.name.trim().toLowerCase() === user.name.trim().toLowerCase();
+              return caPos !== applicantPos && !isApplicantName;
+            });
+
+            if (filteredCoAuthors.length === 0) return null;
+
+            return (
+              <Card sx={{ p: 0, overflow: "hidden", mb: 3, border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)" }}>
+                <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid var(--border-color)" }}>
+                  <Groups sx={{ color: "var(--color-primary)" }} />
+                  <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Authors & Affiliations</Typography>
+                </Box>
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)", width: 80 }}>POSITION</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AUTHOR TYPE</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {(() => {
+                        const total = parseInt(data.totalAuthors) || 0;
+                        const derivedPositions = total > 0
+                          ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
+                          : [];
+                        return filteredCoAuthors.map((author, idx) => {
                         const pos = author.authorPosition || derivedPositions[idx] || (idx + 1);
                         return (
                           <TableRow key={idx} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
@@ -1499,12 +1508,13 @@ export default function ConferencePublication() {
                           </TableRow>
                         );
                       });
-                    })()}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Card>
-          )}
+                      })()}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Card>
+            );
+          })()}
 
           <Box sx={{ mt: 3 }}>
             <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", mb: 2 }}>

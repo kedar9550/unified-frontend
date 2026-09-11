@@ -1027,32 +1027,42 @@ export default function PatentPublication() {
           <Divider sx={{ my: 3 }} />
 
           {/* Co-Inventors detail list */}
-          {data.coInventors && data.coInventors.length > 0 && (
-            <Card sx={{ p: 0, overflow: "hidden", mb: 3, border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)" }}>
-              <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid var(--border-color)" }}>
-                <Groups sx={{ color: "var(--color-primary)" }} />
-                <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Inventors & Affiliations</Typography>
-              </Box>
-              <TableContainer>
-                <Table size="small">
-                  <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {data.coInventors.map((inventor, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{inventor.name}</TableCell>
-                        <TableCell sx={{ color: "var(--text-secondary)" }}>{inventor.affiliation}</TableCell>
+          {(() => {
+            const filteredCoInventors = (data.coInventors || []).filter((ca) => {
+              const isApplicantName = ca.name && user?.name && ca.name.trim().toLowerCase() === user.name.trim().toLowerCase();
+              const isApplicantEmpId = ca.empId && user?.institutionId && String(ca.empId).trim() === String(user.institutionId).trim();
+              return !isApplicantName && !isApplicantEmpId;
+            });
+
+            if (filteredCoInventors.length === 0) return null;
+
+            return (
+              <Card sx={{ p: 0, overflow: "hidden", mb: 3, border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)" }}>
+                <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid var(--border-color)" }}>
+                  <Groups sx={{ color: "var(--color-primary)" }} />
+                  <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Inventors & Affiliations</Typography>
+                </Box>
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Card>
-          )}
+                    </TableHead>
+                    <TableBody>
+                      {filteredCoInventors.map((inventor, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{inventor.name}</TableCell>
+                          <TableCell sx={{ color: "var(--text-secondary)" }}>{inventor.affiliation}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Card>
+            );
+          })()}
 
           {/* Attached Files previews */}
           <Box sx={{ mt: 3 }}>

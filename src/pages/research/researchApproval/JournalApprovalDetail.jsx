@@ -918,38 +918,57 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
             </Box>
 
             {/* Co-Authors - shown above Attached Documents */}
-            {data.coAuthors?.length > 0 && (
-                <Card sx={{ ...cardStyle, p: 0, overflow: "hidden" }}>
-                    <Box sx={{ p: 3, pb: 2 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                            <GroupsIcon sx={{ color: "var(--color-primary)" }} />
-                            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Author Details</Typography>
-                            <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
-                                <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
-                                    Total: {data.coAuthors.length} Co-Author{data.coAuthors.length > 1 ? 's' : ''}
-                                </Typography>
+            {(() => {
+                const applicantPos = parseInt(data.userAuthorPosition) || (data.firstAuthor === "Yes" ? 1 : parseInt(data.authorPosition)) || 1;
+                const applicantName = (data.facultyId?.name || "").trim().toLowerCase();
+                const applicantEmpId = (data.facultyId?.institutionId || data.facultyId?._id || "").toString().trim().toLowerCase();
+
+                const filteredCoAuthors = (data.coAuthors || []).filter((ca, index) => {
+                    const pos = ca.authorPosition;
+                    if (pos && pos === applicantPos) return false;
+
+                    const caEmpId = (ca.employeeId?.institutionId || ca.employeeId?._id || ca.employeeId || "").toString().trim().toLowerCase();
+                    if (caEmpId && applicantEmpId && caEmpId === applicantEmpId) return false;
+
+                    const caName = (ca.name || "").trim().toLowerCase();
+                    if (caName && applicantName && (caName === applicantName || caName.includes(applicantName) || applicantName.includes(caName))) return false;
+
+                    return true;
+                });
+
+                if (filteredCoAuthors.length === 0) return null;
+
+                const total = parseInt(data.totalAuthors) || (filteredCoAuthors.length + 1);
+                const derivedPositions = total > 0
+                    ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
+                    : [];
+
+                return (
+                    <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
+                        <Box sx={{ p: 3, pb: 2 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                <GroupsIcon sx={{ color: "var(--color-primary)" }} />
+                                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Author Details</Typography>
+                                <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
+                                        Total: {filteredCoAuthors.length} Co-Author{filteredCoAuthors.length > 1 ? 's' : ''}
+                                    </Typography>
+                                </Box>
                             </Box>
                         </Box>
-                    </Box>
-                    <TableContainer>
-                        <Table>
-                            <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
-                                <TableRow>
-                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>POSITION</TableCell>
-                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
-                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>TYPE</TableCell>
-                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {(() => {
-                                    const total = parseInt(data.totalAuthors) || 0;
-                                    const applicantPos = parseInt(data.userAuthorPosition) || (data.firstAuthor === "Yes" ? 1 : parseInt(data.authorPosition)) || 0;
-                                    const derivedPositions = total > 0
-                                        ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
-                                        : [];
-                                    return data.coAuthors.map((ca, i) => {
-                                        const pos = ca.authorPosition || derivedPositions[i] || (i + 1);
+                        <TableContainer>
+                            <Table>
+                                <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                                    <TableRow>
+                                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>POSITION</TableCell>
+                                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
+                                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>TYPE</TableCell>
+                                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {filteredCoAuthors.map((ca, i) => {
+                                        const pos = ca.authorPosition || derivedPositions[i] || (i + (applicantPos === 1 ? 2 : 1));
                                         return (
                                             <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
                                                 <TableCell>
@@ -967,13 +986,13 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                                 <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
                                             </TableRow>
                                         );
-                                    });
-                                })()}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </Card>
-            )}
+                                    })}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Card>
+                );
+            })()}
 
             {/* Documents */}
             <Card sx={cardStyle}>
