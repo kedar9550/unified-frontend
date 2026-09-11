@@ -337,6 +337,21 @@ export default function ResourceUtilization() {
       return;
     }
 
+    if (form.eventEndDate) {
+      const end = new Date(form.eventEndDate);
+      end.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const diffTime = today.getTime() - end.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays > 20) {
+        toast.error("You cannot add activities that ended more than 20 days ago.");
+        return;
+      }
+    }
+
     if (isFdpParticipant) {
       if (!form.organizingInstitutionCategory) {
         toast.error("Organizing Institution Category is required");
