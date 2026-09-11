@@ -259,7 +259,13 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
   }, [location.pathname, activeRole, user]);
 
   const handleToggle = (text) => {
-    setOpenStates((prev) => ({ ...prev, [text]: !prev[text] }));
+    setOpenStates((prev) => {
+      const isOpening = !prev[text];
+      if (isOpening) {
+        return { [text]: true };
+      }
+      return { ...prev, [text]: false };
+    });
   };
 
   const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
@@ -493,7 +499,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                           width: 32,
                           height: 32,
                           borderRadius: '8px',
-                          display: 'flex',
+                          display: 'flex', 
                           alignItems: 'center',
                           justifyContent: 'center',
                           background: ITEM_METADATA[item.text]?.color || 'var(--bg-accent-4)',
