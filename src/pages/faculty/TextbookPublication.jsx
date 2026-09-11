@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
-import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Autocomplete, InputAdornment, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Autocomplete, InputAdornment, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination, Radio, RadioGroup, FormControlLabel } from "@mui/material";
 import { toast } from "sonner";
 import { Delete, Search, CurrencyRupee, Close, Groups, MenuBook, AttachFile, Description, Download, Visibility } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
@@ -36,6 +36,7 @@ export default function TextbookPublication() {
     title: "", publisher: "", isbn: "", yearOfPublication: "",
     totalAuthors: 1, userAuthorPosition: 1,
     edition: "", cost: "", month: "", year: "",
+    isStudentsInvolved: "No",
     applyIncentive: "",
     otherAuthors: [],
     publicationScope: "National",
@@ -362,6 +363,7 @@ export default function TextbookPublication() {
       fd.append("year", submissionForm.year);
       fd.append("publicationScope", submissionForm.publicationScope);
       fd.append("publisher", submissionForm.publisher === "Others" ? submissionForm.customPublisher : submissionForm.publisher);
+      fd.append("isStudentsInvolved", submissionForm.isStudentsInvolved || "No");
       fd.append("applyIncentive", submissionForm.applyIncentive);
       fd.append("authors", JSON.stringify(allAuthors));
 
@@ -376,7 +378,7 @@ export default function TextbookPublication() {
       toast.success("Textbook submitted successfully!");
 
       // Reset form
-      setForm({ title: "", publisher: "", isbn: "", yearOfPublication: "", totalAuthors: 1, userAuthorPosition: 1, edition: "", cost: "", month: "", year: "", applyIncentive: "", otherAuthors: [], publicationScope: "National", currencySymbol: "₹" });
+      setForm({ title: "", publisher: "", isbn: "", yearOfPublication: "", totalAuthors: 1, userAuthorPosition: 1, edition: "", cost: "", month: "", year: "", isStudentsInvolved: "No", applyIncentive: "", otherAuthors: [], publicationScope: "National", currencySymbol: "₹" });
       setFiles({ coverPage: null, authorAffiliation: null, index: null });
       setSelectedYear("");
       setViewMode("list");
@@ -804,6 +806,13 @@ export default function TextbookPublication() {
         <Box sx={{ gridColumn: { sm: "1 / -1" }, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)", mt: 2 }}>
           <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", mb: 2 }}>Author Details</Typography>
           <Grid2>
+            <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+              <Typography sx={{ ...labelStyle, mb: 0 }}>Are students involved in this work as co-authors? *</Typography>
+              <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={set("isStudentsInvolved")}>
+                <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+                <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+              </RadioGroup>
+            </Box>
             <Box>
               <Typography sx={labelStyle}>Total Number of Authors :</Typography>
               <TextField
@@ -962,7 +971,7 @@ export default function TextbookPublication() {
         <FileField label="Attach Index *" name="index" onChange={setFile("index")} />
         <Box>
           <Typography sx={labelStyle}>Whether you want to apply for incentive?</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
+          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
             <MenuItem value="">Select</MenuItem>
             <MenuItem value="Yes">Yes</MenuItem>
             <MenuItem value="No">No</MenuItem>
@@ -1204,10 +1213,21 @@ export default function TextbookPublication() {
                     ];
                     const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
 
+                    const isApproved = data.status === "Approved";
+                    const isAppraisalEligible = data.appraisalEligible === "Yes";
+
                     if (uniqueClaimants.length <= 1) {
                       return (
                         <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
                           {data.facultyId?.name || "-"} (Auto-assigned)
+                        </Typography>
+                      );
+                    }
+
+                    if (!isApproved || !isAppraisalEligible) {
+                      return (
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)", mt: 0.5 }}>
+                          N/A - Not Eligible or Not Approved
                         </Typography>
                       );
                     }

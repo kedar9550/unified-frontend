@@ -1,7 +1,7 @@
 import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
-    Box, Typography, Grid, Card, Button, TextField,
+    Box, Typography, Grid, Card, Button, TextField, MenuItem, Select,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack
 } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -24,6 +24,7 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
     const [loading, setLoading] = useState(true);
     const [remarks, setRemarks] = useState("");
     const [approvedAmount, setApprovedAmount] = useState("");
+    const [appraisalEligible, setAppraisalEligible] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
@@ -42,6 +43,7 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                     if (res.data.data.rndComment) setRemarks(res.data.data.rndComment);
                     else if (res.data.data.hodComment) setRemarks(res.data.data.hodComment);
                     if (res.data.data.approvedAmount) setApprovedAmount(res.data.data.approvedAmount);
+                    if (res.data.data.appraisalEligible) setAppraisalEligible(res.data.data.appraisalEligible);
                 }
             } catch (error) {
                 console.error("Failed to fetch patent details", error);
@@ -59,9 +61,13 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
             return;
         }
 
-        if (action === 'Approve' && isResearchAdmin && data.applyIncentive === 'Yes') {
-            if (!approvedAmount) {
-                toast.error('Please enter the approved incentive amount');
+        if (action === 'Approve') {
+            if (isResearchAdmin && data.applyIncentive === 'Yes' && (!approvedAmount || Number(approvedAmount) <= 0)) {
+                toast.error('Please enter a valid approved incentive amount');
+                return;
+            }
+            if (isResearchAdmin && !appraisalEligible) {
+                toast.error('Please select Appraisal Eligible status');
                 return;
             }
         }
@@ -72,7 +78,8 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
             const res = await API.put(endpoint, {
                 action,
                 comment: remarks,
-                approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined
+                approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined,
+                appraisalEligible: isResearchAdmin ? appraisalEligible : undefined
             });
             if (res.data?.success) {
                 toast.success(`Request ${action === 'Approve' ? 'Approved' : 'Rejected'} successfully`);
@@ -321,16 +328,28 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
                             
-                            {isResearchAdmin && data.applyIncentive === 'Yes' && (
-                                <Box sx={{ mb: 3 }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED INCENTIVE (₹)</Typography>
-                                    <TextField 
-                                        fullWidth size="small" type="number" 
-                                        placeholder="Enter approved amount" 
-                                        value={approvedAmount} 
-                                        onChange={e => setApprovedAmount(e.target.value)} 
-                                        sx={{ maxWidth: 250, "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
-                                    />
+                            {isResearchAdmin && (
+                                <Box sx={{ mb: 3, display: "flex", gap: 2, flexWrap: "wrap" }}>
+                                    {data.applyIncentive === 'Yes' && (
+                                        <Box sx={{ flex: 1, minWidth: 200 }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED INCENTIVE (₹)</Typography>
+                                            <TextField 
+                                                fullWidth size="small" type="number" 
+                                                placeholder="Enter approved amount" 
+                                                value={approvedAmount} 
+                                                onChange={e => setApprovedAmount(e.target.value)} 
+                                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
+                                            />
+                                        </Box>
+                                    )}
+                                    <Box sx={{ flex: 1, minWidth: 200 }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>ARTICLE ELIGIBILITY FOR APPRAISAL *</Typography>
+                                        <Select fullWidth size="small" value={appraisalEligible} onChange={e => setAppraisalEligible(e.target.value)} displayEmpty sx={{ borderRadius: "10px", bgcolor: "var(--bg-panel)" }}>
+                                            <MenuItem value="" disabled>Select Eligibility</MenuItem>
+                                            <MenuItem value="Yes">Yes</MenuItem>
+                                            <MenuItem value="No">No</MenuItem>
+                                        </Select>
+                                    </Box>
                                 </Box>
                             )}
 

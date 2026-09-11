@@ -1,7 +1,7 @@
 import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
-    Box, Typography, Grid, Card, Button, TextField,
+    Box, Typography, Grid, Card, Button, TextField, MenuItem, Select,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton
 } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
@@ -24,6 +24,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
     const [loading, setLoading] = useState(true);
     const [remarks, setRemarks] = useState("");
     const [approvedAmount, setApprovedAmount] = useState("");
+    const [appraisalEligible, setAppraisalEligible] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
@@ -39,7 +40,10 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                 const res = await API.get(`/api/research/textbook/${id}`);
                 if (res.data?.success) {
                     setData(res.data.data);
-                    // Pre-fill remarks if already approved by current stage? Usually not.
+                    if (res.data.data.rndComment) setRemarks(res.data.data.rndComment);
+                    else if (res.data.data.hodComment) setRemarks(res.data.data.hodComment);
+                    if (res.data.data.approvedAmount) setApprovedAmount(res.data.data.approvedAmount);
+                    if (res.data.data.appraisalEligible) setAppraisalEligible(res.data.data.appraisalEligible);
                 }
             } catch (error) {
                 console.error("Failed to fetch textbook details", error);
@@ -57,10 +61,13 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
             return;
         }
 
-        // Incentive validation for Dean
-        if (action === 'Approve' && isResearchAdmin && data.applyIncentive === 'Yes') {
-            if (!approvedAmount) {
-                toast.error('Please enter the approved incentive amount');
+        if (action === 'Approve') {
+            if (isResearchAdmin && data.applyIncentive === 'Yes' && (!approvedAmount || Number(approvedAmount) <= 0)) {
+                toast.error('Please enter a valid approved incentive amount');
+                return;
+            }
+            if (isResearchAdmin && !appraisalEligible) {
+                toast.error('Please select Appraisal Eligible status');
                 return;
             }
         }
@@ -71,7 +78,8 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
             const res = await API.put(endpoint, {
                 action,
                 comment: remarks,
-                approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined
+                approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined,
+                appraisalEligible: isResearchAdmin ? appraisalEligible : undefined
             });
             if (res.data?.success) {
                 onBack(); // Go back to list on success
@@ -526,24 +534,48 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                                 Please provide your review remarks below. Remarks are mandatory for <strong>Rejection</strong>.
                             </Typography>
 
-                            {isResearchAdmin && data.applyIncentive === 'Yes' && (
-                                <Box sx={{ mb: 3 }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "var(--color-primary)" }}>
-                                        Approved Incentive Amount (₹)
-                                    </Typography>
-                                    <TextField
-                                        fullWidth
-                                        size="small"
-                                        type="number"
-                                        placeholder="Enter approved amount"
-                                        value={approvedAmount}
-                                        onChange={(e) => setApprovedAmount(e.target.value)}
-                                        sx={{
-                                            maxWidth: 300,
-                                            "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" },
-                                            "& .MuiOutlinedInput-input": { color: "var(--text-primary)", fontWeight: 600 }
-                                        }}
-                                    />
+                            {isResearchAdmin && (
+                                <Box sx={{ mb: 3, display: "flex", gap: 2, flexWrap: "wrap" }}>
+                                    {data.applyIncentive === 'Yes' && (
+                                        <Box sx={{ flex: 1, minWidth: 200 }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "var(--color-primary)" }}>
+                                                Approved Incentive Amount (₹)
+                                            </Typography>
+                                            <TextField
+                                                fullWidth
+                                                size="small"
+                                                type="number"
+                                                placeholder="Enter approved amount"
+                                                value={approvedAmount}
+                                                onChange={(e) => setApprovedAmount(e.target.value)}
+                                                sx={{
+                                                    "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" },
+                                                    "& .MuiOutlinedInput-input": { color: "var(--text-primary)", fontWeight: 600 }
+                                                }}
+                                            />
+                                        </Box>
+                                    )}
+                                    <Box sx={{ flex: 1, minWidth: 200 }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: "var(--color-primary)" }}>
+                                            Article Eligibility for Appraisal *
+                                        </Typography>
+                                        <Select
+                                            fullWidth
+                                            size="small"
+                                            value={appraisalEligible}
+                                            onChange={(e) => setAppraisalEligible(e.target.value)}
+                                            displayEmpty
+                                            sx={{
+                                                borderRadius: "10px",
+                                                bgcolor: "var(--bg-panel)",
+                                                color: "var(--text-primary)"
+                                            }}
+                                        >
+                                            <MenuItem value="" disabled>Select Eligibility</MenuItem>
+                                            <MenuItem value="Yes">Yes</MenuItem>
+                                            <MenuItem value="No">No</MenuItem>
+                                        </Select>
+                                    </Box>
                                 </Box>
                             )}
 

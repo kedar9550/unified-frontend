@@ -60,8 +60,8 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
         }
 
         if (action === 'Approve') {
-            if (isResearchAdmin && data.applyIncentive === 'Yes' && !approvedAmount) {
-                toast.error('Please enter the approved incentive amount');
+            if (isResearchAdmin && data.applyIncentive === 'Yes' && (!approvedAmount || Number(approvedAmount) <= 0)) {
+                toast.error('Please enter a valid approved incentive amount');
                 return;
             }
             if (isResearchAdmin && !appraisalEligible) {
@@ -393,7 +393,7 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                             
                             {isResearchAdmin && data.applyIncentive === 'Yes' && (
                                 <Box sx={{ mb: 3 }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED INCENTIVE AMOUNT (₹)</Typography>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED INCENTIVE AMOUNT (₹) *</Typography>
                                     <TextField 
                                         fullWidth size="small" type="number" 
                                         placeholder={`Approved Incentive Amount`} 

@@ -49,6 +49,8 @@ export default function RndConferenceDataEntry() {
     totalAuthors: 1,
     userAuthorPosition: 1,
     otherAuthors: [],
+    appraisalEligible: "Yes",
+    approvedAmount: ""
   };
 
   const [form, setForm] = useState(emptyForm);
@@ -291,6 +293,16 @@ export default function RndConferenceDataEntry() {
       return;
     }
 
+    if (!form.appraisalEligible) {
+      toast.error("Please select Appraisal Eligible status");
+      return;
+    }
+
+    if (form.applyIncentive === "Yes" && (!form.approvedAmount || Number(form.approvedAmount) <= 0)) {
+      toast.error("Please enter a valid Approved Incentive Amount");
+      return;
+    }
+
     if (!files.certificate || !files.proceedings) {
       toast.error("Please attach all required documents (Certificate & Proceedings)");
       return;
@@ -312,7 +324,8 @@ export default function RndConferenceDataEntry() {
       const fields = [
         "doi", "title", "conferenceName", "scope", "indexing",
         "publisher", "issnIsbn", "applyIncentive", "applyingSeedGrant",
-        "totalAuthors", "userAuthorPosition", "isStudentsInvolved"
+        "totalAuthors", "userAuthorPosition", "isStudentsInvolved",
+        "appraisalEligible", "approvedAmount"
       ];
       fields.forEach(k => {
         fd.append(k, form[k] ?? "");
@@ -714,6 +727,27 @@ export default function RndConferenceDataEntry() {
                 <MenuItem value="No">No</MenuItem>
               </Select>
             </Box>
+            <Box>
+              <Typography sx={labelStyle}>Appraisal Eligible? : *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.appraisalEligible} onChange={set("appraisalEligible")}>
+                <MenuItem value="">Select Option</MenuItem>
+                <MenuItem value="Yes">Yes</MenuItem>
+                <MenuItem value="No">No</MenuItem>
+              </Select>
+            </Box>
+            {form.applyIncentive === "Yes" && (
+              <Box>
+                <Typography sx={labelStyle}>Approved Incentive Amount (₹) : *</Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  type="number"
+                  placeholder="Enter Approved Incentive Amount"
+                  value={form.approvedAmount}
+                  onChange={set("approvedAmount")}
+                />
+              </Box>
+            )}
           </Grid2>
 
           {/* ── Attachments ── */}
