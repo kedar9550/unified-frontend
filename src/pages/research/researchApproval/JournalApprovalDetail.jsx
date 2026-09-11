@@ -625,7 +625,37 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                             {[
                                 { key: "academicYear", label: "Academic Year", value: data.academicYear?.year || "-", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
                                 { key: "doi", label: "DOI", value: data.doi || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
-                                { key: "authorPos", label: "Applicant Author Position", value: data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-"), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                { key: "authorPos", label: "Applicant Author Position", chip: (
+                                    (() => {
+                                        const pos = data.userAuthorPosition || (data.firstAuthor === "Yes" ? 1 : data.authorPosition) || 1;
+                                        const total = data.totalAuthors || 1;
+                                        return (
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Box sx={{
+                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                    width: 32, height: 32, borderRadius: '50%',
+                                                    bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)',
+                                                    color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.9rem'
+                                                }}>
+                                                    {pos}
+                                                </Box>
+                                                {total && (
+                                                    <>
+                                                        <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem' }}>of</Typography>
+                                                        <Box sx={{
+                                                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                            px: 1.2, height: 28, borderRadius: '8px',
+                                                            bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)',
+                                                            color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                                        }}>
+                                                            {total} Authors
+                                                        </Box>
+                                                    </>
+                                                )}
+                                            </Box>
+                                        );
+                                    })()
+                                ), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
                                 { key: "journalQuartile", label: "Journal Quartile", value: data.journalQuartile || data.categoryOfJournal || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Q1", "Q2", "Q3", "Q4", "None"] },
                                 { key: "isScopus", label: "Scopus", value: data.isScopus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
                                 { key: "journalType", label: "Journal Type", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["SCI", "SCIE", "ESCI", "None"] },
@@ -684,6 +714,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                                 inputProps={item.type === "number" ? { step: "any" } : {}}
                                             />
                                         )
+                                    ) : item.chip ? (
+                                        item.chip
                                     ) : (
                                         <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", textAlign: "right", maxWidth: "55%", wordBreak: "break-word" }}>
                                             {item.value}
@@ -716,7 +748,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                     </Typography>
                                 </Box>
                                 <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                                    {data.publicationScope || data.incentiveApplied || "National"}
+                                    {data.scope || data.publicationScope || data.incentiveApplied || "National"}
                                 </Typography>
                             </Box>
 
@@ -1008,7 +1040,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                                 </Box>
                                             )}
                                             <Box sx={{ flex: "1 1 200px" }}>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPRAISAL ELIGIBLE *</Typography>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>ARTICLE ELIGIBILITY FOR APPRAISAL *</Typography>
                                                 <Select 
                                                     fullWidth size="small" 
                                                     value={appraisalEligible} 

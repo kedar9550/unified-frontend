@@ -2,7 +2,8 @@ import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
     Box, Typography, Grid, Card, Button, TextField, MenuItem, Select,
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack,
+    Dialog, DialogTitle, DialogContent, DialogActions
 } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PersonIcon from '@mui/icons-material/Person';
@@ -28,6 +29,8 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
+    const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+    const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
 
     const isHOD = !role || role === 'HOD';
     const isDean = role === 'RESEARCH_DEAN';
@@ -324,40 +327,17 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                 {data.hodComment && <Box sx={{ flex: 1, minWidth: 300 }}><Card sx={{ ...cardStyle, borderLeft: "4px solid #ffc107", height: "100%", mb: 0 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><HistoryIcon sx={{ color: "#ffc107" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>HOD Review</Typography></Box><Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}><Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.hodComment}"</Typography></Box></Card></Box>}
                 
                 <Box sx={{ flex: 1, minWidth: 350 }}>
-                    {(isResearchAdmin && data.status === 'Pending at R&D') ? (
+                    {((isResearchAdmin && data.status === 'Pending at R&D') || (isHOD && data.status === 'Pending at HOD')) ? (
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
                             
-                            {isResearchAdmin && (
-                                <Box sx={{ mb: 3, display: "flex", gap: 2, flexWrap: "wrap" }}>
-                                    {data.applyIncentive === 'Yes' && (
-                                        <Box sx={{ flex: 1, minWidth: 200 }}>
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED INCENTIVE (₹)</Typography>
-                                            <TextField 
-                                                fullWidth size="small" type="number" 
-                                                placeholder="Enter approved amount" 
-                                                value={approvedAmount} 
-                                                onChange={e => setApprovedAmount(e.target.value)} 
-                                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
-                                            />
-                                        </Box>
-                                    )}
-                                    <Box sx={{ flex: 1, minWidth: 200 }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>ARTICLE ELIGIBILITY FOR APPRAISAL *</Typography>
-                                        <Select fullWidth size="small" value={appraisalEligible} onChange={e => setAppraisalEligible(e.target.value)} displayEmpty sx={{ borderRadius: "10px", bgcolor: "var(--bg-panel)" }}>
-                                            <MenuItem value="" disabled>Select Eligibility</MenuItem>
-                                            <MenuItem value="Yes">Yes</MenuItem>
-                                            <MenuItem value="No">No</MenuItem>
-                                        </Select>
-                                    </Box>
-                                </Box>
-                            )}
+                            <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3 }}>
+                                Please review the details above and choose an action to proceed with this patent submission.
+                            </Typography>
 
-                            <TextField fullWidth multiline rows={3} placeholder="Provide your review comments..." value={remarks} onChange={e => setRemarks(e.target.value)} sx={{ mb: 3, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }} />
-
-                            <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ px: 3 }}>Reject</Button>
-                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ px: 4 }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
+                            <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-start" }}>
+                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => setRejectDialogOpen(true)} sx={{ px: 3, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>Reject</Button>
+                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => setApproveDialogOpen(true)} sx={{ px: 4, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
                             </Box>
                         </Card>
                     ) : (
@@ -375,6 +355,103 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                     )}
                 </Box>
             </Box>
+
+            {/* Approve Dialog */}
+            <Dialog open={approveDialogOpen} onClose={() => setApproveDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>
+                <DialogTitle sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                    {isHOD ? "Approve & Forward Submission" : "Final Approve Submission"}
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 2.5 }}>
+                        Please confirm approval details for this patent submission:
+                    </Typography>
+
+                    {isResearchAdmin && data.applyIncentive === 'Yes' && (
+                        <Box sx={{ mb: 2.5 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--color-primary)", fontSize: "0.8rem" }}>
+                                APPROVED INCENTIVE AMOUNT (₹) *
+                            </Typography>
+                            <TextField 
+                                fullWidth size="small" type="number" 
+                                placeholder="Enter approved incentive amount" 
+                                value={approvedAmount} 
+                                onChange={e => setApprovedAmount(e.target.value)} 
+                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
+                            />
+                        </Box>
+                    )}
+
+                    {isResearchAdmin && (
+                        <Box sx={{ mb: 2.5 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--color-primary)", fontSize: "0.8rem" }}>
+                                ARTICLE ELIGIBILITY FOR APPRAISAL *
+                            </Typography>
+                            <Select fullWidth size="small" value={appraisalEligible} onChange={e => setAppraisalEligible(e.target.value)} displayEmpty sx={{ borderRadius: "10px" }}>
+                                <MenuItem value="" disabled>Select Eligibility</MenuItem>
+                                <MenuItem value="Yes">Yes</MenuItem>
+                                <MenuItem value="No">No</MenuItem>
+                            </Select>
+                        </Box>
+                    )}
+
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--text-primary)", fontSize: "0.8rem" }}>
+                            REMARKS / COMMENTS (OPTIONAL)
+                        </Typography>
+                        <TextField 
+                            fullWidth multiline rows={3} 
+                            placeholder="Provide review comments..." 
+                            value={remarks} 
+                            onChange={e => setRemarks(e.target.value)} 
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={() => setApproveDialogOpen(false)} disabled={actionLoading} sx={{ color: "var(--text-secondary)", textTransform: "none" }}>
+                        Cancel
+                    </Button>
+                    <Button 
+                        variant="contained" color="success" disabled={actionLoading} 
+                        onClick={() => handleAction('Approve')}
+                        sx={{ borderRadius: "8px", px: 3, textTransform: "none", fontWeight: 700 }}
+                    >
+                        {actionLoading ? "Processing..." : "Confirm Approve"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Reject Dialog */}
+            <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>
+                <DialogTitle sx={{ fontWeight: 800, color: "#d32f2f" }}>
+                    Reject Submission
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 2 }}>
+                        Please provide a reason for rejecting this submission:
+                    </Typography>
+                    <TextField 
+                        fullWidth multiline rows={3} 
+                        placeholder="Provide rejection comments (Required)..." 
+                        value={remarks} 
+                        onChange={e => setRemarks(e.target.value)} 
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
+                    />
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={() => setRejectDialogOpen(false)} disabled={actionLoading} sx={{ color: "var(--text-secondary)", textTransform: "none" }}>
+                        Cancel
+                    </Button>
+                    <Button 
+                        variant="contained" color="error" disabled={actionLoading} 
+                        onClick={() => handleAction('Reject')}
+                        sx={{ borderRadius: "8px", px: 3, textTransform: "none", fontWeight: 700 }}
+                    >
+                        {actionLoading ? "Processing..." : "Confirm Rejection"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             {isResearchAdmin && (
                 <EditResearchDetailsDialog
                     open={editOpen}
