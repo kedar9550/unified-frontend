@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
-  Box, TextField, MenuItem, Select, Typography, Button
+  Box, TextField, MenuItem, Select, Typography, Button,
+  Radio, RadioGroup, FormControlLabel
 } from "@mui/material";
 import { toast } from "sonner";
 import { Search, AttachFile } from "@mui/icons-material";
@@ -38,9 +39,12 @@ export default function RndPatentDataEntry() {
     patentFiledCountry: "India",
     customCountryName: "",
     applyingSeedGrant: "No",
+    isStudentsInvolved: "No",
     applyIncentive: "No",
     totalInventors: 1,
-    otherInventors: []
+    otherInventors: [],
+    appraisalEligible: "Yes",
+    approvedAmount: ""
   });
   const [files, setFiles] = useState({ eFilingReceipt: null, form1: null });
   const [loading, setLoading] = useState(false);
@@ -55,7 +59,16 @@ export default function RndPatentDataEntry() {
     }).catch(err => console.log("Failed to fetch academic years", err));
   }, []);
 
-  const set = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
+  const set = (k) => (e) => {
+    const val = e.target.value;
+    setForm(p => {
+      const newForm = { ...p, [k]: val };
+      if (k === "isStudentsInvolved" && val === "Yes") {
+        newForm.applyIncentive = "No";
+      }
+      return newForm;
+    });
+  };
 
   // Handle dynamic inventor generation based on total inventors
   useEffect(() => {
@@ -185,6 +198,15 @@ export default function RndPatentDataEntry() {
       return;
     }
 
+    if (form.applyIncentive === "Yes" && (!form.approvedAmount || Number(form.approvedAmount) <= 0)) {
+      toast.error("Please enter a valid Approved Incentive Amount");
+      return;
+    }
+    if (!form.appraisalEligible) {
+      toast.error("Please select Appraisal Eligible status");
+      return;
+    }
+
     setLoading(true);
     try {
       const fd = new FormData();
@@ -203,8 +225,11 @@ export default function RndPatentDataEntry() {
       fd.append("status", form.status);
       fd.append("patentFiledCountry", form.patentFiledCountry === 'Others' ? form.customCountryName : form.patentFiledCountry);
       fd.append("coInventors", JSON.stringify(coInventorsList));
+      fd.append("isStudentsInvolved", form.isStudentsInvolved || "No");
       fd.append("applyIncentive", form.applyIncentive);
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
+      fd.append("appraisalEligible", form.appraisalEligible || "Yes");
+      fd.append("approvedAmount", form.approvedAmount || "");
       fd.append("totalInventors", String(form.totalInventors));
       fd.append("academicYear", selectedYear);
       fd.append("isDirectEntry", "true");
@@ -217,8 +242,8 @@ export default function RndPatentDataEntry() {
       toast.success("Patent record added directly for faculty!");
       setForm({
         title: "", applicantName: "", patentName: "Aditya University", area: "", filingNo: "", dateOfFiling: "",
-        status: "Filed", patentFiledCountry: "India", customCountryName: "", applyingSeedGrant: "No", applyIncentive: "No",
-        totalInventors: 1, otherInventors: []
+        status: "Filed", patentFiledCountry: "India", customCountryName: "", applyingSeedGrant: "No", isStudentsInvolved: "No", applyIncentive: "No",
+        totalInventors: 1, otherInventors: [], appraisalEligible: "Yes", approvedAmount: ""
       });
       setFiles({ eFilingReceipt: null, form1: null });
       setTargetFacultyEmpId("");
