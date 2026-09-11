@@ -583,7 +583,7 @@ export default function ResourceUtilization() {
                 Submit All Drafts
               </Button>
             )}
-            <Button
+            {/* <Button
               variant="contained"
               startIcon={<AddCircle />}
               onClick={handleOpenAddModal}
@@ -598,7 +598,7 @@ export default function ResourceUtilization() {
               }}
             >
               Add Resource Utilization
-            </Button>
+            </Button> */}
           </Box>
         </Box>
 
