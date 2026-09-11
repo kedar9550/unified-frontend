@@ -204,7 +204,7 @@ export default function ResourceUtilization() {
     API.get(`/api/value-addition/resource-utilization`)
       .then(res => {
         const allActivities = res.data?.data || [];
-        setActivitiesList(allActivities.filter(a => a.status === 'Approved' || a.status === 'Completed'));
+        setActivitiesList(allActivities);
       })
       .catch(err => console.log("Failed to fetch activities", err));
   };
@@ -423,7 +423,9 @@ export default function ResourceUtilization() {
       return;
     }
 
-     else if (form.activityCategory === "FDP" || form.activityCategory === "SYMPOSIUM") {
+    const durationDays = Math.round((to - from) / (1000 * 60 * 60 * 24)) + 1;
+
+    if (form.activityCategory === "FDP" || form.activityCategory === "SYMPOSIUM") {
       if (durationDays < 5) {
         toast.error(`${form.activityCategory} must have a minimum duration of 5 days.`);
         return;

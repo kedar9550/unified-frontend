@@ -49,7 +49,7 @@ const ContributionApproval = () => {
   const [requests, setRequests] = useState([]);
   const [selected, setSelected] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("Pending at HOD");
+  const [statusFilter, setStatusFilter] = useState("Pending");
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -74,7 +74,7 @@ const ContributionApproval = () => {
     setActionLoading(true);
     try {
       await API.put(`/api/value-addition/contribution/hod-action/${selected._id}`, { action, comment: '' });
-      toast.success(`Request ${action} successfully`);
+      toast.success(`Request approved successfully`);
       fetchRequests();
       setSelected(null);
     } catch (err) {
@@ -85,17 +85,16 @@ const ContributionApproval = () => {
     }
   };
 
-  const columns = ['#', 'Faculty Name', 'Employee ID', 'Category', 'Type', 'Organization', 'Status', 'Actions'];
+  const columns = ['#', 'Faculty Name', 'Employee ID', 'Category', 'Status', 'Actions'];
 
   const rows = requests.map((item, index) => {
     const statusStyle = getStatusStyle(item.status);
+
     return [
       index + 1,
       item.facultyId?.name || 'N/A',
       item.facultyId?.institutionId || 'N/A',
       item.category?.name || '-',
-      item.type || '-',
-      item.organizationName || '-',
       {
         value: item.status,
         display: (
@@ -133,6 +132,44 @@ const ContributionApproval = () => {
 
   const DetailDialog = () => {
     const statusStyle = selected ? getStatusStyle(selected.status) : { bg: 'var(--bg-glass)', color: 'var(--text-secondary)' };
+    const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+    const getFileUrl = (proof) => proof ? (proof.startsWith('http') ? proof : `${backendURL}${proof}`) : null;
+
+    let detailFields = [];
+    if (selected) {
+      detailFields = [
+        { label: 'Type', value: selected.type },
+        { label: 'Organization', value: selected.organizationName },
+        { label: 'Role', value: selected.role },
+        { label: 'Award Name', value: selected.awardName },
+        { label: 'Awarding Agency', value: selected.awardingAgency },
+        { label: 'Award Date', value: selected.awardDate ? formatDate(selected.awardDate) : null, raw: selected.awardDate },
+        { label: 'Course Name', value: selected.courseName },
+        { label: 'Certification Name', value: selected.certificationName },
+        { label: 'Event Name', value: selected.eventName },
+        { label: 'Event Date', value: selected.eventDate ? formatDate(selected.eventDate) : null, raw: selected.eventDate },
+        { label: 'Article Title', value: selected.articleTitle },
+        { label: 'Journal Name', value: selected.journalName },
+        { label: 'Journal/Conference', value: selected.journalConferenceName },
+        { label: 'Publisher', value: selected.publisherName },
+        { label: 'Book Title', value: selected.bookTitle },
+        { label: 'Patent Title', value: selected.patentTitle },
+        { label: 'Patent Number', value: selected.patentNumber },
+        { label: 'Publication Date', value: selected.publicationDate ? formatDate(selected.publicationDate) : null, raw: selected.publicationDate },
+        { label: 'Facility Name', value: selected.facilityName },
+        { label: 'Facility Date', value: selected.facilityDate ? formatDate(selected.facilityDate) : null, raw: selected.facilityDate },
+        { label: 'Contribution Type', value: selected.contributionType },
+        { label: 'Grant Title', value: selected.grantTitle },
+        { label: 'Grant Type', value: selected.grantType },
+        { label: 'Funding Agency', value: selected.fundingAgency },
+        { label: 'Grant Amount', value: selected.grantAmount },
+        { label: 'Sanction Date', value: selected.sanctionDate ? formatDate(selected.sanctionDate) : null, raw: selected.sanctionDate },
+        { label: 'Course Hours', value: selected.courseHours },
+        { label: 'Certificate Number', value: selected.certificateNumber },
+        { label: 'URL', value: selected.url }
+      ];
+    }
+
     return (
       <Dialog open={!!selected} onClose={() => setSelected(null)} maxWidth="md" fullWidth sx={{ '& .MuiPaper-root': { borderRadius: '16px', background: 'var(--bg-panel)' } }}>
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -145,16 +182,21 @@ const ContributionApproval = () => {
               <LabelValueDetails label="Faculty" value={selected.facultyId?.name || 'N/A'} horizontal />
               <LabelValueDetails label="Employee ID" value={selected.facultyId?.institutionId || 'N/A'} horizontal />
               <LabelValueDetails label="Category" value={selected.category?.name || '-'} horizontal />
-              <LabelValueDetails label="Type" value={selected.type} horizontal />
-              <LabelValueDetails label="Organization" value={selected.organizationName} horizontal />
-              <LabelValueDetails label="Role" value={selected.role} horizontal />
+              
+              {detailFields.map((field, idx) => (
+                (field.value !== null && field.value !== undefined && field.value !== '') ? (
+                  <LabelValueDetails key={idx} label={field.label} value={field.value} horizontal />
+                ) : null
+              ))}
+
               <LabelValueDetails label="Submitted" value={formatDate(selected.createdAt)} horizontal />
               {selected.proof && (
                 <LabelValueDetails label="Proof" display={
-                  <Button variant="outlined" size="small" onClick={() => window.open(selected.proof, '_blank')}>View Proof</Button>
+                  <Button variant="outlined" size="small" onClick={() => window.open(getFileUrl(selected.proof), '_blank')}>View Proof</Button>
                 } horizontal />
               )}
               <LabelValueDetails label="Status" chip={<Chip label={selected.status} size="small" sx={{ bgcolor: statusStyle.bg, color: statusStyle.color, fontWeight: 600, borderRadius: '6px' }} />} horizontal />
+
             </Grid>
           )}
         </DialogContent>
@@ -170,8 +212,8 @@ const ContributionApproval = () => {
   return (
     <PageContainer>
       <PageHeader
-        title="Department Contribution Approvals"
-        subtitle="Approve, reject, and track department contribution submissions"
+        title="Contribution Approvals"
+        subtitle="Approve, reject, and track contribution submissions"
         icon={<AwardIcon />}
       />
       {loading ? (
@@ -192,7 +234,7 @@ const ContributionApproval = () => {
                   "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" }
                 }}
               >
-                <MenuItem value="Pending at HOD">Pending</MenuItem>
+                <MenuItem value="Pending">Pending</MenuItem>
                 <MenuItem value="Approved">Approved</MenuItem>
                 <MenuItem value="Rejected">Rejected</MenuItem>
                 <MenuItem value="All">All Requests</MenuItem>
