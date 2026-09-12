@@ -26,7 +26,7 @@ const VerifyCertificate = () => {
           const status = (p.paymentStatus || p.payment || '').toString().trim().toUpperCase();
           return status === 'PAID';
         });
-        
+
         // Find the matching payment by receipt
         const payment = payments.find(p => p.receipt === receipt || p.teamId === receipt);
         if (!payment) {
@@ -71,20 +71,20 @@ const VerifyCertificate = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#f8fafc', p: 3, position: 'relative', overflow: 'hidden' }}>
-      
+    <Box sx={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#f8fafc', p: { xs: 2, sm: 4 }, py: { xs: 4, sm: 6 }, position: 'relative', overflow: 'hidden' }}>
+
       {/* Background decoration */}
       <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: '400px', background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)', zIndex: 0 }} />
 
-      <Paper 
+      <Paper
         elevation={0}
-        sx={{ 
+        sx={{
           position: 'relative',
           zIndex: 1,
           p: 0,
-          borderRadius: 6, 
-          maxWidth: 600, 
-          width: '100%', 
+          borderRadius: 3,
+          maxWidth: { xs: 380, sm: 550 },
+          width: '100%',
           boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1), 0 10px 15px -3px rgba(0,0,0,0.05)',
           overflow: 'hidden',
           background: '#ffffff'
@@ -100,11 +100,7 @@ const VerifyCertificate = () => {
             </svg>
           </Box>
 
-          {/* Valid Certificate Pill */}
-          <Box sx={{ position: 'absolute', top: 20, right: 20, background: '#dcfce7', color: '#15803d', px: 2, py: 0.75, borderRadius: '20px', display: 'flex', alignItems: 'center', gap: 1, zIndex: 2 }}>
-            <VerifiedUserIcon sx={{ fontSize: 16 }} />
-            <Typography sx={{ fontSize: '0.85rem', fontWeight: 700 }}>Valid Certificate</Typography>
-          </Box>
+
 
           {/* Custom Success Icon with Confetti */}
           <Box sx={{ position: 'relative', width: 100, height: 100, mx: 'auto', mb: 3, zIndex: 2 }}>
@@ -136,17 +132,17 @@ const VerifyCertificate = () => {
 
         {/* Main Content Area */}
         <Box sx={{ px: { xs: 3, sm: 5 }, pb: 5, position: 'relative', zIndex: 2 }}>
-          
+
           {/* Inner Participant Card */}
-          <Paper elevation={0} sx={{ background: '#f9fafb', borderRadius: 4, p: { xs: 3, sm: 4 }, border: '1px solid #f1f5f9', mb: 4 }}>
+          <Paper elevation={0} sx={{ background: '#f9fafb', borderRadius: 2, p: { xs: 2.5, sm: 4 }, border: '1px solid #f1f5f9', mb: 4 }}>
             
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'center', sm: 'flex-start' }, gap: 4, mb: 4 }}>
-              <Box 
-                component="img" 
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'center', sm: 'flex-start' }, gap: { xs: 2, sm: 4 }, mb: { xs: 3, sm: 4 } }}>
+              <Box
+                component="img"
                 src={`https://info.aec.edu.in/adityacentral/StudentPhotos/${data.participant.roll}.jpg`}
                 onError={(e) => { e.target.src = 'https://via.placeholder.com/150?text=No+Photo'; }}
                 alt="Student"
-                sx={{ width: 130, height: 130, borderRadius: '50%', objectFit: 'cover', border: '5px solid #ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)' }}
+                sx={{ width: { xs: 100, sm: 130 }, height: { xs: 100, sm: 130 }, borderRadius: '50%', objectFit: 'cover', border: '5px solid #ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)' }}
               />
               <Box sx={{ textAlign: { xs: 'center', sm: 'left' }, pt: 1 }}>
                 <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase' }}>
@@ -170,9 +166,9 @@ const VerifyCertificate = () => {
               </Box>
             </Box>
 
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6}>
-                <Paper elevation={0} sx={{ background: '#ffffff', borderRadius: 3, p: 2, display: 'flex', alignItems: 'center', gap: 2, border: '1px solid #f1f5f9' }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Paper elevation={0} sx={{ background: '#ffffff', borderRadius: 2, p: 2, display: 'flex', alignItems: 'center', gap: 2, border: '1px solid #f1f5f9' }}>
                   <Box sx={{ width: 44, height: 44, borderRadius: 2, background: '#dcfce7', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <EventIcon />
                   </Box>
@@ -186,9 +182,9 @@ const VerifyCertificate = () => {
                   </Box>
                 </Paper>
               </Grid>
-              
-              <Grid item xs={12} sm={6}>
-                <Paper elevation={0} sx={{ background: '#ffffff', borderRadius: 3, p: 2, display: 'flex', alignItems: 'center', gap: 2, border: '1px solid #f1f5f9' }}>
+
+              <Grid item xs={12}>
+                <Paper elevation={0} sx={{ background: '#ffffff', borderRadius: 2, p: 2, display: 'flex', alignItems: 'center', gap: 2, border: '1px solid #f1f5f9' }}>
                   <Box sx={{ width: 44, height: 44, borderRadius: 2, background: '#e0f2fe', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <DescriptionIcon />
                   </Box>
@@ -196,11 +192,11 @@ const VerifyCertificate = () => {
                     <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 800, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
                       Certificate ID
                     </Typography>
-                    <Typography 
-                      variant="subtitle1" 
-                      sx={{ 
-                        fontWeight: 800, 
-                        color: '#1e293b', 
+                    <Typography
+                      variant="subtitle1"
+                      sx={{
+                        fontWeight: 800,
+                        color: '#1e293b',
                         lineHeight: 1.2,
                         wordBreak: 'break-all'
                       }}
@@ -222,31 +218,7 @@ const VerifyCertificate = () => {
                   {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                 </Typography>
               </Box>
-              <Box sx={{ width: '3px', height: '40px', background: '#10b981', borderRadius: '2px' }} />
-              <Box>
-                <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600 }}>Trusted by</Typography>
-                <Typography variant="subtitle1" sx={{ color: '#64748b', fontWeight: 600 }}>
-                  Aditya University
-                </Typography>
-              </Box>
             </Box>
-            
-            {/* Watermark Logo */}
-            <Box 
-              component="img"
-              src={watermarkLogo}
-              sx={{
-                width: 140,
-                height: 140,
-                position: 'absolute',
-                bottom: -20,
-                right: -20,
-                opacity: 0.1,
-                filter: 'grayscale(100%)',
-                pointerEvents: 'none',
-                zIndex: 0
-              }}
-            />
           </Box>
         </Box>
       </Paper>
