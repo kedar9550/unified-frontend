@@ -18,6 +18,7 @@ import {
   PeopleAlt as PeopleAltIcon,
   Refresh as RefreshIcon,
   FileDownload as DownloadIcon,
+  Print as PrintIcon,
 } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
 import { PageContainer, EmptyState } from '../../components/common/design-system';
@@ -157,6 +158,7 @@ const ParticipationCertificates = () => {
   const [selectedCertificate, setSelectedCertificate] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   const [departmentsDialogOpen, setDepartmentsDialogOpen] = useState(false);
   const [departmentsToView, setDepartmentsToView] = useState([]);
@@ -325,46 +327,102 @@ const ParticipationCertificates = () => {
     setDialogOpen(true);
   };
 
+  const generateCertificatePdf = async () => {
+    const element = document.querySelector('.certificate-box');
+    if (!element) return null;
+
+    const html2canvasModule = await import('html2canvas');
+    const html2canvas = html2canvasModule.default || html2canvasModule;
+
+    const canvas = await html2canvas(element, {
+      scale: 4, // 4x ultra-high resolution scale for razor-sharp rendering
+      useCORS: true,
+      allowTaint: true,
+      scrollX: 0,
+      scrollY: 0,
+      backgroundColor: '#ffffff'
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const jsPDFModule = await import('jspdf');
+    const jsPDF = jsPDFModule.default || jsPDFModule.jsPDF || jsPDFModule;
+
+    // Standard ISO 216 A4 landscape page: 297mm x 210mm
+    const pdf = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4',
+      compress: true
+    });
+
+    const pageWidth = 297;
+    const pageHeight = 210;
+
+    // Safe print margins ensuring all 4 borders print completely on any physical printer without getting clipped
+    const marginY = 6; // 6mm top and bottom margin (well within standard printer hardware printable area)
+    const certHeight = pageHeight - (marginY * 2); // 198mm
+    const certWidth = certHeight * (canvas.width / canvas.height); // maintains exact certificate aspect ratio
+    const marginX = (pageWidth - certWidth) / 2; // perfectly centered horizontally (~8.46mm)
+
+    pdf.addImage(imgData, 'PNG', marginX, marginY, certWidth, certHeight, undefined, 'FAST');
+    return pdf;
+  };
+
   const handleDownloadPDF = async () => {
     try {
       setIsDownloading(true);
-      toast.info('Generating PDF, please wait...', { duration: 3000 });
+      toast.info('Generating A4 PDF, please wait...', { duration: 3000 });
 
-      const element = document.querySelector('.certificate-box');
-      if (!element) return;
+      const pdf = await generateCertificatePdf();
+      if (!pdf) {
+        toast.error('Certificate element not found');
+        return;
+      }
 
-      const width = element.offsetWidth;
-      const height = element.offsetHeight;
-
-      const html2canvasModule = await import('html2canvas');
-      const html2canvas = html2canvasModule.default || html2canvasModule;
-
-      const canvas = await html2canvas(element, {
-        scale: 4, // 4x ultra-high resolution scale for razor-sharp rendering
-        useCORS: true,
-        allowTaint: true,
-        scrollX: 0,
-        scrollY: 0
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-      const jsPDFModule = await import('jspdf');
-      const jsPDF = jsPDFModule.default || jsPDFModule.jsPDF || jsPDFModule;
-
-      const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'px',
-        format: [width, height]
-      });
-
-      pdf.addImage(imgData, 'PNG', 0, 0, width, height, undefined, 'FAST');
       pdf.save(`Certificate_${selectedCertificate?.participant?.name?.replace(/\s+/g, '_') || 'Participant'}.pdf`);
-      toast.success('Downloaded successfully!');
+      toast.success('A4 Certificate downloaded successfully!');
     } catch (error) {
       console.error('PDF Error:', error);
       toast.error('Failed to generate PDF. Check console.');
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handlePrintCertificate = async () => {
+    try {
+      setIsPrinting(true);
+      toast.info('Preparing certificate for printing...', { duration: 2500 });
+
+      const pdf = await generateCertificatePdf();
+      if (!pdf) {
+        toast.error('Certificate element not found');
+        return;
+      }
+
+      pdf.autoPrint();
+      const blobUrl = pdf.output('bloburl');
+      const printWindow = window.open(blobUrl, '_blank');
+      if (!printWindow) {
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = 'none';
+        iframe.src = blobUrl;
+        document.body.appendChild(iframe);
+        iframe.onload = () => {
+          iframe.contentWindow?.focus();
+          iframe.contentWindow?.print();
+        };
+      }
+    } catch (error) {
+      console.error('Print Error:', error);
+      toast.error('Failed to prepare print document.');
+    } finally {
+      setIsPrinting(false);
     }
   };
 
@@ -549,11 +607,24 @@ const ParticipationCertificates = () => {
         >
           <DialogContent sx={{ p: 0, position: 'relative', background: '#fff', borderRadius: '0px !important' }}>
 
-            {/* Floating Action Buttons (Not included in PDF) */}
-            <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 100, display: 'flex', gap: 1 }}>
+            {/* Floating Action Buttons (Not included in print/PDF) */}
+            <Box className="no-print" sx={{ position: 'absolute', top: 16, right: 16, zIndex: 100, display: 'flex', gap: 1 }}>
+              <IconButton
+                onClick={handlePrintCertificate}
+                disabled={isPrinting || isDownloading}
+                title="Print Certificate (A4)"
+                sx={{
+                  background: 'rgba(255,255,255,0.95)',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  '&:hover': { background: '#fff', transform: 'scale(1.05)' },
+                  transition: 'all 0.2s'
+                }}
+              >
+                {isPrinting ? <CircularProgress size={20} /> : <PrintIcon color="primary" />}
+              </IconButton>
               <IconButton
                 onClick={handleDownloadPDF}
-                disabled={isDownloading}
+                disabled={isPrinting || isDownloading}
                 title="Download PDF"
                 sx={{
                   background: 'rgba(255,255,255,0.95)',
@@ -590,11 +661,51 @@ const ParticipationCertificates = () => {
                 }
 
                 @media print {
-                  @page { size: A4 landscape; margin: 0; }
-                  html, body { margin: 0 !important; padding: 0 !important; overflow: hidden !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-                  #invoice-print-container { box-shadow: none !important; margin: 0 !important; width: 100vw !important; height: 100vh !important; max-width: 100vw !important; max-height: 100vh !important; overflow: hidden !important; border-radius: 0 !important; }
-                  .certificate-box { min-height: 100vh !important; height: 100vh !important; overflow: hidden !important; box-sizing: border-box !important; }
-                  .no-print { display: none !important; }
+                  @page {
+                    size: A4 landscape;
+                    margin: 6mm 8.5mm;
+                  }
+                  html, body {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    background: #ffffff !important;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                  }
+                  .no-print,
+                  .MuiBackdrop-root,
+                  header,
+                  nav,
+                  aside,
+                  button {
+                    display: none !important;
+                  }
+                  .MuiDialog-root {
+                    position: static !important;
+                    display: block !important;
+                  }
+                  .MuiDialog-container {
+                    display: block !important;
+                    position: static !important;
+                    padding: 0 !important;
+                  }
+                  .MuiPaper-root {
+                    box-shadow: none !important;
+                    margin: 0 !important;
+                    max-width: 100% !important;
+                    width: 100% !important;
+                    background: transparent !important;
+                  }
+                  .certificate-box {
+                    width: 100% !important;
+                    height: 100% !important;
+                    max-width: 100% !important;
+                    max-height: 100% !important;
+                    margin: 0 auto !important;
+                    box-shadow: none !important;
+                    page-break-inside: avoid !important;
+                    break-inside: avoid !important;
+                  }
                 }
               `}
             </style>
@@ -634,6 +745,7 @@ const ParticipationCertificates = () => {
                     bottom: 0,
                     border: '2.5cqh solid #154487',
                     borderRadius: '0px !important',
+                    boxSizing: 'border-box',
                     zIndex: 2,
                     pointerEvents: 'none'
                   }} />
