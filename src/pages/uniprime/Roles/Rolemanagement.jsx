@@ -939,6 +939,39 @@ const RoleManagement = () => {
             }
         }
 
+        // Validation for Unique Roles
+        const uniqueRoleNames = [
+            'VICE CHANCELLOR',
+            'DY. PRO CHANCELLOR',
+            'REGISTRAR',
+            'CONTROLLER OF EXAMINATIONS',
+            'DEAN - (IQAC)',
+            'DEAN - (ADMISSIONS)',
+            'PRO VICE-CHANCELLOR (E & S)',
+            'PRO VICE-CHANCELLOR (A)',
+            'PRO VICE-CHANCELLOR (S & P)'
+        ];
+
+        let uniqueConflictMsg = null;
+        for (const rid of assignedRoleIds) {
+            const role = roles.find(r => r._id.toString() === rid.toString());
+            if (role && (uniqueRoleNames.includes(role.name?.toUpperCase()) || uniqueRoleNames.includes(role.key?.toUpperCase()))) {
+                const existingUser = allEmployees.find(emp =>
+                    emp._id !== selectedUser._id &&
+                    emp.roles?.some(r => r._id.toString() === rid.toString())
+                );
+                if (existingUser) {
+                    uniqueConflictMsg = `The role "${role.name}" is already assigned to ${existingUser.name}. Continuing will reassign it. Are you sure?`;
+                    break;
+                }
+            }
+        }
+        
+        if (uniqueConflictMsg) {
+            setHodConfirm({ open: true, message: uniqueConflictMsg });
+            return;
+        }
+
         executeSaveAssignments();
     };
 
@@ -2389,7 +2422,7 @@ const RoleManagement = () => {
 
             {/* HOD Replacement Confirmation */}
             <Dialog open={hodConfirm.open} onClose={() => setHodConfirm({ open: false, message: "" })} slotProps={{ paper: { sx: { borderRadius: '16px' } } }}>
-                <DialogTitle sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Confirm HOD Replacement</DialogTitle>
+                <DialogTitle sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>Confirm Role Replacement</DialogTitle>
                 <DialogContent><Typography sx={{ color: 'var(--text-secondary)' }}>{hodConfirm.message}</Typography></DialogContent>
                 <DialogActions sx={{ p: 2, gap: 1 }}>
                     <Button onClick={() => setHodConfirm({ open: false, message: "" })} sx={{ borderRadius: '50px', textTransform: 'none', fontWeight: 600 }}>Cancel</Button>
