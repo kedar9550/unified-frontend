@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, FormControl, Tooltip, TablePagination } from "@mui/material";
 import { toast } from "sonner";
-import { Close, Description, Download, AttachFile, Groups, AssignmentInd, Visibility } from "@mui/icons-material";
+import { Close, Description, Download, AttachFile, Groups, AssignmentInd, Visibility, Edit, CheckCircle, Cancel, AccessTime } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
@@ -35,7 +35,61 @@ export default function ConsultancyPublication() {
     totalInvestigators: 1,
     otherInvestigatorsList: []
   });
+  const [files, setFiles] = useState({ sanctionLetter: null, mou: null });
+  const [existingFiles, setExistingFiles] = useState({ sanctionLetter: null, mou: null });
+  const [deleteFlags, setDeleteFlags] = useState({ sanctionLetter: false, mou: false });
+  const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const setFile = (k) => (e) => setFiles((p) => ({ ...p, [k]: e.target.files[0] }));
+
+  const handleEditClick = (pub) => {
+    setEditingId(pub._id);
+    setSelectedYear(pub.academicYear?._id || pub.academicYear || "");
+
+    const mappedInvestigators = [];
+    if (pub.coInvestigators && pub.coInvestigators.length > 0) {
+      pub.coInvestigators.forEach((ca, idx) => {
+        mappedInvestigators.push({
+          investigatorPosition: idx + 2,
+          role: ca.role || (ca.principalInvestigator === "Yes" ? "Principal Investigator" : "Co-Investigator"),
+          affiliationType: ca.affiliationType || (ca.employeeId ? "AUS" : "Others"),
+          empId: ca.employeeId?.institutionId || ca.employeeId || "",
+          name: ca.name || "",
+          affiliation: ca.affiliation || "",
+          department: ca.department || "",
+          designation: ca.designation || ""
+        });
+      });
+    }
+
+    setForm({
+      title: pub.title || "",
+      fundingAgency: pub.fundingAgency || "",
+      fundingAdityaUniversity: pub.fundingAdityaUniversity || "No",
+      amount: pub.amount || "",
+      duration: pub.duration || "",
+      month: pub.month || "",
+      year: pub.year || "",
+      applyingSeedGrant: pub.applyingSeedGrant || "",
+      investigatorType: pub.investigatorType || "Principal Investigator (PI)",
+      principalInvestigator: pub.principalInvestigator || "",
+      coPrincipalInvestigator: pub.coPrincipalInvestigator || "",
+      applyIncentive: pub.applyIncentive || "No",
+      projectStatus: pub.projectStatus || "Sanctioned",
+      totalInvestigators: pub.totalInvestigators || 1,
+      otherInvestigatorsList: mappedInvestigators
+    });
+
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:9000";
+    setExistingFiles({
+      sanctionLetter: pub.sanctionLetter ? `${backendUrl}${pub.sanctionLetter}` : null,
+      mou: pub.mou ? `${backendUrl}${pub.mou}` : null,
+    });
+    setFiles({ sanctionLetter: null, mou: null });
+    setDeleteFlags({ sanctionLetter: false, mou: false });
+    setViewMode("form");
+  };
 
   // Generate dynamic investigator fields
   useEffect(() => {
@@ -270,23 +324,39 @@ export default function ConsultancyPublication() {
       const isPI = form.investigatorType === "Principal Investigator (PI)";
       const isCoPI = form.investigatorType === "Co-Principal Investigator (Co-PI)";
 
-      const payload = {
-        ...form,
-        principalInvestigator: isPI ? "Yes" : "No",
-        coPrincipalInvestigator: isCoPI ? "Yes" : "No",
-        coInvestigators: coInvestigatorsList,
-        academicYear: selectedYear,
-        college: user?.college || "",
-        panNumber: user?.panNumber || ""
-      };
+      const fd = new FormData();
+      Object.entries(form).forEach(([k, v]) => {
+        if (k !== 'otherInvestigatorsList') fd.append(k, v);
+      });
+      fd.append("principalInvestigator", isPI ? "Yes" : "No");
+      fd.append("coPrincipalInvestigator", isCoPI ? "Yes" : "No");
+      fd.append("coInvestigators", JSON.stringify(coInvestigatorsList));
+      fd.append("academicYear", selectedYear);
+      fd.append("college", user?.college || "");
+      fd.append("panNumber", user?.panNumber || "");
 
-      await API.post("/api/research/consultancy", payload);
-      toast.success("Consultancy submitted successfully!");
+      if (files.sanctionLetter) fd.append("sanctionLetter", files.sanctionLetter);
+      if (files.mou) fd.append("mou", files.mou);
+      if (deleteFlags.sanctionLetter) fd.append("deleteSanctionLetter", "true");
+      if (deleteFlags.mou) fd.append("deleteMou", "true");
+
+      if (editingId) {
+        await API.put(`/api/research/consultancy/${editingId}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+        toast.success("Consultancy resubmitted successfully!");
+      } else {
+        await API.post("/api/research/consultancy", fd, { headers: { "Content-Type": "multipart/form-data" } });
+        toast.success("Consultancy submitted successfully!");
+      }
+
       setForm({
         title: "", fundingAgency: "", fundingAdityaUniversity: "", amount: "", duration: "", month: "", year: "", applyingSeedGrant: "",
         investigatorType: "", principalInvestigator: "", coPrincipalInvestigator: "", applyIncentive: "No", projectStatus: "Sanctioned",
         totalInvestigators: 1, otherInvestigatorsList: []
       });
+      setFiles({ sanctionLetter: null, mou: null });
+      setExistingFiles({ sanctionLetter: null, mou: null });
+      setDeleteFlags({ sanctionLetter: false, mou: false });
+      setEditingId(null);
       setSelectedYear("");
       setViewMode("list");
     } catch (err) {
@@ -307,7 +377,7 @@ export default function ConsultancyPublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Consultancy Work</Typography>
-        {/* <Button
+        <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -320,7 +390,7 @@ export default function ConsultancyPublication() {
           }}
           sx={{
             background: "var(--gradient-primary)",
-            
+
             px: 3,
             fontWeight: 700,
             textTransform: "none",
@@ -333,7 +403,7 @@ export default function ConsultancyPublication() {
           }}
         >
           Apply New
-        </Button> */}
+        </Button>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -367,7 +437,7 @@ export default function ConsultancyPublication() {
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Investigators</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status / Remarks</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -395,35 +465,80 @@ export default function ConsultancyPublication() {
                       : <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>None</Typography>}
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: pub.status?.includes('Rejected') ? "#ef4444" : pub.status === 'Approved' ? "#10b981" : "#e8a000",
-                        fontWeight: 700,
-                        background: pub.status?.includes('Rejected') ? "rgba(239, 68, 68, 0.1)" : pub.status === 'Approved' ? "rgba(16, 185, 129, 0.1)" : "rgba(232, 160, 0, 0.1)",
-                        px: 1.5,
-                        py: 0.5,
-                        borderRadius: "6px",
-                        display: "inline-block"
-                      }}
-                    >
-                      {pub.status || "Pending"}
-                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                      <Chip
+                        icon={
+                          pub.status === 'Approved' ? <CheckCircle style={{ fontSize: 16 }} /> :
+                            pub.status?.includes('Rejected') ? <Cancel style={{ fontSize: 16 }} /> :
+                              <AccessTime style={{ fontSize: 16 }} />
+                        }
+                        label={pub.status || "Pending"}
+                        size="small"
+                        sx={{
+                          color: pub.status?.includes('Rejected') ? "#ef4444" : pub.status === 'Approved' ? "#10b981" : "#e8a000",
+                          fontWeight: 700,
+                          background: pub.status?.includes('Rejected') ? "rgba(239, 68, 68, 0.1)" : pub.status === 'Approved' ? "rgba(16, 185, 129, 0.1)" : "rgba(232, 160, 0, 0.1)",
+                          border: `1px solid ${pub.status?.includes('Rejected') ? "rgba(239, 68, 68, 0.3)" : pub.status === 'Approved' ? "rgba(16, 185, 129, 0.3)" : "rgba(232, 160, 0, 0.3)"}`,
+                          width: "fit-content",
+                          "& .MuiChip-icon": {
+                            color: "inherit"
+                          }
+                        }}
+                      />
+                      {pub.status?.includes('Rejected') && (pub.rndComment || pub.hodComment) && (
+                        <Tooltip title={pub.rndComment || pub.hodComment} arrow placement="top">
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "#ef4444",
+                              fontStyle: "italic",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                              cursor: "pointer",
+                              maxWidth: 220,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis"
+                            }}
+                          >
+                            <span>💬</span> "{pub.rndComment || pub.hodComment}"
+                          </Typography>
+                        </Tooltip>
+                      )}
+                    </Box>
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
-                    <Tooltip title="View Details" arrow>
-                      <IconButton
-                        size="small"
-                        onClick={() => setSelectedPubDetails(pub)}
-                        sx={{
-                          color: "var(--color-primary)",
-                          "&:hover": { background: "var(--bg-accent-1)", transform: "scale(1.1)" },
-                          transition: "all 0.2s ease"
-                        }}
-                      >
-                        <Visibility fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Stack direction="row" spacing={1}>
+                      <Tooltip title="View Details" arrow>
+                        <IconButton
+                          size="small"
+                          onClick={() => setSelectedPubDetails(pub)}
+                          sx={{
+                            color: "var(--color-primary)",
+                            "&:hover": { background: "var(--bg-accent-1)", transform: "scale(1.1)" },
+                            transition: "all 0.2s ease"
+                          }}
+                        >
+                          <Visibility fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      {pub.status?.includes("Rejected") && (
+                        <Tooltip title="Edit & Resubmit" arrow>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleEditClick(pub)}
+                            sx={{
+                              color: "#ef4444",
+                              "&:hover": { background: "rgba(239, 68, 68, 0.1)", transform: "scale(1.1)" },
+                              transition: "all 0.2s ease"
+                            }}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ))}
@@ -739,6 +854,31 @@ export default function ConsultancyPublication() {
               <MenuItem value="Sanctioned">Sanctioned</MenuItem>
             </Select>
           </Box>
+        </Grid2>
+
+        <NoteBox />
+
+        <Grid2 sx={{ mt: 1 }}>
+          <FileField
+            label="Sanction Letter:"
+            name="sanctionLetter"
+            onChange={setFile("sanctionLetter")}
+            existingFileUrl={existingFiles.sanctionLetter}
+            onRemoveExisting={() => {
+              setExistingFiles(p => ({ ...p, sanctionLetter: null }));
+              setDeleteFlags(p => ({ ...p, sanctionLetter: true }));
+            }}
+          />
+          <FileField
+            label="MOU (If any):"
+            name="mou"
+            onChange={setFile("mou")}
+            existingFileUrl={existingFiles.mou}
+            onRemoveExisting={() => {
+              setExistingFiles(p => ({ ...p, mou: null }));
+              setDeleteFlags(p => ({ ...p, mou: true }));
+            }}
+          />
         </Grid2>
 
         <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>

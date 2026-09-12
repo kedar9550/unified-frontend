@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination, FormControl, Radio, RadioGroup, FormControlLabel } from "@mui/material";
 import { toast } from "sonner";
-import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, Visibility, Edit } from "@mui/icons-material";
+import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, Visibility, Edit, CheckCircle, Cancel, AccessTime } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
@@ -34,6 +34,10 @@ export default function PatentPublication() {
     totalInventors: 1, otherInventors: []
   });
   const [files, setFiles] = useState({ eFilingReceipt: null, form1: null });
+  const [existingFiles, setExistingFiles] = useState({ eFilingReceipt: null, form1: null });
+  const [deleteFlags, setDeleteFlags] = useState({ eFilingReceipt: false, form1: false });
+  const [editMode, setEditMode] = useState(false);
+  const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(false);
 
   
@@ -57,8 +61,8 @@ export default function PatentPublication() {
                  inventorPosition: i,
                  affiliationType: isInternal ? "Aditya University" : "Others",
                  empId: isInternal ? (ca.employeeId?.institutionId || ca.employeeId) : "",
-                 inventorName: ca.name || "",
-                 affiliationName: ca.affiliation || ""
+                 name: ca.name || "",
+                 affiliation: ca.affiliation || ""
              });
              positionCounter++;
           }
@@ -66,17 +70,28 @@ export default function PatentPublication() {
     }
 
     setForm({
-      patentNumber: pub.patentNumber || "",
-      patentTitle: pub.patentTitle || "",
-      patentType: pub.patentType || "",
-      patentCategory: pub.patentCategory || "",
-      stage: pub.stage || "",
+      title: pub.title || "",
+      applicantName: pub.applicantName || user?.name || "",
+      patentName: pub.patentName || "",
+      area: pub.area || "",
+      filingNo: pub.filingNo || "",
+      dateOfFiling: pub.dateOfFiling ? pub.dateOfFiling.split('T')[0] : "",
+      status: pub.patentStatus || pub.status || "",
+      isStudentsInvolved: pub.isStudentsInvolved || "No",
+      applyIncentive: pub.applyIncentive || "",
+      applyingSeedGrant: pub.applyingSeedGrant || "",
+      patentFiledCountry: pub.patentFiledCountry || "India",
+      customCountryName: "",
       totalInventors: pub.totalInventors || 1,
-      userInventorPosition: pub.userInventorPosition || 1,
-      otherInventors: mappedAuthors,
-      academicYear: pub.academicYear || ""
+      otherInventors: mappedAuthors
     });
-    setFiles({ certificate: null });
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:9000";
+    setExistingFiles({
+      eFilingReceipt: pub.eFilingReceipt ? `${backendUrl}${pub.eFilingReceipt}` : null,
+      form1: pub.form1 ? `${backendUrl}${pub.form1}` : null,
+    });
+    setFiles({ eFilingReceipt: null, form1: null });
+    setDeleteFlags({ eFilingReceipt: false, form1: false });
     setViewMode("form");
   };
 
@@ -268,14 +283,27 @@ export default function PatentPublication() {
       fd.append("totalInventors", String(total));
 
       Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
+      if (deleteFlags.eFilingReceipt) fd.append("deleteEFilingReceipt", "true");
+      if (deleteFlags.form1) fd.append("deleteForm1", "true");
+
       fd.append("academicYear", selectedYear);
       fd.append("college", user?.college || "");
       fd.append("panNumber", user?.panNumber || "");
 
-      await API.post("/api/research/patent", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      toast.success("Patent submitted successfully!");
+      if (editMode) {
+        await API.put(`/api/research/patent/${editId}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+        toast.success("Patent resubmitted successfully!");
+      } else {
+        await API.post("/api/research/patent", fd, { headers: { "Content-Type": "multipart/form-data" } });
+        toast.success("Patent submitted successfully!");
+      }
+
       setForm({ title: "", applicantName: user?.name || "", patentName: "", area: "", filingNo: "", dateOfFiling: "", status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "", patentFiledCountry: "", customCountryName: "", totalInventors: 1, otherInventors: [] });
       setFiles({ eFilingReceipt: null, form1: null });
+      setExistingFiles({ eFilingReceipt: null, form1: null });
+      setDeleteFlags({ eFilingReceipt: false, form1: false });
+      setEditMode(false);
+      setEditId(null);
       setSelectedYear("");
       setViewMode("list");
     } catch (err) {
@@ -356,7 +384,7 @@ export default function PatentPublication() {
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Inventors</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status / Remarks</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -384,20 +412,48 @@ export default function PatentPublication() {
                       : <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>None</Typography>}
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: pub.status?.includes('Rejected') ? "#ef4444" : pub.status === 'Approved' ? "#10b981" : "#e8a000",
-                        fontWeight: 700,
-                        background: pub.status?.includes('Rejected') ? "rgba(239, 68, 68, 0.1)" : pub.status === 'Approved' ? "rgba(16, 185, 129, 0.1)" : "rgba(232, 160, 0, 0.1)",
-                        px: 1.5,
-                        py: 0.5,
-                        borderRadius: "6px",
-                        display: "inline-block"
-                      }}
-                    >
-                      {pub.status || "Pending"}
-                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                      <Chip
+                        icon={
+                          pub.status === 'Approved' ? <CheckCircle style={{ fontSize: 16 }} /> :
+                          pub.status?.includes('Rejected') ? <Cancel style={{ fontSize: 16 }} /> :
+                          <AccessTime style={{ fontSize: 16 }} />
+                        }
+                        label={pub.status || "Pending"}
+                        size="small"
+                        sx={{
+                          color: pub.status?.includes('Rejected') ? "#ef4444" : pub.status === 'Approved' ? "#10b981" : "#e8a000",
+                          fontWeight: 700,
+                          background: pub.status?.includes('Rejected') ? "rgba(239, 68, 68, 0.1)" : pub.status === 'Approved' ? "rgba(16, 185, 129, 0.1)" : "rgba(232, 160, 0, 0.1)",
+                          border: `1px solid ${pub.status?.includes('Rejected') ? "rgba(239, 68, 68, 0.3)" : pub.status === 'Approved' ? "rgba(16, 185, 129, 0.3)" : "rgba(232, 160, 0, 0.3)"}`,
+                          width: "fit-content",
+                          "& .MuiChip-icon": {
+                            color: "inherit"
+                          }
+                        }}
+                      />
+                      {pub.status?.includes('Rejected') && (pub.rndComment || pub.hodComment) && (
+                        <Tooltip title={pub.rndComment || pub.hodComment} arrow placement="top">
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "#ef4444",
+                              fontStyle: "italic",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                              cursor: "pointer",
+                              maxWidth: 220,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis"
+                            }}
+                          >
+                            <span>💬</span> "{pub.rndComment || pub.hodComment}"
+                          </Typography>
+                        </Tooltip>
+                      )}
+                    </Box>
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
                     <Stack direction="row" spacing={1}>
@@ -414,14 +470,14 @@ export default function PatentPublication() {
                           <Visibility fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      {pub.status?.includes("Rejected") && pub.visibilityRole === "Applicant" && (
+                      {pub.status?.includes("Rejected") && (
                         <Tooltip title="Edit & Resubmit" arrow>
                           <IconButton
                             size="small"
                             onClick={() => handleEditClick(pub)}
                             sx={{
-                              color: "#eab308",
-                              "&:hover": { background: "rgba(234,179,8,0.1)", transform: "scale(1.1)" },
+                              color: "#ef4444",
+                              "&:hover": { background: "rgba(239, 68, 68, 0.1)", transform: "scale(1.1)" },
                               transition: "all 0.2s ease"
                             }}
                           >
@@ -714,8 +770,26 @@ export default function PatentPublication() {
       <NoteBox />
 
       <Grid2 sx={{ mt: 1 }}>
-        <FileField label="e-Filing Receipt:" name="eFilingReceipt" onChange={setFile("eFilingReceipt")} />
-        <FileField label="Form -1" name="form1" onChange={setFile("form1")} />
+        <FileField
+          label="e-Filing Receipt:"
+          name="eFilingReceipt"
+          onChange={setFile("eFilingReceipt")}
+          existingFileUrl={existingFiles.eFilingReceipt}
+          onRemoveExisting={() => {
+            setExistingFiles(p => ({ ...p, eFilingReceipt: null }));
+            setDeleteFlags(p => ({ ...p, eFilingReceipt: true }));
+          }}
+        />
+        <FileField
+          label="Form -1"
+          name="form1"
+          onChange={setFile("form1")}
+          existingFileUrl={existingFiles.form1}
+          onRemoveExisting={() => {
+            setExistingFiles(p => ({ ...p, form1: null }));
+            setDeleteFlags(p => ({ ...p, form1: true }));
+          }}
+        />
         <Box sx={{ mt: 1 }}>
           <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
           <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")}>
