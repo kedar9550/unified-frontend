@@ -305,8 +305,7 @@ function App() {
         {/* Public Certificate Verification Route */}
         <Route path="/verify/certificate/:receipt/:roll" element={<VerifyCertificate />} />
 
-        {/* Certificate Redesign Preview */}
-        <Route path="/certificate-preview" element={<VerifyCertificatePreview />} />
+
 
         <Route path="/doi-test" element={<DOIFetcher />} />
 
