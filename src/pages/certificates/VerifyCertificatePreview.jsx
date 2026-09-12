@@ -1,75 +1,28 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Box, Typography, Paper, CircularProgress, Grid } from '@mui/material';
-import API from '../../api/axios';
+import React from 'react';
+import { Box, Typography, Paper, Grid, Avatar, Chip } from '@mui/material';
 import {
-  Error as ErrorIcon,
+  Check as CheckIcon,
   VerifiedUser as VerifiedUserIcon,
   School as SchoolIcon,
   AccountBalance as AccountBalanceIcon,
   Event as EventIcon,
-  Description as DescriptionIcon,
-  Check as CheckIcon
+  Description as DescriptionIcon
 } from '@mui/icons-material';
 import watermarkLogo from '../../assets/Circle_Gold.svg';
-const VerifyCertificate = () => {
-  const { receipt, roll } = useParams();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState(null);
-  const [error, setError] = useState('');
 
-  useEffect(() => {
-    const fetchVerification = async () => {
-      try {
-        const response = await API.get(`/api/razorpay/registrations?roll=${roll}&paymentStatus=PAID`);
-        let payments = (response.data?.payments || []).filter(p => {
-          const status = (p.paymentStatus || p.payment || '').toString().trim().toUpperCase();
-          return status === 'PAID';
-        });
-
-        // Find the matching payment by receipt
-        const payment = payments.find(p => p.receipt === receipt || p.teamId === receipt);
-        if (!payment) {
-          setError('Certificate not found or invalid.');
-          return;
-        }
-
-        const participant = payment.participants?.find(p => p.roll === roll);
-        if (!participant) {
-          setError('Participant not found on this certificate.');
-          return;
-        }
-
-        setData({ payment, participant });
-      } catch (err) {
-        setError('Failed to verify certificate.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchVerification();
-  }, [receipt, roll]);
-
-  if (loading) {
-    return (
-      <Box sx={{ display: 'grid', placeItems: 'center', height: '100vh', background: '#f8fafc' }}>
-        <CircularProgress />
-      </Box>
-    );
+const previewData = {
+  participant: {
+    name: "MANTHENA VENKATA SIVA SURYA SUBRAHMANYA CHAITANYA RAJU",
+    roll: "26B21EC096",
+    college: "Aditya University",
+  },
+  payment: {
+    eventName: "ROBO RACE",
+    receipt: "VEDA2026-P-event-6a91253e24e42c6fe382bc6-1789061067756",
   }
+};
 
-  if (error) {
-    return (
-      <Box sx={{ display: 'grid', placeItems: 'center', height: '100vh', background: '#f8fafc' }}>
-        <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 4, maxWidth: 400, boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}>
-          <ErrorIcon color="error" sx={{ fontSize: 64, mb: 2 }} />
-          <Typography variant="h5" color="error" gutterBottom sx={{ fontWeight: 800 }}>Verification Failed</Typography>
-          <Typography color="text.secondary">{error}</Typography>
-        </Paper>
-      </Box>
-    );
-  }
-
+const VerifyCertificatePreview = () => {
   return (
     <Box sx={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', background: '#f8fafc', p: { xs: 2, md: 4 }, position: 'relative', overflow: 'hidden' }}>
 
@@ -127,8 +80,8 @@ const VerifyCertificate = () => {
 
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'center', sm: 'flex-start' }, gap: { xs: 2, sm: 4 } }}>
               <Avatar
-                src={`https://info.aec.edu.in/adityacentral/StudentPhotos/${data.participant.roll}.jpg`}
-                alt={data.participant.name}
+                src={`https://info.aec.edu.in/adityacentral/StudentPhotos/${previewData.participant.roll}.jpg`}
+                alt={previewData.participant.name}
                 sx={{
                   width: { xs: 64, sm: 80, md: 90 },
                   height: { xs: 64, sm: 80, md: 90 },
@@ -154,19 +107,19 @@ const VerifyCertificate = () => {
                     fontSize: { xs: '1.05rem', sm: '1.15rem', md: '1.25rem' }
                   }}
                 >
-                  {data.participant.name}
+                  {previewData.participant.name}
                 </Typography>
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'center', sm: 'center' }, gap: { xs: 0.5, sm: 2 } }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <SchoolIcon sx={{ color: '#64748b', fontSize: { xs: 16, sm: 18 } }} />
                     <Typography sx={{ fontWeight: 800, color: '#334155', fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-                      {data.participant.roll}
+                      {previewData.participant.roll}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <AccountBalanceIcon sx={{ color: '#94a3b8', fontSize: { xs: 16, sm: 18 } }} />
                     <Typography sx={{ color: '#64748b', fontWeight: 600, fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
-                      {data.participant.college || 'Aditya University'}
+                      {previewData.participant.college}
                     </Typography>
                   </Box>
                 </Box>
@@ -185,7 +138,7 @@ const VerifyCertificate = () => {
                     Event Name
                   </Typography>
                   <Typography sx={{ fontWeight: 900, color: '#1e293b', lineHeight: 1.2, fontSize: { xs: '0.85rem', sm: '0.875rem' } }}>
-                    {data.payment.eventName || data.payment.category}
+                    {previewData.payment.eventName}
                   </Typography>
                 </Box>
               </Paper>
@@ -210,7 +163,7 @@ const VerifyCertificate = () => {
                       fontSize: { xs: '0.7rem', sm: '0.75rem' }
                     }}
                   >
-                    VEDA2026-P-{data.payment.receipt}
+                    {previewData.payment.receipt}
                   </Typography>
                 </Box>
               </Paper>
@@ -223,7 +176,7 @@ const VerifyCertificate = () => {
               <Box>
                 <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 600 }}>Verified on</Typography>
                 <Typography variant="subtitle2" sx={{ color: '#1e293b', fontWeight: 800 }}>
-                  {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  Sep 11, 2026
                 </Typography>
               </Box>
             </Box>
@@ -234,4 +187,4 @@ const VerifyCertificate = () => {
   );
 };
 
-export default VerifyCertificate;
+export default VerifyCertificatePreview;

@@ -125,6 +125,7 @@ import Enquiries from "./pages/studenteventsadmin/Enquiries";
 import SendMail from "./pages/studenteventsadmin/SendMail";
 import VerifyCertificate from "./pages/public/VerifyCertificate";
 
+
 // Infrastructure
 import Building from "./pages/Infrastructure/Building";
 import Floor from "./pages/Infrastructure/Floor";
@@ -303,6 +304,9 @@ function App() {
 
         {/* Public Certificate Verification Route */}
         <Route path="/verify/certificate/:receipt/:roll" element={<VerifyCertificate />} />
+
+        {/* Certificate Redesign Preview */}
+        <Route path="/certificate-preview" element={<VerifyCertificatePreview />} />
 
         <Route path="/doi-test" element={<DOIFetcher />} />
 
