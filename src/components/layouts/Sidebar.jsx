@@ -629,8 +629,6 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                                   <Box sx={{
                                     width: 32, height: 32, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     background: getIconMetadata(subItem.text).color, color: getIconMetadata(subItem.text).iconColor
-                                    background: ITEM_METADATA[subItem.text]?.color || 'var(--bg-accent-4)',
-                                    color: ITEM_METADATA[subItem.text]?.iconColor || 'var(--color-primary)'
                                   }}>
                                     {React.cloneElement(subItem.icon || getIconMetadata(subItem.text).icon, { sx: { fontSize: 18 } })}
                                   </Box>
@@ -672,10 +670,8 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                                     {subItem.nested.map((deepSub) => (
                                       <Item
                                         key={`${subItem.text}-${deepSub.text}`}
-                                        nested
-                                        icon={deepSub.icon || getIconMetadata(deepSub.text).icon}
                                         nested={false}
-                                        icon={deepSub.icon || ITEM_METADATA[deepSub.text]?.icon || null}
+                                        icon={deepSub.icon || getIconMetadata(deepSub.text).icon}
                                         text={deepSub.text}
                                         path={deepSub.path}
                                         active={active}
