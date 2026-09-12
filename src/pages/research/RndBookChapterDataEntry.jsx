@@ -44,7 +44,9 @@ export default function RndBookChapterDataEntry() {
     isStudentsInvolved: "No",
     totalAuthors: 1,
     userAuthorPosition: 1,
-    otherAuthors: []
+    otherAuthors: [],
+    appraisalEligible: "Yes",
+    approvedAmount: ""
   };
 
   const [form, setForm] = useState(emptyForm);
@@ -239,6 +241,14 @@ export default function RndBookChapterDataEntry() {
       toast.error("Please fill in all required fields marked with *");
       return;
     }
+    if (form.applyIncentive === "Yes" && (!form.approvedAmount || Number(form.approvedAmount) <= 0)) {
+      toast.error("Please enter a valid Approved Incentive Amount");
+      return;
+    }
+    if (!form.appraisalEligible) {
+      toast.error("Please select Appraisal Eligible status");
+      return;
+    }
     if (!files.publishedChapter) {
       toast.error("Please attach the Published Chapter document");
       return;
@@ -259,7 +269,8 @@ export default function RndBookChapterDataEntry() {
 
       const fields = [
         "doi", "chapterTitle", "bookTitle", "publisher", "isbn", "indexing", "scope",
-        "applyIncentive", "applyingSeedGrant", "totalAuthors", "userAuthorPosition", "isStudentsInvolved"
+        "applyIncentive", "applyingSeedGrant", "totalAuthors", "userAuthorPosition", "isStudentsInvolved",
+        "appraisalEligible", "approvedAmount"
       ];
       fields.forEach(k => {
         fd.append(k, form[k] ?? "");
@@ -595,6 +606,26 @@ export default function RndBookChapterDataEntry() {
               <Typography sx={labelStyle}>Apply For Incentive? : *</Typography>
               <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"} sx={form.isStudentsInvolved === "Yes" ? disabledField : {}}>
                 <MenuItem value="">Select Option</MenuItem>
+                <MenuItem value="Yes">Yes</MenuItem>
+                <MenuItem value="No">No</MenuItem>
+              </Select>
+            </Box>
+            {form.applyIncentive === "Yes" && (
+              <Box>
+                <Typography sx={labelStyle}>Approved Incentive Amount (₹) : *</Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  type="number"
+                  placeholder="Enter approved amount"
+                  value={form.approvedAmount}
+                  onChange={set("approvedAmount")}
+                />
+              </Box>
+            )}
+            <Box>
+              <Typography sx={labelStyle}>Article Eligibility for Appraisal : *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.appraisalEligible} onChange={set("appraisalEligible")}>
                 <MenuItem value="Yes">Yes</MenuItem>
                 <MenuItem value="No">No</MenuItem>
               </Select>

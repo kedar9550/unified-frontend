@@ -1563,7 +1563,37 @@ export default function JournalPublication() {
                   {[
                     { label: "Academic Year", value: data.academicYear?.year || "-", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "DOI", value: data.doi || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    { label: "Applicant Author Position", value: data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors}` : (data.firstAuthor === "Yes" ? "1" : data.authorPosition || "-"), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Applicant Author Position", chip: (
+                      (() => {
+                        const pos = data.userAuthorPosition || (data.firstAuthor === "Yes" ? 1 : data.authorPosition) || 1;
+                        const total = data.totalAuthors || 1;
+                        return (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{
+                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                              width: 32, height: 32, borderRadius: '50%',
+                              bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)',
+                              color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.9rem'
+                            }}>
+                              {pos}
+                            </Box>
+                            {total && (
+                              <>
+                                <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem' }}>of</Typography>
+                                <Box sx={{
+                                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                  px: 1.2, height: 28, borderRadius: '8px',
+                                  bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)',
+                                  color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                }}>
+                                  {total} Authors
+                                </Box>
+                              </>
+                            )}
+                          </Box>
+                        );
+                      })()
+                    ), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Journal Quartile", value: data.journalQuartile || data.categoryOfJournal || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Scopus", value: data.isScopus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Journal Type", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
@@ -1601,9 +1631,13 @@ export default function JournalPublication() {
                           {item.label}
                         </Typography>
                       </Box>
-                      <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", textAlign: "right", maxWidth: "55%", wordBreak: "break-word" }}>
-                        {item.value}
-                      </Typography>
+                      {item.chip ? (
+                        item.chip
+                      ) : (
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", textAlign: "right", maxWidth: "55%", wordBreak: "break-word" }}>
+                          {item.value}
+                        </Typography>
+                      )}
                     </Box>
                   ))}
                 </Box>
@@ -1803,32 +1837,39 @@ export default function JournalPublication() {
           <Divider sx={{ my: 3 }} />
 
           {/* Co-Authors table */}
-          {data.coAuthors && data.coAuthors.length > 0 && (
-            <Card sx={{ p: 0, overflow: "hidden", mb: 3, border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)" }}>
-              <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid var(--border-color)" }}>
-                <Groups sx={{ color: "var(--color-primary)" }} />
-                <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Authors & Affiliations</Typography>
-              </Box>
-              <TableContainer>
-                <Table size="small">
-                  <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)", width: 80 }}>AUTHOR NO</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AUTHOR TYPE</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {(() => {
-                      // Derive correct author positions for co-authors:
-                      // Skip the applicant's position from the full 1..totalAuthors range.
-                      const total = parseInt(data.totalAuthors) || 0;
-                      const applicantPos = parseInt(data.userAuthorPosition) || 0;
-                      const derivedPositions = total > 0
-                        ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
-                        : [];
-                      return data.coAuthors.map((ca, idx) => {
+          {(() => {
+            const applicantPos = parseInt(data.userAuthorPosition || data.authorPosition) || 0;
+            const filteredCoAuthors = (data.coAuthors || []).filter((ca) => {
+              const caPos = parseInt(ca.authorPosition);
+              const isApplicantName = ca.name && user?.name && ca.name.trim().toLowerCase() === user.name.trim().toLowerCase();
+              return caPos !== applicantPos && !isApplicantName;
+            });
+
+            if (filteredCoAuthors.length === 0) return null;
+
+            return (
+              <Card sx={{ p: 0, overflow: "hidden", mb: 3, border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)" }}>
+                <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid var(--border-color)" }}>
+                  <Groups sx={{ color: "var(--color-primary)" }} />
+                  <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Authors & Affiliations</Typography>
+                </Box>
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)", width: 80 }}>AUTHOR NO</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AUTHOR TYPE</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {(() => {
+                        const total = parseInt(data.totalAuthors) || 0;
+                        const derivedPositions = total > 0
+                          ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
+                          : [];
+                        return filteredCoAuthors.map((ca, idx) => {
                         const pos = ca.authorPosition || derivedPositions[idx] || (idx + 1);
                         return (
                           <TableRow key={idx} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
@@ -1848,12 +1889,13 @@ export default function JournalPublication() {
                           </TableRow>
                         );
                       });
-                    })()}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Card>
-          )}
+                      })()}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Card>
+            );
+          })()}
 
           {/* Attached Files previews */}
           <Box sx={{ mt: 3 }}>

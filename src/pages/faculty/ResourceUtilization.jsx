@@ -204,7 +204,7 @@ export default function ResourceUtilization() {
     API.get(`/api/value-addition/resource-utilization`)
       .then(res => {
         const allActivities = res.data?.data || [];
-        setActivitiesList(allActivities.filter(a => a.status === 'Approved' || a.status === 'Completed'));
+        setActivitiesList(allActivities);
       })
       .catch(err => console.log("Failed to fetch activities", err));
   };
@@ -337,6 +337,21 @@ export default function ResourceUtilization() {
       return;
     }
 
+    if (form.eventEndDate) {
+      const end = new Date(form.eventEndDate);
+      end.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const diffTime = today.getTime() - end.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays > 20) {
+        toast.error("You cannot add activities that ended more than 20 days ago.");
+        return;
+      }
+    }
+
     if (isFdpParticipant) {
       if (!form.organizingInstitutionCategory) {
         toast.error("Organizing Institution Category is required");
@@ -423,7 +438,9 @@ export default function ResourceUtilization() {
       return;
     }
 
-     else if (form.activityCategory === "FDP" || form.activityCategory === "SYMPOSIUM") {
+    const durationDays = Math.round((to - from) / (1000 * 60 * 60 * 24)) + 1;
+
+    if (form.activityCategory === "FDP" || form.activityCategory === "SYMPOSIUM") {
       if (durationDays < 5) {
         toast.error(`${form.activityCategory} must have a minimum duration of 5 days.`);
         return;

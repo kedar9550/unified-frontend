@@ -13,7 +13,7 @@ import { Visibility as ViewIcon, Check as ApproveIcon, Close as RejectIcon, Clos
 import DataTable from '../../components/data/DataTable';
 import { toast } from 'sonner';
 
-const LabelValueDetails = ({ label, value, chip, horizontal = false }) => (
+const LabelValueDetails = ({ label, value, chip, horizontal = false, display }) => (
   <Box sx={{
     p: horizontal ? "10px 16px" : 1.5,
     borderRadius: "10px",
@@ -27,7 +27,7 @@ const LabelValueDetails = ({ label, value, chip, horizontal = false }) => (
   }}>
     <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800, fontSize: "0.65rem", mb: horizontal ? 0 : 0.5 }}>{label}</Typography>
     <Box sx={{ flex: horizontal ? 1 : "none" }}>
-      {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>{value || "-"}</Typography>}
+      {display ? display : (chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>{value || "-"}</Typography>)}
     </Box>
   </Box>
 );
@@ -49,7 +49,7 @@ const ResourceUtilizationApproval = () => {
   const [requests, setRequests] = useState([]);
   const [selected, setSelected] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("Pending at HOD");
+  const [statusFilter, setStatusFilter] = useState("Pending");
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -74,7 +74,7 @@ const ResourceUtilizationApproval = () => {
     setActionLoading(true);
     try {
       await API.put(`/api/value-addition/resource-utilization/hod-action/${selected._id}`, { action, comment: '' });
-      toast.success(`Request ${action} successfully`);
+      toast.success(`Request approved successfully`);
       fetchRequests();
       setSelected(null);
     } catch (err) {
@@ -85,17 +85,16 @@ const ResourceUtilizationApproval = () => {
     }
   };
 
-  const columns = ['#', 'Faculty Name', 'Employee ID', 'Category', 'Type', 'Role', 'Status', 'Actions'];
+  const columns = ['#', 'Faculty Name', 'Employee ID', 'Category', 'Status', 'Actions'];
 
   const rows = requests.map((item, index) => {
     const statusStyle = getStatusStyle(item.status);
+
     return [
       index + 1,
       item.facultyId?.name || 'N/A',
       item.facultyId?.institutionId || 'N/A',
-      item.category?.name || '-',
-      item.type || '-',
-      item.role || '-',
+      item.activityCategory || '-',
       {
         value: item.status,
         display: (
@@ -133,6 +132,28 @@ const ResourceUtilizationApproval = () => {
 
   const DetailDialog = () => {
     const statusStyle = selected ? getStatusStyle(selected.status) : { bg: 'var(--bg-glass)', color: 'var(--text-secondary)' };
+    const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+    const getFileUrl = (proof) => proof ? (proof.startsWith('http') ? proof : `${backendURL}${proof}`) : null;
+
+    let detailFields = [];
+    if (selected) {
+      detailFields = [
+        { label: 'Type/Role', value: selected.activityType },
+        { label: 'Course/FDP Name', value: selected.courseFdpName },
+        { label: 'Organizing Institution', value: selected.organizingInstitutionCategory },
+        { label: 'Location', value: selected.location },
+        { label: 'University Name', value: selected.universityName },
+        { label: 'Institute Name', value: selected.instituteName },
+        { label: 'Lab Name', value: selected.labName },
+        { label: 'NIRF Rank', value: selected.nirfRank },
+        { label: 'Sessions Conducted', value: selected.sessionsConducted },
+        { label: 'Days Participated', value: selected.daysParticipated },
+        { label: 'From Date', value: selected.fromDate ? formatDate(selected.fromDate) : null, raw: selected.fromDate },
+        { label: 'To Date', value: selected.toDate ? formatDate(selected.toDate) : null, raw: selected.toDate },
+        { label: 'Certificate Number', value: selected.certificateNumber }
+      ];
+    }
+
     return (
       <Dialog open={!!selected} onClose={() => setSelected(null)} maxWidth="md" fullWidth sx={{ '& .MuiPaper-root': { borderRadius: '16px', background: 'var(--bg-panel)' } }}>
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -144,16 +165,22 @@ const ResourceUtilizationApproval = () => {
             <Grid container spacing={2}>
               <LabelValueDetails label="Faculty" value={selected.facultyId?.name || 'N/A'} horizontal />
               <LabelValueDetails label="Employee ID" value={selected.facultyId?.institutionId || 'N/A'} horizontal />
-              <LabelValueDetails label="Category" value={selected.category?.name || '-'} horizontal />
-              <LabelValueDetails label="Type" value={selected.type} horizontal />
-              <LabelValueDetails label="Role" value={selected.role} horizontal />
+              <LabelValueDetails label="Category" value={selected.activityCategory || '-'} horizontal />
+              
+              {detailFields.map((field, idx) => (
+                (field.value !== null && field.value !== undefined && field.value !== '') ? (
+                  <LabelValueDetails key={idx} label={field.label} value={field.value} horizontal />
+                ) : null
+              ))}
+
               <LabelValueDetails label="Submitted" value={formatDate(selected.createdAt)} horizontal />
               {selected.proof && (
                 <LabelValueDetails label="Proof" display={
-                  <Button variant="outlined" size="small" onClick={() => window.open(selected.proof, '_blank')}>View Proof</Button>
+                  <Button variant="outlined" size="small" onClick={() => window.open(getFileUrl(selected.proof), '_blank')}>View Proof</Button>
                 } horizontal />
               )}
               <LabelValueDetails label="Status" chip={<Chip label={selected.status} size="small" sx={{ bgcolor: statusStyle.bg, color: statusStyle.color, fontWeight: 600, borderRadius: '6px' }} />} horizontal />
+
             </Grid>
           )}
         </DialogContent>
@@ -169,8 +196,8 @@ const ResourceUtilizationApproval = () => {
   return (
     <PageContainer>
       <PageHeader
-        title="Department Resource Utilization Approvals"
-        subtitle="Approve, reject, and track department resource utilization submissions"
+        title="Resource Utilization Approvals"
+        subtitle="Approve, reject, and track resource utilization submissions"
         icon={<ResourceIcon />}
       />
       {loading ? (
@@ -191,7 +218,7 @@ const ResourceUtilizationApproval = () => {
                   "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color)" }
                 }}
               >
-                <MenuItem value="Pending at HOD">Pending</MenuItem>
+                <MenuItem value="Pending">Pending</MenuItem>
                 <MenuItem value="Approved">Approved</MenuItem>
                 <MenuItem value="Rejected">Rejected</MenuItem>
                 <MenuItem value="All">All Requests</MenuItem>

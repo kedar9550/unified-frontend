@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination, FormControl } from "@mui/material";
+import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination, FormControl, Radio, RadioGroup, FormControlLabel } from "@mui/material";
 import { toast } from "sonner";
 import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, Visibility, Edit } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
@@ -29,7 +29,7 @@ export default function PatentPublication() {
 
   const [form, setForm] = useState({
     title: "", applicantName: "", patentName: "", area: "", filingNo: "", dateOfFiling: "",
-    status: "", applyIncentive: "", applyingSeedGrant: "",
+    status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "",
     patentFiledCountry: "", customCountryName: "",
     totalInventors: 1, otherInventors: []
   });
@@ -97,7 +97,16 @@ export default function PatentPublication() {
     }
   }, [user]);
 
-  const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
+  const set = (k) => (e) => {
+    const val = e.target.value;
+    setForm((p) => {
+      const newForm = { ...p, [k]: val };
+      if (k === "isStudentsInvolved" && val === "Yes") {
+        newForm.applyIncentive = "No";
+      }
+      return newForm;
+    });
+  };
   const setFile = (k) => (e) => setFiles((p) => ({ ...p, [k]: e.target.files[0] }));
 
   // Handle dynamic inventor generation based on total inventors
@@ -253,6 +262,7 @@ export default function PatentPublication() {
       fd.append("status", form.status);
       fd.append("patentFiledCountry", form.patentFiledCountry === 'Others' ? form.customCountryName : form.patentFiledCountry);
       fd.append("coInventors", JSON.stringify(coInventorsList));
+      fd.append("isStudentsInvolved", form.isStudentsInvolved || "No");
       fd.append("applyIncentive", form.applyIncentive);
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
       fd.append("totalInventors", String(total));
@@ -264,7 +274,7 @@ export default function PatentPublication() {
 
       await API.post("/api/research/patent", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Patent submitted successfully!");
-      setForm({ title: "", applicantName: user?.name || "", patentName: "", area: "", filingNo: "", dateOfFiling: "", status: "", applyIncentive: "", applyingSeedGrant: "", patentFiledCountry: "", customCountryName: "", totalInventors: 1, otherInventors: [] });
+      setForm({ title: "", applicantName: user?.name || "", patentName: "", area: "", filingNo: "", dateOfFiling: "", status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "", patentFiledCountry: "", customCountryName: "", totalInventors: 1, otherInventors: [] });
       setFiles({ eFilingReceipt: null, form1: null });
       setSelectedYear("");
       setViewMode("list");
@@ -595,6 +605,13 @@ export default function PatentPublication() {
             <TextField size="small" fullWidth value={form.customCountryName} onChange={set("customCountryName")} placeholder="e.g., USA, UK" />
           </Box>
         )}
+        <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+          <Typography sx={{ ...labelStyle, mb: 0 }}>Are students involved in this work as co-inventors? *</Typography>
+          <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={set("isStudentsInvolved")}>
+            <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+            <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+          </RadioGroup>
+        </Box>
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
           <Typography sx={labelStyle}>Total Number of Inventors : *</Typography>
           <TextField
@@ -709,7 +726,7 @@ export default function PatentPublication() {
         </Box>
         <Box sx={{ mt: 1 }}>
           <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>
+          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"}>
             <MenuItem value="">Select</MenuItem>
             <MenuItem value="Yes">Yes</MenuItem>
             <MenuItem value="No">No</MenuItem>
@@ -948,10 +965,21 @@ export default function PatentPublication() {
                   ];
                   const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
 
+                  const isApproved = data.status === "Approved";
+                  const isAppraisalEligible = data.appraisalEligible === "Yes";
+
                   if (uniqueClaimants.length <= 1) {
                     return (
                       <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
                         {data.facultyId?.name || "-"} (Auto-assigned)
+                      </Typography>
+                    );
+                  }
+
+                  if (!isApproved || !isAppraisalEligible) {
+                    return (
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)", mt: 0.5 }}>
+                        N/A - Not Eligible or Not Approved
                       </Typography>
                     );
                   }
@@ -999,32 +1027,42 @@ export default function PatentPublication() {
           <Divider sx={{ my: 3 }} />
 
           {/* Co-Inventors detail list */}
-          {data.coInventors && data.coInventors.length > 0 && (
-            <Card sx={{ p: 0, overflow: "hidden", mb: 3, border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)" }}>
-              <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid var(--border-color)" }}>
-                <Groups sx={{ color: "var(--color-primary)" }} />
-                <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Inventors & Affiliations</Typography>
-              </Box>
-              <TableContainer>
-                <Table size="small">
-                  <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {data.coInventors.map((inventor, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{inventor.name}</TableCell>
-                        <TableCell sx={{ color: "var(--text-secondary)" }}>{inventor.affiliation}</TableCell>
+          {(() => {
+            const filteredCoInventors = (data.coInventors || []).filter((ca) => {
+              const isApplicantName = ca.name && user?.name && ca.name.trim().toLowerCase() === user.name.trim().toLowerCase();
+              const isApplicantEmpId = ca.empId && user?.institutionId && String(ca.empId).trim() === String(user.institutionId).trim();
+              return !isApplicantName && !isApplicantEmpId;
+            });
+
+            if (filteredCoInventors.length === 0) return null;
+
+            return (
+              <Card sx={{ p: 0, overflow: "hidden", mb: 3, border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)" }}>
+                <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid var(--border-color)" }}>
+                  <Groups sx={{ color: "var(--color-primary)" }} />
+                  <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Inventors & Affiliations</Typography>
+                </Box>
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Card>
-          )}
+                    </TableHead>
+                    <TableBody>
+                      {filteredCoInventors.map((inventor, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{inventor.name}</TableCell>
+                          <TableCell sx={{ color: "var(--text-secondary)" }}>{inventor.affiliation}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Card>
+            );
+          })()}
 
           {/* Attached Files previews */}
           <Box sx={{ mt: 3 }}>

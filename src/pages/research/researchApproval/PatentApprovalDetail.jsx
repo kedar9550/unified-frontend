@@ -1,8 +1,9 @@
 import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
-    Box, Typography, Grid, Card, Button, TextField,
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack
+    Box, Typography, Grid, Card, Button, TextField, MenuItem, Select,
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack,
+    Dialog, DialogTitle, DialogContent, DialogActions
 } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PersonIcon from '@mui/icons-material/Person';
@@ -24,9 +25,12 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
     const [loading, setLoading] = useState(true);
     const [remarks, setRemarks] = useState("");
     const [approvedAmount, setApprovedAmount] = useState("");
+    const [appraisalEligible, setAppraisalEligible] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
+    const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+    const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
 
     const isHOD = !role || role === 'HOD';
     const isDean = role === 'RESEARCH_DEAN';
@@ -42,6 +46,7 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                     if (res.data.data.rndComment) setRemarks(res.data.data.rndComment);
                     else if (res.data.data.hodComment) setRemarks(res.data.data.hodComment);
                     if (res.data.data.approvedAmount) setApprovedAmount(res.data.data.approvedAmount);
+                    if (res.data.data.appraisalEligible) setAppraisalEligible(res.data.data.appraisalEligible);
                 }
             } catch (error) {
                 console.error("Failed to fetch patent details", error);
@@ -59,9 +64,13 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
             return;
         }
 
-        if (action === 'Approve' && isResearchAdmin && data.applyIncentive === 'Yes') {
-            if (!approvedAmount) {
-                toast.error('Please enter the approved incentive amount');
+        if (action === 'Approve') {
+            if (isResearchAdmin && data.applyIncentive === 'Yes' && (!approvedAmount || Number(approvedAmount) <= 0)) {
+                toast.error('Please enter a valid approved incentive amount');
+                return;
+            }
+            if (isResearchAdmin && !appraisalEligible) {
+                toast.error('Please select Appraisal Eligible status');
                 return;
             }
         }
@@ -72,7 +81,8 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
             const res = await API.put(endpoint, {
                 action,
                 comment: remarks,
-                approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined
+                approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined,
+                appraisalEligible: isResearchAdmin ? appraisalEligible : undefined
             });
             if (res.data?.success) {
                 toast.success(`Request ${action === 'Approve' ? 'Approved' : 'Rejected'} successfully`);
@@ -258,50 +268,60 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
             </Box>
 
             {/* Co-Inventors */}
-            {data.coInventors?.length > 0 && (
-                <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
-                    <Box sx={{ p: 3, pb: 2 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                            <GroupsIcon sx={{ color: "var(--color-primary)" }} />
-                            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Inventors Details</Typography>
-                            <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
-                                <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
-                                    Total: {data.coInventors.length} Co-Inventor{data.coInventors.length > 1 ? 's' : ''}
-                                </Typography>
+            {(() => {
+                const filteredCoInventors = (data.coInventors || []).filter((ca) => {
+                    const isApplicantName = ca.name && facultyId?.name && ca.name.trim().toLowerCase() === facultyId.name.trim().toLowerCase();
+                    const isApplicantEmpId = ca.empId && facultyId?.institutionId && String(ca.empId).trim() === String(facultyId.institutionId).trim();
+                    return !isApplicantName && !isApplicantEmpId;
+                });
+
+                if (filteredCoInventors.length === 0) return null;
+
+                return (
+                    <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
+                        <Box sx={{ p: 3, pb: 2 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                <GroupsIcon sx={{ color: "var(--color-primary)" }} />
+                                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Inventors Details</Typography>
+                                <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
+                                        Total: {filteredCoInventors.length} Co-Inventor{filteredCoInventors.length > 1 ? 's' : ''}
+                                    </Typography>
+                                </Box>
                             </Box>
                         </Box>
-                    </Box>
-                    <TableContainer>
-                        <Table>
-                            <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
-                                <TableRow>
-                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>#</TableCell>
-                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
-                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {data.coInventors.map((ca, i) => (
-                                    <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
-                                        <TableCell>
-                                            <Box sx={{
-                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                width: 32, height: 32, borderRadius: '50%',
-                                                bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
-                                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
-                                            }}>
-                                                {i + 1}
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
-                                        <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
+                        <TableContainer>
+                            <Table>
+                                <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                                    <TableRow>
+                                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>#</TableCell>
+                                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
+                                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </Card>
-            )}
+                                </TableHead>
+                                <TableBody>
+                                    {filteredCoInventors.map((ca, i) => (
+                                        <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                                            <TableCell>
+                                                <Box sx={{
+                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                    width: 32, height: 32, borderRadius: '50%',
+                                                    bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                                    color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                                }}>
+                                                    {i + 1}
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
+                                            <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Card>
+                );
+            })()}
 
             {/* Documents */}
             <Card sx={cardStyle}>
@@ -317,28 +337,17 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                 {data.hodComment && <Box sx={{ flex: 1, minWidth: 300 }}><Card sx={{ ...cardStyle, borderLeft: "4px solid #ffc107", height: "100%", mb: 0 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><HistoryIcon sx={{ color: "#ffc107" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>HOD Review</Typography></Box><Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}><Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.hodComment}"</Typography></Box></Card></Box>}
                 
                 <Box sx={{ flex: 1, minWidth: 350 }}>
-                    {(isResearchAdmin && data.status === 'Pending at R&D') ? (
+                    {((isResearchAdmin && data.status === 'Pending at R&D') || (isHOD && data.status === 'Pending at HOD')) ? (
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
                             
-                            {isResearchAdmin && data.applyIncentive === 'Yes' && (
-                                <Box sx={{ mb: 3 }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED INCENTIVE (₹)</Typography>
-                                    <TextField 
-                                        fullWidth size="small" type="number" 
-                                        placeholder="Enter approved amount" 
-                                        value={approvedAmount} 
-                                        onChange={e => setApprovedAmount(e.target.value)} 
-                                        sx={{ maxWidth: 250, "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
-                                    />
-                                </Box>
-                            )}
+                            <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3 }}>
+                                Please review the details above and choose an action to proceed with this patent submission.
+                            </Typography>
 
-                            <TextField fullWidth multiline rows={3} placeholder="Provide your review comments..." value={remarks} onChange={e => setRemarks(e.target.value)} sx={{ mb: 3, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }} />
-
-                            <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ px: 3 }}>Reject</Button>
-                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ px: 4 }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
+                            <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-start" }}>
+                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => setRejectDialogOpen(true)} sx={{ px: 3, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>Reject</Button>
+                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => setApproveDialogOpen(true)} sx={{ px: 4, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
                             </Box>
                         </Card>
                     ) : (
@@ -356,6 +365,103 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                     )}
                 </Box>
             </Box>
+
+            {/* Approve Dialog */}
+            <Dialog open={approveDialogOpen} onClose={() => setApproveDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>
+                <DialogTitle sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                    {isHOD ? "Approve & Forward Submission" : "Final Approve Submission"}
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 2.5 }}>
+                        Please confirm approval details for this patent submission:
+                    </Typography>
+
+                    {isResearchAdmin && data.applyIncentive === 'Yes' && (
+                        <Box sx={{ mb: 2.5 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--color-primary)", fontSize: "0.8rem" }}>
+                                APPROVED INCENTIVE AMOUNT (₹) *
+                            </Typography>
+                            <TextField 
+                                fullWidth size="small" type="number" 
+                                placeholder="Enter approved incentive amount" 
+                                value={approvedAmount} 
+                                onChange={e => setApprovedAmount(e.target.value)} 
+                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
+                            />
+                        </Box>
+                    )}
+
+                    {isResearchAdmin && (
+                        <Box sx={{ mb: 2.5 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--color-primary)", fontSize: "0.8rem" }}>
+                                ARTICLE ELIGIBILITY FOR APPRAISAL *
+                            </Typography>
+                            <Select fullWidth size="small" value={appraisalEligible} onChange={e => setAppraisalEligible(e.target.value)} displayEmpty sx={{ borderRadius: "10px" }}>
+                                <MenuItem value="" disabled>Select Eligibility</MenuItem>
+                                <MenuItem value="Yes">Yes</MenuItem>
+                                <MenuItem value="No">No</MenuItem>
+                            </Select>
+                        </Box>
+                    )}
+
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--text-primary)", fontSize: "0.8rem" }}>
+                            REMARKS / COMMENTS (OPTIONAL)
+                        </Typography>
+                        <TextField 
+                            fullWidth multiline rows={3} 
+                            placeholder="Provide review comments..." 
+                            value={remarks} 
+                            onChange={e => setRemarks(e.target.value)} 
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={() => setApproveDialogOpen(false)} disabled={actionLoading} sx={{ color: "var(--text-secondary)", textTransform: "none" }}>
+                        Cancel
+                    </Button>
+                    <Button 
+                        variant="contained" color="success" disabled={actionLoading} 
+                        onClick={() => handleAction('Approve')}
+                        sx={{ borderRadius: "8px", px: 3, textTransform: "none", fontWeight: 700 }}
+                    >
+                        {actionLoading ? "Processing..." : "Confirm Approve"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Reject Dialog */}
+            <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>
+                <DialogTitle sx={{ fontWeight: 800, color: "#d32f2f" }}>
+                    Reject Submission
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 2 }}>
+                        Please provide a reason for rejecting this submission:
+                    </Typography>
+                    <TextField 
+                        fullWidth multiline rows={3} 
+                        placeholder="Provide rejection comments (Required)..." 
+                        value={remarks} 
+                        onChange={e => setRemarks(e.target.value)} 
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
+                    />
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={() => setRejectDialogOpen(false)} disabled={actionLoading} sx={{ color: "var(--text-secondary)", textTransform: "none" }}>
+                        Cancel
+                    </Button>
+                    <Button 
+                        variant="contained" color="error" disabled={actionLoading} 
+                        onClick={() => handleAction('Reject')}
+                        sx={{ borderRadius: "8px", px: 3, textTransform: "none", fontWeight: 700 }}
+                    >
+                        {actionLoading ? "Processing..." : "Confirm Rejection"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             {isResearchAdmin && (
                 <EditResearchDetailsDialog
                     open={editOpen}

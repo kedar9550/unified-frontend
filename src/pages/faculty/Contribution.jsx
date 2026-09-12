@@ -170,7 +170,7 @@ export default function Contribution() {
     API.get(`/api/value-addition/contribution`)
       .then(res => {
         const allContributions = res.data?.data || [];
-        setContributionsList(allContributions.filter(c => c.status === 'Approved' || c.status === 'Completed'));
+        setContributionsList(allContributions);
       })
       .catch(err => console.log("Failed to fetch contributions", err));
   };

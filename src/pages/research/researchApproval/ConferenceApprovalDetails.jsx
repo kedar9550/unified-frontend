@@ -2,7 +2,8 @@ import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
     Box, Typography, Grid, Card, Button, TextField,
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack, Select, MenuItem
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack, Select, MenuItem,
+    Dialog, DialogTitle, DialogContent, DialogActions
 } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SchoolIcon from '@mui/icons-material/School';
@@ -26,6 +27,8 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
+    const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+    const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
 
     const isHOD = !role || role === 'HOD';
     const isDean = role === 'RESEARCH_DEAN';
@@ -60,8 +63,8 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
         }
 
         if (action === 'Approve') {
-            if (isResearchAdmin && data.applyIncentive === 'Yes' && !approvedAmount) {
-                toast.error('Please enter the approved incentive amount');
+            if (isResearchAdmin && data.applyIncentive === 'Yes' && (!approvedAmount || Number(approvedAmount) <= 0)) {
+                toast.error('Please enter a valid approved incentive amount');
                 return;
             }
             if (isResearchAdmin && !appraisalEligible) {
@@ -268,7 +271,7 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                         <LabelValue label="Title of Research Paper" value={data.title} horizontal />
                         <LabelValue label="DOI" value={data.doi || "-"} horizontal />
                         <LabelValue label="Name of Conference" value={data.conferenceName} horizontal />
-                        <LabelValue label="Publication Scope" value={data.level} horizontal />
+                        <LabelValue label="Publication Scope" value={data.scope || data.level || "National"} horizontal />
                         <LabelValue label="Indexing" value={data.indexing} horizontal />
                         <LabelValue 
                             label="Applicant Position" 
@@ -313,62 +316,81 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
             </Box>
 
             {/* Co-Authors - shown above Attached Documents */}
-            {data.coAuthors?.length > 0 && (
-                <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
-                    <Box sx={{ p: 3, pb: 2 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                            <GroupsIcon sx={{ color: "var(--color-primary)" }} />
-                            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Author Details</Typography>
-                            <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
-                                <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
-                                    Total: {data.coAuthors.length} Co-Author{data.coAuthors.length > 1 ? 's' : ''}
-                                </Typography>
+            {(() => {
+                const applicantPos = parseInt(data.userAuthorPosition) || 1;
+                const applicantName = (data.facultyId?.name || "").trim().toLowerCase();
+                const applicantEmpId = (data.facultyId?.institutionId || data.facultyId?._id || "").toString().trim().toLowerCase();
+
+                const filteredCoAuthors = (data.coAuthors || []).filter((ca, index) => {
+                    const pos = ca.authorPosition;
+                    if (pos && pos === applicantPos) return false;
+
+                    const caEmpId = (ca.employeeId?.institutionId || ca.employeeId?._id || ca.employeeId || "").toString().trim().toLowerCase();
+                    if (caEmpId && applicantEmpId && caEmpId === applicantEmpId) return false;
+
+                    const caName = (ca.name || "").trim().toLowerCase();
+                    if (caName && applicantName && (caName === applicantName || caName.includes(applicantName) || applicantName.includes(caName))) return false;
+
+                    return true;
+                });
+
+                if (filteredCoAuthors.length === 0) return null;
+
+                const total = parseInt(data.totalAuthors) || (filteredCoAuthors.length + 1);
+                const derivedPositions = total > 0
+                    ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
+                    : [];
+
+                return (
+                    <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
+                        <Box sx={{ p: 3, pb: 2 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                <GroupsIcon sx={{ color: "var(--color-primary)" }} />
+                                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Author Details</Typography>
+                                <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
+                                        Total: {filteredCoAuthors.length} Co-Author{filteredCoAuthors.length > 1 ? 's' : ''}
+                                    </Typography>
+                                </Box>
                             </Box>
                         </Box>
-                    </Box>
-                    <TableContainer>
-                        <Table>
-                            <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
-                                <TableRow>
-                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>POSITION</TableCell>
-                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
-                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>TYPE</TableCell>
-                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {(() => {
-                                    const total = parseInt(data.totalAuthors) || 0;
-                                    const applicantPos = parseInt(data.userAuthorPosition) || 0;
-                                    const derivedPositions = total > 0
-                                        ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
-                                        : [];
-                                    return data.coAuthors.map((ca, i) => {
-                                        const pos = ca.authorPosition || derivedPositions[i] || (i + 1);
+                        <TableContainer>
+                            <Table>
+                                <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                                    <TableRow>
+                                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>POSITION</TableCell>
+                                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
+                                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>TYPE</TableCell>
+                                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {filteredCoAuthors.map((ca, i) => {
+                                        const pos = ca.authorPosition || derivedPositions[i] || (i + (applicantPos === 1 ? 2 : 1));
                                         return (
                                             <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
-                                        <TableCell>
-                                            <Box sx={{
-                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                width: 32, height: 32, borderRadius: '50%',
-                                                bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
-                                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
-                                            }}>
-                                                {pos}
-                                            </Box>
-                                        </TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
-                                        <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)", textTransform: "capitalize" }}>{ca.CoAuthorType || "-"}</TableCell>
-                                        <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
-                                    </TableRow>
-                                    );
-                                    });
-                                })()}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </Card>
-            )}
+                                                <TableCell>
+                                                    <Box sx={{
+                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                        width: 32, height: 32, borderRadius: '50%',
+                                                        bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                                        color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                                    }}>
+                                                        {pos}
+                                                    </Box>
+                                                </TableCell>
+                                                <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
+                                                <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)", textTransform: "capitalize" }}>{ca.CoAuthorType || "-"}</TableCell>
+                                                <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Card>
+                );
+            })()}
 
             {/* Attachments Section */}
             <Card sx={{ ...cardStyle, mb: 3 }}>
@@ -387,39 +409,17 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                 {data.hodComment && <Box sx={{ flex: 1, minWidth: 300 }}><Card sx={{ ...cardStyle, borderLeft: "4px solid #ffc107", height: "100%", mb: 0 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><HistoryIcon sx={{ color: "#ffc107" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>HOD Review</Typography></Box><Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}><Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.hodComment}"</Typography></Box></Card></Box>}
                 
                 <Box sx={{ flex: 1, minWidth: 350 }}>
-                    {(isResearchAdmin && data.status === 'Pending at R&D') ? (
+                    {((isResearchAdmin && data.status === 'Pending at R&D') || (isHOD && data.status === 'Pending at HOD')) ? (
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
                             
-                            {isResearchAdmin && data.applyIncentive === 'Yes' && (
-                                <Box sx={{ mb: 3 }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED INCENTIVE AMOUNT (₹)</Typography>
-                                    <TextField 
-                                        fullWidth size="small" type="number" 
-                                        placeholder={`Approved Incentive Amount`} 
-                                        value={approvedAmount} 
-                                        onChange={e => setApprovedAmount(e.target.value)} 
-                                        sx={{ maxWidth: 250, "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
-                                    />
-                                </Box>
-                            )}
+                            <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3 }}>
+                                Please review the details above and choose an action to proceed with this submission.
+                            </Typography>
 
-                            {isResearchAdmin && (
-                                <Box sx={{ mb: 3 }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPRAISAL ELIGIBLE *</Typography>
-                                    <Select fullWidth size="small" value={appraisalEligible} onChange={e => setAppraisalEligible(e.target.value)} displayEmpty sx={{ maxWidth: 250, borderRadius: "10px", bgcolor: "var(--bg-panel)" }}>
-                                        <MenuItem value="" disabled>Select Eligibility</MenuItem>
-                                        <MenuItem value="Yes">Yes</MenuItem>
-                                        <MenuItem value="No">No</MenuItem>
-                                    </Select>
-                                </Box>
-                            )}
-
-                            <TextField fullWidth multiline rows={3} placeholder="Provide your review comments..." value={remarks} onChange={e => setRemarks(e.target.value)} sx={{ mb: 3, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }} />
-
-                            <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ px: 3 }}>Reject</Button>
-                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ px: 4 }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
+                            <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-start" }}>
+                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => setRejectDialogOpen(true)} sx={{ px: 3, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>Reject</Button>
+                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => setApproveDialogOpen(true)} sx={{ px: 4, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
                             </Box>
                         </Card>
                     ) : (
@@ -437,6 +437,103 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                     )}
                 </Box>
             </Box>
+
+            {/* Approve Dialog */}
+            <Dialog open={approveDialogOpen} onClose={() => setApproveDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>
+                <DialogTitle sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                    {isHOD ? "Approve & Forward Submission" : "Final Approve Submission"}
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 2.5 }}>
+                        Please confirm approval details for this conference submission:
+                    </Typography>
+
+                    {isResearchAdmin && data.applyIncentive === 'Yes' && (
+                        <Box sx={{ mb: 2.5 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--color-primary)", fontSize: "0.8rem" }}>
+                                APPROVED INCENTIVE AMOUNT (₹) *
+                            </Typography>
+                            <TextField 
+                                fullWidth size="small" type="number" 
+                                placeholder="Enter approved incentive amount" 
+                                value={approvedAmount} 
+                                onChange={e => setApprovedAmount(e.target.value)} 
+                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
+                            />
+                        </Box>
+                    )}
+
+                    {isResearchAdmin && (
+                        <Box sx={{ mb: 2.5 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--color-primary)", fontSize: "0.8rem" }}>
+                                ARTICLE ELIGIBILITY FOR APPRAISAL *
+                            </Typography>
+                            <Select fullWidth size="small" value={appraisalEligible} onChange={e => setAppraisalEligible(e.target.value)} displayEmpty sx={{ borderRadius: "10px" }}>
+                                <MenuItem value="" disabled>Select Eligibility</MenuItem>
+                                <MenuItem value="Yes">Yes</MenuItem>
+                                <MenuItem value="No">No</MenuItem>
+                            </Select>
+                        </Box>
+                    )}
+
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--text-primary)", fontSize: "0.8rem" }}>
+                            REMARKS / COMMENTS (OPTIONAL)
+                        </Typography>
+                        <TextField 
+                            fullWidth multiline rows={3} 
+                            placeholder="Provide review comments..." 
+                            value={remarks} 
+                            onChange={e => setRemarks(e.target.value)} 
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={() => setApproveDialogOpen(false)} disabled={actionLoading} sx={{ color: "var(--text-secondary)", textTransform: "none" }}>
+                        Cancel
+                    </Button>
+                    <Button 
+                        variant="contained" color="success" disabled={actionLoading} 
+                        onClick={() => handleAction('Approve')}
+                        sx={{ borderRadius: "8px", px: 3, textTransform: "none", fontWeight: 700 }}
+                    >
+                        {actionLoading ? "Processing..." : "Confirm Approve"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Reject Dialog */}
+            <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>
+                <DialogTitle sx={{ fontWeight: 800, color: "#d32f2f" }}>
+                    Reject Submission
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 2 }}>
+                        Please provide a reason for rejecting this submission:
+                    </Typography>
+                    <TextField 
+                        fullWidth multiline rows={3} 
+                        placeholder="Provide rejection comments (Required)..." 
+                        value={remarks} 
+                        onChange={e => setRemarks(e.target.value)} 
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
+                    />
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={() => setRejectDialogOpen(false)} disabled={actionLoading} sx={{ color: "var(--text-secondary)", textTransform: "none" }}>
+                        Cancel
+                    </Button>
+                    <Button 
+                        variant="contained" color="error" disabled={actionLoading} 
+                        onClick={() => handleAction('Reject')}
+                        sx={{ borderRadius: "8px", px: 3, textTransform: "none", fontWeight: 700 }}
+                    >
+                        {actionLoading ? "Processing..." : "Confirm Rejection"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             {isResearchAdmin && (
                 <EditResearchDetailsDialog
                     open={editOpen}

@@ -53,7 +53,8 @@ import { useNavigate } from 'react-router-dom';
 /* ─── Colour palettes ──────────────────────────────────────────────────────── */
 const DEPT_BAR_COLORS = { teams: '#0d9488', students: '#f59e0b', events: '#3b82f6', participants: '#3b82f6' };
 const YEAR_COLORS = ['#16a34a', '#f59e0b', '#1d4ed8', '#06b6d4'];
-const GENDER_PIE = ['#4ade80', '#3b82f6', '#f97316'];
+const GENDER_PIE = ['#16a34a', '#2563eb'];
+const GENDER_PIE_COLORS = { Male: '#16a34a', Female: '#2563eb' };
 const CAMPUS_GENDER_COLORS = { Male: '#ef4444', Female: '#1d4ed8', Others: '#f59e0b' };
 const CAMPUS_COUNT_COLORS = ['#16a34a', '#f59e0b', '#1d4ed8'];
 const REVENUE_COLOR = '#7c3aed';
@@ -269,7 +270,15 @@ const StudentEventAdminDashboard = () => {
 
   const genderPieData = useMemo(() => {
     if (!stats?.genderStats) return [];
-    return Object.entries(stats.genderStats).map(([key, val]) => ({ name: key, value: val }));
+    return Object.entries(stats.genderStats)
+      .filter(([key]) => {
+        const k = key.trim().toLowerCase();
+        return k === 'male' || k === 'female' || k === 'm' || k === 'f';
+      })
+      .map(([key, val]) => ({
+        name: key.trim().toLowerCase().startsWith('m') ? 'Male' : 'Female',
+        value: Number(val) || 0,
+      }));
   }, [stats]);
 
   const campusGenderLineData = useMemo(() => {
@@ -495,16 +504,33 @@ const StudentEventAdminDashboard = () => {
             {/* Gender Pie */}
             <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: '16px', background: 'var(--bg-paper)', border: '1px solid var(--border-color)', width: '100%', maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
               <SectionTitle>Gender Chart</SectionTitle>
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
-                <ResponsiveContainer width="100%" height={240}>
-                  <PieChart>
-                    <Pie data={genderPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${(percent * 100).toFixed(1)}%`}>
-                      {genderPieData.map((_, i) => (
-                        <Cell key={i} fill={GENDER_PIE[i % GENDER_PIE.length]} />
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', minHeight: 280 }}>
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart margin={{ top: 30, right: 30, bottom: 10, left: 30 }} style={{ overflow: 'visible' }}>
+                    <Pie
+                      data={genderPieData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={75}
+                      label={({ name, value, payload }) => `${name || payload?.name}: ${fmt(value ?? payload?.value)}`}
+                    >
+                      {genderPieData.map((entry, i) => (
+                        <Cell
+                          key={entry.name || i}
+                          fill={GENDER_PIE_COLORS[entry.name] || GENDER_PIE[i % GENDER_PIE.length]}
+                        />
                       ))}
                     </Pie>
-                    <Legend />
-                    <Tooltip />
+                    <Legend
+                      formatter={(value, entry) => {
+                        const item = genderPieData.find((d) => d.name === value);
+                        const count = item ? fmt(item.value) : fmt(entry?.payload?.value);
+                        return `${value} (${count})`;
+                      }}
+                    />
+                    <Tooltip formatter={(value, name) => [fmt(value), name]} />
                   </PieChart>
                 </ResponsiveContainer>
               </Box>

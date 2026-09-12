@@ -226,7 +226,25 @@ const MobileNavbar = () => {
     }, [coords]);
 
     const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
-    const menuItems = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
+    let menuItems = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
+
+    if (effectiveRole === "SCHOOL_DEAN" && user?.roles) {
+        const deanRoleObj = user.roles.find(r => r.role === "SCHOOL_DEAN" || r.role === "SCHOOL DEAN" || r.key === "SCHOOL_DEAN");
+        if (deanRoleObj && deanRoleObj.schools && deanRoleObj.schools.length > 0) {
+            const allSchoolsHaveHOD = deanRoleObj.schools.every(school => school.hod === true);
+            if (allSchoolsHaveHOD) {
+                menuItems = menuItems.map(item => {
+                    if (item.text === "Submissions" && item.nested) {
+                        return {
+                            ...item,
+                            nested: item.nested.filter(sub => sub.text !== "Resource Utilization" && sub.text !== "Contribution")
+                        };
+                    }
+                    return item;
+                });
+            }
+        }
+    }
 
     const activeIndex = menuItems.findIndex(item => isItemActive(item, location.pathname));
 

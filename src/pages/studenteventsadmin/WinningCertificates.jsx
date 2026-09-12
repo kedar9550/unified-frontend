@@ -20,6 +20,7 @@ import {
   IconButton,
   Switch,
   FormControlLabel,
+  Tooltip,
 } from '@mui/material';
 import {
   ReceiptLong as ReceiptIcon,
@@ -55,6 +56,16 @@ const formatDate = (value) => {
     hour: '2-digit',
     minute: '2-digit',
   });
+};
+
+const isParticipantAttended = (part) => {
+  if (!part) return false;
+  if (part.attended === true || part.attended === 1) return true;
+  if (typeof part.attended === 'string') {
+    const s = part.attended.trim().toLowerCase();
+    return s === 'true' || s === 'yes' || s === '1' || s === 'present';
+  }
+  return false;
 };
 
 const WinningCertificates = () => {
@@ -146,7 +157,7 @@ const WinningCertificates = () => {
 
     const headers = [
       'S.No', 'School Name', 'Event Name', 'Event Department(s)', 'Team ID', 'Team Size', 'Winner Status',
-      'Participant Name', 'Gender', 'Roll Number', 'College', 'Student Department', 'Student Year', 'Mobile', 'Email'
+      'Participant Name', 'Gender', 'Roll Number', 'College', 'Student Department', 'Student Year', 'Mobile', 'Email', 'Attended Status'
     ];
     const csvRows = [headers.join(',')];
     let sNo = 1;
@@ -183,7 +194,8 @@ const WinningCertificates = () => {
             `"${p.department || ''}"`,
             `"${p.year || ''}"`,
             `"${p.mobile || ''}"`,
-            `"${p.email || ''}"`
+            `"${p.email || ''}"`,
+            `"${isParticipantAttended(p) ? 'Attended' : 'Absent'}"`
           ];
           csvRows.push(participantRow.join(','));
         });
@@ -217,15 +229,25 @@ const WinningCertificates = () => {
   };
 
   const handleWinnerStatusChange = async (paymentId, prizeType, newStatus) => {
+    const payment = payments.find(p => p._id === paymentId);
+    if (newStatus === true && payment) {
+      const participants = payment.participants || [];
+      const hasAttended = participants.some(isParticipantAttended);
+      if (!hasAttended) {
+        toast.error('Cannot award prize: All participants are absent. At least one participant must have attended the event.');
+        return;
+      }
+    }
+
     try {
       const response = await API.put(`/api/razorpay/registrations/${paymentId}/winner`, {
         prizeType,
         status: newStatus
       });
 
-      const { isFirstWinner, isSecondWinner, isThirdWinner } = response.data;
+      const { isFirstWinner, isSecondWinner, isThirdWinner, message } = response.data;
 
-      toast.success('Winner status updated successfully');
+      toast.success(message || 'Winner status updated successfully');
       setPayments((prev) =>
         prev.map((p) =>
           p._id === paymentId
@@ -233,9 +255,20 @@ const WinningCertificates = () => {
             : p
         )
       );
+
+      // If a prize was given, immediately mark the event registration as stopped in allEvents
+      if (newStatus === true && payment) {
+        setAllEvents((prev) =>
+          prev.map((e) =>
+            e._id === payment.eventId || e.eventName?.toLowerCase() === payment.eventName?.toLowerCase()
+              ? { ...e, registrationStop: 'Yes' }
+              : e
+          )
+        );
+      }
     } catch (error) {
       console.error('Error updating winner status:', error);
-      toast.error(error.response?.data?.message || 'Failed to update winner status');
+      toast.error(error.response?.data?.error || error.response?.data?.message || 'Failed to update winner status');
     }
   };
 
@@ -327,46 +360,61 @@ const WinningCertificates = () => {
       {
         value: payment.isFirstWinner ? 'Yes' : 'No',
         display: (
-          <FormControlLabel
-            control={
-              <Switch
-                checked={payment.isFirstWinner || false}
-                onChange={(e) => handleWinnerStatusChange(payment._id, 'first', e.target.checked)}
-                color="success"
+          <Tooltip title={!payment.isFirstWinner && !payment.participants?.some(isParticipantAttended) ? "Cannot award prize: All participants are absent" : ""}>
+            <span>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={payment.isFirstWinner || false}
+                    onChange={(e) => handleWinnerStatusChange(payment._id, 'first', e.target.checked)}
+                    color="success"
+                    disabled={!payment.isFirstWinner && !payment.participants?.some(isParticipantAttended)}
+                  />
+                }
+                label={payment.isFirstWinner ? 'Yes' : 'No'}
               />
-            }
-            label={payment.isFirstWinner ? 'Yes' : 'No'}
-          />
+            </span>
+          </Tooltip>
         ),
       },
       {
         value: payment.isSecondWinner ? 'Yes' : 'No',
         display: (
-          <FormControlLabel
-            control={
-              <Switch
-                checked={payment.isSecondWinner || false}
-                onChange={(e) => handleWinnerStatusChange(payment._id, 'second', e.target.checked)}
-                color="success"
+          <Tooltip title={!payment.isSecondWinner && !payment.participants?.some(isParticipantAttended) ? "Cannot award prize: All participants are absent" : ""}>
+            <span>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={payment.isSecondWinner || false}
+                    onChange={(e) => handleWinnerStatusChange(payment._id, 'second', e.target.checked)}
+                    color="success"
+                    disabled={!payment.isSecondWinner && !payment.participants?.some(isParticipantAttended)}
+                  />
+                }
+                label={payment.isSecondWinner ? 'Yes' : 'No'}
               />
-            }
-            label={payment.isSecondWinner ? 'Yes' : 'No'}
-          />
+            </span>
+          </Tooltip>
         ),
       },
       {
         value: payment.isThirdWinner ? 'Yes' : 'No',
         display: (
-          <FormControlLabel
-            control={
-              <Switch
-                checked={payment.isThirdWinner || false}
-                onChange={(e) => handleWinnerStatusChange(payment._id, 'third', e.target.checked)}
-                color="success"
+          <Tooltip title={!payment.isThirdWinner && !payment.participants?.some(isParticipantAttended) ? "Cannot award prize: All participants are absent" : ""}>
+            <span>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={payment.isThirdWinner || false}
+                    onChange={(e) => handleWinnerStatusChange(payment._id, 'third', e.target.checked)}
+                    color="success"
+                    disabled={!payment.isThirdWinner && !payment.participants?.some(isParticipantAttended)}
+                  />
+                }
+                label={payment.isThirdWinner ? 'Yes' : 'No'}
               />
-            }
-            label={payment.isThirdWinner ? 'Yes' : 'No'}
-          />
+            </span>
+          </Tooltip>
         ),
       },
     ];
@@ -630,7 +678,7 @@ const WinningCertificates = () => {
                         <TableCell sx={{ fontWeight: 800 }}>Roll Number</TableCell>
                         <TableCell sx={{ fontWeight: 800 }}>College & Dept</TableCell>
                         <TableCell sx={{ fontWeight: 800 }}>Contact Info</TableCell>
-                        <TableCell sx={{ fontWeight: 800, textAlign: 'center' }}>Accomm.</TableCell>
+                        <TableCell sx={{ fontWeight: 800, textAlign: 'center' }}>Attended Status</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -664,8 +712,8 @@ const WinningCertificates = () => {
                           </TableCell>
                           <TableCell align="center">
                             <Chip
-                              label={p.accommodation || 'No'}
-                              color={p.accommodation?.toLowerCase() === 'yes' ? 'primary' : 'default'}
+                              label={isParticipantAttended(p) ? 'Attended' : 'Absent'}
+                              color={isParticipantAttended(p) ? 'success' : 'error'}
                               size="small"
                               sx={{ fontWeight: 700, fontSize: '0.7rem' }}
                             />
