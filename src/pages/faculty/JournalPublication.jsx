@@ -788,8 +788,7 @@ export default function JournalPublication() {
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Authors</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Remarks</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status / Remarks</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2, textAlign: "center" }}>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -816,7 +815,7 @@ export default function JournalPublication() {
                       {pub.visibilityRole || "Applicant"}
                     </Typography>
                   </TableCell>
-                  <TableCell sx={{ py: 2 }}>
+                  <TableCell sx={{ py: 2, maxWidth: 220 }}>
                     <Typography variant="body2" sx={{
                       color: pub.status?.includes("Rejected") ? "#ef4444" : pub.status === "Approved" ? "#10b981" : "#e8a000",
                       fontWeight: 700,
@@ -825,11 +824,24 @@ export default function JournalPublication() {
                     }}>
                       {pub.status || "Pending"}
                     </Typography>
-                  </TableCell>
-                  <TableCell sx={{ py: 2 }}>
-                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontSize: "0.85rem", maxWidth: 150, textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }} title={pub.rndComment || pub.hodComment || ""}>
-                      {pub.rndComment || pub.hodComment || "—"}
-                    </Typography>
+                    {pub.status?.includes("Rejected") && (pub.rndComment || pub.hodComment) && (
+                      <Typography variant="caption" sx={{
+                        display: "block",
+                        mt: 0.8,
+                        color: "#ef4444",
+                        fontStyle: "italic",
+                        fontWeight: 500,
+                        lineHeight: 1.4,
+                        maxWidth: 200,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap"
+                      }}>
+                        <Tooltip title={pub.rndComment || pub.hodComment} arrow placement="top">
+                          <span>💬 "{pub.rndComment || pub.hodComment}"</span>
+                        </Tooltip>
+                      </Typography>
+                    )}
                   </TableCell>
                   <TableCell sx={{ py: 2, textAlign: "center" }}>
                     <Box sx={{ display: "flex", justifyContent: "center", gap: 0.5 }}>

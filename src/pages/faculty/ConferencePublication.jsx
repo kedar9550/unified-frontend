@@ -587,7 +587,7 @@ export default function ConferencePublication() {
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Authors</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status / Remarks</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -617,7 +617,7 @@ export default function ConferencePublication() {
                       <Typography variant="body2" sx={{ fontWeight: 500, color: "text.secondary" }}>None</Typography>
                     )}
                   </TableCell>
-                  <TableCell sx={{ py: 2 }}>
+                  <TableCell sx={{ py: 2, maxWidth: 220 }}>
                     <Typography variant="body2" sx={{
                       color: pub.status?.includes("Rejected") ? "#ef4444" : pub.status === "Approved" ? "#10b981" : "#e8a000",
                       fontWeight: 700,
@@ -626,6 +626,24 @@ export default function ConferencePublication() {
                     }}>
                       {pub.status || "Pending"}
                     </Typography>
+                    {pub.status?.includes("Rejected") && (pub.rndComment || pub.hodComment) && (
+                      <Typography variant="caption" sx={{
+                        display: "block",
+                        mt: 0.8,
+                        color: "#ef4444",
+                        fontStyle: "italic",
+                        fontWeight: 500,
+                        lineHeight: 1.4,
+                        maxWidth: 200,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap"
+                      }}>
+                        <Tooltip title={pub.rndComment || pub.hodComment} arrow placement="top">
+                          <span>💬 "{pub.rndComment || pub.hodComment}"</span>
+                        </Tooltip>
+                      </Typography>
+                    )}
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
                     <Stack direction="row" spacing={1}>
@@ -1285,7 +1303,13 @@ export default function ConferencePublication() {
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
                 <Chip
-                  icon={<AccessTimeIcon sx={{ fontSize: "16px !important", color: "inherit" }} />}
+                  icon={
+                    /approved/i.test(data.status)
+                      ? <CheckCircleOutlineIcon sx={{ fontSize: "16px !important", color: "inherit" }} />
+                      : /reject/i.test(data.status)
+                        ? <Close sx={{ fontSize: "16px !important", color: "inherit" }} />
+                        : <AccessTimeIcon sx={{ fontSize: "16px !important", color: "inherit" }} />
+                  }
                   label={data.status || "Pending at R&D"}
                   sx={{
                     bgcolor: /approved/i.test(data.status) ? "rgba(46, 125, 50, 0.1)" : /reject/i.test(data.status) ? "rgba(211, 47, 47, 0.1)" : "rgba(237, 108, 2, 0.1)",
