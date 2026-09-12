@@ -335,7 +335,7 @@ const StudentEventAdminDashboard = () => {
 
   if (loading) {
     return (
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ pb: 3 }}>
         <Box sx={{ mb: 3 }}>
           <Typography variant="h4" sx={{ color: "var(--text-primary)", fontSize: { xs: "1.5rem", sm: "2rem" }, fontWeight: 700, letterSpacing: "-0.5px" }}>
             Veda Event Admin Dashboard
@@ -362,7 +362,7 @@ const StudentEventAdminDashboard = () => {
 
   return (
     <Box sx={{ width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column', gap: 3, boxSizing: 'border-box' }}>
-      <Box sx={{ px: { xs: 2.5, sm: 4 }, pt: { xs: 2.5, sm: 3 }, pb: 1 }}>
+      <Box sx={{ pt: { xs: 2.5, sm: 3 }, pb: 1 }}>
         <Typography variant="h4" sx={{ color: "var(--text-primary)", fontSize: { xs: "1.5rem", sm: "2rem" }, fontWeight: 700, letterSpacing: "-0.5px" }}>
           Veda Event Admin Dashboard
         </Typography>
