@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 
 /**
  * Reusable StatCardGrid component that automatically computes optimal responsive layout.
@@ -7,44 +7,67 @@ import { Box } from '@mui/material';
  * - Tablet (sm): 2 cards per row (odd remaining card expands evenly).
  * - Mobile (xs): 1 column (100% full width).
  */
-export default function StatCardGrid({ children, columns = 4, gap = 2, sx = {}, item, ...props }) {
-  let gridCols;
+export default function StatCardGrid({ children, columns = 4, gap = 2.5, sx = {}, item, ...props }) {
+  const theme = useTheme();
+  
+  // Calculate the gap in pixels to properly compute flex-basis
+  const gapPx = typeof gap === 'number' ? theme.spacing(gap) : gap;
+
+  // Helper to calculate flex-basis
+  const getBasis = (cols) => {
+    if (!cols) return undefined;
+    if (cols === 1) return '100%';
+    return `calc(${100 / cols}% - ${gapPx})`;
+  };
+
+  let breakpointsConfig = {};
 
   if (typeof columns === 'object' && columns !== null) {
-    gridCols = {
-      xs: columns.xs ? (typeof columns.xs === 'number' ? `repeat(${columns.xs}, 1fr)` : columns.xs) : '1fr',
-      sm: columns.sm ? (typeof columns.sm === 'number' ? `repeat(${columns.sm}, 1fr)` : columns.sm) : undefined,
-      md: columns.md ? (typeof columns.md === 'number' ? `repeat(${columns.md}, 1fr)` : columns.md) : undefined,
-      lg: columns.lg ? (typeof columns.lg === 'number' ? `repeat(${columns.lg}, 1fr)` : columns.lg) : undefined,
-      xl: columns.xl ? (typeof columns.xl === 'number' ? `repeat(${columns.xl}, 1fr)` : columns.xl) : undefined,
+    breakpointsConfig = {
+      xs: getBasis(columns.xs) || '100%',
+      sm: getBasis(columns.sm),
+      md: getBasis(columns.md),
+      lg: getBasis(columns.lg),
+      xl: getBasis(columns.xl),
     };
   } else {
     const cols = Number(columns) || 4;
     if (cols === 1) {
-      gridCols = { xs: '1fr' };
+      breakpointsConfig = { xs: '100%' };
     } else if (cols === 2) {
-      gridCols = { xs: '1fr', sm: 'repeat(2, 1fr)' };
+      breakpointsConfig = { xs: '100%', sm: getBasis(2) };
     } else if (cols === 3) {
-      gridCols = { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' };
+      breakpointsConfig = { xs: '100%', sm: getBasis(2), md: getBasis(3) };
     } else if (cols === 4) {
-      gridCols = { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' };
+      breakpointsConfig = { xs: '100%', sm: getBasis(2), md: getBasis(2), lg: getBasis(4) };
     } else if (cols === 5) {
-      gridCols = { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(5, 1fr)' };
+      breakpointsConfig = { xs: '100%', sm: getBasis(2), md: getBasis(3), lg: getBasis(5) };
     } else {
-      gridCols = { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', xl: `repeat(${cols}, 1fr)` };
+      breakpointsConfig = { xs: '100%', sm: getBasis(2), md: getBasis(3), xl: getBasis(cols) };
     }
   }
+
+  // Convert breakpoint config into explicit media queries for the nested selector
+  const flexBasisStyles = { flexBasis: breakpointsConfig.xs };
+  
+  if (breakpointsConfig.sm) flexBasisStyles[theme.breakpoints.up('sm')] = { flexBasis: breakpointsConfig.sm };
+  if (breakpointsConfig.md) flexBasisStyles[theme.breakpoints.up('md')] = { flexBasis: breakpointsConfig.md };
+  if (breakpointsConfig.lg) flexBasisStyles[theme.breakpoints.up('lg')] = { flexBasis: breakpointsConfig.lg };
+  if (breakpointsConfig.xl) flexBasisStyles[theme.breakpoints.up('xl')] = { flexBasis: breakpointsConfig.xl };
 
   return (
     <Box
       sx={{
-        display: 'grid',
-        gridTemplateColumns: gridCols,
-        gap: { xs: 1.5, sm: 2, md: typeof gap === 'number' ? gap : 2.5 },
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: { xs: 1.5, sm: 2, md: gap },
         mb: 3,
         width: '100%',
         boxSizing: 'border-box',
         '& > *': {
+          flexGrow: 1,
+          flexShrink: 0,
+          ...flexBasisStyles,
           minWidth: 0, // Prevents overflow blowout from large numbers/text
           maxWidth: '100%',
           boxSizing: 'border-box',

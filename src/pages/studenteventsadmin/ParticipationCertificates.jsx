@@ -69,7 +69,85 @@ const CertificateCornerFlourish = ({ position = 'top-left' }) => {
   );
 };
 
+const AutoFitParticipantName = ({ name, roll }) => {
+  const containerRef = React.useRef(null);
+  const textRef = React.useRef(null);
 
+  React.useEffect(() => {
+    if (!containerRef.current || !textRef.current) return;
+
+    const calculateSize = () => {
+      const container = containerRef.current;
+      const text = textRef.current;
+      
+      const containerWidth = container.clientWidth;
+      let currentSize = 2.8;
+      
+      text.style.fontSize = `${currentSize}cqh`;
+      
+      let textWidth = text.scrollWidth;
+
+      while (textWidth > containerWidth && currentSize > 2.0) {
+        currentSize -= 0.1;
+        currentSize = Math.round(currentSize * 10) / 10;
+        text.style.fontSize = `${currentSize}cqh`;
+        textWidth = text.scrollWidth;
+      }
+      
+      if (currentSize < 2.0) {
+        text.style.fontSize = '2.0cqh';
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(() => {
+      calculateSize();
+    });
+
+    resizeObserver.observe(containerRef.current);
+    
+    // Initial calculation
+    calculateSize();
+
+    return () => resizeObserver.disconnect();
+  }, [name, roll]);
+
+  return (
+    <Box
+      ref={containerRef}
+      sx={{
+        flex: 1,
+        position: 'relative',
+        borderBottom: '0.2cqh dotted #154487',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'baseline',
+        pb: '0.3cqh',
+        minWidth: 0
+      }}
+    >
+      <Typography
+        ref={textRef}
+        sx={{
+          fontFamily: '"Stem", sans-serif',
+          fontWeight: 800,
+          fontSize: '2.8cqh',
+          color: '#E75A24',
+          letterSpacing: '1px',
+          textTransform: 'uppercase',
+          lineHeight: 1,
+          whiteSpace: 'nowrap'
+        }}
+      >
+        {name || 'Participant Name'}
+        {roll && (
+          <span style={{ fontSize: '2.0cqh', fontWeight: 700, marginLeft: '0.4cqh' }}>
+            ({roll})
+          </span>
+        )}
+      </Typography>
+    </Box>
+  );
+};
 
 const ParticipationCertificates = () => {
   const { activeRole, user } = useAuth();
@@ -597,32 +675,10 @@ const ParticipationCertificates = () => {
                         <Typography sx={{ fontSize: '2.25cqh', color: '#154487', fontWeight: 500, whiteSpace: 'nowrap', mr: 1.5 }}>
                           This is to certify that Mr./Ms.
                         </Typography>
-                        <Box sx={{
-                          flex: 1,
-                          position: 'relative',
-                          borderBottom: '0.2cqh dotted #154487',
-                          display: 'flex',
-                          justifyContent: 'center',
-                          alignItems: 'baseline',
-                          pb: '0.3cqh'
-                        }}>
-                          <Typography sx={{
-                            fontFamily: '"Stem", sans-serif',
-                            fontWeight: 800,
-                            fontSize: '2.8cqh',
-                            color: '#E75A24',
-                            letterSpacing: '1px',
-                            textTransform: 'uppercase',
-                            lineHeight: 1
-                          }}>
-                            {selectedCertificate.participant.name || 'Participant Name'}
-                            {selectedCertificate.participant.roll && (
-                              <span style={{ fontSize: '2.0cqh', fontWeight: 700, marginLeft: '0.4cqh' }}>
-                                ({selectedCertificate.participant.roll})
-                              </span>
-                            )}
-                          </Typography>
-                        </Box>
+                        <AutoFitParticipantName 
+                          name={selectedCertificate.participant.name} 
+                          roll={selectedCertificate.participant.roll} 
+                        />
                       </Box>
 
                       {/* Line 2: has actively participated [Event Name] on dotted line, VEDA-2K26 organized by */}

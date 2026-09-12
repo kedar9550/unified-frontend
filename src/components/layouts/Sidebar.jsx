@@ -137,6 +137,34 @@ const ITEM_METADATA = {
   "Reference Journals": { color: "rgba(34, 197, 94, 0.12)", iconColor: "#22c55e", icon: <LibraryBooks /> }
 };
 
+const DYNAMIC_PALETTE = [
+  "#ef4444", "#f97316", "#f59e0b", "#eab308", "#84cc16", "#22c55e", "#10b981", 
+  "#14b8a6", "#06b6d4", "#0ea5e9", "#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", 
+  "#d946ef", "#ec4899", "#f43f5e"
+];
+
+const getIconMetadata = (text) => {
+  if (ITEM_METADATA[text]) return ITEM_METADATA[text];
+  if (!text) return { color: 'rgba(148, 163, 184, 0.1)', iconColor: 'var(--text-secondary)', icon: <Dashboard /> };
+
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    hash = text.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % DYNAMIC_PALETTE.length;
+  const hex = DYNAMIC_PALETTE[index];
+  
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  
+  return {
+    color: `rgba(${r}, ${g}, ${b}, 0.12)`,
+    iconColor: hex,
+    icon: <Dashboard />
+  };
+};
+
 const drawerWidth = 270;
 
 const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) => {
@@ -478,8 +506,8 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          background: ITEM_METADATA[item.text]?.color || 'var(--bg-accent-4)',
-                          color: ITEM_METADATA[item.text]?.iconColor || 'var(--color-primary)',
+                          background: getIconMetadata(item.text).color,
+                          color: getIconMetadata(item.text).iconColor,
                           transition: 'all 0.3s ease',
                           opacity: (active === item.text || isParentActive) ? 1 : 0.8
                         }}>
@@ -562,9 +590,9 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                                 <ListItemIcon sx={{ minWidth: 0, mr: 2 }}>
                                   <Box sx={{
                                     width: 32, height: 32, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    background: 'var(--bg-accent-4)', color: 'var(--color-primary)'
+                                    background: getIconMetadata(subItem.text).color, color: getIconMetadata(subItem.text).iconColor
                                   }}>
-                                    {React.cloneElement(subItem.icon || ITEM_METADATA[subItem.text]?.icon || <Dashboard />, { sx: { fontSize: 18 } })}
+                                    {React.cloneElement(subItem.icon || getIconMetadata(subItem.text).icon, { sx: { fontSize: 18 } })}
                                   </Box>
                                 </ListItemIcon>
                                 {!isCollapsed && (
@@ -581,7 +609,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                                       <Item
                                         key={`${subItem.text}-${deepSub.text}`}
                                         nested
-                                        icon={deepSub.icon || ITEM_METADATA[deepSub.text]?.icon || null}
+                                        icon={deepSub.icon || getIconMetadata(deepSub.text).icon}
                                         text={deepSub.text}
                                         path={deepSub.path}
                                         active={active}
@@ -600,7 +628,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                           <Item
                             key={`${item.text}-${subItem.text}`}
                             nested
-                            icon={subItem.icon || ITEM_METADATA[subItem.text]?.icon || null}
+                            icon={subItem.icon || getIconMetadata(subItem.text).icon}
                             text={subItem.text}
                             path={subItem.path}
                             active={active}
@@ -886,8 +914,8 @@ const Item = ({ icon, text, path, active, onClick, nested, isCollapsed }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: ITEM_METADATA[text]?.color || 'rgba(148, 163, 184, 0.1)',
-            color: ITEM_METADATA[text]?.iconColor || 'var(--text-secondary)',
+            background: getIconMetadata(text).color,
+            color: getIconMetadata(text).iconColor,
             transition: 'all 0.3s ease'
           }}>
             {React.cloneElement(icon, { sx: { fontSize: 18 } })}

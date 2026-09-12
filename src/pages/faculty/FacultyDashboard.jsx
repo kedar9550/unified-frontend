@@ -39,10 +39,9 @@ import API from "../../api/axios";
 import { useAuth } from "../../context/AuthContext";
 import DataTable from "../../components/data/DataTable";
 import ProctorStudentsModal from "../../components/faculty/ProctorStudentsModal";
-
 import { useNavigate } from "react-router-dom";
-import PageHeader from "../../components/common/PageHeader";
 import StatCardGrid from "../../components/common/StatCardGrid";
+import StatCard from "../../components/common/StatCard";
 
 const FacultyDashboard = () => {
   const { user } = useAuth();
@@ -131,7 +130,6 @@ const FacultyDashboard = () => {
     {
       title: "Research Works",
       value: dashboardData?.totalResearch || 0,
-      subtitle: `${dashboardData?.approvedResearch || 0} Approved • ${dashboardData?.pendingResearch || 0} Pending`,
       icon: <Science />,
       gradient: "linear-gradient(135deg, #3B82F6, #2563EB)",
       color: "#3B82F6",
@@ -141,7 +139,6 @@ const FacultyDashboard = () => {
     {
       title: "Proctored Students",
       value: dashboardData?.proctoredStudentsCount || 0,
-      subtitle: "Assigned for Mentorship",
       icon: <Group />,
       gradient: "linear-gradient(135deg, #8B5CF6, #6D28D9)",
       color: "#8B5CF6",
@@ -151,7 +148,6 @@ const FacultyDashboard = () => {
     {
       title: "Appraisal Status",
       value: dashboardData?.appraisalStatus || "Not Started",
-      subtitle: `Claimed Score: ${dashboardData?.appraisalScore || 0} pts`,
       progress: Math.min(((dashboardData?.appraisalScore || 0) / 100) * 100, 100),
       icon: <AssignmentTurnedIn />,
       gradient: "linear-gradient(135deg, #F59E0B, #D97706)",
@@ -162,7 +158,6 @@ const FacultyDashboard = () => {
     {
       title: "Value Additions",
       value: dashboardData?.activitiesCount || 0,
-      subtitle: "Resource Util. & Contrib.",
       icon: <Event />,
       gradient: "linear-gradient(135deg, #EF4444, #DC2626)",
       color: "#EF4444",
@@ -231,143 +226,18 @@ const FacultyDashboard = () => {
           {/* Row 1: Summary Cards */}
           <StatCardGrid columns={4} sx={{ mb: 4 }}>
             {topCards.map((card, i) => (
-              <Card
+              <StatCard
                 key={i}
-                sx={{
-                  position: "relative",
-                  borderRadius: "16px",
-                  background: "var(--bg-panel)",
-                  border: "1px solid var(--border-color)",
-                  boxShadow: "var(--shadow-premium)",
-                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                  overflow: "hidden",
-                  "&:hover": {
-                    transform: "translateY(-5px)",
-                    boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
-                  },
-                  height: "100%",
-                  minHeight: "175px",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  p: 2.5,
-                  "&::after": {
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    right: 0,
-                    width: "120px",
-                    height: "120px",
-                    background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
-                    zIndex: 0
-                  }
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5, position: "relative", zIndex: 1 }}>
-                  <Box
-                    sx={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 1,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: card.gradient,
-                      color: "#fff",
-                      position: "relative",
-                      overflow: "hidden",
-                      flexShrink: 0,
-                      boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
-                      "&::after": {
-                        content: '""',
-                        position: "absolute",
-                        inset: 0,
-                        background:
-                          "linear-gradient(180deg, #ffffff30, transparent)",
-                        borderRadius: 1,
-                      },
-                    }}
-                  >
-                    {React.cloneElement(card.icon, { fontSize: "medium" })}
-                  </Box>
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.3, minWidth: 0, flex: 1 }}>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "var(--text-secondary)",
-                        fontWeight: 600,
-                        fontSize: "0.75rem",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      {card.title}
-                    </Typography>
-                    <Typography
-                      variant="h4"
-                      sx={{
-                        fontWeight: 800,
-                        color: "var(--text-primary)",
-                        mt: 0.5,
-                        lineHeight: 1.2,
-                        wordBreak: "break-word",
-                        fontSize: typeof card.value === "string" ? (card.value.length > 15 ? "1.15rem" : card.value.length > 8 ? "1.4rem" : "2rem") : "2rem"
-                      }}
-                    >
-                      {card.value}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "var(--text-secondary)", opacity: 0.7 }}
-                    >
-                      {card.subtitle}
-                    </Typography>
-                    {card.progress !== undefined && (
-                      <Box sx={{ width: '100%', mt: 1 }}>
-                        <LinearProgress
-                          variant="determinate"
-                          value={card.progress}
-                          sx={{
-                            height: 6,
-                            borderRadius: 3,
-                            bgcolor: `${card.color}30`,
-                            '& .MuiLinearProgress-bar': {
-                              bgcolor: card.color,
-                              borderRadius: 3
-                            }
-                          }}
-                        />
-                      </Box>
-                    )}
-                  </Box>
-                </Box>
-                <Box
-                  sx={{
-                    mt: 3,
-                    pt: 2,
-                    borderTop: "1px solid var(--border-color)",
-                    display: "flex",
-                    justifyContent: "flex-end",
-                  }}
-                >
-                  <Button
-                    size="small"
-                    endIcon={<ArrowForward sx={{ fontSize: 16 }} />}
-                    sx={{
-                      textTransform: "none",
-                      fontWeight: 700,
-                      color: "var(--color-primary)",
-                      "&:hover": {
-                        background: "transparent",
-                        textDecoration: "underline",
-                      },
-                    }}
-                    onClick={card.onClick}
-                  >
-                    {card.linkText}
-                  </Button>
-                </Box>
-              </Card>
+                title={card.title}
+                value={card.value}
+                subtitle={card.subtitle}
+                progress={card.progress}
+                icon={card.icon}
+                color={card.color}
+                gradient={card.gradient}
+                linkText={card.linkText}
+                onClick={card.onClick}
+              />
             ))}
           </StatCardGrid>
 
