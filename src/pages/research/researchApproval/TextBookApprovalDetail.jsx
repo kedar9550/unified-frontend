@@ -81,10 +81,11 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
             const res = await API.put(endpoint, {
                 action,
                 comment: remarks,
-                approvedAmount: isResearchAdmin && data.applyIncentive === 'Yes' ? approvedAmount : undefined,
-                appraisalEligible: isResearchAdmin ? appraisalEligible : undefined
+                approvedAmount: isResearchAdmin && action === 'Approve' && data.applyIncentive === 'Yes' ? approvedAmount : undefined,
+                appraisalEligible: isResearchAdmin && action === 'Approve' ? (appraisalEligible || undefined) : undefined
             });
             if (res.data?.success) {
+                toast.success(`Request ${action === 'Approve' ? 'Approved' : 'Rejected'} successfully`);
                 onBack(); // Go back to list on success
             }
         } catch (error) {
