@@ -74,7 +74,8 @@ const ResourceUtilizationApproval = () => {
     setActionLoading(true);
     try {
       await API.put(`/api/value-addition/resource-utilization/hod-action/${selected._id}`, { action, comment: '' });
-      toast.success(`Request approved successfully`);
+      const actionPastTense = action === 'Approve' ? 'approved' : 'rejected';
+      toast.success(`Request ${actionPastTense} successfully`);
       fetchRequests();
       setSelected(null);
     } catch (err) {

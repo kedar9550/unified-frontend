@@ -5,7 +5,7 @@ import {
   DialogContent, DialogActions, Grid, Chip, Divider, Stack, useTheme, useMediaQuery
 } from "@mui/material";
 import { toast } from "sonner";
-import { Description, WorkspacePremium, Close, AddCircle, Edit, Delete, Visibility, School, LocationOn, FilePresent, CalendarToday, Download, Info, DateRange, CheckCircle, TrackChanges, Comment, FormatQuote } from "@mui/icons-material";
+import { Description, WorkspacePremium, Close, AddCircle, Edit, Delete, Visibility, School, LocationOn, FilePresent, CalendarToday, Download, Info, DateRange, CheckCircle, TrackChanges, Comment, FormatQuote, Warning } from "@mui/icons-material";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import PageHeader from "../../components/common/PageHeader";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
@@ -94,6 +94,7 @@ export default function ResourceUtilization() {
   const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [selectedActivityDetails, setSelectedActivityDetails] = useState(null);
   const [previewBlobUrl, setPreviewBlobUrl] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, type: "", id: null, message: "", title: "" });
 
   useEffect(() => {
     let active = true;
@@ -315,8 +316,17 @@ export default function ResourceUtilization() {
     setOpenFormModal(true);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this draft activity?")) return;
+  const handleDelete = (id) => {
+    setConfirmDialog({
+      open: true,
+      type: "delete",
+      id,
+      title: "Delete Draft Activity",
+      message: "Are you sure you want to delete this draft activity? This action cannot be undone."
+    });
+  };
+
+  const performDelete = async (id) => {
     try {
       await API.delete(`/api/value-addition/resource-utilization/${id}`);
       toast.success("Activity deleted successfully!");
@@ -513,19 +523,22 @@ export default function ResourceUtilization() {
     }
   };
 
-  const handleBulkSubmit = async () => {
+  const handleBulkSubmit = () => {
     const activeDrafts = activitiesList.filter(a => a.status === 'Draft');
     if (activeDrafts.length === 0) {
       toast.error("No draft entries found");
       return;
     }
 
-    const confirmMessage = `Are you sure you want to submit all ${activeDrafts.length} draft entries? Once submitted, they will become read-only.`;
+    setConfirmDialog({
+      open: true,
+      type: "bulk_submit",
+      title: "Submit All Drafts",
+      message: `Are you sure you want to submit all ${activeDrafts.length} draft entries? Once submitted, they will become read-only and will be sent for approval.`
+    });
+  };
 
-    if (!window.confirm(confirmMessage)) {
-      return;
-    }
-
+  const performBulkSubmit = async () => {
     setLoading(true);
     try {
       await API.post("/api/value-addition/resource-utilization/submit-academic-year", {
@@ -537,6 +550,16 @@ export default function ResourceUtilization() {
       toast.error(err?.response?.data?.message || "Submission failed");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleConfirmAction = () => {
+    const { type, id } = confirmDialog;
+    setConfirmDialog({ ...confirmDialog, open: false });
+    if (type === "delete") {
+      performDelete(id);
+    } else if (type === "bulk_submit") {
+      performBulkSubmit();
     }
   };
 
@@ -1546,6 +1569,57 @@ export default function ResourceUtilization() {
         open={noActiveYearAlertOpen}
         onClose={() => setNoActiveYearAlertOpen(false)}
       />
+      
+      {/* Confirmation Dialog */}
+      <Dialog 
+        open={confirmDialog.open} 
+        onClose={() => setConfirmDialog({ ...confirmDialog, open: false })}
+        maxWidth="xs"
+        fullWidth
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "16px",
+              background: "var(--bg-paper)",
+              border: "1px solid var(--border-color)",
+              boxShadow: "var(--shadow-premium)"
+            }
+          }
+        }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 1 }}>
+          <Warning color={confirmDialog.type === "delete" ? "error" : "primary"} />
+          <Typography variant="h6" sx={{ fontWeight: 800 }}>{confirmDialog.title}</Typography>
+        </DialogTitle>
+        <DialogContent sx={{ pb: 3 }}>
+          <Typography variant="body1" sx={{ color: "var(--text-secondary)" }}>
+            {confirmDialog.message}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)", gap: 1 }}>
+          <Button 
+            onClick={() => setConfirmDialog({ ...confirmDialog, open: false })} 
+            sx={{ color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'none' }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleConfirmAction} 
+            variant="contained" 
+            color={confirmDialog.type === "delete" ? "error" : "primary"}
+            disabled={loading}
+            sx={{ 
+              borderRadius: '50px', 
+              px: 4, 
+              fontWeight: 700, 
+              textTransform: 'none',
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+            }}
+          >
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
