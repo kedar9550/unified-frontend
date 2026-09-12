@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Box, Typography, Paper, CircularProgress, Grid } from '@mui/material';
+import { Box, Typography, Paper, CircularProgress, Grid, Avatar } from '@mui/material';
 import API from '../../api/axios';
 import {
   Error as ErrorIcon,
