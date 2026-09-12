@@ -5,7 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Autocomplete, InputAdornment, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination, Radio, RadioGroup, FormControlLabel } from "@mui/material";
 import { toast } from "sonner";
-import { Delete, Search, CurrencyRupee, Close, Groups, MenuBook, AttachFile, Description, Download, Visibility } from "@mui/icons-material";
+import { Delete, Search, CurrencyRupee, Close, Groups, MenuBook, AttachFile, Description, Download, Visibility, Edit, CheckCircle, Cancel, AccessTime } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
@@ -44,6 +44,9 @@ export default function TextbookPublication() {
     currencySymbol: "₹"
   });
   const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null });
+  const [existingFiles, setExistingFiles] = useState({ coverPage: null, authorAffiliation: null, index: null });
+  const [deleteFlags, setDeleteFlags] = useState({ coverPage: false, authorAffiliation: false, index: false });
+  const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -268,6 +271,46 @@ export default function TextbookPublication() {
     }
   };
 
+  const handleEditClick = (pub) => {
+    setEditingId(pub._id);
+    setSelectedYear(pub.academicYear?._id || pub.academicYear || "");
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:9000";
+
+    setForm({
+      title: pub.title || "",
+      publisher: pub.publisher || "",
+      isbn: pub.isbn || "",
+      yearOfPublication: pub.yearOfPublication || pub.year || "",
+      totalAuthors: pub.totalAuthors || 1,
+      userAuthorPosition: pub.userAuthorPosition || 1,
+      edition: pub.edition || "",
+      cost: pub.cost || "",
+      month: pub.month || "",
+      year: pub.year || "",
+      isStudentsInvolved: pub.isStudentsInvolved || "No",
+      applyIncentive: pub.applyIncentive || "",
+      otherAuthors: pub.authors ? pub.authors.filter(a => parseInt(a.authorPosition) !== parseInt(pub.userAuthorPosition || 1)).map(a => ({
+        authorPosition: a.authorPosition,
+        affiliationType: a.affiliationType || "",
+        empId: a.employeeId || "",
+        authorName: a.authorName || "",
+        affiliationName: a.affiliationName || ""
+      })) : [],
+      publicationScope: pub.publicationScope || "National",
+      customPublisher: "",
+      currencySymbol: pub.currencySymbol || "₹"
+    });
+
+    setExistingFiles({
+      coverPage: pub.coverPage ? `${backendUrl}${pub.coverPage}` : null,
+      authorAffiliation: pub.authorAffiliation ? `${backendUrl}${pub.authorAffiliation}` : null,
+      index: pub.index ? `${backendUrl}${pub.index}` : null,
+    });
+    setFiles({ coverPage: null, authorAffiliation: null, index: null });
+    setDeleteFlags({ coverPage: false, authorAffiliation: false, index: false });
+    setViewMode("form");
+  };
+
   const handleSubmit = async () => {
     if (!user?.panNumber || user?.panNumber === "Not Set" || !user?.college || user?.college === "Not Set") {
       toast.error("Please update your profile with PAN Number and College before submitting");
@@ -288,11 +331,11 @@ export default function TextbookPublication() {
     }
 
     if (form.year && form.month) {
-      const selectedYear = parseInt(form.year);
+      const selectedYearVal = parseInt(form.year);
       const currentYear = new Date().getFullYear();
       const currentMonthIndex = new Date().getMonth();
       const monthIdx = MONTHS.indexOf(form.month);
-      if (selectedYear > currentYear || (selectedYear === currentYear && monthIdx > currentMonthIndex)) {
+      if (selectedYearVal > currentYear || (selectedYearVal === currentYear && monthIdx > currentMonthIndex)) {
         toast.error("Publication date cannot be in the future");
         return;
       }
@@ -319,9 +362,16 @@ export default function TextbookPublication() {
     }
 
     // Check mandatory file uploads
-    if (!files.coverPage || !files.authorAffiliation || !files.index) {
-      toast.error("Please attach all the required documents (Cover Page, Author Affiliation, Index)");
-      return;
+    if (!editingId) {
+      if (!files.coverPage || !files.authorAffiliation || !files.index) {
+        toast.error("Please attach all the required documents (Cover Page, Author Affiliation, Index)");
+        return;
+      }
+    } else {
+      if ((!files.coverPage && !existingFiles.coverPage) || (!files.authorAffiliation && !existingFiles.authorAffiliation) || (!files.index && !existingFiles.index)) {
+        toast.error("Please attach all required documents");
+        return;
+      }
     }
 
     setLoading(true);
@@ -343,7 +393,7 @@ export default function TextbookPublication() {
               authorPosition: coAuth.authorPosition,
               authorName: coAuth.authorName,
               affiliationType: coAuth.affiliationType,
-              employeeId: coAuth.affiliationType === "Aditya University" ? coAuth.empId : null, // Backend accepts author.employeeId || author.empId
+              employeeId: coAuth.affiliationType === "Aditya University" ? coAuth.empId : null,
               empId: coAuth.affiliationType === "Aditya University" ? coAuth.empId : null,
               affiliationName: coAuth.affiliationType === "Aditya University" ? "Aditya University" : coAuth.affiliationName
             });
@@ -374,12 +424,24 @@ export default function TextbookPublication() {
       if (files.authorAffiliation) fd.append("authorAffiliation", files.authorAffiliation);
       if (files.index) fd.append("index", files.index);
 
-      await API.post("/api/research/textbook", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      toast.success("Textbook submitted successfully!");
+      if (deleteFlags.coverPage) fd.append("deleteCoverPage", "true");
+      if (deleteFlags.authorAffiliation) fd.append("deleteAuthorAffiliation", "true");
+      if (deleteFlags.index) fd.append("deleteIndex", "true");
+
+      if (editingId) {
+        await API.put(`/api/research/textbook/${editingId}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+        toast.success("Textbook resubmitted successfully!");
+      } else {
+        await API.post("/api/research/textbook", fd, { headers: { "Content-Type": "multipart/form-data" } });
+        toast.success("Textbook submitted successfully!");
+      }
 
       // Reset form
       setForm({ title: "", publisher: "", isbn: "", yearOfPublication: "", totalAuthors: 1, userAuthorPosition: 1, edition: "", cost: "", month: "", year: "", isStudentsInvolved: "No", applyIncentive: "", otherAuthors: [], publicationScope: "National", currencySymbol: "₹" });
       setFiles({ coverPage: null, authorAffiliation: null, index: null });
+      setExistingFiles({ coverPage: null, authorAffiliation: null, index: null });
+      setDeleteFlags({ coverPage: false, authorAffiliation: false, index: false });
+      setEditingId(null);
       setSelectedYear("");
       setViewMode("list");
     } catch (err) {
@@ -400,7 +462,7 @@ export default function TextbookPublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Textbook Publications</Typography>
-        {/* <Button
+        <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -425,7 +487,7 @@ export default function TextbookPublication() {
           }}
         >
           Apply New
-        </Button> */}
+        </Button>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -459,7 +521,7 @@ export default function TextbookPublication() {
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Author / Co-Author</TableCell>
 
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status / Remarks</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -485,35 +547,80 @@ export default function TextbookPublication() {
                     </Typography>
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: pub.status?.includes('Rejected') ? "#ef4444" : pub.status === 'Approved' ? "#10b981" : "#e8a000",
-                        fontWeight: 700,
-                        background: pub.status?.includes('Rejected') ? "rgba(239, 68, 68, 0.1)" : pub.status === 'Approved' ? "rgba(16, 185, 129, 0.1)" : "rgba(232, 160, 0, 0.1)",
-                        px: 1.5,
-                        py: 0.5,
-                        borderRadius: "6px",
-                        display: "inline-block"
-                      }}
-                    >
-                      {pub.status || "Pending"}
-                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                      <Chip
+                        icon={
+                          pub.status === 'Approved' ? <CheckCircle style={{ fontSize: 16 }} /> :
+                            pub.status?.includes('Rejected') ? <Cancel style={{ fontSize: 16 }} /> :
+                              <AccessTime style={{ fontSize: 16 }} />
+                        }
+                        label={pub.status || "Pending"}
+                        size="small"
+                        sx={{
+                          color: pub.status?.includes('Rejected') ? "#ef4444" : pub.status === 'Approved' ? "#10b981" : "#e8a000",
+                          fontWeight: 700,
+                          background: pub.status?.includes('Rejected') ? "rgba(239, 68, 68, 0.1)" : pub.status === 'Approved' ? "rgba(16, 185, 129, 0.1)" : "rgba(232, 160, 0, 0.1)",
+                          border: `1px solid ${pub.status?.includes('Rejected') ? "rgba(239, 68, 68, 0.3)" : pub.status === 'Approved' ? "rgba(16, 185, 129, 0.3)" : "rgba(232, 160, 0, 0.3)"}`,
+                          width: "fit-content",
+                          "& .MuiChip-icon": {
+                            color: "inherit"
+                          }
+                        }}
+                      />
+                      {pub.status?.includes('Rejected') && (pub.rndComment || pub.hodComment) && (
+                        <Tooltip title={pub.rndComment || pub.hodComment} arrow placement="top">
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "#ef4444",
+                              fontStyle: "italic",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                              cursor: "pointer",
+                              maxWidth: 220,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis"
+                            }}
+                          >
+                            <span>💬</span> "{pub.rndComment || pub.hodComment}"
+                          </Typography>
+                        </Tooltip>
+                      )}
+                    </Box>
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
-                    <Tooltip title="View Details" arrow>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleOpenDetails(pub)}
-                        sx={{
-                          color: "var(--color-primary)",
-                          "&:hover": { background: "var(--bg-accent-1)", transform: "scale(1.1)" },
-                          transition: "all 0.2s ease"
-                        }}
-                      >
-                        <Visibility fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Stack direction="row" spacing={1}>
+                      <Tooltip title="View Details" arrow>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenDetails(pub)}
+                          sx={{
+                            color: "var(--color-primary)",
+                            "&:hover": { background: "var(--bg-accent-1)", transform: "scale(1.1)" },
+                            transition: "all 0.2s ease"
+                          }}
+                        >
+                          <Visibility fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      {pub.status?.includes('Rejected') && (
+                        <Tooltip title="Edit & Resubmit" arrow>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleEditClick(pub)}
+                            sx={{
+                              color: "#ef4444",
+                              "&:hover": { background: "rgba(239, 68, 68, 0.1)", transform: "scale(1.1)" },
+                              transition: "all 0.2s ease"
+                            }}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ))}
@@ -543,15 +650,15 @@ export default function TextbookPublication() {
         priorYearStr = `${parseInt(parts[0], 10) - 1}-${parseInt(parts[1], 10) - 1}`;
       }
     }
-    
+
     // Only show Active and Prior year
     let filteredYears = academicYears.filter(y => y._id === activeYearDoc?._id || y.year === priorYearStr);
-    
+
     // Ensure active is first
     filteredYears.sort((a, b) => {
-        if (a._id === activeYearDoc?._id) return -1;
-        if (b._id === activeYearDoc?._id) return 1;
-        return 0;
+      if (a._id === activeYearDoc?._id) return -1;
+      if (b._id === activeYearDoc?._id) return 1;
+      return 0;
     });
 
     return (
@@ -966,9 +1073,36 @@ export default function TextbookPublication() {
       <NoteBox />
 
       <Grid2 sx={{ mt: 3 }}>
-        <FileField label="Attach CoverPage *" name="coverPage" onChange={setFile("coverPage")} />
-        <FileField label="Attach Page displaying author affiliation *" name="authorAffiliation" onChange={setFile("authorAffiliation")} />
-        <FileField label="Attach Index *" name="index" onChange={setFile("index")} />
+        <FileField
+          label="Attach CoverPage *"
+          name="coverPage"
+          onChange={setFile("coverPage")}
+          existingFileUrl={existingFiles.coverPage}
+          onRemoveExisting={() => {
+            setExistingFiles(p => ({ ...p, coverPage: null }));
+            setDeleteFlags(p => ({ ...p, coverPage: true }));
+          }}
+        />
+        <FileField
+          label="Attach Page displaying author affiliation *"
+          name="authorAffiliation"
+          onChange={setFile("authorAffiliation")}
+          existingFileUrl={existingFiles.authorAffiliation}
+          onRemoveExisting={() => {
+            setExistingFiles(p => ({ ...p, authorAffiliation: null }));
+            setDeleteFlags(p => ({ ...p, authorAffiliation: true }));
+          }}
+        />
+        <FileField
+          label="Attach Index *"
+          name="index"
+          onChange={setFile("index")}
+          existingFileUrl={existingFiles.index}
+          onRemoveExisting={() => {
+            setExistingFiles(p => ({ ...p, index: null }));
+            setDeleteFlags(p => ({ ...p, index: true }));
+          }}
+        />
         <Box>
           <Typography sx={labelStyle}>Whether you want to apply for incentive?</Typography>
           <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
@@ -1032,7 +1166,7 @@ export default function TextbookPublication() {
       });
       if (res.data.success) {
         setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: claimantId }));
-        API.get("/api/research/textbook").then(r => setPublicationsList(r.data?.data || r.data || [])).catch(()=>{});
+        API.get("/api/research/textbook").then(r => setPublicationsList(r.data?.data || r.data || [])).catch(() => { });
         toast.success("Appraisal claimant successfully updated!");
       }
     } catch (err) {
@@ -1238,23 +1372,23 @@ export default function TextbookPublication() {
                     );
 
                     if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1) {
-                        return (
-                            <Select
-                                size="small"
-                                fullWidth
-                                value=""
-                                displayEmpty
-                                onChange={(e) => handleResolveClaim(data._id, "Textbook", e.target.value)}
-                                sx={{ mt: 0.5, backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
-                            >
-                                <MenuItem value="" disabled>Select Claimant</MenuItem>
-                                {uniqueClaimants.map(c => (
-                                    <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
-                                        {c.name} ({c.institutionId})
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        );
+                      return (
+                        <Select
+                          size="small"
+                          fullWidth
+                          value=""
+                          displayEmpty
+                          onChange={(e) => handleResolveClaim(data._id, "Textbook", e.target.value)}
+                          sx={{ mt: 0.5, backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
+                        >
+                          <MenuItem value="" disabled>Select Claimant</MenuItem>
+                          {uniqueClaimants.map(c => (
+                            <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
+                              {c.name} ({c.institutionId})
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      );
                     }
 
                     return (
@@ -1353,10 +1487,10 @@ export default function TextbookPublication() {
 
   return (
     <Box>
-      <PageHeader 
-        title="Textbook Publications" 
-        subtitle="Manage and submit your textbook publications" 
-        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined} 
+      <PageHeader
+        title="Textbook Publications"
+        subtitle="Manage and submit your textbook publications"
+        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined}
       />
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}

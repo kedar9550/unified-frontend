@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination } from "@mui/material";
 import { toast } from "sonner";
-import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, Visibility } from "@mui/icons-material";
+import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, Visibility, Edit, CheckCircle, Cancel, AccessTime } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
@@ -40,7 +40,56 @@ export default function NovelProductPublication() {
   });
   
   const [files, setFiles] = useState({ document: null });
+  const [existingFiles, setExistingFiles] = useState({ document: null });
+  const [deleteFlags, setDeleteFlags] = useState({ document: false });
+  const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const setFile = (k) => (e) => setFiles((p) => ({ ...p, [k]: e.target.files[0] }));
+
+  const handleEditClick = (pub) => {
+    setEditingId(pub._id);
+    setSelectedYear(pub.academicYear?._id || pub.academicYear || "");
+
+    const mappedDevelopers = [];
+    if (pub.coDevelopers && pub.coDevelopers.length > 0) {
+      pub.coDevelopers.forEach((ca, idx) => {
+        mappedDevelopers.push({
+          developerPosition: idx + 2,
+          role: ca.role || (ca.principalInvestigator === "Yes" ? "Principal Investigator" : "Co-Investigator"),
+          affiliationType: ca.affiliationType || (ca.employeeId ? "AUS" : "Others"),
+          empId: ca.employeeId?.institutionId || ca.employeeId || "",
+          name: ca.name || "",
+          affiliation: ca.affiliation || "",
+          department: ca.department || "",
+          designation: ca.designation || ""
+        });
+      });
+    }
+
+    setForm({
+      productName: pub.productName || "",
+      description: pub.description || "",
+      category: pub.category || "",
+      developedOrganization: pub.developedOrganization || "",
+      implementedOrganization: pub.implementedOrganization || "",
+      remarks: pub.remarks || "",
+      investigatorType: pub.investigatorType || "Principal Investigator (PI)",
+      principalInvestigator: pub.principalInvestigator || "",
+      coPrincipalInvestigator: pub.coPrincipalInvestigator || "",
+      applyIncentive: pub.applyIncentive || "No",
+      totalDevelopers: pub.totalDevelopers || 1,
+      otherDevelopersList: mappedDevelopers
+    });
+
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:9000";
+    setExistingFiles({
+      document: pub.document ? `${backendUrl}${pub.document}` : null
+    });
+    setFiles({ document: null });
+    setDeleteFlags({ document: false });
+    setViewMode("form");
+  };
 
   // Generate dynamic developer fields
   useEffect(() => {
@@ -178,7 +227,6 @@ export default function NovelProductPublication() {
   }, [viewMode]);
 
   const set = (k) => (e) => setForm((p) => ({ ...p, [k]: e.target.value }));
-  const setFile = (k) => (e) => setFiles((p) => ({ ...p, [k]: e.target.files[0] }));
 
   const handleSubmit = async () => {
     if (!form.productName || !form.description || !form.category) {
@@ -189,7 +237,7 @@ export default function NovelProductPublication() {
       toast.error("Organization Name is mandatory when Category is Implemented");
       return;
     }
-    if (!files.document) {
+    if (!files.document && !existingFiles.document) {
       toast.error("At least one supporting document/proof is mandatory");
       return;
     }
@@ -238,7 +286,6 @@ export default function NovelProductPublication() {
         affiliation: a.affiliationType === "AUS" ? "Aditya University" : (a.affiliation || ""),
         department: a.department || "",
         designation: a.designation || "",
-        // Backward compatibility flags
         principalInvestigator: a.role === "Principal Investigator" ? "Yes" : "No",
         coPrincipalInvestigator: a.role === "Co-Investigator" ? "Yes" : "No"
       }));
@@ -256,7 +303,9 @@ export default function NovelProductPublication() {
         fd.append("implementedOrganization", form.implementedOrganization);
       }
       fd.append("remarks", form.remarks);
-      fd.append("document", files.document);
+      if (files.document) fd.append("document", files.document);
+      if (deleteFlags.document) fd.append("deleteDocument", "true");
+
       fd.append("academicYear", selectedYear);
       fd.append("investigatorType", form.investigatorType);
       fd.append("principalInvestigator", isPI ? "Yes" : "No");
@@ -264,8 +313,13 @@ export default function NovelProductPublication() {
       fd.append("applyIncentive", form.applyIncentive);
       fd.append("coDevelopers", JSON.stringify(coDevelopersList));
 
-      await API.post("/api/research/novel-product", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      toast.success("Novel Product/Technology submitted successfully!");
+      if (editingId) {
+        await API.put(`/api/research/novel-product/${editingId}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+        toast.success("Novel Product/Technology resubmitted successfully!");
+      } else {
+        await API.post("/api/research/novel-product", fd, { headers: { "Content-Type": "multipart/form-data" } });
+        toast.success("Novel Product/Technology submitted successfully!");
+      }
       
       // Reset form
       setForm({
@@ -283,6 +337,9 @@ export default function NovelProductPublication() {
         otherDevelopersList: []
       });
       setFiles({ document: null });
+      setExistingFiles({ document: null });
+      setDeleteFlags({ document: false });
+      setEditingId(null);
       setSelectedYear("");
       setViewMode("list");
     } catch (err) {
@@ -363,7 +420,7 @@ export default function NovelProductPublication() {
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Investigators</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Approval Status</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status / Remarks</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -402,35 +459,87 @@ export default function NovelProductPublication() {
                       : <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>None</Typography>}
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: pub.status?.includes('Rejected') ? "#ef4444" : pub.status === 'Approved' ? "#10b981" : "#e8a000",
-                        fontWeight: 700,
-                        background: pub.status?.includes('Rejected') ? "rgba(239, 68, 68, 0.1)" : pub.status === 'Approved' ? "rgba(16, 185, 129, 0.1)" : "rgba(232, 160, 0, 0.1)",
-                        px: 1.5,
-                        py: 0.5,
-                        borderRadius: "6px",
-                        display: "inline-block"
-                      }}
-                    >
-                      {pub.status || "Pending"}
-                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                      <Chip
+                        icon={
+                          pub.status === "Approved" ? (
+                            <CheckCircle style={{ color: "#10b981", fontSize: "16px" }} />
+                          ) : pub.status?.includes("Rejected") ? (
+                            <Cancel style={{ color: "#ef4444", fontSize: "16px" }} />
+                          ) : (
+                            <AccessTime style={{ color: "#e8a000", fontSize: "16px" }} />
+                          )
+                        }
+                        label={pub.status || "Pending"}
+                        size="small"
+                        sx={{
+                          fontWeight: 700,
+                          bgcolor: pub.status === "Approved"
+                            ? "rgba(16, 185, 129, 0.1)"
+                            : pub.status?.includes("Rejected")
+                            ? "rgba(239, 68, 68, 0.1)"
+                            : "rgba(232, 160, 0, 0.1)",
+                          color: pub.status === "Approved"
+                            ? "#10b981"
+                            : pub.status?.includes("Rejected")
+                            ? "#ef4444"
+                            : "#e8a000",
+                          borderRadius: "6px",
+                          width: "fit-content"
+                        }}
+                      />
+                      {pub.status?.includes("Rejected") && (pub.rndComment || pub.hodComment) && (
+                        <Tooltip title={pub.rndComment || pub.hodComment} arrow>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "#ef4444",
+                              fontStyle: "italic",
+                              maxWidth: 180,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                              cursor: "pointer",
+                              display: "block"
+                            }}
+                          >
+                            💬 {pub.rndComment || pub.hodComment}
+                          </Typography>
+                        </Tooltip>
+                      )}
+                    </Box>
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
-                    <Tooltip title="View Details" arrow>
-                      <IconButton
-                        size="small"
-                        onClick={() => setSelectedPubDetails(pub)}
-                        sx={{
-                          color: "var(--color-primary)",
-                          "&:hover": { background: "var(--bg-accent-1)", transform: "scale(1.1)" },
-                          transition: "all 0.2s ease"
-                        }}
-                      >
-                        <Visibility fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      {pub.status?.includes("Rejected") && (
+                        <Tooltip title="Edit & Resubmit" arrow>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleEditClick(pub)}
+                            sx={{
+                              color: "#ef4444",
+                              "&:hover": { background: "rgba(239, 68, 68, 0.1)", transform: "scale(1.1)" },
+                              transition: "all 0.2s ease"
+                            }}
+                          >
+                            <Edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      <Tooltip title="View Details" arrow>
+                        <IconButton
+                          size="small"
+                          onClick={() => setSelectedPubDetails(pub)}
+                          sx={{
+                            color: "var(--color-primary)",
+                            "&:hover": { background: "var(--bg-accent-1)", transform: "scale(1.1)" },
+                            transition: "all 0.2s ease"
+                          }}
+                        >
+                          <Visibility fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}
@@ -719,7 +828,16 @@ export default function NovelProductPublication() {
       <NoteBox />
 
       <Box sx={{ mt: 3, maxWidth: 500 }}>
-        <FileField label="Product Documentation / Technical Report / Implementation Proof : *" name="document" onChange={setFile("document")} />
+        <FileField
+          label="Product Documentation / Technical Report / Implementation Proof : *"
+          name="document"
+          onChange={setFile("document")}
+          existingFileUrl={existingFiles.document}
+          onRemoveExisting={() => {
+            setExistingFiles(p => ({ ...p, document: null }));
+            setDeleteFlags(p => ({ ...p, document: true }));
+          }}
+        />
       </Box>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 5 }}>

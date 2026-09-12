@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination, Radio, RadioGroup, FormControlLabel } from "@mui/material";
 import { toast } from "sonner";
-import { Close, Description, AttachFile, Groups, Book, Visibility, Edit } from "@mui/icons-material";
+import { Close, Description, AttachFile, Groups, Book, Visibility, Edit, CheckCircle, Cancel, AccessTime } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
@@ -38,6 +38,8 @@ export default function BookChapterPublication() {
     totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
   });
   const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
+  const [existingFiles, setExistingFiles] = useState({ authorAffiliation: null });
+  const [deleteFlags, setDeleteFlags] = useState({ authorAffiliation: false });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -48,32 +50,32 @@ export default function BookChapterPublication() {
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState(null);
 
-  
+
   const handleEditClick = (pub) => {
     setEditMode(true);
     setEditId(pub._id);
     setSelectedYear(pub.academicYear?._id || pub.academicYear);
-    
+
     const mappedAuthors = [];
     if (pub.coAuthors && pub.coAuthors.length > 0) {
       let positionCounter = 1;
       const total = parseInt(pub.totalAuthors) || 1;
       const myPos = parseInt(pub.userAuthorPosition) || 1;
-      
-      for(let i=1; i<=total; i++){
-          if(i === myPos) continue;
-          const ca = pub.coAuthors[positionCounter - 1];
-          if(ca) {
-             const isInternal = ca.employeeId ? true : false;
-             mappedAuthors.push({
-                 authorPosition: i,
-                 affiliationType: isInternal ? "Aditya University" : "Others",
-                 empId: isInternal ? (ca.employeeId?.institutionId || ca.employeeId) : "",
-                 authorName: ca.name || "",
-                 affiliationName: ca.affiliation || ""
-             });
-             positionCounter++;
-          }
+
+      for (let i = 1; i <= total; i++) {
+        if (i === myPos) continue;
+        const ca = pub.coAuthors[positionCounter - 1];
+        if (ca) {
+          const isInternal = ca.employeeId ? true : false;
+          mappedAuthors.push({
+            authorPosition: i,
+            affiliationType: isInternal ? "Aditya University" : "Others",
+            empId: isInternal ? (ca.employeeId?.institutionId || ca.employeeId) : "",
+            authorName: ca.name || "",
+            affiliationName: ca.affiliation || ""
+          });
+          positionCounter++;
+        }
       }
     }
 
@@ -95,6 +97,11 @@ export default function BookChapterPublication() {
       userAuthorPosition: pub.userAuthorPosition || 1,
       otherAuthors: mappedAuthors
     });
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:9000";
+    setExistingFiles({
+      authorAffiliation: pub.authorAffiliation ? `${backendUrl}${pub.authorAffiliation}` : null
+    });
+    setDeleteFlags({ authorAffiliation: false });
     setDoiFetched(!!pub.doi);
     setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
     setViewMode("form");
@@ -639,7 +646,7 @@ export default function BookChapterPublication() {
     if (!form.applyingSeedGrant) newErrors.applyingSeedGrant = true;
     if (!form.publicationScope) newErrors.publicationScope = true;
 
-    if (!files.authorAffiliation) newErrors.authorAffiliation = true;
+    if (!files.authorAffiliation && !existingFiles.authorAffiliation) newErrors.authorAffiliation = true;
 
     setErrors(newErrors);
 
@@ -649,11 +656,11 @@ export default function BookChapterPublication() {
     }
 
     if (form.year && form.month) {
-      const selectedYear = parseInt(form.year);
+      const selectedYearVal = parseInt(form.year);
       const currentYear = new Date().getFullYear();
       const currentMonthIndex = new Date().getMonth();
       const monthIdx = MONTHS.indexOf(form.month);
-      if (selectedYear > currentYear || (selectedYear === currentYear && monthIdx > currentMonthIndex)) {
+      if (selectedYearVal > currentYear || (selectedYearVal === currentYear && monthIdx > currentMonthIndex)) {
         toast.error("Publication date cannot be in the future");
         return;
       }
@@ -706,6 +713,8 @@ export default function BookChapterPublication() {
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
 
       Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
+      if (deleteFlags.authorAffiliation) fd.append("deleteAuthorAffiliation", "true");
+
       fd.append("academicYear", selectedYear);
       fd.append("college", user?.college || "");
       fd.append("panNumber", user?.panNumber || "");
@@ -724,6 +733,10 @@ export default function BookChapterPublication() {
         totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
       });
       setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
+      setExistingFiles({ authorAffiliation: null });
+      setDeleteFlags({ authorAffiliation: false });
+      setEditMode(false);
+      setEditId(null);
       setErrors({});
       setSelectedYear("");
       setViewMode("list");
@@ -747,7 +760,7 @@ export default function BookChapterPublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Book Chapter Publications</Typography>
-        {/* <Button
+        <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -772,7 +785,7 @@ export default function BookChapterPublication() {
           }}
         >
           Apply New
-        </Button> */}
+        </Button>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -807,7 +820,7 @@ export default function BookChapterPublication() {
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Authors</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status / Remarks</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -836,20 +849,48 @@ export default function BookChapterPublication() {
                       : <Typography variant="body2" sx={{ color: "var(--text-secondary)" }}>None</Typography>}
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: pub.status?.includes('Rejected') ? "#ef4444" : pub.status === 'Approved' ? "#10b981" : "#e8a000",
-                        fontWeight: 700,
-                        background: pub.status?.includes('Rejected') ? "rgba(239, 68, 68, 0.1)" : pub.status === 'Approved' ? "rgba(16, 185, 129, 0.1)" : "rgba(232, 160, 0, 0.1)",
-                        px: 1.5,
-                        py: 0.5,
-                        borderRadius: "6px",
-                        display: "inline-block"
-                      }}
-                    >
-                      {pub.status || "Pending"}
-                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                      <Chip
+                        icon={
+                          pub.status === 'Approved' ? <CheckCircle style={{ fontSize: 16 }} /> :
+                            pub.status?.includes('Rejected') ? <Cancel style={{ fontSize: 16 }} /> :
+                              <AccessTime style={{ fontSize: 16 }} />
+                        }
+                        label={pub.status || "Pending"}
+                        size="small"
+                        sx={{
+                          color: pub.status?.includes('Rejected') ? "#ef4444" : pub.status === 'Approved' ? "#10b981" : "#e8a000",
+                          fontWeight: 700,
+                          background: pub.status?.includes('Rejected') ? "rgba(239, 68, 68, 0.1)" : pub.status === 'Approved' ? "rgba(16, 185, 129, 0.1)" : "rgba(232, 160, 0, 0.1)",
+                          border: `1px solid ${pub.status?.includes('Rejected') ? "rgba(239, 68, 68, 0.3)" : pub.status === 'Approved' ? "rgba(16, 185, 129, 0.3)" : "rgba(232, 160, 0, 0.3)"}`,
+                          width: "fit-content",
+                          "& .MuiChip-icon": {
+                            color: "inherit"
+                          }
+                        }}
+                      />
+                      {pub.status?.includes('Rejected') && (pub.rndComment || pub.hodComment) && (
+                        <Tooltip title={pub.rndComment || pub.hodComment} arrow placement="top">
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "#ef4444",
+                              fontStyle: "italic",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                              cursor: "pointer",
+                              maxWidth: 220,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis"
+                            }}
+                          >
+                            <span>💬</span> "{pub.rndComment || pub.hodComment}"
+                          </Typography>
+                        </Tooltip>
+                      )}
+                    </Box>
                   </TableCell>
                   <TableCell sx={{ py: 2 }}>
                     <Stack direction="row" spacing={1}>
@@ -866,14 +907,14 @@ export default function BookChapterPublication() {
                           <Visibility fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      {pub.status?.includes("Rejected") && pub.visibilityRole === "Applicant" && (
+                      {pub.status?.includes("Rejected") && (
                         <Tooltip title="Edit & Resubmit" arrow>
                           <IconButton
                             size="small"
                             onClick={() => handleEditClick(pub)}
                             sx={{
-                              color: "#eab308",
-                              "&:hover": { background: "rgba(234,179,8,0.1)", transform: "scale(1.1)" },
+                              color: "#ef4444",
+                              "&:hover": { background: "rgba(239, 68, 68, 0.1)", transform: "scale(1.1)" },
                               transition: "all 0.2s ease"
                             }}
                           >
@@ -911,15 +952,15 @@ export default function BookChapterPublication() {
         priorYearStr = `${parseInt(parts[0], 10) - 1}-${parseInt(parts[1], 10) - 1}`;
       }
     }
-    
+
     // Only show Active and Prior year
     let filteredYears = academicYears.filter(y => y._id === activeYearDoc?._id || y.year === priorYearStr);
-    
+
     // Ensure active is first
     filteredYears.sort((a, b) => {
-        if (a._id === activeYearDoc?._id) return -1;
-        if (b._id === activeYearDoc?._id) return 1;
-        return 0;
+      if (a._id === activeYearDoc?._id) return -1;
+      if (b._id === activeYearDoc?._id) return 1;
+      return 0;
     });
 
     return (
@@ -1251,7 +1292,18 @@ export default function BookChapterPublication() {
       <NoteBox />
 
       <Grid2 sx={{ mt: 1 }}>
-        <FileField label="Attach Page displaying author affiliation and chapter title" name="authorAffiliation" onChange={setFile("authorAffiliation")} error={!!errors.authorAffiliation} onError={(m) => toast.error(m)} />
+        <FileField
+          label="Attach Page displaying author affiliation and chapter title"
+          name="authorAffiliation"
+          onChange={setFile("authorAffiliation")}
+          error={!!errors.authorAffiliation}
+          onError={(m) => toast.error(m)}
+          existingFileUrl={existingFiles.authorAffiliation}
+          onRemoveExisting={() => {
+            setExistingFiles(p => ({ ...p, authorAffiliation: null }));
+            setDeleteFlags(p => ({ ...p, authorAffiliation: true }));
+          }}
+        />
         <Box>
           <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
           <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")} error={!!errors.applyingSeedGrant} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
@@ -1322,7 +1374,7 @@ export default function BookChapterPublication() {
       });
       if (res.data.success) {
         setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: claimantId }));
-        API.get("/api/research/book-chapter").then(r => setPublicationsList(r.data?.data || r.data || [])).catch(()=>{});
+        API.get("/api/research/book-chapter").then(r => setPublicationsList(r.data?.data || r.data || [])).catch(() => { });
         toast.success("Appraisal claimant successfully updated!");
       }
     } catch (err) {
@@ -1519,23 +1571,23 @@ export default function BookChapterPublication() {
                     );
 
                     if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1) {
-                        return (
-                            <Select
-                                size="small"
-                                fullWidth
-                                value=""
-                                displayEmpty
-                                onChange={(e) => handleResolveClaim(data._id, "BookChapter", e.target.value)}
-                                sx={{ mt: 0.5, backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
-                            >
-                                <MenuItem value="" disabled>Select Claimant</MenuItem>
-                                {uniqueClaimants.map(c => (
-                                    <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
-                                        {c.name} ({c.institutionId})
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        );
+                      return (
+                        <Select
+                          size="small"
+                          fullWidth
+                          value=""
+                          displayEmpty
+                          onChange={(e) => handleResolveClaim(data._id, "BookChapter", e.target.value)}
+                          sx={{ mt: 0.5, backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
+                        >
+                          <MenuItem value="" disabled>Select Claimant</MenuItem>
+                          {uniqueClaimants.map(c => (
+                            <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
+                              {c.name} ({c.institutionId})
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      );
                     }
 
                     return (
@@ -1584,24 +1636,24 @@ export default function BookChapterPublication() {
                           ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
                           : [];
                         return filteredCoAuthors.map((author, idx) => {
-                        const pos = author.authorPosition || derivedPositions[idx] || (idx + 1);
-                        return (
-                          <TableRow key={idx}>
-                            <TableCell>
-                              <Box sx={{
-                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                width: 30, height: 30, borderRadius: '50%',
-                                bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
-                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
-                              }}>
-                                {pos}
-                              </Box>
-                            </TableCell>
-                            <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.name}</TableCell>
-                            <TableCell sx={{ color: "var(--text-secondary)" }}>{author.affiliation}</TableCell>
-                          </TableRow>
-                        );
-                      });
+                          const pos = author.authorPosition || derivedPositions[idx] || (idx + 1);
+                          return (
+                            <TableRow key={idx}>
+                              <TableCell>
+                                <Box sx={{
+                                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                  width: 30, height: 30, borderRadius: '50%',
+                                  bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                  color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                }}>
+                                  {pos}
+                                </Box>
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.name}</TableCell>
+                              <TableCell sx={{ color: "var(--text-secondary)" }}>{author.affiliation}</TableCell>
+                            </TableRow>
+                          );
+                        });
                       })()}
                     </TableBody>
                   </Table>
@@ -1651,10 +1703,10 @@ export default function BookChapterPublication() {
 
   return (
     <Box>
-      <PageHeader 
-        title="Book Chapter Publications" 
-        subtitle="Manage and submit your book chapter publications" 
-        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined} 
+      <PageHeader
+        title="Book Chapter Publications"
+        subtitle="Manage and submit your book chapter publications"
+        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined}
       />
 
       {viewMode === "list" && renderList()}
