@@ -774,8 +774,8 @@ const ParticipationCertificates = () => {
                           src="/dr_kishore_signature.png?v=2"
                           alt="Dr. D. Kishore Digital Signature"
                           sx={{
-                            height: '5.6cqh',
-                            maxWidth: '20cqh',
+                            height: '3.8cqh',
+                            maxWidth: '16cqh',
                             objectFit: 'contain',
                             mb: '0.4cqh'
                           }}
