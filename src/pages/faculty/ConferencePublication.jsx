@@ -47,6 +47,7 @@ export default function ConferencePublication() {
     totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
   });
   const [files, setFiles] = useState({ certificate: null, proceedings: null });
+  const [existingFiles, setExistingFiles] = useState({ certificate: null, proceedings: null });
   const [loading, setLoading] = useState(false);
   const [doiFetching, setDoiFetching] = useState(false);
   const [doiFetched, setDoiFetched] = useState(false);
@@ -156,6 +157,10 @@ export default function ConferencePublication() {
       conferenceName: Boolean(pub.conferenceName),
       indexing: Boolean(pub.indexing)
     } : {});
+    setExistingFiles({
+      certificate: pub.certificate || null,
+      proceedings: pub.proceedings || null
+    });
     setFiles({ certificate: null, proceedings: null });
     setViewMode("form");
   };
@@ -439,7 +444,7 @@ export default function ConferencePublication() {
       }
     }
 
-    if (!editMode && !files.certificate) {
+    if (!files.certificate && !existingFiles.certificate) {
       toast.error("Please attach the presentation certificate");
       return;
     }
@@ -479,6 +484,10 @@ export default function ConferencePublication() {
       if (files.certificate) fd.append("certificate", files.certificate);
       if (files.proceedings) fd.append("proceedings", files.proceedings);
 
+      // Tell the backend to delete the old file if user explicitly removed it without replacing
+      if (editMode && !files.certificate && !existingFiles.certificate) fd.append("deleteCertificate", "true");
+      if (editMode && !files.proceedings && !existingFiles.proceedings) fd.append("deleteProceedings", "true");
+
       const url = editMode ? `/api/research/conference/${editId}` : "/api/research/conference";
       const method = editMode ? "put" : "post";
 
@@ -495,6 +504,7 @@ export default function ConferencePublication() {
       });
       setDoiFetched(false);
       setFiles({ certificate: null, proceedings: null });
+      setExistingFiles({ certificate: null, proceedings: null });
       setEditMode(false);
       setEditId(null);
       setSelectedYear("");
@@ -517,7 +527,7 @@ export default function ConferencePublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Conference Publications</Typography>
-        <Button
+        {/* <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -542,7 +552,7 @@ export default function ConferencePublication() {
           }}
         >
           Apply New
-        </Button>
+        </Button> */}
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -1065,8 +1075,22 @@ export default function ConferencePublication() {
       <NoteBox />
 
       <Grid2 sx={{ mt: 2 }}>
-        <FileField label="Attach Certificate of Presentation * :" name="certificate" onChange={setFile("certificate")} />
-        <FileField label="Attach Copy of Proceedings / Abstract Book :" name="proceedings" onChange={setFile("proceedings")} />
+        <FileField
+          label="Attach Certificate of Presentation * :"
+          name="certificate"
+          onChange={setFile("certificate")}
+          existingFileUrl={!files.certificate ? (existingFiles.certificate ? `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000').replace(/\/$/, '')}${existingFiles.certificate}` : null) : null}
+          existingFileName={existingFiles.certificate ? existingFiles.certificate.split('/').pop() : ""}
+          onRemoveExisting={() => setExistingFiles(prev => ({ ...prev, certificate: null }))}
+        />
+        <FileField
+          label="Attach Copy of Proceedings / Abstract Book :"
+          name="proceedings"
+          onChange={setFile("proceedings")}
+          existingFileUrl={!files.proceedings ? (existingFiles.proceedings ? `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000').replace(/\/$/, '')}${existingFiles.proceedings}` : null) : null}
+          existingFileName={existingFiles.proceedings ? existingFiles.proceedings.split('/').pop() : ""}
+          onRemoveExisting={() => setExistingFiles(prev => ({ ...prev, proceedings: null }))}
+        />
       </Grid2>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
@@ -1489,25 +1513,25 @@ export default function ConferencePublication() {
                           ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
                           : [];
                         return filteredCoAuthors.map((author, idx) => {
-                        const pos = author.authorPosition || derivedPositions[idx] || (idx + 1);
-                        return (
-                          <TableRow key={idx} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
-                            <TableCell>
-                              <Box sx={{
-                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                width: 30, height: 30, borderRadius: '50%',
-                                bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
-                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
-                              }}>
-                                {pos}
-                              </Box>
-                            </TableCell>
-                            <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.name}</TableCell>
-                            <TableCell sx={{ color: "var(--text-secondary)", textTransform: "capitalize" }}>{author.CoAuthorType || "-"}</TableCell>
-                            <TableCell sx={{ color: "var(--text-secondary)" }}>{author.affiliation}</TableCell>
-                          </TableRow>
-                        );
-                      });
+                          const pos = author.authorPosition || derivedPositions[idx] || (idx + 1);
+                          return (
+                            <TableRow key={idx} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                              <TableCell>
+                                <Box sx={{
+                                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                  width: 30, height: 30, borderRadius: '50%',
+                                  bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                  color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                }}>
+                                  {pos}
+                                </Box>
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.name}</TableCell>
+                              <TableCell sx={{ color: "var(--text-secondary)", textTransform: "capitalize" }}>{author.CoAuthorType || "-"}</TableCell>
+                              <TableCell sx={{ color: "var(--text-secondary)" }}>{author.affiliation}</TableCell>
+                            </TableRow>
+                          );
+                        });
                       })()}
                     </TableBody>
                   </Table>
