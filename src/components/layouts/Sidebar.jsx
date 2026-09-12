@@ -134,7 +134,23 @@ const ITEM_METADATA = {
   "Feedback Analytics": { color: "rgba(217, 70, 239, 0.12)", iconColor: "#d946ef", icon: <Analytics /> },
   "Assigned to Me": { color: "rgba(59, 130, 246, 0.12)", iconColor: "#3b82f6", icon: <AssignmentInd /> },
   "Author Citations": { color: "rgba(239, 68, 68, 0.12)", iconColor: "#ef4444", icon: <Assignment /> },
-  "Reference Journals": { color: "rgba(34, 197, 94, 0.12)", iconColor: "#22c55e", icon: <LibraryBooks /> }
+  "Reference Journals": { color: "rgba(34, 197, 94, 0.12)", iconColor: "#22c55e", icon: <LibraryBooks /> },
+  "Infrastructure": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <AccountBalance /> },
+  "Schools": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <School /> },
+  "Events": { color: "rgba(234, 179, 8, 0.12)", iconColor: "#eab308", icon: <AccountBalance /> },
+  "Payments": { color: "rgba(124, 58, 237, 0.12)", iconColor: "#7c3aed", icon: <AccountBalance /> },
+  "VEDA EVENT ": { color: "rgba(236, 72, 153, 0.12)", iconColor: "#ec4899", icon: <SupportAgent /> },
+};
+
+const isItemOrDescendantActive = (item, activePath) => {
+  if (!item) return false;
+  if (item.path && (item.path === activePath || (activePath && activePath.startsWith(item.path + "/")))) {
+    return true;
+  }
+  if (item.nested && Array.isArray(item.nested)) {
+    return item.nested.some(sub => isItemOrDescendantActive(sub, activePath));
+  }
+  return false;
 };
 
 const drawerWidth = 270;
@@ -221,7 +237,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
     const checkActive = (itemList) => {
       let found = false;
       itemList.forEach(i => {
-        if (i.path && location.pathname.startsWith(i.path)) found = true;
+        if (i.path && (location.pathname === i.path || location.pathname.startsWith(i.path + "/"))) found = true;
         if (i.nested) {
           if (checkActive(i.nested)) {
             found = true;
@@ -259,13 +275,10 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
   }, [location.pathname, activeRole, user]);
 
   const handleToggle = (text) => {
-    setOpenStates((prev) => {
-      const isOpening = !prev[text];
-      if (isOpening) {
-        return { [text]: true };
-      }
-      return { ...prev, [text]: false };
-    });
+    setOpenStates((prev) => ({
+      ...prev,
+      [text]: !prev[text],
+    }));
   };
 
   const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
@@ -448,7 +461,7 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
             {item.nested ? (
               <Box sx={{ width: '100%' }}>
                 {(() => {
-                  const isParentActive = item.nested.some(sub => active === sub.text);
+                  const isParentActive = isItemOrDescendantActive(item, active);
                   const parentButton = (
                     <ListItemButton
                       onClick={(e) => {
@@ -562,9 +575,9 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                     <List component="div" disablePadding>
                       {item.nested.map((subItem) => {
                         if (subItem.nested) {
-                          const isSubParentActive = subItem.nested.some(deepSub => active === deepSub.path);
+                          const isSubParentActive = isItemOrDescendantActive(subItem, active);
                           return (
-                            <Box key={`${item.text}-${subItem.text}`} sx={{ width: '100%', pl: isCollapsed ? 0 : 4 }}>
+                            <Box key={`${item.text}-${subItem.text}`} sx={{ width: '100%', pl: isCollapsed ? 0 : 3 }}>
                               <ListItemButton
                                 onClick={(e) => {
                                   if (isCollapsed) {
@@ -580,31 +593,57 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
                                   mb: 0.8,
                                   p: 1.2,
                                   background: (isSubParentActive) ? "var(--bg-accent-4)" : "transparent",
+                                  border: (isSubParentActive) ? "1px solid var(--border-color)" : "1px solid transparent",
                                   "&:hover": { background: "var(--bg-panel)" }
                                 }}
                               >
                                 <ListItemIcon sx={{ minWidth: 0, mr: 2 }}>
                                   <Box sx={{
                                     width: 32, height: 32, borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    background: 'var(--bg-accent-4)', color: 'var(--color-primary)'
+                                    background: ITEM_METADATA[subItem.text]?.color || 'var(--bg-accent-4)',
+                                    color: ITEM_METADATA[subItem.text]?.iconColor || 'var(--color-primary)'
                                   }}>
                                     {React.cloneElement(subItem.icon || ITEM_METADATA[subItem.text]?.icon || <Dashboard />, { sx: { fontSize: 18 } })}
                                   </Box>
                                 </ListItemIcon>
                                 {!isCollapsed && (
                                   <>
-                                    <ListItemText primary={<Typography sx={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text-secondary)" }}>{subItem.text}</Typography>} />
-                                    {openStates[subItem.text] ? <ExpandLess sx={{ fontSize: 18 }} /> : <ExpandMore sx={{ fontSize: 18 }} />}
+                                    <ListItemText
+                                      primary={
+                                        <Typography sx={{
+                                          fontSize: "0.875rem",
+                                          fontWeight: isSubParentActive ? 700 : 500,
+                                          color: isSubParentActive ? "var(--color-primary)" : "var(--text-secondary)"
+                                        }}>
+                                          {subItem.text}
+                                        </Typography>
+                                      }
+                                    />
+                                    {openStates[subItem.text] ? (
+                                      <ExpandLess sx={{ color: "var(--color-primary)", fontSize: 18 }} />
+                                    ) : (
+                                      <ExpandMore sx={{ color: isSubParentActive ? "var(--color-primary)" : "#94a3b8", fontSize: 18 }} />
+                                    )}
                                   </>
                                 )}
                               </ListItemButton>
                               {!isCollapsed && (
                                 <Collapse in={!!openStates[subItem.text]} timeout="auto" unmountOnExit>
-                                  <List component="div" disablePadding>
+                                  <List
+                                    component="div"
+                                    disablePadding
+                                    sx={{
+                                      position: 'relative',
+                                      ml: 2,
+                                      pl: 1,
+                                      borderLeft: '1.5px solid var(--border-color)',
+                                      my: 0.5
+                                    }}
+                                  >
                                     {subItem.nested.map((deepSub) => (
                                       <Item
                                         key={`${subItem.text}-${deepSub.text}`}
-                                        nested
+                                        nested={false}
                                         icon={deepSub.icon || ITEM_METADATA[deepSub.text]?.icon || null}
                                         text={deepSub.text}
                                         path={deepSub.path}
