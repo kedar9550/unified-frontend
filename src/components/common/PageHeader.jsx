@@ -6,6 +6,7 @@ export default function PageHeader({
   title,
   subtitle,
   action,
+  actions,
   icon,
   iconBg = "var(--gradient-primary)",
   showBack = false,
@@ -161,7 +162,7 @@ export default function PageHeader({
         zIndex: 1,
         width: "auto"
       }}>
-        {action}
+        {action || actions}
       </Box>
     </Box>
   );
