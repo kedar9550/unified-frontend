@@ -336,7 +336,14 @@ const StudentEventAdminDashboard = () => {
   if (loading) {
     return (
       <Box sx={{ p: 3 }}>
-        <PageHeader title="Veda Event Admin Dashboard" subtitle="Loading event analytics..." />
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h4" sx={{ color: "var(--text-primary)", fontSize: { xs: "1.5rem", sm: "2rem" }, fontWeight: 700, letterSpacing: "-0.5px" }}>
+            Veda Event Admin Dashboard
+          </Typography>
+          <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 500, mt: 0.5, opacity: 0.8 }}>
+            Loading event analytics...
+          </Typography>
+        </Box>
         <Box sx={{ display: 'grid', placeItems: 'center', py: 8 }}>
           <CircularProgress size={32} />
         </Box>
@@ -355,10 +362,14 @@ const StudentEventAdminDashboard = () => {
 
   return (
     <Box sx={{ width: '100%', maxWidth: '100%', display: 'flex', flexDirection: 'column', gap: 3, boxSizing: 'border-box' }}>
-      <PageHeader
-        title="Veda Event Admin Dashboard"
-        subtitle="Overview of paid VEDA event participation, department/school analytics and registration metrics"
-      />
+      <Box sx={{ px: { xs: 2.5, sm: 4 }, pt: { xs: 2.5, sm: 3 }, pb: 1 }}>
+        <Typography variant="h4" sx={{ color: "var(--text-primary)", fontSize: { xs: "1.5rem", sm: "2rem" }, fontWeight: 700, letterSpacing: "-0.5px" }}>
+          Veda Event Admin Dashboard
+        </Typography>
+        <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 500, mt: 0.5, opacity: 0.8 }}>
+          Overview of paid VEDA event participation, department/school analytics and registration metrics
+        </Typography>
+      </Box>
 
 
       <CustomTabs

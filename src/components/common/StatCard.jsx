@@ -1,5 +1,6 @@
 import React from "react";
 import { Box, Typography, Button, Paper } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
 /**
@@ -16,8 +17,9 @@ export default function StatCard({
   sub,
   subtext,
   icon,
-  color = "#3B82F6",
+  color = "#3b82f6",
   iconColor,
+  gradient,
   bg,
   actionText,
   linkText,
@@ -25,11 +27,32 @@ export default function StatCard({
   onActionClick,
   sx = {},
 }) {
+  const theme = useTheme();
+
+  const resolveColor = (c) => {
+    if (c === 'primary') return theme.palette.primary.main;
+    if (c === 'secondary') return theme.palette.secondary.main;
+    if (c === 'success') return theme.palette.success.main;
+    if (c === 'error') return theme.palette.error.main;
+    if (c === 'warning') return theme.palette.warning.main;
+    if (c === 'info') return theme.palette.info.main;
+    return c;
+  };
+
   const displayTitle = title || label;
   const displayValue = value !== undefined ? value : (score !== undefined ? score : 0);
   const displaySub = subtitle || sub || subtext || (max ? `Max Score: ${max}` : null);
-  const displayLink = actionText || linkText;
-  const cardColor = color || iconColor || "#3B82F6";
+
+  // If there is an actionText or linkText, we show it. 
+  // If not, but there is an onClick handler, we can optionally show "View Details" to match the design pattern, 
+  // but to preserve existing behavior we only show the link if text is explicitly provided or if we want a default.
+  // We'll default to "View Details" if clickable, to match the modern dashboard aesthetic in the image.
+  const isClickable = Boolean(onClick || onActionClick);
+  const displayLink = actionText || linkText || (isClickable ? "View Details" : null);
+
+  const rawColor = color || iconColor || "#3b82f6";
+  const cardColor = resolveColor(rawColor);
+  const iconGradient = gradient || `linear-gradient(135deg, ${cardColor} 0%, ${cardColor}dd 100%)`;
 
   const handleCardClick = (e) => {
     if (onClick) {
@@ -51,170 +74,151 @@ export default function StatCard({
       elevation={0}
       onClick={handleCardClick}
       sx={{
-        flex: 1,
+        containerType: "inline-size",
         width: "100%",
         height: "100%",
         boxSizing: "border-box",
-        p: { xs: 2, sm: 2.5 },
-        borderRadius: { xs: "16px", sm: "24px" },
-        background: `linear-gradient(135deg, ${cardColor}12 0%, ${cardColor}03 100%)`,
-        backdropFilter: 'blur(12px)',
-        border: `1px solid ${cardColor}25`,
-        boxShadow: `0 8px 32px -8px ${cardColor}20`,
+        p: { xs: 1.5, sm: 2, lg: 2.5 },
+        borderRadius: "16px",
+        background: "var(--bg-panel, #ffffff)",
+        border: "1px solid var(--border-color, #e2e8f0)",
+        boxShadow: "var(--shadow-premium, 0 10px 30px rgba(0,0,0,0.05))",
         position: "relative",
         overflow: "hidden",
-        transition: "all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-        cursor: onClick || onActionClick ? "pointer" : "default",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        cursor: isClickable ? "pointer" : "default",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        minHeight: { xs: "120px", sm: "140px" },
+        minHeight: { xs: "135px", sm: "160px" },
         "&:hover": {
-          transform: "translateY(-6px) scale(1.02)",
-          boxShadow: `0 20px 40px -12px ${cardColor}40`,
-          borderColor: `${cardColor}50`,
-          background: `linear-gradient(135deg, ${cardColor}18 0%, ${cardColor}08 100%)`,
+          transform: isClickable ? "translateY(-5px)" : "none",
+          boxShadow: isClickable ? "0 12px 40px rgba(0,0,0,0.12)" : "var(--shadow-premium, 0 10px 30px rgba(0,0,0,0.05))",
         },
         "&::after": {
           content: '""',
           position: "absolute",
-          top: -30,
-          right: -30,
-          width: "140px",
-          height: "140px",
-          background: `radial-gradient(circle, ${cardColor}25 0%, transparent 70%)`,
+          top: 0,
+          right: 0,
+          width: { xs: "90px", sm: "120px" },
+          height: { xs: "90px", sm: "120px" },
+          background: `radial-gradient(circle at top right, ${cardColor}25, transparent 70%)`,
           zIndex: 0,
           pointerEvents: "none",
           transition: 'all 0.5s ease',
         },
-        "&:hover::after": {
-          transform: 'scale(1.5)',
-          opacity: 0.9,
-        },
         ...sx,
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: 'space-between', zIndex: 1, position: "relative", mb: 2 }}>
-        <Box sx={{ flex: 1, minWidth: 0, pr: 2 }}>
-           {displayTitle && (
-             <Typography
-                noWrap
-                title={displayTitle}
-                sx={{
-                  fontSize: { xs: "0.75rem", sm: "0.85rem" },
-                  fontWeight: 700,
-                  color: "var(--text-secondary)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  mb: 0.5,
-                }}
-              >
-                {displayTitle}
-              </Typography>
-           )}
-            <Typography
-              noWrap
-              title={String(displayValue)}
-              sx={{
-                fontSize: { xs: "1.5rem", sm: "1.85rem", md: "2.1rem" },
-                fontWeight: 900,
-                color: "var(--text-primary)",
-                lineHeight: 1.1,
-                textShadow: `0 2px 10px ${cardColor}20`,
-                display: 'flex',
-                alignItems: 'baseline',
-                gap: 0.5
-              }}
-            >
-              {displayValue}
-            </Typography>
-        </Box>
-        
+      {/* Top Content: Left Aligned */}
+      <Box sx={{
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "flex-start",
+        gap: { xs: 1.25, sm: 1.5, lg: 2 },
+        textAlign: "left",
+        position: "relative",
+        zIndex: 1,
+        width: "100%",
+        minWidth: 0
+      }}>
         {icon && (
           <Box
             sx={{
-              width: { xs: 48, sm: 56 },
-              height: { xs: 48, sm: 56 },
-              borderRadius: { xs: "14px", sm: "18px" },
+              width: "clamp(48px, 16cqw, 56px)",
+              height: "clamp(48px, 16cqw, 56px)",
+              borderRadius: { xs: "8px", sm: "10px", lg: "12px" },
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              background: `linear-gradient(135deg, ${cardColor} 0%, ${cardColor}dd 100%)`,
+              background: iconGradient,
               color: "#ffffff",
               flexShrink: 0,
-              boxShadow: `0 8px 24px ${cardColor}50, inset 0 2px 0 rgba(255,255,255,0.2)`,
-              position: "relative",
-              overflow: "hidden",
-              transition: 'transform 0.3s ease',
-              "&:hover": {
-                transform: 'rotate(5deg) scale(1.05)'
-              },
+              mt: 0.5,
+              boxShadow: `0 8px 25px ${cardColor}35`,
               "& svg": {
-                fontSize: { xs: 24, sm: 28 },
-                color: "#ffffff",
-                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
-              },
+                fontSize: "clamp(1.4rem, 8cqw, 2rem)"
+              }
             }}
           >
             {icon}
           </Box>
         )}
-      </Box>
 
-      {(displaySub || displayLink) && (
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            zIndex: 1,
-            position: "relative",
-            mt: 'auto',
-          }}
-        >
-          <Box>
-            {displaySub && (
-              <Typography
-                noWrap
-                sx={{
-                  fontSize: { xs: "0.75rem", sm: "0.8rem" },
-                  fontWeight: 700,
-                  color: cardColor,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  background: `${cardColor}15`,
-                  px: 1.25,
-                  py: 0.5,
-                  borderRadius: '8px'
-                }}
-              >
-                {displaySub}
-              </Typography>
-            )}
-          </Box>
-          {displayLink && (
-            <Button
-              size="small"
-              onClick={handleActionClick}
-              endIcon={<ArrowForwardIcon sx={{ fontSize: "16px !important" }} />}
+        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0, width: "100%" }}>
+          {displayTitle && (
+            <Typography
+              variant="body2"
+              title={displayTitle}
               sx={{
-                textTransform: "none",
-                fontSize: { xs: "0.8rem", sm: "0.875rem" },
-                fontWeight: 700,
-                color: cardColor,
-                p: 0,
-                minWidth: 0,
-                "&:hover": {
-                  background: "transparent",
-                  transform: 'translateX(4px)',
-                },
-                transition: 'transform 0.2s',
+                fontSize: "clamp(0.65rem, 5cqw, 0.8rem)",
+                fontWeight: 600,
+                color: "var(--text-secondary, #475569)",
+                textTransform: "capitalize",
+                letterSpacing: "0.5px",
+                width: "100%",
+                wordBreak: "break-word",
               }}
             >
-              {displayLink}
-            </Button>
+              {displayTitle}
+            </Typography>
           )}
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 0.5, width: "100%", minWidth: 0 }}>
+            <Typography
+              title={String(displayValue)}
+              sx={{
+                fontWeight: 800,
+                color: "var(--text-primary, #0f172a)",
+                mt: 0.5,
+                fontSize: String(displayValue).length > 6 ? "clamp(0.9rem, 8cqw, 1.2rem)" : "clamp(1.1rem, 10cqw, 1.6rem)",
+                lineHeight: 1.1,
+                width: "100%",
+                wordBreak: "break-word",
+              }}
+            >
+              {displayValue}
+            </Typography>
+
+            {displaySub && (
+              <Box sx={{ mt: 0.5 }}>
+                <Typography
+                  sx={{
+                    fontSize: "clamp(0.65rem, 4.5cqw, 0.8rem)",
+                    fontWeight: 600,
+                    color: "var(--text-secondary, #64748b)",
+                    opacity: 0.8,
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {displaySub}
+                </Typography>
+              </Box>
+            )}
+          </Box>
         </Box>
+      </Box>
+
+      {/* Bottom Link: Right Aligned */}
+      {displayLink ? (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', position: "relative", zIndex: 1, mt: "auto", pt: 1 }}>
+          <Button
+            size="small"
+            onClick={handleActionClick}
+            endIcon={<ArrowForwardIcon sx={{ fontSize: { xs: 12, sm: 14 } }} />}
+            sx={{
+              textTransform: "none",
+              fontSize: { xs: "0.725rem", sm: "0.8rem" },
+              fontWeight: 700,
+              color: "var(--color-primary, #3b82f6)",
+              p: 0,
+              "&:hover": { background: "transparent", opacity: 0.8 },
+            }}
+          >
+            {displayLink}
+          </Button>
+        </Box>
+      ) : (
+        <Box sx={{ mt: "auto" }} />
       )}
     </Paper>
   );

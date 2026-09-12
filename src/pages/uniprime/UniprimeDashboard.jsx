@@ -41,6 +41,7 @@ import {
   Flag,
 } from "@mui/icons-material";
 import StatCardGrid from "../../components/common/StatCardGrid";
+import StatCard from "../../components/common/StatCard";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import MenuBook from "@mui/icons-material/MenuBook";
 import API from "../../api/axios";
@@ -70,7 +71,7 @@ const UniprimeDashboard = () => {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      const timeout = setTimeout(() => {}, 8000);
+      const timeout = setTimeout(() => { }, 8000);
       try {
         const res = await API.get('/api/dashboard/uniprime');
 
@@ -203,29 +204,29 @@ const UniprimeDashboard = () => {
   const totalRoleAssignments = (dashboardData.roleDistribution || []).reduce((sum, item) => sum + item.value, 0);
 
   const recentActivity = [
-    { 
-      title: dashboardData.activeYear !== "N/A" ? `Academic Year ${dashboardData.activeYear} is active` : "Academic Configurations loaded", 
-      by: "System", 
-      time: "Just now", 
-      icon: <CalendarMonth color="success" /> 
+    {
+      title: dashboardData.activeYear !== "N/A" ? `Academic Year ${dashboardData.activeYear} is active` : "Academic Configurations loaded",
+      by: "System",
+      time: "Just now",
+      icon: <CalendarMonth color="success" />
     },
-    { 
-      title: dashboardData.departmentsList[0]?.departmentName ? `Serving Department '${dashboardData.departmentsList[0].departmentName}' onboarded` : "Academic structure updated", 
-      by: "Super Admin", 
-      time: "Today", 
-      icon: <AccountBalance color="primary" /> 
+    {
+      title: dashboardData.departmentsList[0]?.departmentName ? `Serving Department '${dashboardData.departmentsList[0].departmentName}' onboarded` : "Academic structure updated",
+      by: "Super Admin",
+      time: "Today",
+      icon: <AccountBalance color="primary" />
     },
-    { 
-      title: dashboardData.usersCount > 0 ? `University records sync completed (${dashboardData.usersCount} users active)` : "User database initialized", 
-      by: "System Cron", 
-      time: "Recently", 
-      icon: <PeopleAlt color="info" /> 
+    {
+      title: dashboardData.usersCount > 0 ? `University records sync completed (${dashboardData.usersCount} users active)` : "User database initialized",
+      by: "System Cron",
+      time: "Recently",
+      icon: <PeopleAlt color="info" />
     },
-    { 
-      title: dashboardData.rolesCount > 0 ? `Access control configurations loaded (${dashboardData.rolesCount} active roles)` : "Access control synchronized", 
-      by: "Security Admin", 
-      time: "Yesterday", 
-      icon: <Security color="warning" /> 
+    {
+      title: dashboardData.rolesCount > 0 ? `Access control configurations loaded (${dashboardData.rolesCount} active roles)` : "Access control synchronized",
+      by: "Security Admin",
+      time: "Yesterday",
+      icon: <Security color="warning" />
     },
   ];
 
@@ -234,16 +235,16 @@ const UniprimeDashboard = () => {
     const startDate = new Date(start);
     const endDate = new Date(end);
     const now = new Date();
-    
+
     const dateString = `${startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-    
+
     if (now < startDate) return { percent: 0, text: "Not started yet", dateString };
     if (now > endDate) return { percent: 100, text: "Completed", dateString };
-    
+
     const totalDuration = endDate - startDate;
     const elapsedDuration = now - startDate;
     const percent = Math.min(100, Math.max(0, (elapsedDuration / totalDuration) * 100));
-    
+
     const daysRemaining = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
     return { percent, text: `${daysRemaining} days remaining`, dateString };
   };
@@ -253,180 +254,334 @@ const UniprimeDashboard = () => {
   return (
     <Box>
       <>
-          {/* Header */}
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5, letterSpacing: "-0.02em" }}>
-              Welcome back, UniPrime!
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Super Admin Dashboard • Monitor and manage the entire university ecosystem.
-            </Typography>
-          </Box>
+        {/* Header */}
+        <Box sx={{ mb: 4 }}>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5, letterSpacing: "-0.02em" }}>
+            Welcome back, UniPrime!
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Super Admin Dashboard • Monitor and manage the entire university ecosystem.
+          </Typography>
+        </Box>
 
 
 
-          <StatCardGrid columns={4} sx={{ mb: 4 }}>
-            {topCards.map((card, i) => (
-              <Card
-                key={i}
-                sx={{
-                  position: "relative",
-                  borderRadius: "16px",
-                  boxShadow: "var(--shadow-premium)",
-                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                  "&:hover": {
-                    transform: "translateY(-5px)",
-                    boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
-                  },
-                  height: { xs: "auto", sm: "160px" },
-                  minHeight: { xs: "135px", sm: "160px" },
-                  width: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  p: { xs: 2, sm: 2.5 },
-                  border: "1px solid var(--border-color)",
-                  background: "var(--bg-panel)",
-                  overflow: "hidden",
-                  "&::after": {
-                    content: '""',
-                    position: "absolute",
-                    top: 0,
-                    right: 0,
-                    width: { xs: "90px", sm: "120px" },
-                    height: { xs: "90px", sm: "120px" },
-                    background: `radial-gradient(circle at top right, ${card.color}25, transparent 70%)`,
-                    zIndex: 0
-                  }
-                }}
-              >
-                {/* Top Content: Left Aligned */}
-                <Box sx={{
-                  display: "flex",
-                  flexDirection: "row",
-                  alignItems: "flex-start",
-                  gap: { xs: 1.5, sm: 2 },
-                  textAlign: "left",
-                  position: "relative",
-                  zIndex: 1
-                }}>
-                  {/* Icon */}
+        <StatCardGrid columns={4} sx={{ mb: 4 }}>
+          {topCards.map((card, i) => (
+            <StatCard
+              key={i}
+              title={card.title}
+              value={card.value}
+              icon={card.icon}
+              color={card.color}
+              gradient={card.gradient}
+              subtitle={card.subtitle}
+              linkText={card.linkText}
+              onClick={() => navigate(card.path)}
+            />
+          ))}
+        </StatCardGrid>
+
+        {/* Row 2: Middle Panels */}
+        <Box sx={{ display: "flex", gap: { xs: 2, md: 3 }, mb: 3, flexWrap: { xs: "wrap", lg: "nowrap" }, width: "100%" }}>
+          {/* Academic Structure Overview */}
+          <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
+            <Card
+              sx={{
+                borderRadius: "16px",
+                boxShadow: "var(--shadow-premium)",
+                p: { xs: 2, sm: 3 },
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                width: "100%",
+                border: "1px solid var(--border-color)",
+                position: "relative",
+                background: `linear-gradient(to bottom, var(--bg-panel), var(--bg-panel)), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'><path fill='%23818cf8' fill-opacity='0.08' d='M0,224L120,202.7C240,181,480,139,720,138.7C960,139,1200,181,1320,202.7L1440,224L1440,320L1320,320C1200,320,960,320,720,320C480,320,240,320,120,320L0,320Z'></path></svg>")`,
+                backgroundPosition: "bottom",
+                backgroundSize: "cover",
+                backgroundRepeat: "no-repeat",
+                overflow: "hidden"
+              }}
+            >
+              {/* Header */}
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, position: "relative", zIndex: 1 }}>
+                <Typography sx={{ fontWeight: 800, fontSize: { xs: "0.95rem", sm: "1.1rem" }, color: "var(--text-primary)" }}>
+                  Academic Structure Overview
+                </Typography>
+                <Button
+                  size="small"
+                  onClick={() => navigate("/academics/department")}
+                  sx={{
+                    textTransform: "none",
+                    bgcolor: "rgba(59, 130, 246, 0.08)",
+                    px: 2,
+                    py: 0.5,
+                    borderRadius: "20px",
+                    "&:hover": { bgcolor: "rgba(59, 130, 246, 0.16)" }
+                  }}
+                >
                   <Box
+                    component="span"
                     sx={{
-                      width: { xs: 42, sm: 50 },
-                      height: { xs: 42, sm: 50 },
-                      borderRadius: { xs: "12px", sm: "14px" },
+                      fontSize: "0.8rem",
+                      fontWeight: 800,
+                      background: "var(--gradient-primary)",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      display: "inline-block"
+                    }}
+                  >
+                    View All
+                  </Box>
+                </Button>
+              </Box>
+
+              {/* Hierarchical Tree Content */}
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, position: "relative", zIndex: 1, pb: 1 }}>
+
+                {/* Row 1: Schools */}
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+                  {/* Vertical Connector Line */}
+                  <Box sx={{ position: "absolute", left: { xs: 18, sm: 22 }, top: 20, bottom: -20, borderLeft: "2px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
+
+                  <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.2, sm: 2 }, zIndex: 1 }}>
+                    <Box sx={{
+                      width: { xs: 36, sm: 44 },
+                      height: { xs: 36, sm: 44 },
+                      borderRadius: "50%",
+                      bgcolor: "rgba(129, 140, 248, 0.12)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      background: card.gradient,
-                      color: "#fff",
-                      flexShrink: 0,
-                      mt: 0.5,
-                      boxShadow: `0 8px 25px ${card.color}35`,
-                      "& svg": {
-                        fontSize: { xs: "1.25rem", sm: "1.5rem" }
-                      }
+                      border: "1.5px solid rgba(129, 140, 248, 0.25)"
                     }}>
-                    {React.cloneElement(card.icon)}
-                  </Box>
-
-                  {/* Text */}
-                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", minWidth: 0 }}>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: { xs: "0.775rem", sm: "0.8rem" }, textTransform: "capitalize", letterSpacing: "0.5px" }}
-                    >
-                      {card.title}
-                    </Typography>
-
-                    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 0.5 }}>
-                      <Typography
-                        sx={{
-                          fontWeight: 800,
-                          color: "var(--text-primary)",
-                          mt: 0.5,
-                          fontSize: card.value.toString().length > 6 ? { xs: "1rem", sm: "1.2rem" } : { xs: "1.25rem", sm: "1.6rem" },
-                          lineHeight: 1
-                        }}
-                      >
-                        {card.value}
-                      </Typography>
-
-                      {card.subtitle && (
-                        <Box sx={{ mt: 0.5 }}>
-                          {card.subtitle}
-                        </Box>
-                      )}
+                      <School sx={{ color: "#4f46e5", fontSize: { xs: 18, sm: 22 } }} />
                     </Box>
+                    <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: { xs: "0.85rem", sm: "0.95rem" } }}>Schools</Typography>
+                  </Box>
+                  <Box sx={{ bgcolor: "rgba(129, 140, 248, 0.1)", px: 1.5, py: 0.25, borderRadius: "20px" }}>
+                    <Typography sx={{ fontWeight: 800, color: "#4f46e5", fontSize: "0.85rem" }}>{dashboardData.schoolsCount}</Typography>
                   </Box>
                 </Box>
 
-                {/* Bottom Link: Right Aligned */}
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', position: "relative", zIndex: 1 }}>
-                  <Button
-                    size="small"
-                    endIcon={<ArrowForward sx={{ fontSize: { xs: 12, sm: 14 } }} />}
-                    onClick={() => navigate(card.path)}
+                {/* Row 2: Departments */}
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: { xs: 2.5, sm: 5 }, position: "relative" }}>
+                  {/* Horizontal Connector Branch */}
+                  <Box sx={{ position: "absolute", left: { xs: 18, sm: 22 }, top: 20, width: { xs: 12, sm: 18 }, borderTop: "2px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
+                  {/* Vertical Connector Line */}
+                  <Box sx={{ position: "absolute", left: { xs: 18, sm: 22 }, top: -20, bottom: -20, borderLeft: "2px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
+                  {/* Vertical Connector Line */}
+                  <Box sx={{ position: "absolute", left: { xs: 44, sm: 62 }, top: 20, bottom: -20, borderLeft: "2px dotted #3b82f6", opacity: 0.8, zIndex: 0 }} />
+
+                  <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.2, sm: 2 }, zIndex: 1 }}>
+                    <Box sx={{
+                      width: { xs: 36, sm: 44 },
+                      height: { xs: 36, sm: 44 },
+                      borderRadius: "50%",
+                      bgcolor: "rgba(59, 130, 246, 0.12)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "1.5px solid rgba(59, 130, 246, 0.25)"
+                    }}>
+                      <AccountBalance sx={{ color: "#2563eb", fontSize: { xs: 18, sm: 22 } }} />
+                    </Box>
+                    <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: { xs: "0.85rem", sm: "0.95rem" } }}>Serving Departments</Typography>
+                  </Box>
+                  <Box sx={{ bgcolor: "rgba(59, 130, 246, 0.1)", px: 1.5, py: 0.25, borderRadius: "20px" }}>
+                    <Typography sx={{ fontWeight: 800, color: "#2563eb", fontSize: "0.85rem" }}>{dashboardData.departmentsCount}</Typography>
+                  </Box>
+                </Box>
+
+                {/* Row 3: Programs */}
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: { xs: 5, sm: 10 }, position: "relative" }}>
+                  {/* Horizontal Connector Branch */}
+                  <Box sx={{ position: "absolute", left: { xs: 44, sm: 62 }, top: 20, width: { xs: 12, sm: 18 }, borderTop: "2px dotted #3b82f6", opacity: 0.8, zIndex: 0 }} />
+                  {/* Vertical Connector Line segment */}
+                  <Box sx={{ position: "absolute", left: { xs: 44, sm: 62 }, top: -20, height: 40, borderLeft: "2px dotted #3b82f6", opacity: 0.8, zIndex: 0 }} />
+                  {/* Vertical Connector Line */}
+                  <Box sx={{ position: "absolute", left: { xs: 18, sm: 22 }, top: -20, bottom: -20, borderLeft: "2px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
+
+                  <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.2, sm: 2 }, zIndex: 1 }}>
+                    <Box sx={{
+                      width: { xs: 36, sm: 44 },
+                      height: { xs: 36, sm: 44 },
+                      borderRadius: "50%",
+                      bgcolor: "rgba(16, 185, 129, 0.12)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "1.5px solid rgba(16, 185, 129, 0.25)"
+                    }}>
+                      <School sx={{ color: "#10b981", fontSize: { xs: 16, sm: 20 } }} />
+                    </Box>
+                    <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: { xs: "0.85rem", sm: "0.95rem" } }}>Programs</Typography>
+                  </Box>
+                  <Box sx={{ bgcolor: "rgba(16, 185, 129, 0.1)", px: 1.5, py: 0.25, borderRadius: "20px" }}>
+                    <Typography sx={{ fontWeight: 800, color: "#10b981", fontSize: "0.85rem" }}>{dashboardData.programsCount}</Typography>
+                  </Box>
+                </Box>
+
+                {/* Row 4: Branches / Specializations */}
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: { xs: 2.5, sm: 5 }, position: "relative" }}>
+                  {/* Horizontal Connector Branch */}
+                  <Box sx={{ position: "absolute", left: { xs: 18, sm: 22 }, top: 20, width: { xs: 12, sm: 18 }, borderTop: "2px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
+                  {/* Vertical Connector Line segment */}
+                  <Box sx={{ position: "absolute", left: { xs: 18, sm: 22 }, top: -20, height: 40, borderLeft: "2px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
+
+                  <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.2, sm: 2 }, zIndex: 1 }}>
+                    <Box sx={{
+                      width: { xs: 36, sm: 44 },
+                      height: { xs: 36, sm: 44 },
+                      borderRadius: "50%",
+                      bgcolor: "rgba(239, 68, 68, 0.12)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "1.5px solid rgba(239, 68, 68, 0.25)"
+                    }}>
+                      <Share sx={{ color: "#ef4444", fontSize: { xs: 16, sm: 20 } }} />
+                    </Box>
+                    <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: { xs: "0.825rem", sm: "0.95rem" } }}>Branches / Specializations</Typography>
+                  </Box>
+                  <Box sx={{ bgcolor: "rgba(239, 68, 68, 0.1)", px: 1.5, py: 0.25, borderRadius: "20px" }}>
+                    <Typography sx={{ fontWeight: 800, color: "#ef4444", fontSize: "0.85rem" }}>{dashboardData.branchesCount}</Typography>
+                  </Box>
+                </Box>
+
+              </Box>
+            </Card>
+          </Box>
+
+          {/* Active Academic Configuration */}
+          <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
+
+
+            <Card
+              sx={{
+                borderRadius: "16px",
+                boxShadow: "var(--shadow-premium)",
+                p: 3,
+                height: "100%",
+                width: "100%",
+                border: "1px solid var(--border-color)",
+                background: "var(--bg-panel)",
+              }}
+            >
+              {/* Header */}
+              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+                <Typography sx={{ fontWeight: 700 }}>
+                  Active Academic Configuration
+                </Typography>
+
+                <Chip
+                  label="All Systems Operational"
+                  size="small"
+                  sx={{
+                    bgcolor: "var(--bg-accent-2)",
+                    color: "#10B981",
+                    fontWeight: 700,
+                    fontSize: "0.7rem",
+                    borderRadius: 1,
+                  }}
+                />
+              </Box>
+
+              {/* Card 1 */}
+              <Box sx={configBox}>
+                <Box>
+                  <Typography sx={labelStyle}>
+                    Active Academic Year
+                  </Typography>
+
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Typography sx={valueStyle}>{dashboardData.activeYear}</Typography>
+                    <Chip label="Active" size="small" sx={activeChip} />
+                  </Box>
+                </Box>
+
+                <Box sx={iconBox("var(--bg-accent-4)")}>
+                  <CalendarMonth sx={{ color: "var(--color-primary)" }} />
+                </Box>
+              </Box>
+
+              {/* Duration */}
+              <Box sx={{ ...configBox, display: "block" }}>
+                <Box sx={{ display: "flex", gap: 2, mb: 1.5, alignItems: "center" }}>
+                  <CalendarMonth sx={{ color: "var(--color-primary)" }} />
+                  <Box>
+                    <Typography sx={labelStyle}>
+                      Active Academic Year Duration
+                    </Typography>
+                    <Typography sx={{ fontWeight: 600 }}>
+                      {durationData.dateString}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <Box sx={{ width: "100%" }}>
+                  <LinearProgress
+                    variant="determinate"
+                    value={durationData.percent}
                     sx={{
-                      textTransform: "none",
-                      fontSize: { xs: "0.725rem", sm: "0.8rem" },
-                      fontWeight: 700,
+                      height: 6,
+                      borderRadius: 3,
+                      bgcolor: "var(--border-color)",
+                      "& .MuiLinearProgress-bar": {
+                        background: "var(--gradient-primary)",
+                        borderRadius: 3,
+                      },
+                    }}
+                  />
+
+                  <Typography
+                    sx={{
+                      fontSize: "0.75rem",
                       color: "var(--color-primary)",
-                      p: 0,
-                      "&:hover": { background: "transparent", opacity: 0.8 },
+                      mt: 0.5,
+                      fontWeight: 600,
                     }}
                   >
-                    {card.linkText}
-                  </Button>
-                </Box>
-              </Card>
-            ))}
-          </StatCardGrid>
-
-          {/* Row 2: Middle Panels */}
-          <Box sx={{ display: "flex", gap: { xs: 2, md: 3 }, mb: 3, flexWrap: { xs: "wrap", lg: "nowrap" }, width: "100%" }}>
-            {/* Academic Structure Overview */}
-            <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
-              <Card
-                sx={{
-                  borderRadius: "16px",
-                  boxShadow: "var(--shadow-premium)",
-                  p: { xs: 2, sm: 3 },
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  width: "100%",
-                  border: "1px solid var(--border-color)",
-                  position: "relative",
-                  background: `linear-gradient(to bottom, var(--bg-panel), var(--bg-panel)), url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'><path fill='%23818cf8' fill-opacity='0.08' d='M0,224L120,202.7C240,181,480,139,720,138.7C960,139,1200,181,1320,202.7L1440,224L1440,320L1320,320C1200,320,960,320,720,320C480,320,240,320,120,320L0,320Z'></path></svg>")`,
-                  backgroundPosition: "bottom",
-                  backgroundSize: "cover",
-                  backgroundRepeat: "no-repeat",
-                  overflow: "hidden"
-                }}
-              >
-                {/* Header */}
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, position: "relative", zIndex: 1 }}>
-                  <Typography sx={{ fontWeight: 800, fontSize: { xs: "0.95rem", sm: "1.1rem" }, color: "var(--text-primary)" }}>
-                    Academic Structure Overview
+                    {durationData.text}
                   </Typography>
+                </Box>
+              </Box>
+            </Card>
+          </Box>
+
+        </Box>
+
+        {/* Row 3: Bottom Panels */}
+        <Box sx={{ display: "flex", gap: { xs: 2, md: 3 }, flexWrap: { xs: "wrap", lg: "nowrap" } }}>
+          {/* User & Role Overview */}
+          <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
+            <Card sx={{
+              borderRadius: "16px",
+              boxShadow: "var(--shadow-premium)",
+              height: "100%",
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              border: "1px solid var(--border-color)",
+              background: "var(--bg-panel)",
+            }}>
+              <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>User & Role Overview</Typography>
                   <Button
-                    size="small"
-                    onClick={() => navigate("/academics/department")}
+                    onClick={() => navigate("/role-management", { state: { activeTab: 1 } })}
                     sx={{
                       textTransform: "none",
-                      bgcolor: "rgba(59, 130, 246, 0.08)",
-                      px: 2,
-                      py: 0.5,
-                      borderRadius: "20px",
-                      "&:hover": { bgcolor: "rgba(59, 130, 246, 0.16)" }
+                      p: 0,
+                      minWidth: "auto",
+                      "&:hover": { background: "transparent", opacity: 0.8 }
                     }}
                   >
                     <Box
                       component="span"
                       sx={{
-                        fontSize: "0.8rem",
+                        fontSize: "0.85rem",
                         fontWeight: 800,
                         background: "var(--gradient-primary)",
                         WebkitBackgroundClip: "text",
@@ -434,492 +589,235 @@ const UniprimeDashboard = () => {
                         display: "inline-block"
                       }}
                     >
-                      View All
+                      View All Users &gt;
                     </Box>
                   </Button>
                 </Box>
 
-                {/* Hierarchical Tree Content */}
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, position: "relative", zIndex: 1, pb: 1 }}>
-                  
-                  {/* Row 1: Schools */}
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
-                    {/* Vertical Connector Line */}
-                    <Box sx={{ position: "absolute", left: { xs: 18, sm: 22 }, top: 20, bottom: -20, borderLeft: "2px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
-                    
-                    <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.2, sm: 2 }, zIndex: 1 }}>
-                      <Box sx={{ 
-                        width: { xs: 36, sm: 44 }, 
-                        height: { xs: 36, sm: 44 }, 
-                        borderRadius: "50%", 
-                        bgcolor: "rgba(129, 140, 248, 0.12)", 
-                        display: "flex", 
-                        alignItems: "center", 
-                        justifyContent: "center",
-                        border: "1.5px solid rgba(129, 140, 248, 0.25)"
-                      }}>
-                        <School sx={{ color: "#4f46e5", fontSize: { xs: 18, sm: 22 } }} />
-                      </Box>
-                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: { xs: "0.85rem", sm: "0.95rem" } }}>Schools</Typography>
-                    </Box>
-                    <Box sx={{ bgcolor: "rgba(129, 140, 248, 0.1)", px: 1.5, py: 0.25, borderRadius: "20px" }}>
-                      <Typography sx={{ fontWeight: 800, color: "#4f46e5", fontSize: "0.85rem" }}>{dashboardData.schoolsCount}</Typography>
-                    </Box>
-                  </Box>
+                <Box sx={{
+                  display: "flex",
+                  flexDirection: { xs: 'column', md: 'row' },
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 3
+                }}>
+                  {/* Chart */}
+                  <Box sx={{ position: "relative", width: 200, height: 200, flexShrink: 0, mx: "auto", minWidth: 0 }}>
+                    <ResponsiveContainer width="100%" height={200} minWidth={1} minHeight={1} debounce={50}>
+                      <PieChart>
+                        <Pie
+                          data={dashboardData.roleDistribution}
+                          dataKey="value"
+                          nameKey="label"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={55}
+                          outerRadius={80}
+                          paddingAngle={2}
+                          minAngle={5}
+                          stroke="none"
+                        >
+                          {dashboardData.roleDistribution.map((entry, index) => (
+                            <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
 
-                  {/* Row 2: Departments */}
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: { xs: 2.5, sm: 5 }, position: "relative" }}>
-                    {/* Horizontal Connector Branch */}
-                    <Box sx={{ position: "absolute", left: { xs: 18, sm: 22 }, top: 20, width: { xs: 12, sm: 18 }, borderTop: "2px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
-                    {/* Vertical Connector Line */}
-                    <Box sx={{ position: "absolute", left: { xs: 18, sm: 22 }, top: -20, bottom: -20, borderLeft: "2px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
-                    {/* Vertical Connector Line */}
-                    <Box sx={{ position: "absolute", left: { xs: 44, sm: 62 }, top: 20, bottom: -20, borderLeft: "2px dotted #3b82f6", opacity: 0.8, zIndex: 0 }} />
-                    
-                    <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.2, sm: 2 }, zIndex: 1 }}>
-                      <Box sx={{ 
-                        width: { xs: 36, sm: 44 }, 
-                        height: { xs: 36, sm: 44 }, 
-                        borderRadius: "50%", 
-                        bgcolor: "rgba(59, 130, 246, 0.12)", 
-                        display: "flex", 
-                        alignItems: "center", 
-                        justifyContent: "center",
-                        border: "1.5px solid rgba(59, 130, 246, 0.25)"
-                      }}>
-                        <AccountBalance sx={{ color: "#2563eb", fontSize: { xs: 18, sm: 22 } }} />
-                      </Box>
-                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: { xs: "0.85rem", sm: "0.95rem" } }}>Serving Departments</Typography>
-                    </Box>
-                    <Box sx={{ bgcolor: "rgba(59, 130, 246, 0.1)", px: 1.5, py: 0.25, borderRadius: "20px" }}>
-                      <Typography sx={{ fontWeight: 800, color: "#2563eb", fontSize: "0.85rem" }}>{dashboardData.departmentsCount}</Typography>
-                    </Box>
-                  </Box>
-
-                  {/* Row 3: Programs */}
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: { xs: 5, sm: 10 }, position: "relative" }}>
-                    {/* Horizontal Connector Branch */}
-                    <Box sx={{ position: "absolute", left: { xs: 44, sm: 62 }, top: 20, width: { xs: 12, sm: 18 }, borderTop: "2px dotted #3b82f6", opacity: 0.8, zIndex: 0 }} />
-                    {/* Vertical Connector Line segment */}
-                    <Box sx={{ position: "absolute", left: { xs: 44, sm: 62 }, top: -20, height: 40, borderLeft: "2px dotted #3b82f6", opacity: 0.8, zIndex: 0 }} />
-                    {/* Vertical Connector Line */}
-                    <Box sx={{ position: "absolute", left: { xs: 18, sm: 22 }, top: -20, bottom: -20, borderLeft: "2px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
-                    
-                    <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.2, sm: 2 }, zIndex: 1 }}>
-                      <Box sx={{ 
-                        width: { xs: 36, sm: 44 }, 
-                        height: { xs: 36, sm: 44 }, 
-                        borderRadius: "50%", 
-                        bgcolor: "rgba(16, 185, 129, 0.12)", 
-                        display: "flex", 
-                        alignItems: "center", 
-                        justifyContent: "center",
-                        border: "1.5px solid rgba(16, 185, 129, 0.25)"
-                      }}>
-                        <School sx={{ color: "#10b981", fontSize: { xs: 16, sm: 20 } }} />
-                      </Box>
-                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: { xs: "0.85rem", sm: "0.95rem" } }}>Programs</Typography>
-                    </Box>
-                    <Box sx={{ bgcolor: "rgba(16, 185, 129, 0.1)", px: 1.5, py: 0.25, borderRadius: "20px" }}>
-                      <Typography sx={{ fontWeight: 800, color: "#10b981", fontSize: "0.85rem" }}>{dashboardData.programsCount}</Typography>
-                    </Box>
-                  </Box>
-
-                  {/* Row 4: Branches / Specializations */}
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pl: { xs: 2.5, sm: 5 }, position: "relative" }}>
-                    {/* Horizontal Connector Branch */}
-                    <Box sx={{ position: "absolute", left: { xs: 18, sm: 22 }, top: 20, width: { xs: 12, sm: 18 }, borderTop: "2px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
-                    {/* Vertical Connector Line segment */}
-                    <Box sx={{ position: "absolute", left: { xs: 18, sm: 22 }, top: -20, height: 40, borderLeft: "2px dotted #818cf8", opacity: 0.8, zIndex: 0 }} />
-                    
-                    <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1.2, sm: 2 }, zIndex: 1 }}>
-                      <Box sx={{ 
-                        width: { xs: 36, sm: 44 }, 
-                        height: { xs: 36, sm: 44 }, 
-                        borderRadius: "50%", 
-                        bgcolor: "rgba(239, 68, 68, 0.12)", 
-                        display: "flex", 
-                        alignItems: "center", 
-                        justifyContent: "center",
-                        border: "1.5px solid rgba(239, 68, 68, 0.25)"
-                      }}>
-                        <Share sx={{ color: "#ef4444", fontSize: { xs: 16, sm: 20 } }} />
-                      </Box>
-                      <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: { xs: "0.825rem", sm: "0.95rem" } }}>Branches / Specializations</Typography>
-                    </Box>
-                    <Box sx={{ bgcolor: "rgba(239, 68, 68, 0.1)", px: 1.5, py: 0.25, borderRadius: "20px" }}>
-                      <Typography sx={{ fontWeight: 800, color: "#ef4444", fontSize: "0.85rem" }}>{dashboardData.branchesCount}</Typography>
-                    </Box>
-                  </Box>
-
-                </Box>
-              </Card>
-            </Box>
-
-            {/* Active Academic Configuration */}
-            <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
-
-
-              <Card
-                sx={{
-                  borderRadius: "16px",
-                  boxShadow: "var(--shadow-premium)",
-                  p: 3,
-                  height: "100%",
-                  width: "100%",
-                  border: "1px solid var(--border-color)",
-                  background: "var(--bg-panel)",
-                }}
-              >
-                {/* Header */}
-                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
-                  <Typography sx={{ fontWeight: 700 }}>
-                    Active Academic Configuration
-                  </Typography>
-
-                  <Chip
-                    label="All Systems Operational"
-                    size="small"
-                    sx={{
-                      bgcolor: "var(--bg-accent-2)",
-                      color: "#10B981",
-                      fontWeight: 700,
-                      fontSize: "0.7rem",
-                      borderRadius: 1,
-                    }}
-                  />
-                </Box>
-
-                {/* Card 1 */}
-                <Box sx={configBox}>
-                  <Box>
-                    <Typography sx={labelStyle}>
-                      Active Academic Year
-                    </Typography>
-
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Typography sx={valueStyle}>{dashboardData.activeYear}</Typography>
-                      <Chip label="Active" size="small" sx={activeChip} />
-                    </Box>
-                  </Box>
-
-                  <Box sx={iconBox("var(--bg-accent-4)")}>
-                    <CalendarMonth sx={{ color: "var(--color-primary)" }} />
-                  </Box>
-                </Box>
-
-                {/* Duration */}
-                <Box sx={{ ...configBox, display: "block" }}>
-                  <Box sx={{ display: "flex", gap: 2, mb: 1.5, alignItems: "center" }}>
-                    <CalendarMonth sx={{ color: "var(--color-primary)" }} />
-                    <Box>
-                      <Typography sx={labelStyle}>
-                        Active Academic Year Duration
-                      </Typography>
-                      <Typography sx={{ fontWeight: 600 }}>
-                        {durationData.dateString}
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  <Box sx={{ width: "100%" }}>
-                    <LinearProgress
-                      variant="determinate"
-                      value={durationData.percent}
-                      sx={{
-                        height: 6,
-                        borderRadius: 3,
-                        bgcolor: "var(--border-color)",
-                        "& .MuiLinearProgress-bar": {
-                          background: "var(--gradient-primary)",
-                          borderRadius: 3,
-                        },
-                      }}
-                    />
-
-                    <Typography
-                      sx={{
-                        fontSize: "0.75rem",
-                        color: "var(--color-primary)",
-                        mt: 0.5,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {durationData.text}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Card>
-            </Box>
-
-          </Box>
-
-          {/* Row 3: Bottom Panels */}
-          <Box sx={{ display: "flex", gap: { xs: 2, md: 3 }, flexWrap: { xs: "wrap", lg: "nowrap" } }}>
-            {/* User & Role Overview */}
-            <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
-              <Card sx={{
-                borderRadius: "16px", 
-                boxShadow: "var(--shadow-premium)", 
-                height: "100%", 
-                width: "100%",
-                display: "flex",
-                flexDirection: "column",
-                border: "1px solid var(--border-color)",
-                background: "var(--bg-panel)",
-              }}>
-                <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>User & Role Overview</Typography>
-                    <Button 
-                      onClick={() => navigate("/role-management", { state: { activeTab: 1 } })}
-                      sx={{ 
-                        textTransform: "none", 
-                        p: 0,
-                        minWidth: "auto",
-                        "&:hover": { background: "transparent", opacity: 0.8 }
-                      }}
-                    >
-                      <Box
-                        component="span"
-                        sx={{
-                          fontSize: "0.85rem", 
-                          fontWeight: 800, 
-                          background: "var(--gradient-primary)",
-                          WebkitBackgroundClip: "text",
-                          WebkitTextFillColor: "transparent",
-                          display: "inline-block"
-                        }}
-                      >
-                        View All Users &gt;
-                      </Box>
-                    </Button>
-                  </Box>
-
-                  <Box sx={{
-                    display: "flex",
-                    flexDirection: { xs: 'column', md: 'row' },
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    gap: 3
-                  }}>
-                    {/* Chart */}
-                    <Box sx={{ position: "relative", width: 200, height: 200, flexShrink: 0, mx: "auto", minWidth: 0 }}>
-                      <ResponsiveContainer width="100%" height={200} minWidth={1} minHeight={1} debounce={50}>
-                        <PieChart>
-                          <Pie
-                            data={dashboardData.roleDistribution}
-                            dataKey="value"
-                            nameKey="label"
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={55}
-                            outerRadius={80}
-                            paddingAngle={2}
-                            minAngle={5}
-                            stroke="none"
-                          >
-                            {dashboardData.roleDistribution.map((entry, index) => (
-                              <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip />
-                        </PieChart>
-                      </ResponsiveContainer>
-
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          top: "50%",
-                          left: "50%",
-                          transform: "translate(-50%, -50%)",
-                          textAlign: "center",
-                        }}
-                      >
-                        <Typography sx={{ fontSize: 28, fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.1 }}>
-                          {dashboardData.usersCount}
-                        </Typography>
-
-                        <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600 }}>
-                          Total Users
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    {/* Stats table */}
                     <Box
                       sx={{
-                        p: 2.5,
-                        borderRadius: "16px",
-                        border: "1px solid var(--border-color, #e2e8f0)",
-                        bgcolor: "var(--bg-glass)",
-                        width: { xs: '100%', md: 'auto' },
-                        minWidth: { md: 260 },
-                        flexGrow: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 1.5,
-                        maxHeight: 280,
-                        overflowY: "auto",
-                        pr: 1.5,
-                        "&::-webkit-scrollbar": {
-                          width: "6px",
-                        },
-                        "&::-webkit-scrollbar-track": {
-                          background: "transparent",
-                        },
-                        "&::-webkit-scrollbar-thumb": {
-                          background: "rgba(0, 0, 0, 0.1)",
-                          borderRadius: "4px",
-                        },
-                        "&::-webkit-scrollbar-thumb:hover": {
-                          background: "rgba(0, 0, 0, 0.2)",
-                        },
+                        position: "absolute",
+                        top: "50%",
+                        left: "50%",
+                        transform: "translate(-50%, -50%)",
+                        textAlign: "center",
                       }}
                     >
-                      {dashboardData.roleDistribution.map((role, idx) => {
-                        const percent =
-                          totalRoleAssignments > 0
-                            ? ((role.value / totalRoleAssignments) * 100).toFixed(1)
-                            : 0;
+                      <Typography sx={{ fontSize: 28, fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.1 }}>
+                        {dashboardData.usersCount}
+                      </Typography>
 
-                        return (
-                          <Box
-                            key={idx}
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "center",
-                            }}
-                          >
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                              <Box
-                                sx={{
-                                  width: 8,
-                                  height: 8,
-                                  borderRadius: "50%",
-                                  bgcolor: COLORS[idx % COLORS.length],
-                                }}
-                              />
-                              <Typography sx={{ fontSize: "0.825rem", fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase" }}>
-                                {role.label}
-                              </Typography>
-                            </Box>
-
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
-                              <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, minWidth: 20, textAlign: "right", color: "var(--text-primary)" }}>
-                                {role.value}
-                              </Typography>
-                              <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600, minWidth: 40, textAlign: "right" }}>
-                                {percent}%
-                              </Typography>
-                            </Box>
-                          </Box>
-                        );
-                      })}
+                      <Typography sx={{ fontSize: 11, color: "var(--text-secondary)", fontWeight: 600 }}>
+                        Total Users
+                      </Typography>
                     </Box>
-
                   </Box>
-                </CardContent>
-              </Card>
-            </Box>
 
+                  {/* Stats table */}
+                  <Box
+                    sx={{
+                      p: 2.5,
+                      borderRadius: "16px",
+                      border: "1px solid var(--border-color, #e2e8f0)",
+                      bgcolor: "var(--bg-glass)",
+                      width: { xs: '100%', md: 'auto' },
+                      minWidth: { md: 260 },
+                      flexGrow: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1.5,
+                      maxHeight: 280,
+                      overflowY: "auto",
+                      pr: 1.5,
+                      "&::-webkit-scrollbar": {
+                        width: "6px",
+                      },
+                      "&::-webkit-scrollbar-track": {
+                        background: "transparent",
+                      },
+                      "&::-webkit-scrollbar-thumb": {
+                        background: "rgba(0, 0, 0, 0.1)",
+                        borderRadius: "4px",
+                      },
+                      "&::-webkit-scrollbar-thumb:hover": {
+                        background: "rgba(0, 0, 0, 0.2)",
+                      },
+                    }}
+                  >
+                    {dashboardData.roleDistribution.map((role, idx) => {
+                      const percent =
+                        totalRoleAssignments > 0
+                          ? ((role.value / totalRoleAssignments) * 100).toFixed(1)
+                          : 0;
 
-            {/* Quick Actions */}
-            <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
-              <Card sx={{
-                borderRadius: "16px", 
-                boxShadow: "var(--shadow-premium)", 
-                height: "100%", 
-                width: "100%",
-                display: "flex",
-                flexDirection: "column",
-                border: "1px solid var(--border-color)",
-                background: "var(--bg-panel)",
-              }}>
-                <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2 }}>Quick Actions</Typography>
-                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-                    {quickActions.map((action, i) => (
-                      <Box key={i} sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 8px)" }, display: 'flex' }}>
-                        <Paper
-                          variant="outlined"
-                          onClick={() => navigate(action.path)}
+                      return (
+                        <Box
+                          key={idx}
                           sx={{
-                            p: 2.2,
-                            borderRadius: "12px",
                             display: "flex",
+                            justifyContent: "space-between",
                             alignItems: "center",
-                            gap: 2,
-                            cursor: "pointer",
-                            height: "100%",
-                            width: "100%",
-                            border: "1px solid var(--border-color)",
-                            backgroundColor: "var(--bg-paper)",
-                            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-
-                            "&:hover": {
-                              borderColor: "var(--color-primary)",
-                              backgroundColor: "var(--bg-panel)",
-                              transform: "translateY(-4px)",
-                              boxShadow: "0 10px 25px rgba(59, 130, 246, 0.12)",
-                            },
                           }}
                         >
-                          {/* Icon */}
-                          <Box
-                            sx={{
-                              width: 42,
-                              height: 42,
-                              borderRadius: "10px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              backgroundColor: "var(--bg-panel)",
-                              flexShrink: 0,
-                            }}
-                          >
-                            {action.icon}
-                          </Box>
-
-                          {/* Text */}
-                          <Box>
-                            <Typography
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                            <Box
                               sx={{
-                                fontWeight: 600,
-                                fontSize: "0.95rem",
-                                color: "var(--text-primary)",
+                                width: 8,
+                                height: 8,
+                                borderRadius: "50%",
+                                bgcolor: COLORS[idx % COLORS.length],
                               }}
-                            >
-                              {action.title}
-                            </Typography>
-
-                            <Typography
-                              sx={{
-                                fontSize: "0.75rem",
-                                color: "var(--text-secondary)",
-                                mt: 0.5,
-                              }}
-                            >
-                              {action.desc}
+                            />
+                            <Typography sx={{ fontSize: "0.825rem", fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase" }}>
+                              {role.label}
                             </Typography>
                           </Box>
-                        </Paper>
-                      </Box>
-                    ))}
+
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+                            <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, minWidth: 20, textAlign: "right", color: "var(--text-primary)" }}>
+                              {role.value}
+                            </Typography>
+                            <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontWeight: 600, minWidth: 40, textAlign: "right" }}>
+                              {percent}%
+                            </Typography>
+                          </Box>
+                        </Box>
+                      );
+                    })}
                   </Box>
-                </CardContent>
-              </Card>
-            </Box>
 
-
-
+                </Box>
+              </CardContent>
+            </Card>
           </Box>
 
-          {/* Row 4: Recent Users & Recent Activities */}
-          <Box sx={{ display: "flex", gap: { xs: 2, md: 3 }, mt: 3, flexWrap: { xs: "wrap", lg: "nowrap" } }}>
-            {/* Recently Onboarded Employees */}
-            {/* <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
+
+          {/* Quick Actions */}
+          <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
+            <Card sx={{
+              borderRadius: "16px",
+              boxShadow: "var(--shadow-premium)",
+              height: "100%",
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              border: "1px solid var(--border-color)",
+              background: "var(--bg-panel)",
+            }}>
+              <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 2 }}>Quick Actions</Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                  {quickActions.map((action, i) => (
+                    <Box key={i} sx={{ flex: { xs: "1 1 100%", sm: "1 1 calc(50% - 8px)" }, display: 'flex' }}>
+                      <Paper
+                        variant="outlined"
+                        onClick={() => navigate(action.path)}
+                        sx={{
+                          p: 2.2,
+                          borderRadius: "12px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                          cursor: "pointer",
+                          height: "100%",
+                          width: "100%",
+                          border: "1px solid var(--border-color)",
+                          backgroundColor: "var(--bg-paper)",
+                          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+
+                          "&:hover": {
+                            borderColor: "var(--color-primary)",
+                            backgroundColor: "var(--bg-panel)",
+                            transform: "translateY(-4px)",
+                            boxShadow: "0 10px 25px rgba(59, 130, 246, 0.12)",
+                          },
+                        }}
+                      >
+                        {/* Icon */}
+                        <Box
+                          sx={{
+                            width: 42,
+                            height: 42,
+                            borderRadius: "10px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: "var(--bg-panel)",
+                            flexShrink: 0,
+                          }}
+                        >
+                          {action.icon}
+                        </Box>
+
+                        {/* Text */}
+                        <Box>
+                          <Typography
+                            sx={{
+                              fontWeight: 600,
+                              fontSize: "0.95rem",
+                              color: "var(--text-primary)",
+                            }}
+                          >
+                            {action.title}
+                          </Typography>
+
+                          <Typography
+                            sx={{
+                              fontSize: "0.75rem",
+                              color: "var(--text-secondary)",
+                              mt: 0.5,
+                            }}
+                          >
+                            {action.desc}
+                          </Typography>
+                        </Box>
+                      </Paper>
+                    </Box>
+                  ))}
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+
+
+
+        </Box>
+
+        {/* Row 4: Recent Users & Recent Activities */}
+        <Box sx={{ display: "flex", gap: { xs: 2, md: 3 }, mt: 3, flexWrap: { xs: "wrap", lg: "nowrap" } }}>
+          {/* Recently Onboarded Employees */}
+          {/* <Box sx={{ width: { xs: "100%", lg: "50%" }, display: "flex" }}>
               <Card sx={{
                 borderRadius: "16px",
                 boxShadow: "var(--shadow-premium)",
@@ -988,8 +886,8 @@ const UniprimeDashboard = () => {
                 </CardContent>
               </Card>
             </Box> */}
-          </Box>
-        </>
+        </Box>
+      </>
     </Box >
   );
 };

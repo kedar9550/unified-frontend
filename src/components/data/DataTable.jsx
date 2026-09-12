@@ -485,19 +485,10 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
               borderRadius: "12px",
               width: "100%",
               touchAction: "pan-x pan-y",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none",
               "&::-webkit-scrollbar": {
-                height: "6px",
-              },
-              "&::-webkit-scrollbar-track": {
-                background: "rgba(255, 255, 255, 0.05)",
-                borderRadius: "3px",
-              },
-              "&::-webkit-scrollbar-thumb": {
-                background: "var(--border-color)",
-                borderRadius: "3px",
-                "&:hover": {
-                  background: "var(--color-primary)",
-                },
+                display: "none",
               },
             }}
           >
