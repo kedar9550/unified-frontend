@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Box,
   Button,
@@ -19,6 +19,14 @@ import {
   DialogContentText,
   DialogActions,
   Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Alert,
+  IconButton,
 } from '@mui/material';
 import {
   Hotel as HotelIcon,
@@ -35,6 +43,11 @@ import {
   Email as EmailIcon,
   Payment as PaymentIcon,
   LocalAtm as CashIcon,
+  UploadFile as UploadFileIcon,
+  CloudUpload as CloudUploadIcon,
+  Verified as VerifiedIcon,
+  Close as CloseIcon,
+  WarningAmber as WarningAmberIcon,
 } from '@mui/icons-material';
 import * as XLSX from 'xlsx-js-style';
 import PageHeader from '../../components/common/PageHeader';
@@ -103,6 +116,14 @@ const ApplyAccommodation = () => {
 
   // Revoke confirmation dialog state
   const [revokeDialog, setRevokeDialog] = useState({ open: false, participant: null });
+
+  // Bulk Verify Payment Dialog State
+  const [bulkVerifyDialogOpen, setBulkVerifyDialogOpen] = useState(false);
+  const [bulkFile, setBulkFile] = useState(null);
+  const [parsedBulkRows, setParsedBulkRows] = useState([]);
+  const [verifyingBulk, setVerifyingBulk] = useState(false);
+  const [bulkVerifyResults, setBulkVerifyResults] = useState(null);
+  const fileInputRef = useRef(null);
 
   // Fetch quota stats from backend
   const fetchQuotaStats = useCallback(async () => {
@@ -187,6 +208,41 @@ const ApplyAccommodation = () => {
     });
     return list;
   }, [payments]);
+
+  // Extract all participants who have accommodation = 'YES' or accommodationPayment.paid === true
+  const accommodatedParticipants = useMemo(() => {
+    const list = [];
+    payments.forEach((payment) => {
+      const parts = Array.isArray(payment.participants) ? payment.participants : [];
+      parts.forEach((p, idx) => {
+        const isAcc = (p.accommodation || '').toUpperCase() === 'YES' || p.accommodationPayment?.paid === true;
+        if (isAcc) {
+          const normGen = normalizeGender(p.gender);
+          list.push({
+            ...p,
+            participantIndex: idx,
+            paymentId: payment._id,
+            teamId: payment.teamId || '-',
+            eventName: payment.eventName || '-',
+            schoolName: payment.resolvedSchool || payment.schoolCategory || '-',
+            schoolCategory: payment.schoolCategory || '-',
+            normalizedGender: normGen,
+            collegeDisplay: p.college === 'Other College' && p.otherCollege ? p.otherCollege : (p.college || 'Other College'),
+            uniqueKey: `${payment._id}_${p.barcode || p.roll || idx}`,
+          });
+        }
+      });
+    });
+    return list;
+  }, [payments]);
+
+  const accommodatedMaleCount = useMemo(() => {
+    return accommodatedParticipants.filter((p) => p.normalizedGender === 'MALE').length;
+  }, [accommodatedParticipants]);
+
+  const accommodatedFemaleCount = useMemo(() => {
+    return accommodatedParticipants.filter((p) => p.normalizedGender === 'FEMALE').length;
+  }, [accommodatedParticipants]);
 
   // Extract unique Team IDs
   const teamIdOptions = useMemo(() => {
@@ -541,8 +597,422 @@ const ApplyAccommodation = () => {
     }
   };
 
-  // Export to Excel
-  const handleExportExcel = () => {
+  // Download Sample Excel Template for bulk payment verification
+  const handleDownloadSampleTemplate = () => {
+    const sampleHeaders = ['id', 'email'];
+    const sampleRows = [
+      ['pay_TalWW12AIChRKF', 'bethapudikoushik@gmail.com'],
+      ['pay_TalY4p2ojyGU8n', 'mukotamitadiwa@gmail.com'],
+      ['pay_TalZU7pUZSCg7R', 'foyataessling@gmail.com'],
+    ];
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([sampleHeaders, ...sampleRows]);
+    ws['!cols'] = [{ wch: 28 }, { wch: 35 }];
+
+    for (let c = 0; c < sampleHeaders.length; c++) {
+      const cellRef = XLSX.utils.encode_cell({ r: 0, c });
+      if (ws[cellRef]) {
+        ws[cellRef].s = {
+          font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+          fill: { fgColor: { rgb: '4F46E5' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+        };
+      }
+    }
+
+    XLSX.utils.book_append_sheet(wb, ws, 'VerifyPayments');
+    XLSX.writeFile(wb, 'Bulk_Accommodation_Payments_Sample.xlsx');
+    toast.success('Sample Excel template downloaded!');
+  };
+
+  // Handle Excel file selection and client-side parsing
+  const handleExcelFileUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setBulkFile(file);
+    setBulkVerifyResults(null);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const rawRows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+
+        if (!rawRows || rawRows.length === 0) {
+          toast.error('The uploaded Excel file is empty.');
+          setParsedBulkRows([]);
+          return;
+        }
+
+        // Header detection
+        let idColIdx = -1;
+        let emailColIdx = -1;
+        let startRowIdx = 1;
+
+        const headerRow = rawRows[0] || [];
+        headerRow.forEach((cell, idx) => {
+          const val = String(cell || '').trim().toLowerCase().replace(/[\s_-]/g, '');
+          if (['id', 'paymentid', 'razorpaypaymentid', 'payment', 'razorpayid', 'paymentreference'].includes(val)) {
+            idColIdx = idx;
+          } else if (['email', 'emailid', 'studentemail', 'mail', 'participantemail'].includes(val)) {
+            emailColIdx = idx;
+          }
+        });
+
+        // Fallback substring checks
+        if (idColIdx === -1 || emailColIdx === -1) {
+          headerRow.forEach((cell, idx) => {
+            const val = String(cell || '').trim().toLowerCase();
+            if (idColIdx === -1 && (val.includes('id') || val.startsWith('pay_'))) {
+              idColIdx = idx;
+            }
+            if (emailColIdx === -1 && (val.includes('email') || val.includes('@'))) {
+              emailColIdx = idx;
+            }
+          });
+        }
+
+        // Default fallbacks: column 0 = id, column 1 = email
+        if (idColIdx === -1) idColIdx = 0;
+        if (emailColIdx === -1) emailColIdx = 1;
+
+        // If row 0 contains data (e.g. cell starts with pay_ or contains @)
+        const cell0 = String(headerRow[idColIdx] || '').trim();
+        const cell1 = String(headerRow[emailColIdx] || '').trim();
+        if (cell0.startsWith('pay_') || cell1.includes('@')) {
+          startRowIdx = 0;
+        }
+
+        const parsed = [];
+        for (let r = startRowIdx; r < rawRows.length; r++) {
+          const row = rawRows[r];
+          if (!row) continue;
+          const idVal = String(row[idColIdx] || '').trim();
+          const emailVal = String(row[emailColIdx] || '').trim();
+
+          if (!idVal && !emailVal) continue;
+
+          parsed.push({
+            rowNum: r + 1,
+            id: idVal,
+            email: emailVal,
+          });
+        }
+
+        if (parsed.length === 0) {
+          toast.warning('No valid rows found in the uploaded file.');
+          setParsedBulkRows([]);
+          return;
+        }
+
+        setParsedBulkRows(parsed);
+        toast.success(`Loaded ${parsed.length} rows from Excel file.`);
+      } catch (err) {
+        console.error('Excel parse error:', err);
+        toast.error('Failed to parse Excel file. Please ensure it is a valid .xlsx or .xls file.');
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+  };
+
+  // Preview rows mapped against loaded accommodation data
+  const bulkRowsPreview = useMemo(() => {
+    if (!parsedBulkRows.length) return [];
+
+    const accMap = new Map();
+    const allMap = new Map();
+
+    payments.forEach((reg) => {
+      (reg.participants || []).forEach((p, idx) => {
+        const email = String(p.email || '').trim().toLowerCase();
+        if (!email) return;
+
+        const isAcc = (p.accommodation || '').trim().toUpperCase() === 'YES' || p.accommodationPayment?.paid === true;
+        const participantInfo = {
+          ...p,
+          teamId: reg.teamId || '-',
+          eventName: reg.eventName || '-',
+          regId: reg._id,
+          participantIndex: idx,
+          isAcc,
+          hasExistingPaymentId: !!(p.accommodationPayment?.razorpayPaymentId || p.payment?.razorpay_payment_id),
+          existingPaymentId: p.accommodationPayment?.razorpayPaymentId || p.payment?.razorpay_payment_id || null,
+          existingAmount: p.accommodationPayment?.amount,
+          existingDays: p.accommodationPayment?.days,
+        };
+
+        allMap.set(email, participantInfo);
+        if (isAcc) {
+          accMap.set(email, participantInfo);
+        }
+      });
+    });
+
+    return parsedBulkRows.map((row) => {
+      const emailKey = (row.email || '').trim().toLowerCase();
+      const accMatch = accMap.get(emailKey);
+      const anyMatch = allMap.get(emailKey);
+
+      let matchStatus = 'NOT_FOUND';
+      let matchLabel = 'Not Found';
+      let matchColor = 'error';
+
+      if (accMatch) {
+        if (!accMatch.hasExistingPaymentId) {
+          matchStatus = 'READY_MISSING';
+          matchLabel = 'Matched (Missing Payment Data)';
+          matchColor = 'warning';
+        } else {
+          matchStatus = 'READY_UPDATE';
+          matchLabel = 'Matched (Has Existing Payment)';
+          matchColor = 'info';
+        }
+      } else if (anyMatch) {
+        matchStatus = 'NOT_ACCOMMODATED';
+        matchLabel = 'Found (Accommodation is NO)';
+        matchColor = 'secondary';
+      }
+
+      return {
+        ...row,
+        matched: !!accMatch,
+        participant: accMatch || anyMatch || null,
+        matchStatus,
+        matchLabel,
+        matchColor,
+      };
+    });
+  }, [parsedBulkRows, payments]);
+
+  // Execute bulk verification call to backend
+  const handleExecuteBulkVerify = async () => {
+    if (parsedBulkRows.length === 0) {
+      toast.error('No rows to verify.');
+      return;
+    }
+
+    setVerifyingBulk(true);
+    try {
+      const items = parsedBulkRows.map((r) => ({ id: r.id, email: r.email }));
+      const res = await API.post('/api/razorpay/accommodation/bulk-verify-payments', { items });
+
+      if (res.data?.ok) {
+        toast.success(res.data.message || `Verified and updated ${res.data.summary?.updatedCount || 0} participants!`);
+        setBulkVerifyResults(res.data);
+        await fetchData();
+      } else {
+        toast.error(res.data?.error || 'Bulk verification failed');
+      }
+    } catch (err) {
+      console.error('Bulk verification error:', err);
+      toast.error(err.response?.data?.error || err.message || 'Failed to bulk verify accommodation payments');
+    } finally {
+      setVerifyingBulk(false);
+    }
+  };
+
+  // Download Accommodation Data Excel (Flat sheet with only Accommodated = YES participants)
+  const handleExportAccommodationExcel = (targetGender = 'ALL') => {
+    let list = accommodatedParticipants;
+    if (targetGender === 'MALE') {
+      list = accommodatedParticipants.filter((p) => p.normalizedGender === 'MALE');
+    } else if (targetGender === 'FEMALE') {
+      list = accommodatedParticipants.filter((p) => p.normalizedGender === 'FEMALE');
+    }
+
+    if (list.length === 0) {
+      toast.warning(`No accommodated ${targetGender === 'ALL' ? '' : targetGender.toLowerCase()} participants found to download.`);
+      return;
+    }
+    setExporting(true);
+    try {
+      const headers = [
+        'S.No',
+        'Participant Name',
+        'Roll Number / ID',
+        'Gender',
+        'Hostel Assigned',
+        'College Name',
+        'Branch / Department',
+        'Year',
+        'Mobile Number',
+        'Email Address',
+        'Team ID',
+        'Event Name',
+        'School / Domain',
+        'Accommodation Status',
+        'Days Booked',
+        'Rate / Day',
+        'Total Amount',
+        'Payment Mode',
+        'Payment / Order ID',
+        'Allocation / Payment Date',
+        'Barcode / QR Code',
+        'Hostel Checked-in Status',
+      ];
+
+      const colWidths = [
+        { wch: 6 },
+        { wch: 26 },
+        { wch: 18 },
+        { wch: 10 },
+        { wch: 16 },
+        { wch: 32 },
+        { wch: 22 },
+        { wch: 8 },
+        { wch: 16 },
+        { wch: 28 },
+        { wch: 16 },
+        { wch: 24 },
+        { wch: 22 },
+        { wch: 16 },
+        { wch: 14 },
+        { wch: 12 },
+        { wch: 14 },
+        { wch: 18 },
+        { wch: 28 },
+        { wch: 22 },
+        { wch: 16 },
+        { wch: 18 },
+      ];
+
+      const rows = list.map((p, idx) => {
+        const days =
+          p.accommodationPayment?.days ||
+          p.accommodationPayment?.dayscount ||
+          p.accommodationPayment?.daysCount ||
+          p.days ||
+          p.dayscount ||
+          p.daysCount ||
+          1;
+
+        const amount = p.accommodationPayment?.amount || days * RATE_PER_DAY;
+
+        let paymentMode = 'DIRECT / CASH';
+        if (p.accommodationPayment?.paymentMethod) {
+          paymentMode = p.accommodationPayment.paymentMethod.toUpperCase();
+        } else if (p.accommodationPayment?.razorpayPaymentId) {
+          paymentMode = p.accommodationPayment.razorpayPaymentId.startsWith('CASH') ? 'CASH' : 'ONLINE (RAZORPAY)';
+        } else if (p.payment?.razorpay_payment_id) {
+          paymentMode = 'ONLINE (RAZORPAY)';
+        }
+
+        const paymentId =
+          p.accommodationPayment?.razorpayPaymentId ||
+          p.accommodationPayment?.razorpayOrderId ||
+          p.accommodationPayment?.payment?.razorpay_payment_id ||
+          p.payment?.razorpay_payment_id ||
+          '-';
+
+        let dateStr = '-';
+        const dateVal = p.accommodationPayment?.paidAt || p.accommodationPayment?.appliedAt || p.updatedAt || p.createdAt;
+        if (dateVal) {
+          try {
+            dateStr = new Date(dateVal).toLocaleString('en-IN', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+          } catch {
+            dateStr = String(dateVal);
+          }
+        }
+
+        const hostelType = p.normalizedGender === 'FEMALE' ? 'Girls Hostel' : 'Boys Hostel';
+        const checkedInStatus = p.accommodationCheckedIn ? 'Checked In' : 'Not Checked In';
+
+        return [
+          idx + 1,
+          p.name || '-',
+          p.roll || p.rollnumber || '-',
+          p.normalizedGender === 'FEMALE' ? 'Girl' : 'Male',
+          hostelType,
+          p.collegeDisplay || '-',
+          p.branch || p.department || '-',
+          p.year || '-',
+          p.mobile || '-',
+          p.email || '-',
+          p.teamId || '-',
+          p.eventName || '-',
+          p.schoolName || p.schoolCategory || '-',
+          'YES',
+          `${days} Day${days > 1 ? 's' : ''}`,
+          `₹${RATE_PER_DAY}`,
+          `₹${amount}`,
+          paymentMode,
+          paymentId,
+          dateStr,
+          p.barcode || '-',
+          checkedInStatus,
+        ];
+      });
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+      ws['!cols'] = colWidths;
+
+      for (let c = 0; c < headers.length; c++) {
+        const cellRef = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws[cellRef]) {
+          ws[cellRef].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+            fill: { fgColor: { rgb: '1E3A8A' } },
+            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+            border: {
+              top: { style: 'thin', color: { rgb: '94A3B8' } },
+              bottom: { style: 'medium', color: { rgb: '0F172A' } },
+              left: { style: 'thin', color: { rgb: '94A3B8' } },
+              right: { style: 'thin', color: { rgb: '94A3B8' } },
+            },
+          };
+        }
+      }
+
+      for (let r = 1; r <= rows.length; r++) {
+        for (let c = 0; c < headers.length; c++) {
+          const cellRef = XLSX.utils.encode_cell({ r, c });
+          if (ws[cellRef]) {
+            const isCenterCol = [0, 2, 3, 4, 7, 8, 10, 13, 14, 15, 16, 17, 19, 20, 21].includes(c);
+            ws[cellRef].s = {
+              font: { sz: 10, color: { rgb: '0F172A' } },
+              alignment: {
+                horizontal: isCenterCol ? 'center' : 'left',
+                vertical: 'center',
+              },
+              border: {
+                top: { style: 'thin', color: { rgb: 'E2E8F0' } },
+                bottom: { style: 'thin', color: { rgb: 'E2E8F0' } },
+                left: { style: 'thin', color: { rgb: 'E2E8F0' } },
+                right: { style: 'thin', color: { rgb: 'E2E8F0' } },
+              },
+            };
+          }
+        }
+      }
+
+      const sheetTitle = targetGender === 'MALE' ? 'Boys Accommodation' : targetGender === 'FEMALE' ? 'Girls Accommodation' : 'Accommodation Data';
+      XLSX.utils.book_append_sheet(wb, ws, sheetTitle);
+      const prefix = targetGender === 'MALE' ? 'Boys_' : targetGender === 'FEMALE' ? 'Girls_' : '';
+      XLSX.writeFile(wb, `Accommodation_Data_${prefix}${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success(`Accommodation data (${list.length} students) downloaded successfully!`);
+    } catch (err) {
+      console.error('Export error:', err);
+      toast.error('Failed to export accommodation data');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // Export filtered table records
+  const handleExportFilteredExcel = () => {
     if (filteredParticipants.length === 0) {
       toast.warning('No data to export');
       return;
@@ -564,29 +1034,72 @@ const ApplyAccommodation = () => {
         'Amount Paid',
       ];
 
-      const rows = filteredParticipants.map((p, idx) => [
-        idx + 1,
-        p.name || '-',
-        p.roll || '-',
-        p.normalizedGender === 'FEMALE' ? 'Girl / Female' : 'Male',
-        p.collegeDisplay || '-',
-        p.branch || '-',
-        p.mobile || '-',
-        p.email || '-',
-        p.teamId || '-',
-        (p.accommodation || '').toUpperCase() === 'YES' ? 'YES' : 'NO',
-        p.accommodationPayment?.days || '-',
-        p.accommodationPayment?.amount ? `₹${p.accommodationPayment.amount}` : '-',
-      ]);
+      const colWidths = [
+        { wch: 6 },
+        { wch: 26 },
+        { wch: 18 },
+        { wch: 10 },
+        { wch: 30 },
+        { wch: 20 },
+        { wch: 16 },
+        { wch: 28 },
+        { wch: 16 },
+        { wch: 14 },
+        { wch: 14 },
+        { wch: 14 },
+      ];
+
+      const rows = filteredParticipants.map((p, idx) => {
+        const isAcc = (p.accommodation || '').toUpperCase() === 'YES';
+        const days =
+          p.accommodationPayment?.days ||
+          p.accommodationPayment?.dayscount ||
+          p.days ||
+          p.dayscount ||
+          (isAcc ? 1 : '-');
+        const amount = p.accommodationPayment?.amount
+          ? `₹${p.accommodationPayment.amount}`
+          : isAcc
+          ? `₹${Number(days) * RATE_PER_DAY}`
+          : '-';
+
+        return [
+          idx + 1,
+          p.name || '-',
+          p.roll || '-',
+          p.normalizedGender === 'FEMALE' ? 'Girl' : 'Male',
+          p.collegeDisplay || '-',
+          p.branch || '-',
+          p.mobile || '-',
+          p.email || '-',
+          p.teamId || '-',
+          isAcc ? 'YES' : 'NO',
+          typeof days === 'number' ? `${days} Day(s)` : days,
+          amount,
+        ];
+      });
 
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-      XLSX.utils.book_append_sheet(wb, ws, 'Accommodation List');
-      XLSX.writeFile(wb, `Accommodation_${new Date().toISOString().split('T')[0]}.xlsx`);
-      toast.success('Accommodation list exported successfully');
+      ws['!cols'] = colWidths;
+
+      for (let c = 0; c < headers.length; c++) {
+        const cellRef = XLSX.utils.encode_cell({ r: 0, c });
+        if (ws[cellRef]) {
+          ws[cellRef].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+            fill: { fgColor: { rgb: '334155' } },
+            alignment: { horizontal: 'center', vertical: 'center' },
+          };
+        }
+      }
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Filtered List');
+      XLSX.writeFile(wb, `Participants_Filter_${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Filtered participants list exported successfully');
     } catch (err) {
       console.error('Export error:', err);
-      toast.error('Failed to export accommodation list');
+      toast.error('Failed to export list');
     } finally {
       setExporting(false);
     }
@@ -720,9 +1233,14 @@ const ApplyAccommodation = () => {
                   border: '1px solid rgba(34, 197, 94, 0.3)',
                 }}
               />
-              {p.accommodationPayment?.days && (
+              {(p.accommodationPayment?.days || p.days) ? (
                 <Typography variant="caption" display="block" sx={{ color: '#059669', fontWeight: 700, mt: 0.25 }}>
-                  {p.accommodationPayment.days} Day(s) • ₹{p.accommodationPayment.amount || p.accommodationPayment.days * 100}
+                  {p.accommodationPayment?.days || p.days} Day(s) • ₹{p.accommodationPayment?.amount || (p.accommodationPayment?.days || p.days) * RATE_PER_DAY}
+                </Typography>
+              ) : null}
+              {p.accommodationPayment?.razorpayPaymentId && (
+                <Typography variant="caption" display="block" sx={{ color: '#64748b', fontSize: '0.68rem', fontFamily: 'monospace' }}>
+                  {p.accommodationPayment.razorpayPaymentId}
                 </Typography>
               )}
             </Box>
@@ -808,14 +1326,14 @@ const ApplyAccommodation = () => {
   const totalPayable = selectedDays * RATE_PER_DAY;
 
   return (
-    <PageContainer sx={{ px: { xs: 1.5, md: 3 }, py: { xs: 2, md: 3 } }}>
+    <PageContainer sx={{ px: { xs: 1.5, md: 3 }, py: { xs: 2, md: 3 }, pt: { xs: 3, md: 4 } }}>
       {/* Header */}
       <PageHeader
         title="Apply Accommodation"
         subtitle="Manage and allocate accommodation exclusively for paid participants from other colleges"
         icon={<HotelIcon sx={{ color: '#2563eb' }} />}
-        actions={
-          <Stack direction="row" spacing={1.5} alignItems="center">
+        action={
+          <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
             <Button
               variant="outlined"
               size="small"
@@ -829,18 +1347,66 @@ const ApplyAccommodation = () => {
             <Button
               variant="contained"
               size="small"
-              color="success"
-              onClick={handleExportExcel}
+              onClick={() => {
+                setBulkVerifyDialogOpen(true);
+                setBulkVerifyResults(null);
+              }}
+              startIcon={<UploadFileIcon />}
+              sx={{
+                borderRadius: '10px',
+                textTransform: 'none',
+                fontWeight: 800,
+                px: 2,
+                py: 0.8,
+                background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                boxShadow: '0 4px 14px rgba(99, 102, 241, 0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)',
+                },
+              }}
+            >
+              Bulk Verify Payments (Excel)
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleExportFilteredExcel}
               disabled={exporting || filteredParticipants.length === 0}
+              startIcon={<DownloadIcon sx={{ fontSize: 16 }} />}
+              sx={{
+                borderRadius: '10px',
+                textTransform: 'none',
+                fontWeight: 600,
+                borderColor: '#cbd5e1',
+                color: '#334155',
+                '&:hover': {
+                  borderColor: '#94a3b8',
+                  backgroundColor: '#f8fafc',
+                },
+              }}
+            >
+              Export Filtered List
+            </Button>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => handleExportAccommodationExcel('ALL')}
+              disabled={exporting || accommodatedParticipants.length === 0}
               startIcon={exporting ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon />}
               sx={{
                 borderRadius: '10px',
                 textTransform: 'none',
-                fontWeight: 700,
+                fontWeight: 800,
+                px: 2,
+                py: 0.8,
                 background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                },
               }}
             >
-              {exporting ? 'Exporting...' : 'Export Excel'}
+              {exporting ? 'Downloading...' : `Download Accommodation Data (${accommodatedParticipants.length})`}
             </Button>
           </Stack>
         }
@@ -904,6 +1470,16 @@ const ApplyAccommodation = () => {
             <Typography variant="caption" sx={{ color: '#475569', mt: 0.5, display: 'block', fontWeight: 600 }}>
               {malePercent}% allocated (Limit: {MALE_LIMIT} boys)
             </Typography>
+            <Button
+              size="small"
+              variant="text"
+              startIcon={<DownloadIcon sx={{ fontSize: 13 }} />}
+              onClick={() => handleExportAccommodationExcel('MALE')}
+              disabled={accommodatedMaleCount === 0}
+              sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.72rem', p: 0, mt: 0.5, color: '#1e40af' }}
+            >
+              Download Boys Excel ({accommodatedMaleCount})
+            </Button>
           </CardContent>
         </Card>
 
@@ -956,6 +1532,16 @@ const ApplyAccommodation = () => {
             <Typography variant="caption" sx={{ color: '#475569', mt: 0.5, display: 'block', fontWeight: 600 }}>
               {femalePercent}% allocated (Limit: {FEMALE_LIMIT} female)
             </Typography>
+            <Button
+              size="small"
+              variant="text"
+              startIcon={<DownloadIcon sx={{ fontSize: 13 }} />}
+              onClick={() => handleExportAccommodationExcel('FEMALE')}
+              disabled={accommodatedFemaleCount === 0}
+              sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.72rem', p: 0, mt: 0.5, color: '#9d174d' }}
+            >
+              Download Girls Excel ({accommodatedFemaleCount})
+            </Button>
           </CardContent>
         </Card>
 
@@ -1007,6 +1593,16 @@ const ApplyAccommodation = () => {
             <Typography variant="caption" sx={{ color: '#475569', mt: 0.5, display: 'block', fontWeight: 600 }}>
               {totalPercent}% filled (Max 150 overall)
             </Typography>
+            <Button
+              size="small"
+              variant="text"
+              startIcon={<DownloadIcon sx={{ fontSize: 13 }} />}
+              onClick={() => handleExportAccommodationExcel('ALL')}
+              disabled={accommodatedParticipants.length === 0}
+              sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.72rem', p: 0, mt: 0.5, color: '#065f46' }}
+            >
+              Download All Accommodated ({accommodatedParticipants.length})
+            </Button>
           </CardContent>
         </Card>
 
@@ -1054,7 +1650,7 @@ const ApplyAccommodation = () => {
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
             <FilterAltIcon sx={{ fontSize: 20, color: '#2563eb' }} />
             <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0f172a' }}>
               Filter by Team ID
@@ -1064,20 +1660,122 @@ const ApplyAccommodation = () => {
               size="small"
               sx={{ fontWeight: 700, backgroundColor: '#eff6ff', color: '#1d4ed8' }}
             />
+            {/* Quick Filter Badges */}
+            <Chip
+              label={`Accommodated: ${accommodatedParticipants.length}`}
+              size="small"
+              color={statusFilter === 'YES' && genderFilter === 'ALL' ? 'success' : 'default'}
+              variant={statusFilter === 'YES' && genderFilter === 'ALL' ? 'filled' : 'outlined'}
+              onClick={() => {
+                setStatusFilter(statusFilter === 'YES' && genderFilter === 'ALL' ? 'ALL' : 'YES');
+                setGenderFilter('ALL');
+              }}
+              sx={{ fontWeight: 700, cursor: 'pointer' }}
+            />
+            <Chip
+              label={`Boys: ${accommodatedMaleCount}`}
+              size="small"
+              color={statusFilter === 'YES' && genderFilter === 'MALE' ? 'primary' : 'default'}
+              variant={statusFilter === 'YES' && genderFilter === 'MALE' ? 'filled' : 'outlined'}
+              onClick={() => {
+                setStatusFilter('YES');
+                setGenderFilter(genderFilter === 'MALE' ? 'ALL' : 'MALE');
+              }}
+              sx={{ fontWeight: 700, cursor: 'pointer' }}
+            />
+            <Chip
+              label={`Girls: ${accommodatedFemaleCount}`}
+              size="small"
+              color={statusFilter === 'YES' && genderFilter === 'FEMALE' ? 'secondary' : 'default'}
+              variant={statusFilter === 'YES' && genderFilter === 'FEMALE' ? 'filled' : 'outlined'}
+              onClick={() => {
+                setStatusFilter('YES');
+                setGenderFilter(genderFilter === 'FEMALE' ? 'ALL' : 'FEMALE');
+              }}
+              sx={{ fontWeight: 700, cursor: 'pointer' }}
+            />
           </Box>
 
-          {(teamIdFilter !== 'ALL' || genderFilter !== 'ALL' || statusFilter !== 'ALL' || searchQuery) && (
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+            {(teamIdFilter !== 'ALL' || genderFilter !== 'ALL' || statusFilter !== 'ALL' || searchQuery) && (
+              <Button
+                size="small"
+                variant="text"
+                color="error"
+                onClick={handleResetFilters}
+                startIcon={<FilterAltOffIcon sx={{ fontSize: 16 }} />}
+                sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.8rem' }}
+              >
+                Reset
+              </Button>
+            )}
             <Button
+              variant="outlined"
               size="small"
-              variant="text"
-              color="error"
-              onClick={handleResetFilters}
-              startIcon={<FilterAltOffIcon sx={{ fontSize: 16 }} />}
-              sx={{ textTransform: 'none', fontWeight: 700, fontSize: '0.8rem' }}
+              onClick={() => {
+                setBulkVerifyDialogOpen(true);
+                setBulkVerifyResults(null);
+              }}
+              startIcon={<UploadFileIcon sx={{ fontSize: 16 }} />}
+              sx={{
+                borderRadius: '8px',
+                textTransform: 'none',
+                fontWeight: 700,
+                fontSize: '0.82rem',
+                borderColor: '#6366f1',
+                color: '#4f46e5',
+                backgroundColor: '#ffffff',
+                '&:hover': {
+                  borderColor: '#4338ca',
+                  backgroundColor: '#eef2ff',
+                },
+              }}
             >
-              Reset Filters
+              Bulk Verify Payments (Excel)
             </Button>
-          )}
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => handleExportAccommodationExcel('ALL')}
+              disabled={exporting || accommodatedParticipants.length === 0}
+              startIcon={exporting ? <CircularProgress size={14} color="inherit" /> : <DownloadIcon sx={{ fontSize: 16 }} />}
+              sx={{
+                borderRadius: '8px',
+                textTransform: 'none',
+                fontWeight: 800,
+                fontSize: '0.82rem',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                },
+              }}
+            >
+              {exporting ? 'Downloading...' : `Download Accommodation Excel (${accommodatedParticipants.length})`}
+            </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleExportFilteredExcel}
+              disabled={exporting || filteredParticipants.length === 0}
+              startIcon={<DownloadIcon sx={{ fontSize: 15 }} />}
+              sx={{
+                borderRadius: '8px',
+                textTransform: 'none',
+                fontWeight: 600,
+                fontSize: '0.78rem',
+                borderColor: '#cbd5e1',
+                color: '#334155',
+                bgcolor: '#ffffff',
+                '&:hover': {
+                  borderColor: '#94a3b8',
+                  backgroundColor: '#f8fafc',
+                },
+              }}
+            >
+              Export Filtered ({filteredParticipants.length})
+            </Button>
+          </Stack>
         </Box>
 
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
@@ -1135,6 +1833,143 @@ const ApplyAccommodation = () => {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
+      </Paper>
+
+      {/* Accommodation Quick Action & Export Bar directly above table */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 2,
+          mb: 2.5,
+          borderRadius: '16px',
+          background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+          border: '1.5px solid #6ee7b7',
+          boxShadow: '0 4px 14px rgba(16, 185, 129, 0.12)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 2,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: '12px',
+              backgroundColor: '#059669',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 10px rgba(5, 150, 105, 0.3)',
+            }}
+          >
+            <HotelIcon sx={{ fontSize: 24 }} />
+          </Box>
+          <Box>
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#064e3b', lineHeight: 1.2 }}>
+              Accommodation Data ({accommodatedParticipants.length} Allocated)
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#047857', fontWeight: 600 }}>
+              Boys: <strong>{accommodatedMaleCount}</strong> | Girls: <strong>{accommodatedFemaleCount}</strong> | Total Capacity: <strong>{quotaStats.total} / {OVERALL_LIMIT}</strong>
+            </Typography>
+          </Box>
+        </Box>
+
+        <Stack direction="row" spacing={1.2} alignItems="center" flexWrap="wrap">
+          <Button
+            variant="contained"
+            size="medium"
+            onClick={() => {
+              setBulkVerifyDialogOpen(true);
+              setBulkVerifyResults(null);
+            }}
+            startIcon={<UploadFileIcon />}
+            sx={{
+              borderRadius: '10px',
+              textTransform: 'none',
+              fontWeight: 800,
+              fontSize: '0.85rem',
+              px: 2.2,
+              py: 0.9,
+              background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.35)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)',
+              },
+            }}
+          >
+            Bulk Verify Missing Payments (Excel)
+          </Button>
+          <Button
+            variant="contained"
+            size="medium"
+            onClick={() => handleExportAccommodationExcel('ALL')}
+            disabled={exporting || accommodatedParticipants.length === 0}
+            startIcon={exporting ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon />}
+            sx={{
+              borderRadius: '10px',
+              textTransform: 'none',
+              fontWeight: 800,
+              fontSize: '0.85rem',
+              px: 2.5,
+              py: 0.9,
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.35)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+              },
+            }}
+          >
+            {exporting ? 'Downloading...' : `Download Accommodation Excel (${accommodatedParticipants.length})`}
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => handleExportAccommodationExcel('MALE')}
+            disabled={exporting || accommodatedMaleCount === 0}
+            startIcon={<DownloadIcon sx={{ fontSize: 15 }} />}
+            sx={{
+              borderRadius: '10px',
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              borderColor: '#059669',
+              color: '#065f46',
+              backgroundColor: '#ffffff',
+              '&:hover': {
+                backgroundColor: '#f0fdf4',
+                borderColor: '#047857',
+              },
+            }}
+          >
+            Boys Excel ({accommodatedMaleCount})
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => handleExportAccommodationExcel('FEMALE')}
+            disabled={exporting || accommodatedFemaleCount === 0}
+            startIcon={<DownloadIcon sx={{ fontSize: 15 }} />}
+            sx={{
+              borderRadius: '10px',
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.8rem',
+              borderColor: '#059669',
+              color: '#065f46',
+              backgroundColor: '#ffffff',
+              '&:hover': {
+                backgroundColor: '#f0fdf4',
+                borderColor: '#047857',
+              },
+            }}
+          >
+            Girls Excel ({accommodatedFemaleCount})
+          </Button>
+        </Stack>
       </Paper>
 
       {/* Main Participants Data Table */}
@@ -1363,6 +2198,413 @@ const ApplyAccommodation = () => {
           >
             Yes, Revoke
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Bulk Verify Accommodation Payments Dialog */}
+      <Dialog
+        open={bulkVerifyDialogOpen}
+        onClose={() => {
+          if (!verifyingBulk) {
+            setBulkVerifyDialogOpen(false);
+          }
+        }}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '16px',
+            overflow: 'hidden',
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            background: 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
+            color: '#ffffff',
+            py: 2,
+            px: 3,
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <UploadFileIcon sx={{ fontSize: 28, color: '#e0e7ff' }} />
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 800, color: '#ffffff', lineHeight: 1.2 }}>
+                Bulk Verify Accommodation Payments
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#c7d2fe', fontWeight: 500 }}>
+                Upload Excel file to link Razorpay payment records to accommodated participants
+              </Typography>
+            </Box>
+          </Box>
+          <IconButton
+            size="small"
+            onClick={() => setBulkVerifyDialogOpen(false)}
+            disabled={verifyingBulk}
+            sx={{ color: '#e0e7ff', '&:hover': { color: '#ffffff', backgroundColor: 'rgba(255,255,255,0.1)' } }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 3, backgroundColor: '#f8fafc' }}>
+          {/* Instructions Box */}
+          <Alert
+            severity="info"
+            sx={{
+              mb: 2.5,
+              borderRadius: '12px',
+              border: '1px solid #bfdbfe',
+              backgroundColor: '#eff6ff',
+              '& .MuiAlert-message': { width: '100%' },
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+              <Box>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: '#1e3a8a', mb: 0.5 }}>
+                  Excel Format Requirements:
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#1e40af', display: 'block' }}>
+                  • <strong>Column A (id)</strong>: Razorpay Payment ID (e.g. <code>pay_TalWW12AIChRKF</code>)
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#1e40af', display: 'block' }}>
+                  • <strong>Column B (email)</strong>: Participant Email (e.g. <code>student@gmail.com</code>)
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#4338ca', fontWeight: 600, display: 'block', mt: 0.5 }}>
+                  Matches participants where <strong>Accommodation is "Yes"</strong> and email matches, then verifies & stores the full payment object.
+                </Typography>
+              </Box>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleDownloadSampleTemplate}
+                startIcon={<DownloadIcon sx={{ fontSize: 15 }} />}
+                sx={{
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.78rem',
+                  borderColor: '#3b82f6',
+                  color: '#1d4ed8',
+                  backgroundColor: '#ffffff',
+                  '&:hover': {
+                    borderColor: '#1d4ed8',
+                    backgroundColor: '#dbeafe',
+                  },
+                }}
+              >
+                Sample Template
+              </Button>
+            </Box>
+          </Alert>
+
+          {/* Upload Area */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept=".xlsx, .xls, .csv"
+            onChange={handleExcelFileUpload}
+            style={{ display: 'none' }}
+          />
+
+          <Paper
+            elevation={0}
+            onClick={() => fileInputRef.current?.click()}
+            sx={{
+              p: 3,
+              mb: 2.5,
+              borderRadius: '14px',
+              border: '2px dashed #818cf8',
+              backgroundColor: bulkFile ? '#eef2ff' : '#ffffff',
+              cursor: 'pointer',
+              textAlign: 'center',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                borderColor: '#4f46e5',
+                backgroundColor: '#eef2ff',
+              },
+            }}
+          >
+            <CloudUploadIcon sx={{ fontSize: 44, color: '#6366f1', mb: 1 }} />
+            {bulkFile ? (
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#312e81' }}>
+                  {bulkFile.name}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#4338ca', fontWeight: 600, display: 'block', mt: 0.5 }}>
+                  {parsedBulkRows.length} valid rows loaded from file. Click here to change file.
+                </Typography>
+              </Box>
+            ) : (
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#334155' }}>
+                  Click to Browse or Drag & Drop Excel File here
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#64748b' }}>
+                  Supports .xlsx, .xls, or .csv files with <strong>id</strong> and <strong>email</strong> columns
+                </Typography>
+              </Box>
+            )}
+          </Paper>
+
+          {/* Verification Progress Indicator */}
+          {verifyingBulk && (
+            <Box sx={{ mb: 2.5, p: 2, borderRadius: '12px', backgroundColor: '#eef2ff', border: '1px solid #c7d2fe' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                <CircularProgress size={20} color="primary" />
+                <Typography variant="body2" sx={{ fontWeight: 700, color: '#3730a3' }}>
+                  Verifying payments with Razorpay and updating database...
+                </Typography>
+              </Box>
+              <LinearProgress sx={{ borderRadius: 2, height: 6 }} />
+              <Typography variant="caption" sx={{ color: '#4338ca', mt: 0.5, display: 'block' }}>
+                Please wait while payment IDs are verified against gateway and raw data is stored.
+              </Typography>
+            </Box>
+          )}
+
+          {/* Results Summary Card (After Verification) */}
+          {bulkVerifyResults && (
+            <Box
+              sx={{
+                mb: 2.5,
+                p: 2,
+                borderRadius: '14px',
+                background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+                border: '1.5px solid #6ee7b7',
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                <CheckCircleIcon sx={{ color: '#059669', fontSize: 24 }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#064e3b' }}>
+                  Verification Completed Successfully!
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+                <Chip
+                  label={`Total Processed: ${bulkVerifyResults.summary?.totalProcessed || 0}`}
+                  size="small"
+                  sx={{ fontWeight: 700, backgroundColor: '#ffffff', color: '#065f46' }}
+                />
+                <Chip
+                  label={`Updated & Stored: ${bulkVerifyResults.summary?.updatedCount || 0}`}
+                  size="small"
+                  color="success"
+                  sx={{ fontWeight: 800 }}
+                />
+                {bulkVerifyResults.summary?.notFoundCount > 0 && (
+                  <Chip
+                    label={`Not Found / Not Marked Yes: ${bulkVerifyResults.summary.notFoundCount}`}
+                    size="small"
+                    color="warning"
+                    sx={{ fontWeight: 700 }}
+                  />
+                )}
+                {bulkVerifyResults.summary?.failedGatewayCount > 0 && (
+                  <Chip
+                    label={`Gateway Warnings: ${bulkVerifyResults.summary.failedGatewayCount}`}
+                    size="small"
+                    color="error"
+                    sx={{ fontWeight: 700 }}
+                  />
+                )}
+              </Box>
+            </Box>
+          )}
+
+          {/* Pre-Verification Summary Counters */}
+          {parsedBulkRows.length > 0 && !bulkVerifyResults && (
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2, alignItems: 'center' }}>
+              <Chip
+                label={`Total Rows in File: ${parsedBulkRows.length}`}
+                size="small"
+                sx={{ fontWeight: 700, backgroundColor: '#f1f5f9', color: '#334155' }}
+              />
+              <Chip
+                label={`Matched (Acc: YES): ${bulkRowsPreview.filter((r) => r.matched).length}`}
+                size="small"
+                color="success"
+                sx={{ fontWeight: 700 }}
+              />
+              <Chip
+                label={`Missing Payment Info: ${bulkRowsPreview.filter((r) => r.matchStatus === 'READY_MISSING').length}`}
+                size="small"
+                color="warning"
+                sx={{ fontWeight: 700 }}
+              />
+              <Chip
+                label={`Unmatched / Acc: NO: ${bulkRowsPreview.filter((r) => !r.matched).length}`}
+                size="small"
+                color="error"
+                variant="outlined"
+                sx={{ fontWeight: 700 }}
+              />
+            </Box>
+          )}
+
+          {/* Table Preview of Loaded Rows */}
+          {parsedBulkRows.length > 0 && (
+            <Paper
+              elevation={0}
+              sx={{
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                overflow: 'hidden',
+                backgroundColor: '#ffffff',
+              }}
+            >
+              <TableContainer sx={{ maxHeight: 320 }}>
+                <Table size="small" stickyHeader>
+                  <TableHead>
+                    <TableRow sx={{ '& th': { fontWeight: 800, backgroundColor: '#f1f5f9', color: '#1e293b' } }}>
+                      <TableCell width={50}>#</TableCell>
+                      <TableCell>Payment ID (Excel)</TableCell>
+                      <TableCell>Email (Excel)</TableCell>
+                      <TableCell>Matched Participant</TableCell>
+                      <TableCell>Team ID</TableCell>
+                      <TableCell align="center">{bulkVerifyResults ? 'Verification Status' : 'Match Status'}</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {bulkVerifyResults ? (
+                      bulkVerifyResults.results.map((res, idx) => (
+                        <TableRow key={idx} hover sx={{ backgroundColor: res.status === 'SUCCESS' ? '#f0fdf4' : '#fff' }}>
+                          <TableCell sx={{ fontWeight: 600, color: '#64748b' }}>{res.row || idx + 1}</TableCell>
+                          <TableCell sx={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.8rem', color: '#1e293b' }}>
+                            {res.paymentId}
+                          </TableCell>
+                          <TableCell sx={{ fontSize: '0.8rem', color: '#334155' }}>{res.email}</TableCell>
+                          <TableCell>
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.8rem' }}>
+                              {res.participantName || '-'}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748b' }}>
+                              {res.roll || '-'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#4338ca' }}>
+                            {res.teamId || '-'}
+                          </TableCell>
+                          <TableCell align="center">
+                            <Chip
+                              label={
+                                res.status === 'SUCCESS'
+                                  ? `UPDATED (₹${res.amount}, ${res.days}d)`
+                                  : res.status
+                              }
+                              size="small"
+                              color={res.status === 'SUCCESS' ? 'success' : res.status === 'NOT_ACCOMMODATED' ? 'warning' : 'error'}
+                              sx={{ fontWeight: 800, fontSize: '0.7rem' }}
+                            />
+                            {res.message && (
+                              <Typography variant="caption" display="block" sx={{ color: '#64748b', fontSize: '0.68rem', mt: 0.25 }}>
+                                {res.message}
+                              </Typography>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      bulkRowsPreview.map((row, idx) => (
+                        <TableRow key={idx} hover sx={{ backgroundColor: row.matched ? '#fdfefe' : '#fff5f5' }}>
+                          <TableCell sx={{ fontWeight: 600, color: '#64748b' }}>{row.rowNum || idx + 1}</TableCell>
+                          <TableCell sx={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.8rem', color: '#1e293b' }}>
+                            {row.id}
+                          </TableCell>
+                          <TableCell sx={{ fontSize: '0.8rem', color: '#334155' }}>{row.email}</TableCell>
+                          <TableCell>
+                            {row.participant ? (
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 700, color: '#0f172a', fontSize: '0.8rem' }}>
+                                  {row.participant.name || 'Unknown'}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: '#64748b' }}>
+                                  {row.participant.roll || 'No Roll'} • {row.participant.collegeDisplay || 'Other College'}
+                                </Typography>
+                              </Box>
+                            ) : (
+                              <Typography variant="caption" sx={{ color: '#94a3b8', fontStyle: 'italic' }}>
+                                No match found
+                              </Typography>
+                            )}
+                          </TableCell>
+                          <TableCell sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#4338ca' }}>
+                            {row.participant?.teamId || '-'}
+                          </TableCell>
+                          <TableCell align="center">
+                            <Chip
+                              label={row.matchLabel}
+                              size="small"
+                              color={row.matchColor}
+                              sx={{ fontWeight: 700, fontSize: '0.72rem' }}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2.5, backgroundColor: '#f1f5f9', gap: 1 }}>
+          <Button
+            onClick={() => setBulkVerifyDialogOpen(false)}
+            variant="outlined"
+            disabled={verifyingBulk}
+            sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600 }}
+          >
+            {bulkVerifyResults ? 'Close' : 'Cancel'}
+          </Button>
+
+          {parsedBulkRows.length > 0 && !bulkVerifyResults && (
+            <Button
+              variant="contained"
+              disabled={verifyingBulk || parsedBulkRows.length === 0}
+              onClick={handleExecuteBulkVerify}
+              startIcon={verifyingBulk ? <CircularProgress size={16} color="inherit" /> : <VerifiedIcon />}
+              sx={{
+                borderRadius: '8px',
+                textTransform: 'none',
+                fontWeight: 800,
+                px: 2.5,
+                background: 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
+                boxShadow: '0 4px 14px rgba(79, 70, 229, 0.35)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #4338ca 0%, #312e81 100%)',
+                },
+              }}
+            >
+              {verifyingBulk
+                ? 'Verifying Payments...'
+                : `Verify & Store Payments (${parsedBulkRows.length} Rows)`}
+            </Button>
+          )}
+
+          {bulkVerifyResults && (
+            <Button
+              variant="contained"
+              onClick={() => {
+                setBulkFile(null);
+                setParsedBulkRows([]);
+                setBulkVerifyResults(null);
+                if (fileInputRef.current) fileInputRef.current.value = '';
+              }}
+              startIcon={<UploadFileIcon />}
+              sx={{
+                borderRadius: '8px',
+                textTransform: 'none',
+                fontWeight: 700,
+                background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+              }}
+            >
+              Verify Another File
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </PageContainer>
