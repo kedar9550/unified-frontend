@@ -545,6 +545,35 @@ export default function JournalPublication() {
   };
 
   // ── Submit ───────────────────────────────────────────────────────────────────
+  const handleStudentsInvolvedChange = (e) => {
+    const val = e.target.value;
+    setForm((prev) => {
+      let newForm = { ...prev, isStudentsInvolved: val };
+      
+      if (val === "Yes") {
+        newForm.applyIncentive = "No";
+      } else {
+        newForm.applyIncentive = "";
+        if (newForm.otherAuthors) {
+          newForm.otherAuthors = newForm.otherAuthors.map(author => {
+            const newAuthor = { ...author };
+            delete newAuthor.CoAuthorType;
+            delete newAuthor.studentId;
+            if (author.CoAuthorType === "student" && newAuthor.affiliationType === "Aditya University") {
+               newAuthor.affiliationType = "";
+            }
+            return newAuthor;
+          });
+        }
+      }
+      return newForm;
+    });
+  };
+
+  const handleApplyIncentiveChange = (e) => {
+    setForm((prev) => ({ ...prev, applyIncentive: e.target.value }));
+  };
+
   const handleSubmit = async () => {
     if (!user?.panNumber || user?.panNumber === "Not Set" || !user?.college || user?.college === "Not Set") {
       toast.error("Please update your profile with PAN Number and College before submitting");
@@ -740,7 +769,7 @@ export default function JournalPublication() {
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Journal Publications</Typography>
 
-        {/* <Button
+        <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -754,7 +783,7 @@ export default function JournalPublication() {
           sx={{ background: "var(--gradient-primary)", px: 3, fontWeight: 700, textTransform: "none", "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }, transition: "all 0.2s ease" }}
         >
           Apply New
-        </Button> */}
+        </Button>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -1116,7 +1145,7 @@ export default function JournalPublication() {
         <Grid2>
           <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
             <Typography sx={{ ...labelStyle, mb: 0 }}>Are students involved in this work as co-authors? *</Typography>
-            <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={set("isStudentsInvolved")}>
+            <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={handleStudentsInvolvedChange}>
               <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
               <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
             </RadioGroup>
@@ -1575,37 +1604,39 @@ export default function JournalPublication() {
                   {[
                     { label: "Academic Year", value: data.academicYear?.year || "-", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "DOI", value: data.doi || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    { label: "Applicant Author Position", chip: (
-                      (() => {
-                        const pos = data.userAuthorPosition || (data.firstAuthor === "Yes" ? 1 : data.authorPosition) || 1;
-                        const total = data.totalAuthors || 1;
-                        return (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Box sx={{
-                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                              width: 32, height: 32, borderRadius: '50%',
-                              bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)',
-                              color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.9rem'
-                            }}>
-                              {pos}
+                    {
+                      label: "Applicant Author Position", chip: (
+                        (() => {
+                          const pos = data.userAuthorPosition || (data.firstAuthor === "Yes" ? 1 : data.authorPosition) || 1;
+                          const total = data.totalAuthors || 1;
+                          return (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box sx={{
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                width: 32, height: 32, borderRadius: '50%',
+                                bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)',
+                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.9rem'
+                              }}>
+                                {pos}
+                              </Box>
+                              {total && (
+                                <>
+                                  <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem' }}>of</Typography>
+                                  <Box sx={{
+                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                    px: 1.2, height: 28, borderRadius: '8px',
+                                    bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)',
+                                    color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                  }}>
+                                    {total} Authors
+                                  </Box>
+                                </>
+                              )}
                             </Box>
-                            {total && (
-                              <>
-                                <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem' }}>of</Typography>
-                                <Box sx={{
-                                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                  px: 1.2, height: 28, borderRadius: '8px',
-                                  bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)',
-                                  color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.85rem'
-                                }}>
-                                  {total} Authors
-                                </Box>
-                              </>
-                            )}
-                          </Box>
-                        );
-                      })()
-                    ), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                          );
+                        })()
+                      ), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />
+                    },
                     { label: "Journal Quartile", value: data.journalQuartile || data.categoryOfJournal || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Scopus", value: data.isScopus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Journal Type", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
@@ -1882,25 +1913,25 @@ export default function JournalPublication() {
                           ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
                           : [];
                         return filteredCoAuthors.map((ca, idx) => {
-                        const pos = ca.authorPosition || derivedPositions[idx] || (idx + 1);
-                        return (
-                          <TableRow key={idx} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
-                            <TableCell>
-                              <Box sx={{
-                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                width: 30, height: 30, borderRadius: '50%',
-                                bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
-                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.82rem'
-                              }}>
-                                {pos}
-                              </Box>
-                            </TableCell>
-                            <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
-                            <TableCell sx={{ color: "var(--text-secondary)", textTransform: "capitalize" }}>{ca.CoAuthorType || "-"}</TableCell>
-                            <TableCell sx={{ color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
-                          </TableRow>
-                        );
-                      });
+                          const pos = ca.authorPosition || derivedPositions[idx] || (idx + 1);
+                          return (
+                            <TableRow key={idx} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                              <TableCell>
+                                <Box sx={{
+                                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                  width: 30, height: 30, borderRadius: '50%',
+                                  bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                  color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.82rem'
+                                }}>
+                                  {pos}
+                                </Box>
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
+                              <TableCell sx={{ color: "var(--text-secondary)", textTransform: "capitalize" }}>{ca.CoAuthorType || "-"}</TableCell>
+                              <TableCell sx={{ color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
+                            </TableRow>
+                          );
+                        });
                       })()}
                     </TableBody>
                   </Table>

@@ -605,14 +605,35 @@ export default function BookChapterPublication() {
     const updated = form.otherAuthors.map(a => {
       if (a.authorPosition === pos) {
         const newA = { ...a, [field]: value };
+        
+        if (field === "CoAuthorType") {
+          if (value === "faculty") {
+            newA.studentId = "";
+            if (a.CoAuthorType === "student") {
+              newA.authorName = "";
+              newA.empId = "";
+            }
+          } else if (value === "student") {
+            newA.empId = "";
+            newA.affiliationType = "Aditya University";
+            newA.affiliationName = "Aditya University";
+            if (a.CoAuthorType === "faculty") {
+              newA.authorName = "";
+            }
+          }
+        }
+        
         if (field === "affiliationType") {
           if (value === "Aditya University") {
             newA.affiliationName = "Aditya University";
             newA.authorName = ""; // clear name so it can be fetched
+            newA.empId = "";
+            newA.studentId = "";
           } else {
             newA.affiliationName = "";
             newA.empId = "";
             newA.authorName = "";
+            newA.studentId = "";
           }
         }
         return newA;
@@ -625,10 +646,35 @@ export default function BookChapterPublication() {
     // Fetch name if Aditya University and Employee ID is entered (length >= 3)
     if (field === "empId" && value.length >= 3) {
       const author = updated.find(a => a.authorPosition === pos);
-      if (author && author.affiliationType === "Aditya University") {
+      if (author && author.affiliationType === "Aditya University" && author.CoAuthorType !== "student") {
         fetchCoAuthorName(pos, value);
       }
     }
+  };
+
+  const handleStudentsInvolvedChange = (e) => {
+    const val = e.target.value;
+    setForm((prev) => {
+      let newForm = { ...prev, isStudentsInvolved: val };
+      
+      if (val === "Yes") {
+        newForm.applyIncentive = "No";
+      } else {
+        newForm.applyIncentive = "";
+        if (newForm.otherAuthors) {
+          newForm.otherAuthors = newForm.otherAuthors.map(author => {
+            const newAuthor = { ...author };
+            delete newAuthor.CoAuthorType;
+            delete newAuthor.studentId;
+            if (author.CoAuthorType === "student" && newAuthor.affiliationType === "Aditya University") {
+               newAuthor.affiliationType = "";
+            }
+            return newAuthor;
+          });
+        }
+      }
+      return newForm;
+    });
   };
 
   const handleSubmit = async () => {
@@ -675,9 +721,26 @@ export default function BookChapterPublication() {
     // Validate co-authors dynamically
     if (total > 1) {
       for (const a of form.otherAuthors) {
-        if (!a.affiliationType || (a.affiliationType === 'Others' && (!a.authorName || !a.affiliationName)) || (a.affiliationType === 'Aditya University' && (!a.empId || !a.authorName))) {
+        if (!a.affiliationType) {
+          toast.error(`Please select affiliation type for Author Position ${a.authorPosition}`);
+          return;
+        }
+        if (a.affiliationType === 'Others' && (!a.authorName || !a.affiliationName)) {
           toast.error(`Please complete details for Author Position ${a.authorPosition}`);
           return;
+        }
+        if (a.affiliationType === 'Aditya University') {
+          if (a.CoAuthorType === 'student') {
+            if (!a.studentId || !a.authorName) {
+              toast.error(`Please provide Student Roll No and Name for Author Position ${a.authorPosition}`);
+              return;
+            }
+          } else {
+            if (!a.empId || !a.authorName) {
+              toast.error(`Please provide Employee ID and verify Name for Author Position ${a.authorPosition}`);
+              return;
+            }
+          }
         }
       }
     }
@@ -1150,7 +1213,7 @@ export default function BookChapterPublication() {
         </Box>
         <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
           <Typography sx={{ ...labelStyle, mb: 0 }}>Are students involved in this work as co-authors? *</Typography>
-          <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={set("isStudentsInvolved")}>
+          <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={handleStudentsInvolvedChange}>
             <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
             <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
           </RadioGroup>
@@ -1186,49 +1249,98 @@ export default function BookChapterPublication() {
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "30px", height: "30px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, flexShrink: 0 }}>
                     {ca.authorPosition}
                   </Box>
+
+                  {/* Co-Author Type (if students are involved) */}
+                  {form.isStudentsInvolved === "Yes" && (
+                    <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "130px" } }}>
+                      <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR TYPE</Typography>
+                      <Select
+                        size="small"
+                        fullWidth
+                        displayEmpty
+                        value={ca.CoAuthorType || "faculty"}
+                        onChange={(e) => handleCoAuthorChange(ca.authorPosition, "CoAuthorType", e.target.value)}
+                        MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}
+                      >
+                        <MenuItem value="faculty">Faculty</MenuItem>
+                        <MenuItem value="student">Student</MenuItem>
+                      </Select>
+                    </Box>
+                  )}
+
                   <Box sx={{ flex: 1, minWidth: "150px" }}>
                     <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE</Typography>
                     <Select
                       size="small"
                       fullWidth
-                      value={ca.affiliationType}
+                      value={ca.CoAuthorType === "student" ? "Aditya University" : ca.affiliationType}
                       onChange={(e) => handleCoAuthorChange(ca.authorPosition, "affiliationType", e.target.value)}
                       displayEmpty
                       MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}
                     >
                       <MenuItem value="" disabled>Select Affiliation</MenuItem>
                       <MenuItem value="Aditya University">Aditya University</MenuItem>
-                      <MenuItem value="Others">Others</MenuItem>
+                      {ca.CoAuthorType !== "student" && (
+                        <MenuItem value="Others">Others</MenuItem>
+                      )}
                     </Select>
                   </Box>
 
                   {ca.affiliationType === "Aditya University" ? (
-                    <>
-                      <Box sx={{ flex: 1, minWidth: "120px" }}>
-                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          value={ca.empId}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (/^\d*$/.test(val)) handleCoAuthorChange(ca.authorPosition, "empId", val);
-                          }}
-                          placeholder="e.g. 5741"
-                        />
-                      </Box>
-                      <Box sx={{ flex: 2, minWidth: "200px" }}>
-                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
-                        <TextField
-                          size="small"
-                          fullWidth
-                          value={ca.authorName}
-                          disabled
-                          placeholder="Fetched from API"
-                          sx={{ background: "rgba(0,0,0,0.02)" }}
-                        />
-                      </Box>
-                    </>
+                    ca.CoAuthorType === "student" ? (
+                      <>
+                        <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT ROLL NO</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.studentId || ""}
+                            onChange={(e) => handleCoAuthorChange(ca.authorPosition, "studentId", e.target.value)}
+                            placeholder="e.g. 21A91A0501"
+                          />
+                        </Box>
+                        <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.authorName}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (!/\d/.test(val)) handleCoAuthorChange(ca.authorPosition, "authorName", val);
+                            }}
+                            placeholder="Student Name"
+                          />
+                        </Box>
+                      </>
+                    ) : (
+                      <>
+                        <Box sx={{ flex: 1, minWidth: "120px" }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.empId}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (/^\d*$/.test(val)) handleCoAuthorChange(ca.authorPosition, "empId", val);
+                            }}
+                            placeholder="e.g. 5741"
+                          />
+                        </Box>
+                        <Box sx={{ flex: 2, minWidth: "200px" }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-AUTHOR NAME</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.authorName}
+                            disabled
+                            placeholder="Fetched from API"
+                            sx={{ background: "rgba(0,0,0,0.02)" }}
+                          />
+                        </Box>
+                      </>
+                    )
                   ) : (
                     <>
                       <Box sx={{ flex: 1, minWidth: "180px" }}>
