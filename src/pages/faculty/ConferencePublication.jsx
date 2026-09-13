@@ -391,6 +391,35 @@ export default function ConferencePublication() {
     }
   };
 
+  const handleStudentsInvolvedChange = (e) => {
+    const val = e.target.value;
+    setForm((prev) => {
+      let newForm = { ...prev, isStudentsInvolved: val };
+      
+      if (val === "Yes") {
+        newForm.applyIncentive = "No";
+      } else {
+        newForm.applyIncentive = "";
+        if (newForm.otherAuthors) {
+          newForm.otherAuthors = newForm.otherAuthors.map(author => {
+            const newAuthor = { ...author };
+            delete newAuthor.CoAuthorType;
+            delete newAuthor.studentId;
+            if (author.CoAuthorType === "student" && newAuthor.affiliationType === "Aditya University") {
+               newAuthor.affiliationType = "";
+            }
+            return newAuthor;
+          });
+        }
+      }
+      return newForm;
+    });
+  };
+
+  const handleApplyIncentiveChange = (e) => {
+    setForm((prev) => ({ ...prev, applyIncentive: e.target.value }));
+  };
+
   const handleSubmit = async () => {
     if (!form.doi) {
       toast.error("DOI is mandatory. Please enter the DOI.");
@@ -914,7 +943,7 @@ export default function ConferencePublication() {
         <Grid2>
           <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
             <Typography sx={{ ...labelStyle, mb: 0 }}>Are students involved in this work as co-authors? *</Typography>
-            <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={set("isStudentsInvolved")}>
+            <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={handleStudentsInvolvedChange}>
               <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
               <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
             </RadioGroup>

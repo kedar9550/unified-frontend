@@ -125,14 +125,35 @@ export default function RndPatentDataEntry() {
     const updated = form.otherInventors.map(a => {
       if (a.inventorPosition === pos) {
         const newA = { ...a, [field]: value };
+        
+        if (field === "CoInventorType") {
+          if (value === "faculty") {
+            newA.studentId = "";
+            if (a.CoInventorType === "student") {
+              newA.name = "";
+              newA.empId = "";
+            }
+          } else if (value === "student") {
+            newA.empId = "";
+            newA.affiliationType = "Aditya University";
+            newA.affiliation = "Aditya University";
+            if (a.CoInventorType === "faculty") {
+              newA.name = "";
+            }
+          }
+        }
+
         if (field === "affiliationType") {
           if (value === "Aditya University") {
             newA.affiliation = "Aditya University";
             newA.name = "";
+            newA.empId = "";
+            newA.studentId = "";
           } else {
             newA.affiliation = "";
             newA.empId = "";
             newA.name = "";
+            newA.studentId = "";
           }
         }
         return newA;
@@ -144,10 +165,36 @@ export default function RndPatentDataEntry() {
 
     if (field === "empId" && value.length >= 3) {
       const inventor = updated.find(a => a.inventorPosition === pos);
-      if (inventor && inventor.affiliationType === "Aditya University") {
+      if (inventor && inventor.affiliationType === "Aditya University" && inventor.CoInventorType !== "student") {
         fetchCoInventorName(pos, value);
       }
     }
+  };
+
+  const handleStudentsInvolvedChange = (e) => {
+    const val = e.target.value;
+    setForm((prev) => {
+      let newForm = { ...prev, isStudentsInvolved: val };
+      
+      if (val === "Yes") {
+        newForm.applyIncentive = "No";
+      } else {
+        newForm.applyIncentive = "";
+        if (newForm.otherInventors) {
+          newForm.otherInventors = newForm.otherInventors.map(inventor => {
+            const newInventor = { ...inventor };
+            delete newInventor.CoInventorType;
+            delete newInventor.studentId;
+            if (inventor.CoInventorType === "student" && newInventor.affiliationType === "Aditya University") {
+               newInventor.affiliationType = "";
+               newInventor.affiliation = "";
+            }
+            return newInventor;
+          });
+        }
+      }
+      return newForm;
+    });
   };
 
   const handleVerifyFaculty = async () => {
@@ -213,7 +260,10 @@ export default function RndPatentDataEntry() {
       const coInventorsList = form.otherInventors.map(a => ({
         name: a.name || "",
         affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliation || ""),
-        employeeId: a.affiliationType === "Aditya University" ? a.empId : null
+        employeeId: (a.affiliationType === "Aditya University" && a.CoInventorType !== "student") ? a.empId : null,
+        studentId: (a.affiliationType === "Aditya University" && a.CoInventorType === "student") ? a.studentId : null,
+        CoInventorType: form.isStudentsInvolved === "Yes" ? (a.CoInventorType || "faculty") : "faculty",
+        inventorPosition: a.inventorPosition
       })).filter(ca => ca.name && ca.affiliation);
 
       fd.append("title", form.title);
@@ -376,6 +426,13 @@ export default function RndPatentDataEntry() {
               <TextField size="small" fullWidth value={form.customCountryName} onChange={set("customCountryName")} placeholder="e.g. USA, UK" />
             </Box>
           )}
+          <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+            <Typography sx={{ ...labelStyle, mb: 0 }}>Are students involved in this work as co-inventors? *</Typography>
+            <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={handleStudentsInvolvedChange}>
+              <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+              <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+            </RadioGroup>
+          </Box>
           <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
             <Typography sx={labelStyle}>Total Number of Inventors :</Typography>
             <TextField
@@ -396,46 +453,97 @@ export default function RndPatentDataEntry() {
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "30px", height: "30px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, flexShrink: 0 }}>
                       {ca.inventorPosition}
                     </Box>
+
+                    {/* Co-Inventor Type (if students are involved) */}
+                    {form.isStudentsInvolved === "Yes" && (
+                      <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "130px" } }}>
+                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVENTOR TYPE</Typography>
+                        <Select
+                          size="small"
+                          fullWidth
+                          displayEmpty
+                          value={ca.CoInventorType || "faculty"}
+                          onChange={(e) => handleCoInventorChange(ca.inventorPosition, "CoInventorType", e.target.value)}
+                          MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}
+                        >
+                          <MenuItem value="faculty">Faculty</MenuItem>
+                          <MenuItem value="student">Student</MenuItem>
+                        </Select>
+                      </Box>
+                    )}
+
                     <Box sx={{ flex: 1, minWidth: "150px" }}>
                       <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE</Typography>
                       <Select
                         size="small"
                         fullWidth
-                        value={ca.affiliationType}
+                        value={ca.CoInventorType === "student" ? "Aditya University" : ca.affiliationType}
                         onChange={(e) => handleCoInventorChange(ca.inventorPosition, "affiliationType", e.target.value)}
+                        displayEmpty
                       >
+                        <MenuItem value="" disabled>Select Affiliation</MenuItem>
                         <MenuItem value="Aditya University">Aditya University</MenuItem>
-                        <MenuItem value="Others">Others</MenuItem>
+                        {ca.CoInventorType !== "student" && (
+                          <MenuItem value="Others">Others</MenuItem>
+                        )}
                       </Select>
                     </Box>
 
                     {ca.affiliationType === "Aditya University" ? (
-                      <>
-                        <Box sx={{ flex: 1, minWidth: "120px" }}>
-                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
-                          <TextField
-                            size="small"
-                            fullWidth
-                            value={ca.empId}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              handleCoInventorChange(ca.inventorPosition, "empId", val);
-                            }}
-                            placeholder="e.g. 5741"
-                          />
-                        </Box>
-                        <Box sx={{ flex: 2, minWidth: "200px" }}>
-                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVENTOR NAME</Typography>
-                          <TextField
-                            size="small"
-                            fullWidth
-                            value={ca.name}
-                            disabled
-                            placeholder="Auto-fetched"
-                            sx={{ background: "rgba(0,0,0,0.02)" }}
-                          />
-                        </Box>
-                      </>
+                      ca.CoInventorType === "student" ? (
+                        <>
+                          <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT ROLL NO</Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              value={ca.studentId || ""}
+                              onChange={(e) => handleCoInventorChange(ca.inventorPosition, "studentId", e.target.value)}
+                              placeholder="e.g. 21A91A0501"
+                            />
+                          </Box>
+                          <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVENTOR NAME</Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              value={ca.name}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (!/\d/.test(val)) handleCoInventorChange(ca.inventorPosition, "name", val);
+                              }}
+                              placeholder="Student Name"
+                            />
+                          </Box>
+                        </>
+                      ) : (
+                        <>
+                          <Box sx={{ flex: 1, minWidth: "120px" }}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              value={ca.empId}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (/^\d*$/.test(val)) handleCoInventorChange(ca.inventorPosition, "empId", val);
+                              }}
+                              placeholder="e.g. 5741"
+                            />
+                          </Box>
+                          <Box sx={{ flex: 2, minWidth: "200px" }}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVENTOR NAME</Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              value={ca.name}
+                              disabled
+                              placeholder="Auto-fetched"
+                              sx={{ background: "rgba(0,0,0,0.02)" }}
+                            />
+                          </Box>
+                        </>
+                      )
                     ) : (
                       <>
                         <Box sx={{ flex: 1, minWidth: "180px" }}>
