@@ -9,7 +9,7 @@ import { Search, AttachFile } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import PageContainer from "../../components/common/design-system/PageContainer";
 import {
-  FormCard, Grid2, SubLabel, FileField, SubmitBtn
+  FormCard, Grid2, SubLabel, FileField, SubmitBtn, FacultyInfoRow
 } from "../../components/faculty/PublicationFormFields";
 import { labelStyle } from "../../components/faculty/publicationConstants";
 import API from "../../api/axios";
@@ -32,6 +32,7 @@ export default function RndPatentDataEntry() {
     title: "",
     applicantName: "",
     patentName: "Aditya University",
+    patentFiledInInstitution: "Yes",
     area: "",
     filingNo: "",
     dateOfFiling: "",
@@ -40,10 +41,10 @@ export default function RndPatentDataEntry() {
     customCountryName: "",
     applyingSeedGrant: "No",
     isStudentsInvolved: "No",
-    applyIncentive: "No",
+    applyIncentive: "",
     totalInventors: 1,
     otherInventors: [],
-    appraisalEligible: "Yes",
+    appraisalEligible: "",
     approvedAmount: ""
   });
   const [files, setFiles] = useState({ eFilingReceipt: null, form1: null });
@@ -125,7 +126,7 @@ export default function RndPatentDataEntry() {
     const updated = form.otherInventors.map(a => {
       if (a.inventorPosition === pos) {
         const newA = { ...a, [field]: value };
-        
+
         if (field === "CoInventorType") {
           if (value === "faculty") {
             newA.studentId = "";
@@ -175,7 +176,7 @@ export default function RndPatentDataEntry() {
     const val = e.target.value;
     setForm((prev) => {
       let newForm = { ...prev, isStudentsInvolved: val };
-      
+
       if (val === "Yes") {
         newForm.applyIncentive = "No";
       } else {
@@ -186,8 +187,8 @@ export default function RndPatentDataEntry() {
             delete newInventor.CoInventorType;
             delete newInventor.studentId;
             if (inventor.CoInventorType === "student" && newInventor.affiliationType === "Aditya University") {
-               newInventor.affiliationType = "";
-               newInventor.affiliation = "";
+              newInventor.affiliationType = "";
+              newInventor.affiliation = "";
             }
             return newInventor;
           });
@@ -269,6 +270,7 @@ export default function RndPatentDataEntry() {
       fd.append("title", form.title);
       fd.append("applicantName", form.applicantName || targetFacultyName || "");
       fd.append("patentName", form.patentName);
+      fd.append("patentFiledInInstitution", form.patentFiledInInstitution || "Yes");
       fd.append("area", form.area);
       fd.append("filingNo", form.filingNo);
       fd.append("dateOfFiling", form.dateOfFiling);
@@ -282,6 +284,8 @@ export default function RndPatentDataEntry() {
       fd.append("approvedAmount", form.approvedAmount || "");
       fd.append("totalInventors", String(form.totalInventors));
       fd.append("academicYear", selectedYear);
+      fd.append("college", targetFacultyDetails?.college || user?.college || "");
+      fd.append("panNumber", targetFacultyDetails?.panNumber || user?.panNumber || "");
       fd.append("isDirectEntry", "true");
       fd.append("targetFacultyEmpId", targetFacultyEmpId);
 
@@ -291,7 +295,7 @@ export default function RndPatentDataEntry() {
       await API.post("/api/research/patent", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Patent record added directly for faculty!");
       setForm({
-        title: "", applicantName: "", patentName: "Aditya University", area: "", filingNo: "", dateOfFiling: "",
+        title: "", applicantName: "", patentName: "Aditya University", patentFiledInInstitution: "Yes", area: "", filingNo: "", dateOfFiling: "",
         status: "Filed", patentFiledCountry: "India", customCountryName: "", applyingSeedGrant: "No", isStudentsInvolved: "No", applyIncentive: "No",
         totalInventors: 1, otherInventors: [], appraisalEligible: "Yes", approvedAmount: ""
       });
@@ -315,57 +319,64 @@ export default function RndPatentDataEntry() {
 
       {/* Target Faculty Section */}
       <FormCard title="Target Faculty Identification">
-        <Grid2>
-          <Box>
-            <Typography sx={{ ...labelStyle, mb: 0.5 }}>TARGET FACULTY EMPLOYEE ID : <span style={{ color: 'red' }}>*</span></Typography>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                size="small"
-                fullWidth
-                placeholder="Enter Employee ID (e.g., ADITYA123)"
-                value={targetFacultyEmpId}
-                onChange={(e) => {
-                  setTargetFacultyEmpId(e.target.value);
-                  setIsTargetFacultyValid(false);
-                  setTargetFacultyName("");
-                  setTargetFacultyDetails(null);
-                }}
-              />
-              <Button
-                variant="contained"
-                onClick={handleVerifyFaculty}
-                disabled={verifyingFaculty || !targetFacultyEmpId}
-                startIcon={<Search />}
-                sx={{ background: "var(--gradient-primary)", color: "#fff", textTransform: "none", fontWeight: 700, px: 3, whiteSpace: "nowrap" }}
-              >
-                {verifyingFaculty ? "Verifying..." : "Verify"}
-              </Button>
-            </Box>
-          </Box>
-          <Box>
-            <Typography sx={{ ...labelStyle, mb: 0.5 }}>VERIFIED FACULTY NAME :</Typography>
+        <Box>
+          <Typography sx={{ ...labelStyle, mb: 0.5 }}>TARGET FACULTY EMPLOYEE ID : <span style={{ color: 'red' }}>*</span></Typography>
+          <Box sx={{ display: 'flex', gap: 2, maxWidth: 500 }}>
             <TextField
               size="small"
               fullWidth
-              disabled
-              value={targetFacultyName}
-              placeholder="Verified faculty name will appear here"
-              sx={{ background: "rgba(0,0,0,0.02)" }}
+              placeholder="Enter Employee ID (e.g., ADITYA123)"
+              value={targetFacultyEmpId}
+              onChange={(e) => {
+                setTargetFacultyEmpId(e.target.value);
+                setIsTargetFacultyValid(false);
+                setTargetFacultyName("");
+                setTargetFacultyDetails(null);
+              }}
             />
+            <Button
+              variant="contained"
+              onClick={handleVerifyFaculty}
+              disabled={verifyingFaculty || !targetFacultyEmpId}
+              startIcon={<Search />}
+              sx={{ background: "var(--gradient-primary)", color: "#fff", textTransform: "none", fontWeight: 700, px: 3, whiteSpace: "nowrap" }}
+            >
+              {verifyingFaculty ? "Verifying..." : "Verify"}
+            </Button>
           </Box>
-        </Grid2>
-        {isTargetFacultyValid && targetFacultyDetails && (
-          <Box sx={{ mt: 2, p: 2, background: "rgba(16, 185, 129, 0.08)", border: "1px solid #10b981", borderRadius: "10px" }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#065f46" }}>
-              ✓ Verified: {targetFacultyDetails.name} ({targetFacultyDetails.designation || "Faculty"} - {targetFacultyDetails.department || "Dept"})
-            </Typography>
-          </Box>
-        )}
+        </Box>
       </FormCard>
 
-      {/* Details of the Patent */}
-      <FormCard title="Patent Details">
+      {isTargetFacultyValid && targetFacultyDetails && (
+        <>
+          <FormCard title="Target Faculty Profile Details">
+            <FacultyInfoRow faculty={targetFacultyDetails} />
+          </FormCard>
+
+          {/* Details of the Patent */}
+          <FormCard title="Patent Details">
         <Grid2>
+          <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, p: 2, background: "var(--bg-panel)", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+              <Typography sx={{ ...labelStyle, mb: 0, fontWeight: 700, color: "var(--text-primary)" }}>Is Patent filed in Institution Name? *</Typography>
+              <RadioGroup
+                row
+                value={form.patentFiledInInstitution || "Yes"}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setForm(prev => ({
+                    ...prev,
+                    patentFiledInInstitution: val,
+                    patentName: val === "Yes" ? (PATENT_APPLICANTS.includes(prev.patentName) ? prev.patentName : "Aditya University") : (targetFacultyName || prev.patentName || "")
+                  }));
+                }}
+              >
+                <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+                <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+              </RadioGroup>
+            </Box>
+          </Box>
+
           <Box>
             <Typography sx={labelStyle}>Academic Year :</Typography>
             <Select fullWidth size="small" value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
@@ -373,16 +384,26 @@ export default function RndPatentDataEntry() {
             </Select>
           </Box>
           <Box>
-            <Typography sx={labelStyle}>Title of the Patent : <span style={{ color: 'red' }}>*</span></Typography>
-            <TextField size="small" fullWidth multiline rows={2} value={form.title} onChange={set("title")} placeholder="Full title of the patent" />
-          </Box>
-          <Box>
             <Typography sx={labelStyle}>Name of the Applicant in Patent : <span style={{ color: 'red' }}>*</span></Typography>
-            <Select size="small" fullWidth displayEmpty value={form.patentName} onChange={set("patentName")}>
-              {PATENT_APPLICANTS.map((option) => (
-                <MenuItem key={option} value={option}>{option}</MenuItem>
-              ))}
-            </Select>
+            {(form.patentFiledInInstitution || "Yes") === "Yes" ? (
+              <Select size="small" fullWidth displayEmpty value={form.patentName} onChange={set("patentName")}>
+                {PATENT_APPLICANTS.map((option) => (
+                  <MenuItem key={option} value={option}>{option}</MenuItem>
+                ))}
+              </Select>
+            ) : (
+              <TextField
+                size="small"
+                fullWidth
+                value={form.patentName}
+                onChange={set("patentName")}
+                placeholder="Enter Applicant Name in Patent"
+              />
+            )}
+          </Box>
+          <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+            <Typography sx={labelStyle}>Title of the Patent : <span style={{ color: 'red' }}>*</span></Typography>
+            <TextField size="small" fullWidth value={form.title} onChange={set("title")} placeholder="Full title of the patent" />
           </Box>
           <Box>
             <Typography sx={labelStyle}>Area of Patent :</Typography>
@@ -589,8 +610,9 @@ export default function RndPatentDataEntry() {
             </Select>
           </Box>
           <Box>
-            <Typography sx={labelStyle}>Apply for Incentive?</Typography>
-            <Select size="small" fullWidth value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"}>
+            <Typography sx={labelStyle}>Apply Incentive? : *</Typography>
+            <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"}>
+              <MenuItem value="" disabled>Select Option</MenuItem>
               <MenuItem value="Yes">Yes</MenuItem>
               <MenuItem value="No">No</MenuItem>
             </Select>
@@ -611,6 +633,7 @@ export default function RndPatentDataEntry() {
           <Box>
             <Typography sx={labelStyle}>Article Eligibility for Appraisal : *</Typography>
             <Select size="small" fullWidth displayEmpty value={form.appraisalEligible} onChange={set("appraisalEligible")}>
+              <MenuItem value="" disabled>Select Option</MenuItem>
               <MenuItem value="Yes">Yes</MenuItem>
               <MenuItem value="No">No</MenuItem>
             </Select>
@@ -623,6 +646,8 @@ export default function RndPatentDataEntry() {
           {loading ? "Submitting..." : "Submit Patent Record Directly"}
         </SubmitBtn>
       </Box>
+        </>
+      )}
     </PageContainer>
   );
 }

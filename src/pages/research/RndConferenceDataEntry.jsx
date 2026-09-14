@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import PageHeader from "../../components/common/PageHeader";
 import PageContainer from "../../components/common/design-system/PageContainer";
 import {
-  FacultyInfoRow, FormCard, Grid2, SubLabel, FileField, SubmitBtn
+  FacultyInfoRow, FormCard, Grid2, SubLabel, FileField, SubmitBtn, NoteBox
 } from "../../components/faculty/PublicationFormFields";
 import {
   labelStyle, disabledField, MONTHS, YEARS
@@ -49,7 +49,7 @@ export default function RndConferenceDataEntry() {
     totalAuthors: 1,
     userAuthorPosition: 1,
     otherAuthors: [],
-    appraisalEligible: "Yes",
+    appraisalEligible: "",
     approvedAmount: ""
   };
 
@@ -753,9 +753,9 @@ export default function RndConferenceDataEntry() {
               </Select>
             </Box>
             <Box>
-              <Typography sx={labelStyle}>Apply For Incentive? : *</Typography>
+              <Typography sx={labelStyle}>Apply Incentive? : *</Typography>
               <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"} sx={form.isStudentsInvolved === "Yes" ? disabledField : {}}>
-                <MenuItem value="">Select Option</MenuItem>
+                <MenuItem value="" disabled>Select Option</MenuItem>
                 <MenuItem value="Yes">Yes</MenuItem>
                 <MenuItem value="No">No</MenuItem>
               </Select>
@@ -763,7 +763,7 @@ export default function RndConferenceDataEntry() {
             <Box>
               <Typography sx={labelStyle}>Article Eligibility for Appraisal : *</Typography>
               <Select size="small" fullWidth displayEmpty value={form.appraisalEligible} onChange={set("appraisalEligible")}>
-                <MenuItem value="">Select Option</MenuItem>
+                <MenuItem value="" disabled>Select Option</MenuItem>
                 <MenuItem value="Yes">Yes</MenuItem>
                 <MenuItem value="No">No</MenuItem>
               </Select>
@@ -785,18 +785,19 @@ export default function RndConferenceDataEntry() {
 
           {/* ── Attachments ── */}
           <SubLabel text="Upload Required Documents:" />
-          <FormCard title="File Attachments (PDF or Images, Max 500KB each)">
-            <Grid2>
-              <Box>
-                <Typography sx={labelStyle}>Certificate of Presentation : *</Typography>
-                <FileField onChange={setFile("certificate")} label="Attach Presentation Certificate" file={files.certificate} />
-              </Box>
-              <Box>
-                <Typography sx={labelStyle}>Conference Proceedings Page : *</Typography>
-                <FileField onChange={setFile("proceedings")} label="Attach Proceedings Page" file={files.proceedings} />
-              </Box>
-            </Grid2>
-          </FormCard>
+          <NoteBox />
+          <Grid2 sx={{ mt: 2 }}>
+            <FileField
+              label="Attach Certificate of Presentation * :"
+              name="certificate"
+              onChange={setFile("certificate")}
+            />
+            <FileField
+              label="Attach Copy of Proceedings / Abstract Book :"
+              name="proceedings"
+              onChange={setFile("proceedings")}
+            />
+          </Grid2>
 
           <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
             <SubmitBtn onClick={handleSubmit} disabled={loading || !isTargetFacultyValid}>

@@ -1297,7 +1297,7 @@ export default function RndJournalDataEntry() {
             </Box>
 
             <Box>
-              <Typography sx={labelStyle}>Eligible for Incentive? *</Typography>
+              <Typography sx={labelStyle}>Apply Incentive? : *</Typography>
               <Select 
                 size="small" 
                 fullWidth 

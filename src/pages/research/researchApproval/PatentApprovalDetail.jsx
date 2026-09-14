@@ -115,7 +115,7 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
         const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filepath);
 
         return (
-            <Grid key={index} item xs={12} sm={6} md={3}>
+            <Grid key={index} item xs={12} sm={6} md={6}>
                 <Box sx={{ mb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.75rem", textTransform: "uppercase" }}>
                         {index}. {title}
@@ -165,11 +165,6 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
         <Box sx={{ width: "100%", pb: 5 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                 <Button startIcon={<ArrowBackIcon />} onClick={onBack} sx={{ color: "var(--color-primary)", fontWeight: 700, textTransform: "none" }}>Back to Request List</Button>
-                {isResearchAdmin && !/pending/i.test(data.status) && (
-                    <Button variant="outlined" onClick={() => setEditOpen(true)} sx={{ borderColor: "var(--color-primary)", color: "var(--color-primary)", fontWeight: 700, textTransform: "none", borderRadius: "10px", "&:hover": { bgcolor: "rgba(190, 147, 55, 0.1)", borderColor: "var(--color-primary)" } }}>
-                        Correct Research Details
-                    </Button>
-                )}
             </Box>
 
             {/* Header Card */}
@@ -183,7 +178,22 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                         </Box>
                     </Box>
                     <Box sx={{ textAlign: { xs: "center", sm: "right" } }}>
-                        <Chip label="Patent Application" sx={{ bgcolor: "rgba(22, 101, 52, 0.1)", color: "#2e7d32", fontWeight: 800, borderRadius: "8px", textTransform: "uppercase", fontSize: "0.65rem" }} />
+                        <Box sx={{ display: "flex", gap: 1, justifyContent: { xs: "center", sm: "flex-end" }, flexWrap: "wrap", mb: 1 }}>
+                            <Chip 
+                                label={(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "R&D Direct Entry" : "Faculty Self Entry"} 
+                                sx={{ 
+                                    bgcolor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.12)" : "rgba(59, 130, 246, 0.12)", 
+                                    color: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "#7c3aed" : "#2563eb", 
+                                    fontWeight: 800, 
+                                    borderRadius: "8px", 
+                                    textTransform: "uppercase", 
+                                    fontSize: "0.65rem",
+                                    border: "1px solid",
+                                    borderColor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.3)" : "rgba(59, 130, 246, 0.3)"
+                                }} 
+                            />
+                            <Chip label="Patent Application" sx={{ bgcolor: "rgba(22, 101, 52, 0.1)", color: "#2e7d32", fontWeight: 800, borderRadius: "8px", textTransform: "uppercase", fontSize: "0.65rem" }} />
+                        </Box>
                         <Typography variant="caption" sx={{ display: "block", mt: 1, color: "var(--text-secondary)", fontWeight: 700 }}>Submitted on {new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</Typography>
                     </Box>
                 </Box>
@@ -255,7 +265,41 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                 <Card sx={{ ...cardStyle, flex: { xs: "1 1 100%", lg: "1 1 48%" }, mb: 0 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><ArticleIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Patent Details</Typography></Box>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
+                        <LabelValue 
+                            label="Entry Source" 
+                            horizontal 
+                            chip={
+                                <Chip 
+                                    label={(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "R&D Direct Entry (Admin)" : "Faculty Self Entry"} 
+                                    size="small" 
+                                    sx={{ 
+                                        bgcolor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.1)" : "rgba(59, 130, 246, 0.1)", 
+                                        color: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "#7c3aed" : "#2563eb", 
+                                        fontWeight: 800, 
+                                        border: "1px solid", 
+                                        borderColor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.3)" : "rgba(59, 130, 246, 0.3)"
+                                    }} 
+                                />
+                            } 
+                        />
                         <LabelValue label="Applicant Name" value={data.applicantName} horizontal />
+                        <LabelValue 
+                            label="Filed in Institution Name" 
+                            horizontal 
+                            chip={
+                                <Chip 
+                                    label={data.patentFiledInInstitution === 'No' ? 'No (Personal / Individual)' : 'Yes (Institution Name)'} 
+                                    size="small" 
+                                    sx={{ 
+                                        bgcolor: data.patentFiledInInstitution === 'No' ? "rgba(255, 152, 0, 0.1)" : "rgba(76, 175, 80, 0.1)", 
+                                        color: data.patentFiledInInstitution === 'No' ? "#e65100" : "#1b5e20", 
+                                        fontWeight: 800, 
+                                        border: "1px solid", 
+                                        borderColor: data.patentFiledInInstitution === 'No' ? "#ffe0b2" : "#c8e6c9" 
+                                    }} 
+                                />
+                            } 
+                        />
                         <LabelValue label="Name of the Applicant in Patent" value={data.patentName} horizontal />
                         <LabelValue label="Area of Patent" value={data.area} horizontal />
                         <LabelValue label="Filing No" value={data.filingNo} horizontal />
@@ -294,28 +338,49 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                             <Table>
                                 <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
                                     <TableRow>
-                                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>#</TableCell>
+                                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 80 }}>POSITION</TableCell>
                                         <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
+                                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>INVENTOR TYPE</TableCell>
                                         <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {filteredCoInventors.map((ca, i) => (
-                                        <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
-                                            <TableCell>
-                                                <Box sx={{
-                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                    width: 32, height: 32, borderRadius: '50%',
-                                                    bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
-                                                    color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
-                                                }}>
-                                                    {i + 1}
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
-                                            <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
-                                        </TableRow>
-                                    ))}
+                                    {filteredCoInventors.map((ca, i) => {
+                                        const rawType = ca.CoInventorType || ca.CoAuthorType || (ca.studentId ? "student" : "faculty");
+                                        const displayType = rawType.charAt(0).toUpperCase() + rawType.slice(1);
+                                        const isStudent = rawType.toLowerCase() === "student";
+
+                                        return (
+                                            <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                                                <TableCell>
+                                                    <Box sx={{
+                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                        width: 32, height: 32, borderRadius: '50%',
+                                                        bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                                        color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                                    }}>
+                                                        {ca.inventorPosition || ca.authorPosition || (i + 1)}
+                                                    </Box>
+                                                </TableCell>
+                                                <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
+                                                <TableCell>
+                                                    <Chip
+                                                        label={displayType}
+                                                        size="small"
+                                                        sx={{
+                                                            fontWeight: 700,
+                                                            fontSize: '0.7rem',
+                                                            bgcolor: isStudent ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                                                            color: isStudent ? '#2563eb' : '#059669',
+                                                            border: '1px solid',
+                                                            borderColor: isStudent ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)'
+                                                        }}
+                                                    />
+                                                </TableCell>
+                                                <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
                                 </TableBody>
                             </Table>
                         </TableContainer>

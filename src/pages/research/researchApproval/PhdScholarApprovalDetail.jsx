@@ -144,11 +144,6 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
         <Box sx={{ width: "100%", pb: 5 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                 <Button startIcon={<ArrowBackIcon />} onClick={onBack} sx={{ color: "var(--color-primary)", fontWeight: 700, textTransform: "none" }}>Back to Request List</Button>
-                {isResearchAdmin && !/pending/i.test(data.status) && (
-                    <Button variant="outlined" onClick={() => setEditOpen(true)} sx={{ borderColor: "var(--color-primary)", color: "var(--color-primary)", fontWeight: 700, textTransform: "none", borderRadius: "10px", "&:hover": { bgcolor: "rgba(190, 147, 55, 0.1)", borderColor: "var(--color-primary)" } }}>
-                        Correct Research Details
-                    </Button>
-                )}
             </Box>
 
             {/* Header Card */}
@@ -162,7 +157,22 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
                         </Box>
                     </Box>
                     <Box sx={{ textAlign: { xs: "center", sm: "right" } }}>
-                        <Chip label="Ph.D. Scholar Guiding" sx={{ bgcolor: "rgba(59, 130, 246, 0.1)", color: "#3b82f6", fontWeight: 800, borderRadius: "8px", textTransform: "uppercase", fontSize: "0.65rem" }} />
+                        <Box sx={{ display: "flex", gap: 1, justifyContent: { xs: "center", sm: "flex-end" }, flexWrap: "wrap", mb: 1 }}>
+                            <Chip 
+                                label={(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "R&D Direct Entry" : "Faculty Self Entry"} 
+                                sx={{ 
+                                    bgcolor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.12)" : "rgba(59, 130, 246, 0.12)", 
+                                    color: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "#7c3aed" : "#2563eb", 
+                                    fontWeight: 800, 
+                                    borderRadius: "8px", 
+                                    textTransform: "uppercase", 
+                                    fontSize: "0.65rem",
+                                    border: "1px solid",
+                                    borderColor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.3)" : "rgba(59, 130, 246, 0.3)"
+                                }} 
+                            />
+                            <Chip label="Ph.D. Scholar Guiding" sx={{ bgcolor: "rgba(59, 130, 246, 0.1)", color: "#3b82f6", fontWeight: 800, borderRadius: "8px", textTransform: "uppercase", fontSize: "0.65rem" }} />
+                        </Box>
                         <Typography variant="caption" sx={{ display: "block", mt: 1, color: "var(--text-secondary)", fontWeight: 700 }}>Submitted on {new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</Typography>
                     </Box>
                 </Box>
@@ -184,7 +194,7 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
                             "&:hover": { borderColor: "var(--color-primary)", bgcolor: "rgba(190, 147, 55, 0.05)", transform: "translateY(-2px)", boxShadow: "var(--shadow-premium)" },
                             transition: "all 0.3s ease"
                         }}>
-                            <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 900, fontSize: "0.65rem", mb: 0.5 }}>Workflow Status</Typography>
+                            <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 900, fontSize: "0.65rem", mb: 0.5 }}>Status</Typography>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                                 <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: statusStyle.dot, boxShadow: `0 0 10px ${statusStyle.dot}` }} />
                                 <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{data.status}</Typography>
@@ -195,9 +205,9 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
             </Card>
 
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mb: 3 }}>
-                {/* Guide Faculty Info */}
+                {/* Applicant Info */}
                 <Card sx={{ ...cardStyle, flex: { xs: "1 1 100%", lg: "1 1 48%" }, mb: 0 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><PersonIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Guide Information</Typography></Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><PersonIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Applicant Information</Typography></Box>
                     <Box sx={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "center" }}>
                         <Box sx={{ width: 100, height: 100, borderRadius: "50%", background: "var(--bg-panel)", border: "2px solid var(--border-color)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "var(--shadow-premium)" }}>
                             {(() => {
@@ -224,6 +234,7 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
                             <LabelValue label="Designation" value={facultyId?.designation} horizontal />
                             <LabelValue label="Parent Department" value={facultyId?.coreDepartment?.name} horizontal />
                             <LabelValue label="Emp ID" value={facultyId?.institutionId} horizontal />
+                            <LabelValue label="Contact" value={facultyId?.phone} horizontal />
                             <LabelValue label="College" value={facultyId?.college || "Aditya University"} horizontal />
                         </Box>
                     </Box>
@@ -233,6 +244,23 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
                 <Card sx={{ ...cardStyle, flex: { xs: "1 1 100%", lg: "1 1 48%" }, mb: 0 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><ArticleIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Scholar Details</Typography></Box>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
+                        <LabelValue 
+                            label="Entry Source" 
+                            horizontal 
+                            chip={
+                                <Chip 
+                                    label={(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "R&D Direct Entry (Admin)" : "Faculty Self Entry"} 
+                                    size="small" 
+                                    sx={{ 
+                                        bgcolor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.1)" : "rgba(59, 130, 246, 0.1)", 
+                                        color: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "#7c3aed" : "#2563eb", 
+                                        fontWeight: 800, 
+                                        border: "1px solid", 
+                                        borderColor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.3)" : "rgba(59, 130, 246, 0.3)"
+                                    }} 
+                                />
+                            } 
+                        />
                         <LabelValue label="Scholar Roll Number" value={data.rollNumber} horizontal />
                         <LabelValue label="Scholar Student Name" value={data.studentName} horizontal />
                         <LabelValue label="Course Name" value={data.course} horizontal />

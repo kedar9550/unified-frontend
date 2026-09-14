@@ -2,6 +2,19 @@ import { useState, useEffect } from "react";
 import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination, FormControl, Radio, RadioGroup, FormControlLabel } from "@mui/material";
 import { toast } from "sonner";
 import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, Visibility, Edit, CheckCircle, Cancel, AccessTime } from "@mui/icons-material";
+import SchoolIcon from "@mui/icons-material/School";
+import PublicIcon from "@mui/icons-material/Public";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutlined";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutlined";
+import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
+import CategoryIcon from "@mui/icons-material/Category";
+import ArticleIcon from "@mui/icons-material/Article";
+import GrassIcon from "@mui/icons-material/Grass";
+import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
+import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
+import PersonIcon from "@mui/icons-material/Person";
 import PageHeader from "../../components/common/PageHeader";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
@@ -28,7 +41,7 @@ export default function PatentPublication() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const [form, setForm] = useState({
-    title: "", applicantName: "", patentName: "", area: "", filingNo: "", dateOfFiling: "",
+    title: "", applicantName: "", patentName: "", patentFiledInInstitution: "Yes", area: "", filingNo: "", dateOfFiling: "",
     status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "",
     patentFiledCountry: "", customCountryName: "",
     totalInventors: 1, otherInventors: []
@@ -40,32 +53,32 @@ export default function PatentPublication() {
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  
+
   const handleEditClick = (pub) => {
     setEditMode(true);
     setEditId(pub._id);
     setSelectedYear(pub.academicYear?._id || pub.academicYear);
-    
+
     const mappedAuthors = [];
     if (pub.coInventors && pub.coInventors.length > 0) {
       let positionCounter = 1;
       const total = parseInt(pub.totalInventors) || 1;
       const myPos = parseInt(pub.userInventorPosition) || 1;
-      
-      for(let i=1; i<=total; i++){
-          if(i === myPos) continue;
-          const ca = pub.coInventors[positionCounter - 1];
-          if(ca) {
-             const isInternal = ca.employeeId ? true : false;
-             mappedAuthors.push({
-                 inventorPosition: i,
-                 affiliationType: isInternal ? "Aditya University" : "Others",
-                 empId: isInternal ? (ca.employeeId?.institutionId || ca.employeeId) : "",
-                 name: ca.name || "",
-                 affiliation: ca.affiliation || ""
-             });
-             positionCounter++;
-          }
+
+      for (let i = 1; i <= total; i++) {
+        if (i === myPos) continue;
+        const ca = pub.coInventors[positionCounter - 1];
+        if (ca) {
+          const isInternal = ca.employeeId ? true : false;
+          mappedAuthors.push({
+            inventorPosition: i,
+            affiliationType: isInternal ? "Aditya University" : "Others",
+            empId: isInternal ? (ca.employeeId?.institutionId || ca.employeeId) : "",
+            name: ca.name || "",
+            affiliation: ca.affiliation || ""
+          });
+          positionCounter++;
+        }
       }
     }
 
@@ -73,6 +86,7 @@ export default function PatentPublication() {
       title: pub.title || "",
       applicantName: pub.applicantName || user?.name || "",
       patentName: pub.patentName || "",
+      patentFiledInInstitution: pub.patentFiledInInstitution || "Yes",
       area: pub.area || "",
       filingNo: pub.filingNo || "",
       dateOfFiling: pub.dateOfFiling ? pub.dateOfFiling.split('T')[0] : "",
@@ -180,7 +194,7 @@ export default function PatentPublication() {
     const updated = form.otherInventors.map(a => {
       if (a.inventorPosition === pos) {
         const newA = { ...a, [field]: value };
-        
+
         if (field === "CoInventorType") {
           if (value === "faculty") {
             newA.studentId = "";
@@ -197,7 +211,7 @@ export default function PatentPublication() {
             }
           }
         }
-        
+
         if (field === "affiliationType") {
           if (value === "Aditya University") {
             newA.affiliation = "Aditya University";
@@ -231,7 +245,7 @@ export default function PatentPublication() {
     const val = e.target.value;
     setForm((prev) => {
       let newForm = { ...prev, isStudentsInvolved: val };
-      
+
       if (val === "Yes") {
         newForm.applyIncentive = "No";
       } else {
@@ -242,8 +256,8 @@ export default function PatentPublication() {
             delete newInventor.CoInventorType;
             delete newInventor.studentId;
             if (inventor.CoInventorType === "student" && newInventor.affiliationType === "Aditya University") {
-               newInventor.affiliationType = "";
-               newInventor.affiliation = "";
+              newInventor.affiliationType = "";
+              newInventor.affiliation = "";
             }
             return newInventor;
           });
@@ -335,6 +349,7 @@ export default function PatentPublication() {
       fd.append("title", form.title);
       fd.append("applicantName", form.applicantName || user?.name || "");
       fd.append("patentName", form.patentName);
+      fd.append("patentFiledInInstitution", form.patentFiledInInstitution || "Yes");
       fd.append("area", form.area);
       fd.append("filingNo", form.filingNo);
       fd.append("dateOfFiling", form.dateOfFiling);
@@ -362,7 +377,7 @@ export default function PatentPublication() {
         toast.success("Patent submitted successfully!");
       }
 
-      setForm({ title: "", applicantName: user?.name || "", patentName: "", area: "", filingNo: "", dateOfFiling: "", status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "", patentFiledCountry: "", customCountryName: "", totalInventors: 1, otherInventors: [] });
+      setForm({ title: "", applicantName: user?.name || "", patentName: "", patentFiledInInstitution: "Yes", area: "", filingNo: "", dateOfFiling: "", status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "", patentFiledCountry: "", customCountryName: "", totalInventors: 1, otherInventors: [] });
       setFiles({ eFilingReceipt: null, form1: null });
       setExistingFiles({ eFilingReceipt: null, form1: null });
       setDeleteFlags({ eFilingReceipt: false, form1: false });
@@ -388,7 +403,7 @@ export default function PatentPublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Patent Publications</Typography>
-        {/* <Button
+        <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -414,7 +429,7 @@ export default function PatentPublication() {
           }}
         >
           Apply New
-        </Button> */}
+        </Button>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -480,8 +495,8 @@ export default function PatentPublication() {
                       <Chip
                         icon={
                           pub.status === 'Approved' ? <CheckCircle style={{ fontSize: 16 }} /> :
-                          pub.status?.includes('Rejected') ? <Cancel style={{ fontSize: 16 }} /> :
-                          <AccessTime style={{ fontSize: 16 }} />
+                            pub.status?.includes('Rejected') ? <Cancel style={{ fontSize: 16 }} /> :
+                              <AccessTime style={{ fontSize: 16 }} />
                         }
                         label={pub.status || "Pending"}
                         size="small"
@@ -579,15 +594,15 @@ export default function PatentPublication() {
         priorYearStr = `${parseInt(parts[0], 10) - 1}-${parseInt(parts[1], 10) - 1}`;
       }
     }
-    
+
     // Only show Active and Prior year
     let filteredYears = academicYears.filter(y => y._id === activeYearDoc?._id || y.year === priorYearStr);
-    
+
     // Ensure active is first
     filteredYears.sort((a, b) => {
-        if (a._id === activeYearDoc?._id) return -1;
-        if (b._id === activeYearDoc?._id) return 1;
-        return 0;
+      if (a._id === activeYearDoc?._id) return -1;
+      if (b._id === activeYearDoc?._id) return 1;
+      return 0;
     });
 
     return (
@@ -665,19 +680,52 @@ export default function PatentPublication() {
 
       <SubLabel text="Details of the Patent:" />
       <Grid2>
-        <Box>
-          <Typography sx={labelStyle}>Title of the Patent :</Typography>
-          <TextField size="small" fullWidth multiline rows={2} value={form.title} onChange={set("title")} />
+        <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, p: 2, background: "var(--bg-panel)", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+            <Typography sx={{ ...labelStyle, mb: 0, fontWeight: 700, color: "var(--text-primary)" }}>Is Patent filed in Institution Name? *</Typography>
+            <RadioGroup
+              row
+              value={form.patentFiledInInstitution || "Yes"}
+              onChange={(e) => {
+                const val = e.target.value;
+                setForm(prev => ({
+                  ...prev,
+                  patentFiledInInstitution: val,
+                  patentName: val === "Yes" ? (PATENT_APPLICANTS.includes(prev.patentName) ? prev.patentName : "") : (user?.name || prev.patentName || "")
+                }));
+              }}
+            >
+              <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+              <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+            </RadioGroup>
+          </Box>
         </Box>
+
         <Box>
           <Typography sx={labelStyle}>Name of the Applicant in Patent : *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.patentName} onChange={set("patentName")}>
-            <MenuItem value="" disabled>--Select--</MenuItem>
-            {PATENT_APPLICANTS.map((option) => (
-              <MenuItem key={option} value={option}>{option}</MenuItem>
-            ))}
-          </Select>
+          {(form.patentFiledInInstitution || "Yes") === "Yes" ? (
+            <Select size="small" fullWidth displayEmpty value={form.patentName} onChange={set("patentName")}>
+              <MenuItem value="" disabled>--Select--</MenuItem>
+              {PATENT_APPLICANTS.map((option) => (
+                <MenuItem key={option} value={option}>{option}</MenuItem>
+              ))}
+            </Select>
+          ) : (
+            <TextField
+              size="small"
+              fullWidth
+              value={form.patentName}
+              onChange={set("patentName")}
+              placeholder="Enter Applicant Name in Patent"
+            />
+          )}
         </Box>
+
+        <Box>
+          <Typography sx={labelStyle}>Title of the Patent : *</Typography>
+          <TextField size="small" fullWidth value={form.title} onChange={set("title")} placeholder="Enter Title of the Patent" />
+        </Box>
+
         <Box>
           <Typography sx={labelStyle}>Area of Patent :</Typography>
           <TextField size="small" fullWidth value={form.area} onChange={set("area")} />
@@ -696,8 +744,6 @@ export default function PatentPublication() {
               }
             }}
             placeholder="e.g. 202341012345"
-            helperText="Allowed: letters, numbers, / . -"
-            slotProps={{ formHelperText: { sx: { fontSize: "0.7rem", mt: 0.3 } } }}
           />
         </Box>
         <Box>
@@ -973,7 +1019,7 @@ export default function PatentPublication() {
       });
       if (res.data.success) {
         setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: claimantId }));
-        API.get("/api/research/patent").then(r => setPublicationsList(r.data?.data || r.data || [])).catch(()=>{});
+        API.get("/api/research/patent").then(r => setPublicationsList(r.data?.data || r.data || [])).catch(() => { });
         toast.success("Appraisal claimant successfully updated!");
       }
     } catch (err) {
@@ -1025,15 +1071,29 @@ export default function PatentPublication() {
     const isImage = /\.(jpg|jpeg|png|gif)$/i.test(normalizedPath);
 
     return (
-      <Box sx={{ flex: "1 1 200px" }}>
-        <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.7rem", textTransform: "uppercase", display: "block", mb: 1 }}>{title}</Typography>
+      <Box sx={{ flex: "1 1 220px", minWidth: 180 }}>
+        <Box sx={{ mb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.75rem", textTransform: "uppercase" }}>
+            {title}
+          </Typography>
+          <IconButton size="small" href={fileUrl} download target="_blank" sx={{ color: "var(--color-primary)", p: 0.5 }}>
+            <Download fontSize="small" />
+          </IconButton>
+        </Box>
         <Box sx={{
           height: 120, display: "flex", alignItems: "center", justifyContent: "center",
-          border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "8px",
+          border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "12px",
           overflow: "hidden", cursor: "pointer", transition: "all 0.2s ease",
-          "&:hover": { borderColor: "var(--color-primary)", transform: "translateY(-2px)" }
+          "&:hover": { borderColor: "var(--color-primary)", transform: "translateY(-2px)", boxShadow: "var(--shadow-premium)" }
         }} onClick={() => window.open(fileUrl, '_blank')}>
-          {isImage ? <img src={fileUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Box sx={{ textAlign: "center" }}><Description sx={{ fontSize: 24, color: "var(--text-secondary)", mb: 0.5 }} /><Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block" }}>PDF</Typography></Box>}
+          {isImage ? (
+            <img src={fileUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            <Box sx={{ textAlign: "center" }}>
+              <Description sx={{ fontSize: 32, color: "var(--text-secondary)", mb: 0.5 }} />
+              <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block" }}>PDF View</Typography>
+            </Box>
+          )}
         </Box>
       </Box>
     );
@@ -1042,14 +1102,6 @@ export default function PatentPublication() {
   const renderDetailsDialog = () => {
     if (!selectedPubDetails) return null;
     const data = selectedPubDetails;
-    const statusColor = (() => {
-      const s = data.status || "";
-      if (/Pending/i.test(s)) return "#ff9800";
-      if (/Approved/i.test(s)) return "#4caf50";
-      if (/Rejected/i.test(s)) return "#f44336";
-      return "#666";
-    })();
-
     const formatDate = (dateStr) => {
       if (!dateStr) return "-";
       try {
@@ -1072,6 +1124,7 @@ export default function PatentPublication() {
             background: "var(--bg-paper)",
             border: "1px solid var(--border-color)",
             boxShadow: "var(--shadow-premium)",
+            maxHeight: "90vh"
           }
         }}
         slotProps={{
@@ -1091,129 +1144,238 @@ export default function PatentPublication() {
           <IconButton onClick={handleCloseDetails} sx={{ color: "#fff" }}><Close /></IconButton>
         </DialogTitle>
         <DialogContent sx={{ p: 3, mt: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.title}</Typography>
-          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Name of Applicant in Patent: {data.patentName}</Typography>
-
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2 }}>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Area" value={data.area} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}>
-              <LabelValueDetails
-                label="Status"
-                chip={
-                  <Chip
-                    label={data.status}
-                    size="small"
-                    sx={{
-                      bgcolor: `${statusColor}15`,
-                      color: statusColor,
-                      fontWeight: 800,
-                      border: `1px solid ${statusColor}44`,
-                      borderRadius: "6px"
-                    }}
-                  />
-                }
-              />
-            </Box>
-
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Filing No" value={data.filingNo} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Date of Filing" value={formatDate(data.dateOfFiling)} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Patent Status" value={data.patentStatus} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Filed Country" value={data.patentFiledCountry || "India"} /></Box>
-
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Apply Incentive?" value={data.applyIncentive === "Yes" ? "Yes" : "No"} /></Box>
-
-            {data.status === "Approved" && data.approvedAmount && (
-              <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
-                <LabelValueDetails
-                  label="Approved Incentive"
-                  value={`₹${data.approvedAmount}`}
-                  chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
+          {/* Top Banner Card */}
+          <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)" }}>
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, gap: 2 }}>
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5, wordBreak: "break-word" }}>
+                  {data.title}
+                </Typography>
+                <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                  Name of Applicant in Patent: <strong style={{ color: "var(--text-primary)" }}>{data.patentName}</strong>
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap", flexShrink: 0 }}>
+                <Chip
+                  label={(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "R&D Direct Entry" : "Faculty Self Entry"}
+                  sx={{
+                    bgcolor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.1)" : "rgba(59, 130, 246, 0.1)",
+                    color: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "#7c3aed" : "#2563eb",
+                    border: `1px solid ${(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.3)" : "rgba(59, 130, 246, 0.3)"}`,
+                    fontWeight: 700,
+                    borderRadius: "20px",
+                    px: 1,
+                    py: 0.5
+                  }}
+                />
+                <Chip
+                  label={data.status || "Pending at R&D"}
+                  sx={{
+                    bgcolor: /approved/i.test(data.status) ? "rgba(46, 125, 50, 0.1)" : /reject/i.test(data.status) ? "rgba(211, 47, 47, 0.1)" : "rgba(237, 108, 2, 0.1)",
+                    color: /approved/i.test(data.status) ? "#2e7d32" : /reject/i.test(data.status) ? "#d32f2f" : "#ed6c02",
+                    border: `1px solid ${/approved/i.test(data.status) ? "rgba(46, 125, 50, 0.3)" : /reject/i.test(data.status) ? "rgba(211, 47, 47, 0.3)" : "rgba(237, 108, 2, 0.3)"}`,
+                    fontWeight: 700,
+                    borderRadius: "20px",
+                    px: 1,
+                    py: 0.5
+                  }}
                 />
               </Box>
-            )}
+            </Box>
+          </Paper>
 
-            {/* Appraisal Claimant - read only in faculty view */}
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
-              <LabelValueDetails
-                label="Appraisal Claimant"
-                chip={(() => {
-                  const eligibleClaimants = [
-                    { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
-                    ...((data.coInventors || [])
-                      .filter(ca => ca.employeeId)
-                      .map(ca => ({
-                        _id: ca.employeeId?._id || ca.employeeId,
-                        name: ca.employeeId?.name || ca.name,
-                        institutionId: ca.employeeId?.institutionId || ca.employeeId || ""
-                      })))
-                  ];
-                  const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
+          {/* Main Grid: Left Column (Patent Details) + Right Column (Eligibility & Files) */}
+          <Box sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "minmax(0, 1.3fr) minmax(0, 0.9fr)" },
+            gap: 3,
+            mb: 3,
+            width: "100%",
+            alignItems: "flex-start"
+          }}>
+            {/* Left Column (Patent Details) */}
+            <Box sx={{ minWidth: 0 }}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 0,
+                  overflow: "hidden",
+                  borderRadius: "16px",
+                  border: "1px solid var(--border-color)",
+                  background: "var(--bg-paper)",
+                  display: "flex",
+                  flexDirection: "column"
+                }}
+              >
+                <Box sx={{ p: 3, pb: 2, borderBottom: "1px solid var(--border-color)" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
+                    <FormatListBulletedIcon sx={{ color: "var(--color-primary)" }} />
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                      Patent Details
+                    </Typography>
+                  </Box>
+                  <Box sx={{ width: 140, height: 3, bgcolor: "var(--color-primary)", borderRadius: "3px" }} />
+                </Box>
 
-                  const isApproved = data.status === "Approved";
-                  const isAppraisalEligible = data.appraisalEligible === "Yes";
-
-                  if (uniqueClaimants.length <= 1) {
-                    return (
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                        {data.facultyId?.name || "-"} (Auto-assigned)
+                <Box sx={{ display: "flex", flexDirection: "column" }}>
+                  {[
+                    { label: "Academic Year", value: data.academicYear?.year || "-", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Entry Source", value: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "R&D Direct Entry (Admin)" : "Faculty Self Entry", icon: <PersonIcon sx={{ fontSize: 18, color: "var(--color-primary)" }} /> },
+                    { label: "Filed in Institution Name", value: data.patentFiledInInstitution || "Yes", icon: <AccountBalanceIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Name of Applicant in Patent", value: data.patentName || "-", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Area of Patent", value: data.area || "-", icon: <CategoryIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Patent Filing No", value: data.filingNo || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Date of Filing", value: formatDate(data.dateOfFiling), icon: <CalendarTodayIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Patent Application Status", value: data.patentStatus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Filed Country", value: data.patentFiledCountry || "India", icon: <PublicIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Role", value: data.visibilityRole || "Applicant", icon: <PersonIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Seed Grant Work", value: data.applyingSeedGrant === "Yes" ? "Yes" : "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Apply For Incentive", value: data.applyIncentive === "Yes" ? "Yes" : "No", icon: <CardGiftcardIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    ...(data.status === "Approved" && data.approvedAmount ? [{ label: "Approved Incentive Amount", value: `₹${data.approvedAmount}`, icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "#2e7d32" }} /> }] : [])
+                  ].map((item, idx, arr) => (
+                    <Box
+                      key={idx}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        px: 3,
+                        py: 1.6,
+                        borderBottom: idx === arr.length - 1 ? "none" : "1px solid var(--border-color)",
+                        "&:hover": { bgcolor: "rgba(0,0,0,0.015)" },
+                        transition: "background 0.2s"
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        {item.icon}
+                        <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.875rem" }}>
+                          {item.label}
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", textAlign: "right", maxWidth: "55%", wordBreak: "break-word" }}>
+                        {item.value}
                       </Typography>
-                    );
-                  }
+                    </Box>
+                  ))}
+                </Box>
+              </Paper>
+            </Box>
 
-                  if (!isApproved || !isAppraisalEligible) {
-                    return (
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)", mt: 0.5 }}>
-                        N/A - Not Eligible or Not Approved
+            {/* Right Column (Eligibility, Claimant & Files) */}
+            <Box sx={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+              {/* Card 1: Appraisal & Eligibility Info */}
+              <Paper elevation={0} sx={{ p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)" }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 2, borderBottom: "1px solid var(--border-color)" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                      <CheckCircleOutlineIcon sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
+                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                        Patent Eligibility for Appraisal
                       </Typography>
-                    );
-                  }
+                    </Box>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                      {data.status === "Approved" ? (data.appraisalEligible || "No") : "Not yet decided"}
+                    </Typography>
+                  </Box>
 
-                  const currentClaimantObj = uniqueClaimants.find(c => {
-                    const cInst = (c.institutionId || "").toString().trim();
-                    const cId = (c._id || "").toString().trim();
-                    const acInst = (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString().trim();
-                    const acId = (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString().trim();
-                    return (cInst && cInst === acInst) || (cId && cId === acId);
-                  });
+                  <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 0.5 }}>
+                      <PersonIcon sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
+                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                        Appraisal Claimant
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: "right", maxWidth: "60%" }}>
+                      {(() => {
+                        const eligibleClaimants = [
+                          { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
+                          ...((data.coInventors || [])
+                            .filter(ca => ca.employeeId)
+                            .map(ca => ({
+                              _id: ca.employeeId?._id || ca.employeeId,
+                              name: ca.employeeId?.name || ca.name,
+                              institutionId: ca.employeeId?.institutionId || ca.employeeId || ""
+                            })))
+                        ];
+                        const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
 
-                  const isApplicant = data.visibilityRole === "Applicant" || (data.facultyId && (data.facultyId === user?.userId || data.facultyId._id === user?.userId));
+                        const isApproved = data.status === "Approved";
+                        const isAppraisalEligible = data.appraisalEligible === "Yes";
 
-                  if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1) {
-                      return (
-                          <Select
+                        if (uniqueClaimants.length <= 1) {
+                          return (
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                              {data.facultyId?.name || "-"} <Typography component="span" variant="caption" sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>(Auto-assigned)</Typography>
+                            </Typography>
+                          );
+                        }
+
+                        if (!isApproved || !isAppraisalEligible) {
+                          return (
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
+                              N/A - Not Eligible or Not Approved
+                            </Typography>
+                          );
+                        }
+
+                        const currentClaimantObj = uniqueClaimants.find(c => {
+                          const cInst = (c.institutionId || "").toString().trim();
+                          const cId = (c._id || "").toString().trim();
+                          const acInst = (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString().trim();
+                          const acId = (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString().trim();
+                          return (cInst && cInst === acInst) || (cId && cId === acId);
+                        });
+
+                        const isApplicant = data.visibilityRole === "Applicant" || (data.facultyId && (data.facultyId === user?.userId || data.facultyId._id === user?.userId));
+
+                        if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1) {
+                          return (
+                            <Select
                               size="small"
                               fullWidth
                               value=""
                               displayEmpty
                               onChange={(e) => handleResolveClaim(data._id, "Patent", e.target.value)}
-                              sx={{ mt: 0.5, backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
-                          >
+                              sx={{ backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
+                            >
                               <MenuItem value="" disabled>Select Claimant</MenuItem>
                               {uniqueClaimants.map(c => (
-                                  <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
-                                      {c.name} ({c.institutionId})
-                                  </MenuItem>
+                                <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
+                                  {c.name} ({c.institutionId})
+                                </MenuItem>
                               ))}
-                          </Select>
-                      );
-                  }
+                            </Select>
+                          );
+                        }
 
-                  return (
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: currentClaimantObj ? "var(--text-primary)" : "#ff9800", mt: 0.5 }}>
-                      {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
-                    </Typography>
-                  );
-                })()}
-              />
+                        return (
+                          <Typography variant="body2" sx={{ fontWeight: 800, color: currentClaimantObj ? "var(--text-primary)" : "#ed6c02" }}>
+                            {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
+                          </Typography>
+                        );
+                      })()}
+                    </Box>
+                  </Box>
+                </Box>
+              </Paper>
+
+              {/* Card 2: Attached Documents */}
+              <Paper elevation={0} sx={{ p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+                  <AttachFile sx={{ color: "var(--color-primary)" }} />
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                    Attached Documents
+                  </Typography>
+                </Box>
+                <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap" }} useFlexGap>
+                  {renderDetailFile("e-Filing Receipt", data.eFilingReceipt)}
+                  {renderDetailFile("Form 1", data.form1)}
+                </Stack>
+              </Paper>
             </Box>
           </Box>
 
-          <Divider sx={{ my: 3 }} />
-
-          {/* Co-Inventors detail list */}
+          {/* Co-Inventors Details Table */}
           {(() => {
             const filteredCoInventors = (data.coInventors || []).filter((ca) => {
               const isApplicantName = ca.name && user?.name && ca.name.trim().toLowerCase() === user.name.trim().toLowerCase();
@@ -1224,65 +1386,92 @@ export default function PatentPublication() {
             if (filteredCoInventors.length === 0) return null;
 
             return (
-              <Card sx={{ p: 0, overflow: "hidden", mb: 3, border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)" }}>
-                <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid var(--border-color)" }}>
+              <Paper elevation={0} sx={{ p: 0, overflow: "hidden", mb: 3, border: "1px solid var(--border-color)", background: "var(--bg-paper)", borderRadius: "16px" }}>
+                <Box sx={{ p: 2.5, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid var(--border-color)" }}>
                   <Groups sx={{ color: "var(--color-primary)" }} />
-                  <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Inventors & Affiliations</Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Inventors & Affiliations</Typography>
+                  <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.75rem' }}>
+                      {filteredCoInventors.length} Co-Inventor{filteredCoInventors.length > 1 ? 's' : ''}
+                    </Typography>
+                  </Box>
                 </Box>
                 <TableContainer>
                   <Table size="small">
                     <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
+                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", fontSize: "0.75rem", width: 80 }}>POSITION</TableCell>
+                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", fontSize: "0.75rem" }}>NAME</TableCell>
+                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", fontSize: "0.75rem" }}>INVENTOR TYPE</TableCell>
+                        <TableCell sx={{ fontWeight: 800, color: "var(--text-secondary)", fontSize: "0.75rem" }}>AFFILIATION</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {filteredCoInventors.map((inventor, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{inventor.name}</TableCell>
-                          <TableCell sx={{ color: "var(--text-secondary)" }}>{inventor.affiliation}</TableCell>
-                        </TableRow>
-                      ))}
+                      {filteredCoInventors.map((inventor, idx) => {
+                        const rawType = inventor.CoInventorType || inventor.CoAuthorType || (inventor.studentId ? "student" : "faculty");
+                        const displayType = rawType.charAt(0).toUpperCase() + rawType.slice(1);
+                        const isStudent = rawType.toLowerCase() === "student";
+
+                        return (
+                          <TableRow key={idx} sx={{ '&:hover': { bgcolor: 'rgba(0,0,0,0.015)' } }}>
+                            <TableCell>
+                              <Box sx={{
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                width: 28, height: 28, borderRadius: '50%',
+                                bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                color: 'var(--color-primary)', fontWeight: 800, fontSize: '0.8rem'
+                              }}>
+                                {inventor.inventorPosition || inventor.authorPosition || (idx + 1)}
+                              </Box>
+                            </TableCell>
+                            <TableCell sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{inventor.name}</TableCell>
+                            <TableCell>
+                              <Chip
+                                label={displayType}
+                                size="small"
+                                sx={{
+                                  fontWeight: 700,
+                                  fontSize: '0.7rem',
+                                  bgcolor: isStudent ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                                  color: isStudent ? '#2563eb' : '#059669',
+                                  border: '1px solid',
+                                  borderColor: isStudent ? 'rgba(59, 130, 246, 0.3)' : 'rgba(16, 185, 129, 0.3)'
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>{inventor.affiliation || "-"}</TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </TableContainer>
-              </Card>
+              </Paper>
             );
           })()}
 
-          {/* Attached Files previews */}
-          <Box sx={{ mt: 3 }}>
-            <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", mb: 2 }}>
-              <AttachFile sx={{ color: "var(--color-primary)" }} />
-              <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography>
-            </Box>
-            <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }} useFlexGap>
-              {renderDetailFile("e-Filing Receipt", data.eFilingReceipt)}
-              {renderDetailFile("Form 1", data.form1)}
-            </Stack>
-          </Box>
-
           {/* Remarks/Comments if available */}
           {(data.hodComment || data.rndComment) && (
-            <Box sx={{ mt: 4, display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box sx={{ mt: 3, display: "flex", flexDirection: "column", gap: 2 }}>
               {data.hodComment && (
-                <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
-                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#ff9800", textTransform: "uppercase" }}>HOD Remarks</Typography>
-                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.hodComment}"</Typography>
+                <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "12px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#ed6c02", textTransform: "uppercase" }}>HOD Remarks</Typography>
+                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)", fontWeight: 600 }}>"{data.hodComment}"</Typography>
                 </Box>
               )}
               {data.rndComment && (
-                <Box sx={{ p: 2, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "10px", border: "1px solid rgba(76, 175, 80, 0.2)" }}>
-                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
-                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
+                <Box sx={{ p: 2, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "12px", border: "1px solid rgba(76, 175, 80, 0.2)" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#2e7d32", textTransform: "uppercase" }}>R&D Remarks</Typography>
+                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)", fontWeight: 600 }}>"{data.rndComment}"</Typography>
                 </Box>
               )}
             </Box>
           )}
         </DialogContent>
-        <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)" }}>
-          <Button onClick={handleCloseDetails} sx={{ color: "var(--text-primary)", fontWeight: 700 }}>Close</Button>
+        <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)", justifyContent: "flex-end" }}>
+          <Button variant="outlined" onClick={handleCloseDetails} sx={{ color: "var(--text-primary)", borderColor: "var(--border-color)", fontWeight: 700, textTransform: "none", px: 3 }}>
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
     );
@@ -1290,10 +1479,10 @@ export default function PatentPublication() {
 
   return (
     <Box>
-      <PageHeader 
-        title="Patent Publications" 
-        subtitle="Manage and submit your patent publications" 
-        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined} 
+      <PageHeader
+        title="Patent Publications"
+        subtitle="Manage and submit your patent publications"
+        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined}
       />
 
       {viewMode === "list" && renderList()}
