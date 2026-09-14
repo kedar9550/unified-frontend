@@ -1,8 +1,9 @@
 import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
-    Box, Typography, Grid, Card, Button, TextField,
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack
+    Box, Typography, Grid, Card, Button, TextField, Select, MenuItem,
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack,
+    Dialog, DialogTitle, DialogContent, DialogActions
 } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
@@ -18,21 +19,27 @@ import CloseIcon from '@mui/icons-material/Close';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import { toast } from "sonner";
 import API from "../../../api/axios";
+import { useAuth } from "../../../context/AuthContext";
 import EditResearchDetailsDialog from "./EditResearchDetailsDialog";
 
 const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
+    const { user, activeRole } = useAuth();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [remarks, setRemarks] = useState("");
     const [approvedAmount, setApprovedAmount] = useState("");
+    const [appraisalEligible, setAppraisalEligible] = useState("");
+    const [decisionMode, setDecisionMode] = useState(null);  // 'Approve' | 'Reject'
+    const [dialogOpen, setDialogOpen] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
 
-    const isHOD = !role || role === 'HOD';
-    const isDean = role === 'RESEARCH_DEAN';
-    const isCoordinator = role === 'RESEARCH_COORDINATOR';
-    const isResearchAdmin = isDean || isCoordinator;
+    const effectiveRole = role || activeRole || user?.selectedRole || user?.role || '';
+    const isHOD = effectiveRole === 'HOD';
+    const isDean = effectiveRole === 'RESEARCH_DEAN';
+    const isCoordinator = effectiveRole === 'RESEARCH_COORDINATOR';
+    const isResearchAdmin = isDean || isCoordinator || effectiveRole.includes('RESEARCH') || (!isHOD && effectiveRole !== '');
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -43,6 +50,7 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
                     if (res.data.data.rndComment) setRemarks(res.data.data.rndComment);
                     else if (res.data.data.hodComment) setRemarks(res.data.data.hodComment);
                     if (res.data.data.approvedAmount) setApprovedAmount(res.data.data.approvedAmount);
+                    if (res.data.data.appraisalEligible) setAppraisalEligible(res.data.data.appraisalEligible);
                 }
             } catch (error) {
                 console.error("Failed to fetch funded project details", error);
@@ -54,26 +62,55 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
         fetchDetails();
     }, [id]);
 
-    const handleAction = async (action) => {
-        if (!remarks && action === 'Reject') {
+    const handleApprove = async () => {
+        if (isResearchAdmin && !appraisalEligible) {
+            toast.error('Please select Appraisal Eligibility (Yes or No)');
+            return;
+        }
+        setActionLoading(true);
+        try {
+            const endpoint = isResearchAdmin
+                ? `/api/research/funded-project/rnd-action/${id}`
+                : `/api/research/funded-project/hod-action/${id}`;
+            const res = await API.put(endpoint, {
+                action: 'Approve',
+                comment: remarks,
+                appraisalEligible,
+                approvedAmount
+            });
+            if (res.data?.success) {
+                toast.success('Request Approved successfully');
+                onBack();
+            }
+        } catch (error) {
+            console.error('Approve failed', error);
+            toast.error(error.response?.data?.message || 'Approve failed. Please try again.');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleReject = async () => {
+        if (!remarks) {
             toast.error('Remarks are required for rejection');
             return;
         }
-
         setActionLoading(true);
         try {
-            const endpoint = isResearchAdmin ? `/api/research/funded-project/rnd-action/${id}` : `/api/research/funded-project/hod-action/${id}`;
+            const endpoint = isResearchAdmin
+                ? `/api/research/funded-project/rnd-action/${id}`
+                : `/api/research/funded-project/hod-action/${id}`;
             const res = await API.put(endpoint, {
-                action,
+                action: 'Reject',
                 comment: remarks
             });
             if (res.data?.success) {
-                toast.success(`Request ${action === 'Approve' ? 'Approved' : 'Rejected'} successfully`);
-                onBack(); 
+                toast.success('Request Rejected successfully');
+                onBack();
             }
         } catch (error) {
-            console.error("Action failed", error);
-            toast.error(error.response?.data?.message || "Action failed. Please try again.");
+            console.error('Reject failed', error);
+            toast.error(error.response?.data?.message || 'Reject failed. Please try again.');
         } finally {
             setActionLoading(false);
         }
@@ -83,6 +120,14 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
     if (!data) return <Box sx={{ textAlign: 'center', p: 5 }}><Typography color="error">Failed to load data.</Typography><Button onClick={onBack} sx={{ mt: 2 }}>Go Back</Button></Box>;
 
     const { facultyId } = data;
+    const mainFacultyName = facultyId?.name || "Faculty Applicant";
+    const adityaCoInvNames = (data.coInvestigators || [])
+        .filter(c => c.affiliationType === "Aditya University" || c.employeeId || c.affiliation === "Aditya University")
+        .map(c => c.name)
+        .filter(Boolean);
+    const allClaimants = [mainFacultyName, ...adityaCoInvNames].filter((v, i, a) => v && a.indexOf(v) === i);
+    const appraisalClaimantsStr = allClaimants.length > 0 ? allClaimants.join(", ") : "-";
+
     const statusStyle = (() => {
         const s = data.status || "";
         if (/Pending/i.test(s)) return { bg: "rgba(255, 193, 7, 0.1)", color: "#ff9800", dot: "#ff9800" };
@@ -98,7 +143,7 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
         const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filepath);
 
         return (
-            <Grid key={index} item xs={12} sm={6} md={4}>
+            <Grid key={index} size={{ xs: 12, sm: 6, md: 4 }}>
                 <Box sx={{ mb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.75rem", textTransform: "uppercase" }}>
                         {index}. {title}
@@ -253,6 +298,9 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
                         <LabelValue label="Recurring" value={`₹${data.recurring || "0"}`} horizontal />
                         <LabelValue label="Non-Recurring" value={`₹${data.nonRecurring || "0"}`} horizontal />
                         <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} horizontal />
+                        <LabelValue label="Entry Type" value={data.entryType === 'Admin' ? 'Entry: R&D Admin' : 'Entry: Self (Faculty)'} horizontal />
+                        <LabelValue label="Appraisal Eligible?" value={data.status === "Approved" ? (data.appraisalEligible || "No") : "Not yet decided"} horizontal />
+                        <LabelValue label="Appraisal Claimant(s)" value={appraisalClaimantsStr} horizontal />
                     </Box>
                 </Card>
             </Box>
@@ -337,19 +385,28 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
 
             {/* Actions */}
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mt: 3 }}>
-                {data.hodComment && <Box sx={{ flex: 1, minWidth: 300 }}><Card sx={{ ...cardStyle, borderLeft: "4px solid #ffc107", height: "100%", mb: 0 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><HistoryIcon sx={{ color: "#ffc107" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>HOD Review</Typography></Box><Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}><Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.hodComment}"</Typography></Box></Card></Box>}
+                {data.hodComment && (
+                    <Box sx={{ flex: 1, minWidth: 300 }}>
+                        <Card sx={{ ...cardStyle, borderLeft: "4px solid #ffc107", height: "100%", mb: 0 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+                                <HistoryIcon sx={{ color: "#ffc107" }} />
+                                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>HOD Review</Typography>
+                            </Box>
+                            <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}>
+                                <Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.hodComment}"</Typography>
+                            </Box>
+                        </Card>
+                    </Box>
+                )}
                 
                 <Box sx={{ flex: 1, minWidth: 350 }}>
                     {(isResearchAdmin && data.status === 'Pending at R&D') ? (
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
                             
-                            {/* Incentive input removed as there is no incentive for Funded Project */}
-                            <TextField fullWidth multiline rows={3} placeholder="Provide your review comments..." value={remarks} onChange={e => setRemarks(e.target.value)} sx={{ mb: 3, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }} />
-
                             <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ px: 3 }}>Reject</Button>
-                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ px: 4 }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
+                                <Button variant="outlined" color="error" onClick={() => { setDecisionMode('Reject'); setDialogOpen(true); }} sx={{ px: 3, fontWeight: 700 }}>Reject</Button>
+                                <Button variant="contained" color="success" onClick={() => { setDecisionMode('Approve'); setDialogOpen(true); }} sx={{ px: 4, fontWeight: 700 }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
                             </Box>
                         </Card>
                     ) : (
@@ -360,13 +417,93 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
                                 <Box sx={{ mt: 3, textAlign: "left", p: 2, bgcolor: "rgba(16, 185, 129, 0.05)", borderRadius: "10px", border: "1px solid #10b98133" }}>
                                     <Typography variant="caption" sx={{ fontWeight: 900, color: "#10b981", textTransform: "uppercase" }}>R&D Remarks:</Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>"{data.rndComment}"</Typography>
-                                    {data.approvedAmount && <Typography variant="h6" sx={{ mt: 2, fontWeight: 900, color: "#10b981" }}>Approved Amount: ₹{data.approvedAmount}</Typography>}
                                 </Box>
                             )}
                         </Card>
                     )}
                 </Box>
             </Box>
+
+            {/* Decision Dialog Modal */}
+            <Dialog
+                open={dialogOpen}
+                onClose={() => { setDialogOpen(false); setDecisionMode(null); }}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle sx={{ fontWeight: 800, color: decisionMode === 'Reject' ? '#d32f2f' : 'var(--color-primary)' }}>
+                    {decisionMode === 'Reject' ? 'Reject Funded Project Request' : 'Approve Funded Project Request'}
+                </DialogTitle>
+                <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 2 }}>
+                    {decisionMode === 'Approve' && isResearchAdmin && (
+                        <Box>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, color: "var(--text-primary)" }}>
+                                APPRAISAL ELIGIBILITY *
+                            </Typography>
+                            <Box sx={{ display: "flex", gap: 2 }}>
+                                <Button
+                                    variant={appraisalEligible === 'Yes' ? 'contained' : 'outlined'}
+                                    color="success"
+                                    onClick={() => setAppraisalEligible('Yes')}
+                                    sx={{ flex: 1, fontWeight: 700, borderRadius: "10px" }}
+                                >
+                                    ✓ Yes — Eligible
+                                </Button>
+                                <Button
+                                    variant={appraisalEligible === 'No' ? 'contained' : 'outlined'}
+                                    color="error"
+                                    onClick={() => setAppraisalEligible('No')}
+                                    sx={{ flex: 1, fontWeight: 700, borderRadius: "10px" }}
+                                >
+                                    ✗ No — Not Eligible
+                                </Button>
+                            </Box>
+                        </Box>
+                    )}
+
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--text-primary)" }}>
+                            REMARKS {decisionMode === 'Reject' ? '*' : '(OPTIONAL)'}
+                        </Typography>
+                        <TextField 
+                            fullWidth 
+                            multiline 
+                            rows={3} 
+                            placeholder={decisionMode === 'Reject' ? "Provide reason for rejection..." : "Provide review comments..."} 
+                            value={remarks} 
+                            onChange={e => setRemarks(e.target.value)} 
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, pt: 1 }}>
+                    <Button onClick={() => { setDialogOpen(false); setDecisionMode(null); }} color="inherit" sx={{ fontWeight: 700 }}>
+                        Cancel
+                    </Button>
+                    {decisionMode === 'Reject' ? (
+                        <Button
+                            variant="contained"
+                            color="error"
+                            disabled={actionLoading}
+                            onClick={handleReject}
+                            sx={{ px: 3, fontWeight: 700, borderRadius: "8px" }}
+                        >
+                            {actionLoading ? "Rejecting..." : "Confirm Reject"}
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="contained"
+                            color="success"
+                            disabled={actionLoading}
+                            onClick={handleApprove}
+                            sx={{ px: 3, fontWeight: 700, borderRadius: "8px" }}
+                        >
+                            {actionLoading ? "Approving..." : (isHOD ? "Confirm Approve" : "Final Approve")}
+                        </Button>
+                    )}
+                </DialogActions>
+            </Dialog>
+
             {isResearchAdmin && (
                 <EditResearchDetailsDialog
                     open={editOpen}

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
-  Box, TextField, MenuItem, Select, Typography, Button
+  Box, TextField, MenuItem, Select, Typography, Button,
+  Radio, RadioGroup, FormControlLabel
 } from "@mui/material";
 import { toast } from "sonner";
 import { Search, AttachFile } from "@mui/icons-material";
@@ -30,6 +31,7 @@ export default function RndConsultancyDataEntry() {
   const [form, setForm] = useState({
     title: "",
     fundingAgency: "",
+    fundingAdityaUniversity: "No",
     amount: "",
     duration: "",
     month: "",
@@ -38,6 +40,7 @@ export default function RndConsultancyDataEntry() {
     projectStatus: "Sanctioned",
     applyingSeedGrant: "No",
     applyIncentive: "No",
+    appraisalEligible: "Yes",
     totalInvestigators: 1,
     otherInvestigatorsList: []
   });
@@ -197,6 +200,10 @@ export default function RndConsultancyDataEntry() {
       toast.error("Please fill all required fields");
       return;
     }
+    if (!form.appraisalEligible) {
+      toast.error("Please select Appraisal Eligible status");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -218,9 +225,9 @@ export default function RndConsultancyDataEntry() {
       await API.post("/api/research/consultancy", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Consultancy record added directly for faculty!");
       setForm({
-        title: "", fundingAgency: "", amount: "", duration: "", month: "", year: "",
+        title: "", fundingAgency: "", fundingAdityaUniversity: "No", amount: "", duration: "", month: "", year: "",
         investigatorType: "Principal Investigator (PI)", projectStatus: "Sanctioned",
-        applyingSeedGrant: "No", applyIncentive: "No", totalInvestigators: 1, otherInvestigatorsList: []
+        applyingSeedGrant: "No", applyIncentive: "No", appraisalEligible: "Yes", totalInvestigators: 1, otherInvestigatorsList: []
       });
       setFiles({ sanctionOrder: null });
       setTargetFacultyEmpId("");
@@ -299,13 +306,34 @@ export default function RndConsultancyDataEntry() {
               {academicYears.map(y => <MenuItem key={y._id} value={y._id}>{y.yearRange || y.year}</MenuItem>)}
             </Select>
           </Box>
+          <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, p: 2, background: "var(--bg-panel)", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+              <Typography sx={{ ...labelStyle, mb: 0, fontWeight: 700, color: "var(--text-primary)" }}>Is Funding Agency Aditya University / Internal? *</Typography>
+              <RadioGroup
+                row
+                value={form.fundingAdityaUniversity || "No"}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setForm(prev => ({
+                    ...prev,
+                    fundingAdityaUniversity: val,
+                    fundingAgency: val === "Yes" ? "Aditya University" : (prev.fundingAgency === "Aditya University" ? "" : prev.fundingAgency)
+                  }));
+                }}
+              >
+                <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+                <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+              </RadioGroup>
+            </Box>
+          </Box>
+
           <Box>
             <Typography sx={labelStyle}>Title of Consultancy Project : <span style={{ color: 'red' }}>*</span></Typography>
             <TextField fullWidth size="small" multiline rows={2} value={form.title} onChange={set("title")} placeholder="Consultancy Project Title" />
           </Box>
           <Box>
             <Typography sx={labelStyle}>Client / Funding Agency Name : <span style={{ color: 'red' }}>*</span></Typography>
-            <TextField fullWidth size="small" value={form.fundingAgency} onChange={set("fundingAgency")} placeholder="Organization Name" />
+            <TextField fullWidth size="small" value={form.fundingAgency} onChange={set("fundingAgency")} placeholder="Organization Name" disabled={form.fundingAdityaUniversity === "Yes"} />
           </Box>
           <Box>
             <Typography sx={labelStyle}>Sanctioned Amount (₹) : <span style={{ color: 'red' }}>*</span></Typography>
@@ -435,6 +463,19 @@ export default function RndConsultancyDataEntry() {
       {/* Attachments Section */}
       <FormCard title="Attachments & Options" icon={<AttachFile sx={{ color: "var(--color-primary)" }} />}>
         <Grid2>
+          <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, p: 2, background: "var(--bg-panel)", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+              <Typography sx={{ ...labelStyle, mb: 0, fontWeight: 700, color: "var(--text-primary)" }}>Appraisal Eligible *</Typography>
+              <RadioGroup
+                row
+                value={form.appraisalEligible || "Yes"}
+                onChange={(e) => setForm(prev => ({ ...prev, appraisalEligible: e.target.value }))}
+              >
+                <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+                <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+              </RadioGroup>
+            </Box>
+          </Box>
           <FileField label="Sanction Order / Work Order Document:" onChange={(e) => setFiles(p => ({ ...p, sanctionOrder: e.target.files[0] }))} />
           <Box>
             <Typography sx={labelStyle}>Apply for Incentive?</Typography>

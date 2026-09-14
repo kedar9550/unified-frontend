@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
-  Box, TextField, MenuItem, Select, Typography, Button
+  Box, TextField, MenuItem, Select, Typography, Button,
+  Radio, RadioGroup, FormControlLabel
 } from "@mui/material";
 import { toast } from "sonner";
 import { Search, AttachFile } from "@mui/icons-material";
@@ -36,6 +37,7 @@ export default function RndNovelProductDataEntry() {
     remarks: "",
     investigatorType: "Principal Investigator (PI)",
     applyIncentive: "No",
+    appraisalEligible: "Yes",
     totalDevelopers: 1,
     otherDevelopersList: []
   });
@@ -195,6 +197,10 @@ export default function RndNovelProductDataEntry() {
       toast.error("Please fill all required fields");
       return;
     }
+    if (!form.appraisalEligible) {
+      toast.error("Please select Appraisal Eligible status");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -218,7 +224,7 @@ export default function RndNovelProductDataEntry() {
       setForm({
         productName: "", description: "", category: "Developed", developedOrganization: "",
         implementedOrganization: "", remarks: "", investigatorType: "Principal Investigator (PI)",
-        applyIncentive: "No", totalDevelopers: 1, otherDevelopersList: []
+        applyIncentive: "No", appraisalEligible: "Yes", totalDevelopers: 1, otherDevelopersList: []
       });
       setFiles({ document: null });
       setTargetFacultyEmpId("");
@@ -423,6 +429,19 @@ export default function RndNovelProductDataEntry() {
       {/* Attachments Section */}
       <FormCard title="Attachments & Options" icon={<AttachFile sx={{ color: "var(--color-primary)" }} />}>
         <Grid2>
+          <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, p: 2, background: "var(--bg-panel)", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+              <Typography sx={{ ...labelStyle, mb: 0, fontWeight: 700, color: "var(--text-primary)" }}>Appraisal Eligible *</Typography>
+              <RadioGroup
+                row
+                value={form.appraisalEligible || "Yes"}
+                onChange={(e) => setForm(prev => ({ ...prev, appraisalEligible: e.target.value }))}
+              >
+                <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+                <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+              </RadioGroup>
+            </Box>
+          </Box>
           <FileField label="Product Document / Proof:" onChange={(e) => setFiles(p => ({ ...p, document: e.target.files[0] }))} />
           <Box>
             <Typography sx={labelStyle}>Apply for Incentive?</Typography>

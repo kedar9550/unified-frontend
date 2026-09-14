@@ -423,7 +423,6 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                             <FormControl fullWidth size="small">
                                 <InputLabel>Patent Status</InputLabel>
                                 <Select label="Patent Status" name="patentStatus" value={formData.patentStatus || ""} onChange={handleChange}>
-                                    <MenuItem value="Filed">Filed</MenuItem>
                                     <MenuItem value="Published">Published</MenuItem>
                                     <MenuItem value="Granted">Granted</MenuItem>
                                 </Select>

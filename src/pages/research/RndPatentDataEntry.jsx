@@ -14,7 +14,7 @@ import {
 import { labelStyle } from "../../components/faculty/publicationConstants";
 import API from "../../api/axios";
 
-const PATENT_STATUSES = ["Filed", "Published", "Granted"];
+const PATENT_STATUSES = ["Published", "Granted"];
 const PATENT_APPLICANTS = ["Aditya University", "Aditya College of Pharmacy", "Other"];
 
 export default function RndPatentDataEntry() {
@@ -31,12 +31,12 @@ export default function RndPatentDataEntry() {
   const [form, setForm] = useState({
     title: "",
     applicantName: "",
-    patentName: "Aditya University",
+    patentName: "",
     patentFiledInInstitution: "Yes",
     area: "",
     filingNo: "",
     dateOfFiling: "",
-    status: "Filed",
+    status: "",
     patentFiledCountry: "India",
     customCountryName: "",
     applyingSeedGrant: "No",
@@ -295,8 +295,8 @@ export default function RndPatentDataEntry() {
       await API.post("/api/research/patent", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Patent record added directly for faculty!");
       setForm({
-        title: "", applicantName: "", patentName: "Aditya University", patentFiledInInstitution: "Yes", area: "", filingNo: "", dateOfFiling: "",
-        status: "Filed", patentFiledCountry: "India", customCountryName: "", applyingSeedGrant: "No", isStudentsInvolved: "No", applyIncentive: "No",
+        title: "", applicantName: "", patentName: "", patentFiledInInstitution: "Yes", area: "", filingNo: "", dateOfFiling: "",
+        status: "", patentFiledCountry: "India", customCountryName: "", applyingSeedGrant: "No", isStudentsInvolved: "No", applyIncentive: "No",
         totalInventors: 1, otherInventors: [], appraisalEligible: "Yes", approvedAmount: ""
       });
       setFiles({ eFilingReceipt: null, form1: null });
@@ -367,7 +367,7 @@ export default function RndPatentDataEntry() {
                   setForm(prev => ({
                     ...prev,
                     patentFiledInInstitution: val,
-                    patentName: val === "Yes" ? (PATENT_APPLICANTS.includes(prev.patentName) ? prev.patentName : "Aditya University") : (targetFacultyName || prev.patentName || "")
+                    patentName: val === "Yes" ? (PATENT_APPLICANTS.includes(prev.patentName) ? prev.patentName : "") : (targetFacultyName || prev.patentName || "")
                   }));
                 }}
               >
@@ -387,6 +387,7 @@ export default function RndPatentDataEntry() {
             <Typography sx={labelStyle}>Name of the Applicant in Patent : <span style={{ color: 'red' }}>*</span></Typography>
             {(form.patentFiledInInstitution || "Yes") === "Yes" ? (
               <Select size="small" fullWidth displayEmpty value={form.patentName} onChange={set("patentName")}>
+                <MenuItem value="" disabled>--Select--</MenuItem>
                 {PATENT_APPLICANTS.map((option) => (
                   <MenuItem key={option} value={option}>{option}</MenuItem>
                 ))}
@@ -430,7 +431,8 @@ export default function RndPatentDataEntry() {
           </Box>
           <Box>
             <Typography sx={labelStyle}>Status of Patent Application :</Typography>
-            <Select size="small" fullWidth value={form.status} onChange={set("status")}>
+            <Select size="small" fullWidth displayEmpty value={form.status} onChange={set("status")}>
+              <MenuItem value="">--Select--</MenuItem>
               {PATENT_STATUSES.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
             </Select>
           </Box>

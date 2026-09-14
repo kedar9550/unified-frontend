@@ -946,22 +946,24 @@ export default function ConsultancyPublication() {
   const renderDetailsDialog = () => {
     if (!selectedPubDetails) return null;
     const data = selectedPubDetails;
-    const statusColor = (() => {
-      const s = data.status || "";
-      if (/Pending/i.test(s)) return "#ff9800";
-      if (/Approved/i.test(s)) return "#4caf50";
-      if (/Rejected/i.test(s)) return "#f44336";
-      return "#666";
-    })();
+
+    const mainFacultyName = data.facultyId?.name || user?.name || "Faculty Applicant";
+    const adityaCoInvNames = (data.coInvestigators || [])
+      .filter(c => c.affiliationType === "Aditya University" || c.employeeId || c.affiliation === "Aditya University")
+      .map(c => c.name)
+      .filter(Boolean);
+    const allClaimants = [mainFacultyName, ...adityaCoInvNames].filter((v, i, a) => v && a.indexOf(v) === i);
+    const appraisalClaimantsStr = allClaimants.length > 0 ? allClaimants.join(", ") : "-";
 
     return (
       <Dialog
         open={!!selectedPubDetails}
         onClose={handleCloseDetails}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
         sx={{
           "& .MuiDialog-paper": {
+            maxWidth: { xs: "95vw", sm: "90vw", md: "85vw", lg: "1100px" },
             borderRadius: "20px",
             background: "var(--bg-paper)",
             border: "1px solid var(--border-color)",
@@ -985,110 +987,173 @@ export default function ConsultancyPublication() {
           <IconButton onClick={handleCloseDetails} sx={{ color: "#fff" }}><Close /></IconButton>
         </DialogTitle>
         <DialogContent sx={{ p: 3, mt: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.title}</Typography>
-          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Funding Agency: {data.fundingAgency}</Typography>
-
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2 }}>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Funding Agency" value={data.fundingAgency} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Amount" value={`₹${data.amount}`} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Duration (Years)" value={data.duration || "-"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}>
-              <LabelValueDetails
-                label="Status"
-                chip={
-                  <Chip
-                    label={data.status}
-                    size="small"
-                    sx={{
-                      bgcolor: `${statusColor}15`,
-                      color: statusColor,
-                      fontWeight: 800,
-                      border: `1px solid ${statusColor}44`,
-                      borderRadius: "6px"
-                    }}
-                  />
-                }
-              />
-            </Box>
-
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Commencement Month/Year" value={`${data.month || ""} ${data.year || ""}`} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applicant Faculty" value={data.facultyId?.name || "N/A"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Type of Investigator" value={data.investigatorType || "N/A"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applying Incentive?" value={data.applyIncentive || "No"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Project Status" value={data.projectStatus || "Sanctioned"} /></Box>
-
-            {data.status === "Approved" && data.approvedAmount && (
-              <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
-                <LabelValueDetails
-                  label="Approved Incentive"
-                  value={`₹${data.approvedAmount}`}
-                  chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
-                />
-              </Box>
-            )}
-            {data.coInvestigators && data.coInvestigators.length > 0 && (
-              <Box sx={{ gridColumn: { xs: "span 12", sm: "span 12" } }}>
-                <Box sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", overflow: "hidden", width: "100%" }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, p: 2, bgcolor: "rgba(0, 0, 0, 0.02)", borderBottom: "1px solid var(--border-color)" }}>
-                    <Groups sx={{ color: "var(--color-primary)", fontSize: 20 }} />
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", textTransform: "uppercase" }}>
-                      Co-Investigators
-                    </Typography>
-                  </Box>
-                  <Box sx={{ width: "100%" }}>
-                    {/* Header Row */}
-                    <Box sx={{ display: "grid", gridTemplateColumns: "70px 1fr 220px 180px", alignItems: "center", px: 2, py: 1.5, bgcolor: "rgba(0,0,0,0.01)", borderBottom: "1px solid var(--border-color)" }}>
-                      <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)" }}>S.No</Typography>
-                      <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)" }}>NAME</Typography>
-                      <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)" }}>AFFILIATION</Typography>
-                      <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)", textAlign: "right" }}>ROLE</Typography>
-                    </Box>
-                    {/* Data Rows */}
-                    {data.coInvestigators.map((co, idx) => {
-                      const roleText = co.role || (co.principalInvestigator === "Yes" ? "Principal Investigator" : "Co-Investigator");
-                      return (
-                        <Box key={idx} sx={{ display: "grid", gridTemplateColumns: "70px 1fr 220px 180px", alignItems: "center", px: 2, py: 2, borderBottom: idx < data.coInvestigators.length - 1 ? "1px dashed var(--border-color)" : "none" }}>
-                          <Box sx={{ width: 28, height: 28, borderRadius: "50%", border: "1px solid var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-primary)", fontWeight: 700, fontSize: "0.8rem" }}>
-                            {idx + 1}
-                          </Box>
-                          <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", pr: 2 }}>
-                            {co.name} {co.employeeId ? `(Staff Code: ${co.employeeId})` : ""}
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: "var(--text-secondary)", pr: 2 }}>
-                            {co.affiliation || "Aditya University"}
-                          </Typography>
-                          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                            <Chip
-                              size="small"
-                              label={roleText}
-                              color={roleText.includes("Principal") ? "primary" : "warning"}
-                              variant="outlined"
-                              sx={{ fontWeight: 700, borderRadius: "6px" }}
-                            />
-                          </Box>
-                        </Box>
-                      );
-                    })}
-                  </Box>
+          {/* Top Header Card */}
+          <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-panel)" }}>
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, gap: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+                <Box sx={{
+                  width: 48, height: 48, borderRadius: "12px", bgcolor: "rgba(0, 78, 146, 0.08)",
+                  color: "var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "center",
+                  border: "1px solid rgba(0, 78, 146, 0.15)", flexShrink: 0, mt: 0.5
+                }}>
+                  <AssignmentInd sx={{ fontSize: 26 }} />
+                </Box>
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.3 }}>
+                    {data.title}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, mt: 0.5 }}>
+                    Client / Funding Agency: {data.fundingAgency}
+                  </Typography>
                 </Box>
               </Box>
-            )}
-          </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0, flexWrap: "wrap" }}>
+                <Chip
+                  label={data.entryType === 'Admin' ? 'Entry: R&D Admin' : 'Entry: Self (Faculty)'}
+                  sx={{
+                    bgcolor: data.entryType === 'Admin' ? 'rgba(156, 39, 176, 0.1)' : 'rgba(3, 169, 244, 0.1)',
+                    color: data.entryType === 'Admin' ? '#9c27b0' : '#0288d1',
+                    border: `1px solid ${data.entryType === 'Admin' ? 'rgba(156, 39, 176, 0.3)' : 'rgba(3, 169, 244, 0.3)'}`,
+                    fontWeight: 700, borderRadius: '20px', px: 1, py: 0.5
+                  }}
+                />
+                <Chip
+                  icon={<AccessTime sx={{ fontSize: "16px !important", color: "inherit" }} />}
+                  label={data.status || "Pending at R&D"}
+                  sx={{
+                    bgcolor: /approved/i.test(data.status) ? "rgba(46, 125, 50, 0.1)" : /reject/i.test(data.status) ? "rgba(211, 47, 47, 0.1)" : "rgba(237, 108, 2, 0.1)",
+                    color: /approved/i.test(data.status) ? "#2e7d32" : /reject/i.test(data.status) ? "#d32f2f" : "#ed6c02",
+                    border: `1px solid ${/approved/i.test(data.status) ? "rgba(46, 125, 50, 0.3)" : /reject/i.test(data.status) ? "rgba(211, 47, 47, 0.3)" : "rgba(237, 108, 2, 0.3)"}`,
+                    fontWeight: 700,
+                    borderRadius: "20px",
+                    px: 1,
+                    py: 0.5
+                  }}
+                />
+              </Box>
+            </Box>
+          </Paper>
 
-          {/* Remarks/Comments if available */}
+          {/* Details Card */}
+          <Paper elevation={0} sx={{ borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", overflow: "hidden", mb: 3 }}>
+            <Box sx={{ p: 3, pb: 2, borderBottom: "1px solid var(--border-color)" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
+                <Description sx={{ color: "var(--color-primary)" }} />
+                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                  Consultancy Project Details
+                </Typography>
+              </Box>
+              <Box sx={{ width: 140, height: 3, bgcolor: "var(--color-primary)", borderRadius: "3px" }} />
+            </Box>
+            <Box sx={{ display: "flex", flexDirection: "column" }}>
+              {[
+                { label: "Academic Year", value: data.academicYear?.year || "-" },
+                { label: "Client / Funding Agency", value: data.fundingAgency || "-" },
+                { label: "Internal Funding (Aditya University)?", value: data.fundingAdityaUniversity || "No" },
+                { label: "Sanctioned Amount", value: data.amount ? `₹${data.amount}` : "-" },
+                { label: "Duration (Months)", value: data.duration || "-" },
+                { label: "Commencement Month / Year", value: `${data.month || ""} ${data.year || ""}`.trim() || "-" },
+                { label: "Investigator Role", value: data.investigatorType || "N/A" },
+                { label: "Project Status", value: data.projectStatus || "Sanctioned" },
+                { label: "Applying Seed Grant?", value: data.applyingSeedGrant || "No" },
+                { label: "Appraisal Eligible?", value: data.status === "Approved" ? (data.appraisalEligible || "No") : "Not yet decided" },
+                { label: "Appraisal Claimant(s)", value: appraisalClaimantsStr },
+                { label: "Approved Incentive Amount", value: data.approvedAmount ? `₹${data.approvedAmount}` : "-" }
+              ].map((item, idx, arr) => (
+                <Box
+                  key={idx}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    px: 3,
+                    py: 1.6,
+                    borderBottom: idx === arr.length - 1 ? "none" : "1px solid var(--border-color)",
+                    "&:hover": { bgcolor: "rgba(0,0,0,0.015)" },
+                    transition: "background 0.2s"
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.875rem" }}>
+                    {item.label}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", textAlign: "right", maxWidth: "60%", wordBreak: "break-word" }}>
+                    {item.value}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          </Paper>
+
+          {/* Co-Investigators Table */}
+          {data.coInvestigators && data.coInvestigators.length > 0 && (
+            <Paper elevation={0} sx={{ borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", overflow: "hidden", mb: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 3, pb: 2, borderBottom: "1px solid var(--border-color)" }}>
+                <Groups sx={{ color: "var(--color-primary)" }} />
+                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                  Co-Investigators Details
+                </Typography>
+              </Box>
+              <Box sx={{ width: "100%", overflowX: "auto" }}>
+                <Box sx={{ display: "grid", gridTemplateColumns: "70px 1fr 220px 180px", alignItems: "center", px: 3, py: 1.5, bgcolor: "rgba(0,0,0,0.02)", borderBottom: "1px solid var(--border-color)" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)" }}>S.NO</Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)" }}>NAME</Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)" }}>AFFILIATION</Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--text-secondary)", textAlign: "right" }}>ROLE</Typography>
+                </Box>
+                {data.coInvestigators.map((co, idx) => {
+                  const roleText = co.role || (co.principalInvestigator === "Yes" ? "Principal Investigator" : "Co-Investigator");
+                  return (
+                    <Box key={idx} sx={{ display: "grid", gridTemplateColumns: "70px 1fr 220px 180px", alignItems: "center", px: 3, py: 1.8, borderBottom: idx < data.coInvestigators.length - 1 ? "1px dashed var(--border-color)" : "none" }}>
+                      <Box sx={{ width: 28, height: 28, borderRadius: "50%", border: "1px solid var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-primary)", fontWeight: 700, fontSize: "0.8rem" }}>
+                        {idx + 1}
+                      </Box>
+                      <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", pr: 2 }}>
+                        {co.name} {co.employeeId ? `(${co.employeeId})` : ""}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", pr: 2 }}>
+                        {co.affiliation || "Aditya University"}
+                      </Typography>
+                      <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                        <Chip
+                          size="small"
+                          label={roleText}
+                          color={roleText.includes("Principal") ? "primary" : "warning"}
+                          variant="outlined"
+                          sx={{ fontWeight: 700, borderRadius: "6px" }}
+                        />
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+            </Paper>
+          )}
+
+          {/* Attached Files previews */}
+          {(data.sanctionLetter || data.mou) && (
+            <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)" }}>
+              <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", mb: 2 }}>
+                <AttachFile sx={{ color: "var(--color-primary)" }} />
+                <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Supporting Documents</Typography>
+              </Box>
+              <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }} useFlexGap>
+                {data.sanctionLetter && renderDetailFile("Sanction Letter / Work Order", data.sanctionLetter)}
+                {data.mou && renderDetailFile("MOU Document", data.mou)}
+              </Stack>
+            </Paper>
+          )}
+
+          {/* Remarks/Comments */}
           {(data.hodComment || data.rndComment) && (
-            <Box sx={{ mt: 4, display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box sx={{ mt: 3, display: "flex", flexDirection: "column", gap: 2 }}>
               {data.hodComment && (
-                <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
+                <Box sx={{ p: 2.5, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "12px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
                   <Typography variant="caption" sx={{ fontWeight: 900, color: "#ff9800", textTransform: "uppercase" }}>HOD Remarks</Typography>
                   <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.hodComment}"</Typography>
                 </Box>
               )}
               {data.rndComment && (
-                <Box sx={{ p: 2, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "10px", border: "1px solid rgba(76, 175, 80, 0.2)" }}>
+                <Box sx={{ p: 2.5, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "12px", border: "1px solid rgba(76, 175, 80, 0.2)" }}>
                   <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
                   <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
                 </Box>

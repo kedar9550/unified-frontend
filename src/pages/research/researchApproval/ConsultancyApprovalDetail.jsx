@@ -1,8 +1,9 @@
 import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
-    Box, Typography, Grid, Card, Button, TextField,
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack
+    Box, Typography, Grid, Card, Button, TextField, Select, MenuItem,
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack,
+    Dialog, DialogTitle, DialogContent, DialogActions
 } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
@@ -14,21 +15,26 @@ import AttachFileIcon from '@mui/icons-material/AttachFile';
 import GroupsIcon from '@mui/icons-material/Groups';
 import { toast } from "sonner";
 import API from "../../../api/axios";
+import { useAuth } from "../../../context/AuthContext";
 import EditResearchDetailsDialog from "./EditResearchDetailsDialog";
 
 const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
+    const { user, activeRole } = useAuth();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [remarks, setRemarks] = useState("");
     const [approvedAmount, setApprovedAmount] = useState("");
+    const [appraisalEligible, setAppraisalEligible] = useState("");
+    const [decisionMode, setDecisionMode] = useState(null);
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
 
-    const isHOD = !role || role === 'HOD';
-    const isDean = role === 'RESEARCH_DEAN';
-    const isCoordinator = role === 'RESEARCH_COORDINATOR';
-    const isResearchAdmin = isDean || isCoordinator;
+    const effectiveRole = role || activeRole || user?.selectedRole || user?.role || '';
+    const isHOD = effectiveRole === 'HOD';
+    const isDean = effectiveRole === 'RESEARCH_DEAN';
+    const isCoordinator = effectiveRole === 'RESEARCH_COORDINATOR';
+    const isResearchAdmin = isDean || isCoordinator || effectiveRole.includes('RESEARCH') || (!isHOD && effectiveRole !== '');
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -39,6 +45,7 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                     if (res.data.data.rndComment) setRemarks(res.data.data.rndComment);
                     else if (res.data.data.hodComment) setRemarks(res.data.data.hodComment);
                     if (res.data.data.approvedAmount) setApprovedAmount(res.data.data.approvedAmount);
+                    if (res.data.data.appraisalEligible) setAppraisalEligible(res.data.data.appraisalEligible);
                 }
             } catch (error) {
                 console.error("Failed to fetch consultancy details", error);
@@ -56,12 +63,19 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
             return;
         }
 
+        if (action === 'Approve' && isResearchAdmin && !appraisalEligible) {
+            toast.error('Please select Appraisal Eligible status');
+            return;
+        }
+
         setActionLoading(true);
         try {
             const endpoint = isResearchAdmin ? `/api/research/consultancy/rnd-action/${id}` : `/api/research/consultancy/hod-action/${id}`;
             const res = await API.put(endpoint, {
                 action,
-                comment: remarks
+                comment: remarks,
+                appraisalEligible,
+                approvedAmount
             });
             if (res.data?.success) {
                 toast.success(`Request ${action === 'Approve' ? 'Approved' : 'Rejected'} successfully`);
@@ -79,6 +93,14 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
     if (!data) return <Box sx={{ textAlign: 'center', p: 5 }}><Typography color="error">Failed to load data.</Typography><Button onClick={onBack} sx={{ mt: 2 }}>Go Back</Button></Box>;
 
     const { facultyId } = data;
+    const mainFacultyName = facultyId?.name || "Faculty Applicant";
+    const adityaCoInvNames = (data.coInvestigators || [])
+        .filter(c => c.affiliationType === "Aditya University" || c.employeeId || c.affiliation === "Aditya University")
+        .map(c => c.name)
+        .filter(Boolean);
+    const allClaimants = [mainFacultyName, ...adityaCoInvNames].filter((v, i, a) => v && a.indexOf(v) === i);
+    const appraisalClaimantsStr = allClaimants.length > 0 ? allClaimants.join(", ") : "-";
+
     const statusStyle = (() => {
         const s = data.status || "";
         if (/Pending/i.test(s)) return { bg: "rgba(255, 193, 7, 0.1)", color: "#ff9800", dot: "#ff9800" };
@@ -222,6 +244,9 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                         <LabelValue label="Commencement Year" value={data.year} horizontal />
                         <LabelValue label="Investigator Type" value={data.investigatorType || (data.principalInvestigator === 'Yes' ? 'Principal Investigator (PI)' : 'Co-Principal Investigator (Co-PI)')} horizontal />
                         <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} horizontal />
+                        <LabelValue label="Entry Type" value={data.entryType === 'Admin' ? 'Entry: R&D Admin' : 'Entry: Self (Faculty)'} horizontal />
+                        <LabelValue label="Appraisal Eligible?" value={data.status === "Approved" ? (data.appraisalEligible || "No") : "Not yet decided"} horizontal />
+                        <LabelValue label="Appraisal Claimant(s)" value={appraisalClaimantsStr} horizontal />
                     </Box>
                 </Card>
             </Box>
@@ -282,13 +307,9 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
                             
-                            {/* Incentive input removed as there is no incentive for Consultancy */}
-
-                            <TextField fullWidth multiline rows={3} placeholder="Provide your review comments..." value={remarks} onChange={e => setRemarks(e.target.value)} sx={{ mb: 3, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }} />
-
                             <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ px: 3 }}>Reject</Button>
-                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ px: 4 }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
+                                <Button variant="outlined" color="error" onClick={() => setDecisionMode('Reject')} sx={{ px: 3, fontWeight: 700 }}>Reject</Button>
+                                <Button variant="contained" color="success" onClick={() => setDecisionMode('Approve')} sx={{ px: 4, fontWeight: 700 }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
                             </Box>
                         </Card>
                     ) : (
@@ -306,6 +327,69 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                     )}
                 </Box>
             </Box>
+
+            {/* Decision Dialog Modal */}
+            <Dialog
+                open={!!decisionMode}
+                onClose={() => setDecisionMode(null)}
+                maxWidth="sm"
+                fullWidth
+                slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}
+            >
+                <DialogTitle sx={{ fontWeight: 800, color: decisionMode === 'Reject' ? '#d32f2f' : 'var(--color-primary)' }}>
+                    {decisionMode === 'Reject' ? 'Reject Consultancy Request' : 'Approve Consultancy Request'}
+                </DialogTitle>
+                <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 2 }}>
+                    {decisionMode === 'Approve' && isResearchAdmin && (
+                        <Box>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--text-primary)" }}>
+                                APPRAISAL ELIGIBILITY *
+                            </Typography>
+                            <Select 
+                                fullWidth 
+                                size="small" 
+                                value={appraisalEligible} 
+                                onChange={e => setAppraisalEligible(e.target.value)} 
+                                displayEmpty 
+                                sx={{ borderRadius: "10px" }}
+                            >
+                                <MenuItem value="" disabled>Select Eligibility</MenuItem>
+                                <MenuItem value="Yes">Yes</MenuItem>
+                                <MenuItem value="No">No</MenuItem>
+                            </Select>
+                        </Box>
+                    )}
+
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--text-primary)" }}>
+                            REMARKS {decisionMode === 'Reject' ? '*' : '(OPTIONAL)'}
+                        </Typography>
+                        <TextField 
+                            fullWidth 
+                            multiline 
+                            rows={3} 
+                            placeholder={decisionMode === 'Reject' ? "Provide reason for rejection..." : "Provide review comments..."} 
+                            value={remarks} 
+                            onChange={e => setRemarks(e.target.value)} 
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, pt: 1 }}>
+                    <Button onClick={() => setDecisionMode(null)} color="inherit" sx={{ fontWeight: 700 }}>
+                        Cancel
+                    </Button>
+                    <Button 
+                        variant="contained" 
+                        color={decisionMode === 'Reject' ? "error" : "success"} 
+                        disabled={actionLoading} 
+                        onClick={() => handleAction(decisionMode)} 
+                        sx={{ px: 3, fontWeight: 700, borderRadius: "8px" }}
+                    >
+                        {decisionMode === 'Reject' ? "Confirm Reject" : (isHOD ? "Confirm Approve" : "Final Approve")}
+                    </Button>
+                </DialogActions>
+            </Dialog>
             {isResearchAdmin && (
                 <EditResearchDetailsDialog
                     open={editOpen}
