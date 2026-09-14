@@ -369,7 +369,36 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                             <TextField fullWidth label="Applicant Name" name="applicantName" value={formData.applicantName || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
-                            <TextField fullWidth label="Patent Name" name="patentName" value={formData.patentName || ""} onChange={handleChange} variant="outlined" size="small" />
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Filed in Institution Name?</InputLabel>
+                                <Select
+                                    label="Filed in Institution Name?"
+                                    name="patentFiledInInstitution"
+                                    value={formData.patentFiledInInstitution || "Yes"}
+                                    onChange={handleChange}
+                                >
+                                    <MenuItem value="Yes">Yes</MenuItem>
+                                    <MenuItem value="No">No</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Box>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
+                            {(formData.patentFiledInInstitution || "Yes") === "Yes" ? (
+                                <FormControl fullWidth size="small">
+                                    <InputLabel>Name of Applicant in Patent</InputLabel>
+                                    <Select
+                                        label="Name of Applicant in Patent"
+                                        name="patentName"
+                                        value={formData.patentName || ""}
+                                        onChange={handleChange}
+                                    >
+                                        <MenuItem value="Aditya University">Aditya University</MenuItem>
+                                        <MenuItem value="Aditya College of Pharmacy">Aditya College of Pharmacy</MenuItem>
+                                    </Select>
+                                </FormControl>
+                            ) : (
+                                <TextField fullWidth label="Name of Applicant in Patent" name="patentName" value={formData.patentName || ""} onChange={handleChange} variant="outlined" size="small" />
+                            )}
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                             <TextField fullWidth label="Area" name="area" value={formData.area || ""} onChange={handleChange} variant="outlined" size="small" />

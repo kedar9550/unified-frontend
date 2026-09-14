@@ -944,6 +944,25 @@ export default function PhdScholarPublication() {
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Admission / Award Date" value={formatDate(data.admissionOrAwardDate)} /></Box>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
               <LabelValueDetails 
+                label="Entry Source" 
+                chip={
+                  <Chip 
+                    label={(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "R&D Direct Entry" : "Faculty Self Entry"} 
+                    size="small" 
+                    sx={{ 
+                      bgcolor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.15)" : "rgba(59, 130, 246, 0.15)", 
+                      color: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "#7c3aed" : "#2563eb", 
+                      fontWeight: 800, 
+                      borderRadius: "6px",
+                      border: "1px solid",
+                      borderColor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.3)" : "rgba(59, 130, 246, 0.3)"
+                    }} 
+                  />
+                } 
+              />
+            </Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
+              <LabelValueDetails 
                 label="Approval Workflow Status" 
                 chip={
                   <Chip 

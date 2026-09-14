@@ -275,11 +275,6 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                 >
                     Back to Request List
                 </Button>
-                {isResearchAdmin && !/pending/i.test(data.status) && (
-                    <Button variant="outlined" onClick={() => setEditOpen(true)} sx={{ borderColor: "var(--color-primary)", color: "var(--color-primary)", fontWeight: 700, textTransform: "none", borderRadius: "10px", "&:hover": { bgcolor: "rgba(190, 147, 55, 0.1)", borderColor: "var(--color-primary)" } }}>
-                        Correct Research Details
-                    </Button>
-                )}
             </Box>
 
             {/* Title Card */}

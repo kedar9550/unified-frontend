@@ -130,11 +130,6 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
         <Box sx={{ width: "100%", pb: 5 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                 <Button startIcon={<ArrowBackIcon />} onClick={onBack} sx={{ color: "var(--color-primary)", fontWeight: 700, textTransform: "none" }}>Back to Request List</Button>
-                {isResearchAdmin && !/pending/i.test(data.status) && (
-                    <Button variant="outlined" onClick={() => setEditOpen(true)} sx={{ borderColor: "var(--color-primary)", color: "var(--color-primary)", fontWeight: 700, textTransform: "none", borderRadius: "10px", "&:hover": { bgcolor: "rgba(190, 147, 55, 0.1)", borderColor: "var(--color-primary)" } }}>
-                        Correct Research Details
-                    </Button>
-                )}
             </Box>
 
             <Card sx={cardStyle}>

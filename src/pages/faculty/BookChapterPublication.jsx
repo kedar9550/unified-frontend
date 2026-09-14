@@ -14,6 +14,20 @@ import {
   labelStyle, disabledField, MONTHS, YEARS
 } from "../../components/faculty/publicationConstants"; import API from "../../api/axios";
 
+import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
+import SchoolIcon from '@mui/icons-material/School';
+import LinkIcon from '@mui/icons-material/Link';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import GrassIcon from '@mui/icons-material/Grass';
+import CardGiftcard from '@mui/icons-material/CardGiftcard';
+import CurrencyRupee from '@mui/icons-material/CurrencyRupee';
+import PublicIcon from '@mui/icons-material/Public';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
+import Person from '@mui/icons-material/Person';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+
 const ELSEVIER_API_KEY = "0436d4fe788649172354545ceca9e650";
 
 export default function BookChapterPublication() {
@@ -691,6 +705,7 @@ export default function BookChapterPublication() {
     if (!form.applyIncentive) newErrors.applyIncentive = true;
     if (!form.applyingSeedGrant) newErrors.applyingSeedGrant = true;
     if (!form.publicationScope) newErrors.publicationScope = true;
+    if (!form.isbnNumber) newErrors.isbnNumber = true;
 
     if (!files.authorAffiliation && !existingFiles.authorAffiliation) newErrors.authorAffiliation = true;
 
@@ -774,6 +789,7 @@ export default function BookChapterPublication() {
       fd.append("year", form.year);
       fd.append("applyIncentive", form.applyIncentive);
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
+      fd.append("scopusIndexed", scopusIndexed ? "Yes" : "No");
 
       Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
       if (deleteFlags.authorAffiliation) fd.append("deleteAuthorAffiliation", "true");
@@ -1153,7 +1169,7 @@ export default function BookChapterPublication() {
 
         {/* ISBN + Book Title fetch */}
         <Box>
-          <Typography sx={labelStyle}>ISBN Number :</Typography>
+          <Typography sx={labelStyle}>ISBN Number : *</Typography>
           <Box sx={{ display: "flex", gap: 1 }}>
             <TextField
               size="small"
@@ -1381,7 +1397,7 @@ export default function BookChapterPublication() {
       <SubLabel text="Date of the Publication:" />
       <Grid2>
         <Box>
-          <Typography sx={labelStyle}>Year:</Typography>
+          <Typography sx={labelStyle}>Year: *</Typography>
           <Select size="small" fullWidth displayEmpty value={form.year} onChange={(e) => {
             setForm(p => ({ ...p, year: e.target.value, month: "" }));
           }} error={!!errors.year} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
@@ -1393,7 +1409,7 @@ export default function BookChapterPublication() {
           </Select>
         </Box>
         <Box>
-          <Typography sx={labelStyle}>Month:</Typography>
+          <Typography sx={labelStyle}>Month: *</Typography>
           <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year} error={!!errors.month} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
             <MenuItem value="">Select Month</MenuItem>
             {getAvailableMonths().map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
@@ -1594,122 +1610,221 @@ export default function BookChapterPublication() {
           <IconButton onClick={handleCloseDetails} sx={{ color: "#fff" }}><Close /></IconButton>
         </DialogTitle>
         <DialogContent sx={{ p: 3, mt: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.chapterTitle}</Typography>
-          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Text Book: {data.textBookName}</Typography>
-
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2 }}>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Publisher" value={data.publisher} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}>
-              <LabelValueDetails
-                label="Status"
-                chip={
-                  <Chip
-                    label={data.status}
-                    size="small"
-                    sx={{
-                      bgcolor: `${statusColor}15`,
-                      color: statusColor,
-                      fontWeight: 800,
-                      border: `1px solid ${statusColor}44`,
-                      borderRadius: "6px"
-                    }}
-                  />
-                }
-              />
-            </Box>
-
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="DOI" value={data.doi || "-"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Publication Scope" value={data.publicationScope || "National"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Month/Year" value={`${data.month || ""} ${data.year || ""}`} /></Box>
-
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Author Position" value={data.userAuthorPosition || "1"} /></Box>
-
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applying Seed Grant?" value={data.applyingSeedGrant === "Yes" ? "Yes" : "No"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Apply Incentive?" value={data.applyIncentive === "Yes" ? "Yes" : "No"} /></Box>
-
-            {data.status === "Approved" && data.approvedAmount && (
-              <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
-                <LabelValueDetails
-                  label="Approved Incentive"
-                  value={`₹${data.approvedAmount}`}
-                  chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
+          {/* Top Header Box */}
+          <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-panel)" }}>
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, gap: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+                <Box sx={{
+                  width: 48, height: 48, borderRadius: "12px", bgcolor: "rgba(0, 78, 146, 0.08)",
+                  color: "var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "center",
+                  border: "1px solid rgba(0, 78, 146, 0.15)", flexShrink: 0, mt: 0.5
+                }}>
+                  <Book sx={{ fontSize: 26 }} />
+                </Box>
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.3 }}>
+                    {data.chapterTitle}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, mt: 0.5 }}>
+                    Text Book: {data.textBookName}
+                  </Typography>
+                </Box>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
+                <Chip
+                  icon={
+                    /approved/i.test(data.status)
+                      ? <CheckCircleOutlineIcon sx={{ fontSize: "16px !important", color: "inherit" }} />
+                      : /reject/i.test(data.status)
+                        ? <Close sx={{ fontSize: "16px !important", color: "inherit" }} />
+                        : <AccessTimeIcon sx={{ fontSize: "16px !important", color: "inherit" }} />
+                  }
+                  label={data.status || "Pending at HOD"}
+                  sx={{
+                    bgcolor: /approved/i.test(data.status) ? "rgba(46, 125, 50, 0.1)" : /reject/i.test(data.status) ? "rgba(211, 47, 47, 0.1)" : "rgba(237, 108, 2, 0.1)",
+                    color: /approved/i.test(data.status) ? "#2e7d32" : /reject/i.test(data.status) ? "#d32f2f" : "#ed6c02",
+                    border: `1px solid ${/approved/i.test(data.status) ? "rgba(46, 125, 50, 0.3)" : /reject/i.test(data.status) ? "rgba(211, 47, 47, 0.3)" : "rgba(237, 108, 2, 0.3)"}`,
+                    fontWeight: 700,
+                    borderRadius: "20px",
+                    px: 1,
+                    py: 0.5
+                  }}
                 />
               </Box>
-            )}
+            </Box>
+          </Paper>
 
-            {/* Appraisal Claimant Selector */}
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
-              <LabelValueDetails
-                label="Appraisal Claimant"
-                chip={
-                  (() => {
-                    const isApplicant = data.visibilityRole === "Applicant" || (data.facultyId && (data.facultyId === user?.userId || data.facultyId._id === user?.userId));
-                    const eligibleClaimants = [
-                      { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
-                      ...((data.coAuthors || [])
-                        .filter(ca => ca.employeeId)
-                        .map(ca => ({
-                          _id: ca.employeeId?._id || ca.employeeId,
-                          name: ca.employeeId?.name || ca.name,
-                          institutionId: ca.employeeId?.institutionId || ca.employeeId || ""
-                        })))
-                    ];
-                    const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
-
-                    const isApproved = data.status === "Approved";
-                    const isAppraisalEligible = data.appraisalEligible === "Yes";
-
-                    if (uniqueClaimants.length <= 1) {
-                      return (
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                          {data.facultyId?.name || "-"} (Auto-assigned)
+          {/* Main Grid: Left Column (Publication Details) + Right Column (Scope & Appraisal) */}
+          <Box sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "minmax(0, 1.3fr) minmax(0, 0.9fr)" },
+            gap: 3,
+            mb: 3,
+            width: "100%",
+            alignItems: "flex-start"
+          }}>
+            {/* Left Column (Publication Details) */}
+            <Box sx={{ minWidth: 0 }}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 0,
+                  overflow: "hidden",
+                  borderRadius: "16px",
+                  border: "1px solid var(--border-color)",
+                  background: "var(--bg-paper)",
+                  display: "flex",
+                  flexDirection: "column"
+                }}
+              >
+                <Box sx={{ p: 3, pb: 2, borderBottom: "1px solid var(--border-color)" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
+                    <FormatListBulletedIcon sx={{ color: "var(--color-primary)" }} />
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                      Publication Details
+                    </Typography>
+                  </Box>
+                  <Box sx={{ width: 140, height: 3, bgcolor: "var(--color-primary)", borderRadius: "3px" }} />
+                </Box>
+                <Box sx={{ display: "flex", flexDirection: "column" }}>
+                  {[
+                    { label: "Academic Year", value: data.academicYear?.year || "N/A", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "DOI", value: data.doi || "N/A", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Applicant Author Position", value: data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors || 1}` : "1", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Publisher", value: data.publisher || "N/A", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Role", value: data.visibilityRole || "Applicant", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Month/Year", value: `${data.month || ""} ${data.year || ""}`.trim() || "-", icon: <CalendarMonthIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Seed Grant Work", value: data.applyingSeedGrant === "Yes" ? "Yes" : "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Apply For Incentive", value: data.applyIncentive === "Yes" ? "Yes" : "No", icon: <CardGiftcard sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Approved Incentive Amount", value: data.approvedAmount ? `₹${data.approvedAmount}` : "-", icon: <CurrencyRupee sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> }
+                  ].map((item, idx, arr) => (
+                    <Box
+                      key={idx}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        px: 3,
+                        py: 1.6,
+                        borderBottom: idx === arr.length - 1 ? "none" : "1px solid var(--border-color)",
+                        "&:hover": { bgcolor: "rgba(0,0,0,0.015)" },
+                        transition: "background 0.2s"
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        {item.icon}
+                        <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.875rem" }}>
+                          {item.label}
                         </Typography>
-                      );
-                    }
-
-                    if (!isApproved || !isAppraisalEligible) {
-                      return (
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)", mt: 0.5 }}>
-                          N/A - Not Eligible or Not Approved
-                        </Typography>
-                      );
-                    }
-
-                    const currentClaimantObj = uniqueClaimants.find(c =>
-                      (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
-                      (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
-                    );
-
-                    if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1) {
-                      return (
-                        <Select
-                          size="small"
-                          fullWidth
-                          value=""
-                          displayEmpty
-                          onChange={(e) => handleResolveClaim(data._id, "BookChapter", e.target.value)}
-                          sx={{ mt: 0.5, backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
-                        >
-                          <MenuItem value="" disabled>Select Claimant</MenuItem>
-                          {uniqueClaimants.map(c => (
-                            <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
-                              {c.name} ({c.institutionId})
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      );
-                    }
-
-                    return (
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                        {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
+                      </Box>
+                      <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", textAlign: "right", maxWidth: "55%", wordBreak: "break-word" }}>
+                        {item.value}
                       </Typography>
-                    );
-                  })()
-                }
-              />
+                    </Box>
+                  ))}
+                </Box>
+              </Paper>
+            </Box>
+
+            {/* Right Column (Publication Scope & Appraisal) */}
+            <Box sx={{
+              minWidth: 0,
+              display: "flex",
+              flexDirection: "column",
+              gap: 3
+            }}>
+              {/* Scope, Eligibility, Claimant Card */}
+              <Paper elevation={0} sx={{ p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)" }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 2, borderBottom: "1px solid var(--border-color)" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                      <PublicIcon sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
+                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                        Publication Scope
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                      {data.publicationScope || data.incentiveApplied || "National"}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 2, borderBottom: "1px solid var(--border-color)" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                      <CheckCircleOutlineIcon sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
+                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                        Article Eligibility for Appraisal
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                      {data.status === "Approved" ? (data.appraisalEligible || "No") : "Not yet decided"}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 0.5 }}>
+                      <Person sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
+                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                        Appraisal Claimant
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: "right", maxWidth: "60%" }}>
+                      {(() => {
+                        const isApplicant = data.visibilityRole === "Applicant" || (data.facultyId && (data.facultyId === user?.userId || data.facultyId._id === user?.userId));
+                        const eligibleClaimants = [
+                          { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
+                          ...((data.coAuthors || [])
+                            .filter(ca => ca.employeeId)
+                            .map(ca => ({
+                              _id: ca.employeeId?._id || ca.employeeId,
+                              name: ca.employeeId?.name || ca.name,
+                              institutionId: ca.employeeId?.institutionId || ca.employeeId || ""
+                            })))
+                        ];
+                        const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
+
+                        if (uniqueClaimants.length <= 1) {
+                          return (
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                              {user?.name || data.facultyId?.name || "AMALAPURAPU KEDARNADH"} <Typography component="span" variant="caption" sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>(Auto-assigned)</Typography>
+                            </Typography>
+                          );
+                        }
+
+                        const currentClaimantObj = uniqueClaimants.find(c =>
+                          (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
+                          (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
+                        );
+
+                        if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1 && data.status === "Approved" && data.appraisalEligible === "Yes") {
+                          return (
+                            <Select
+                              size="small"
+                              fullWidth
+                              value=""
+                              displayEmpty
+                              onChange={(e) => handleResolveClaim(data._id, "BookChapter", e.target.value)}
+                              sx={{ backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
+                            >
+                              <MenuItem value="" disabled>Select Claimant</MenuItem>
+                              {uniqueClaimants.map(c => (
+                                <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
+                                  {c.name} ({c.institutionId})
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          );
+                        }
+
+                        return (
+                          <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                            {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : (data.status === "Approved" && data.appraisalEligible === "Yes" ? `Not Yet Designated` : `N/A - Not Eligible or Not Approved`)}
+                          </Typography>
+                        );
+                      })()}
+                    </Box>
+                  </Box>
+                </Box>
+              </Paper>
             </Box>
           </Box>
 

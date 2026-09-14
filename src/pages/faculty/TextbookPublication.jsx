@@ -363,7 +363,7 @@ export default function TextbookPublication() {
       return;
     }
 
-    if (!form.title || !form.publisher || !form.isbn) {
+    if (!form.title || !form.publisher || !form.isbn || !form.month || !form.year) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -823,7 +823,7 @@ export default function TextbookPublication() {
           </Select>
         </Box>
         <Box>
-          <Typography sx={labelStyle}>ISBN NO :</Typography>
+          <Typography sx={labelStyle}>ISBN NO : *</Typography>
           <Box sx={{ display: "flex", gap: 1 }}>
             <TextField
               size="small"
@@ -1147,7 +1147,7 @@ export default function TextbookPublication() {
       <SubLabel text="Date of the Publication:" />
       <Grid2>
         <Box>
-          <Typography sx={labelStyle}>Year:</Typography>
+          <Typography sx={labelStyle}>Year: *</Typography>
           <Select size="small" fullWidth displayEmpty value={form.year} onChange={(e) => {
             setForm(p => ({ ...p, year: e.target.value, month: "" }));
           }} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
@@ -1165,7 +1165,7 @@ export default function TextbookPublication() {
         </Box>
         {form.year ? (
           <Box>
-            <Typography sx={labelStyle}>Month:</Typography>
+            <Typography sx={labelStyle}>Month: *</Typography>
             <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
               <MenuItem value="">Select Month</MenuItem>
               {getAvailableMonths().map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}

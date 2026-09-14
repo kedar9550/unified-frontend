@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import PageHeader from "../../components/common/PageHeader";
 import PageContainer from "../../components/common/design-system/PageContainer";
 import {
-  FacultyInfoRow, FormCard, Grid2, SubLabel, FileField, SubmitBtn
+  FacultyInfoRow, FormCard, Grid2, SubLabel, FileField, SubmitBtn, NoteBox
 } from "../../components/faculty/PublicationFormFields";
 import {
   labelStyle, disabledField, MONTHS, YEARS
@@ -32,9 +32,9 @@ export default function RndBookChapterDataEntry() {
   const emptyForm = {
     doi: "",
     chapterTitle: "",
-    bookTitle: "",
+    textBookName: "",
     publisher: "",
-    isbn: "",
+    isbnNumber: "",
     month: "",
     year: "",
     indexing: "",
@@ -45,13 +45,18 @@ export default function RndBookChapterDataEntry() {
     totalAuthors: 1,
     userAuthorPosition: 1,
     otherAuthors: [],
-    appraisalEligible: "Yes",
+    appraisalEligible: "",
     approvedAmount: ""
   };
 
   const [form, setForm] = useState(emptyForm);
-  const [files, setFiles] = useState({ publishedChapter: null, indexProof: null });
+  const [files, setFiles] = useState({ authorAffiliation: null });
   const [loading, setLoading] = useState(false);
+  const [doiFetching, setDoiFetching] = useState(false);
+  const [doiFetched, setDoiFetched] = useState(null);
+  const [isbnFetching, setIsbnFetching] = useState(false);
+  const [scopusIndexed, setScopusIndexed] = useState(false);
+  const ELSEVIER_API_KEY = import.meta.env.VITE_ELSEVIER_API_KEY;
 
   useEffect(() => {
     API.get("/api/academic-years")
@@ -95,6 +100,122 @@ export default function RndBookChapterDataEntry() {
       return MONTHS.filter((_, idx) => idx <= currentMonthIndex);
     }
     return MONTHS;
+  };
+
+  const parseDateStr = (str) => {
+    if (!str) return { year: "", month: "" };
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"];
+    const shortNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    let year = "", month = "";
+    const yMatch = str.match(/\b(19|20)\d{2}\b/);
+    if (yMatch) year = yMatch[0];
+    for (let i = 0; i < 12; i++) {
+      if (str.toLowerCase().includes(monthNames[i].toLowerCase()) ||
+        str.toLowerCase().includes(shortNames[i].toLowerCase())) {
+        month = monthNames[i]; break;
+      }
+    }
+    if (!month) {
+      const iso = str.match(/\d{4}-(\d{2})/);
+      if (iso) month = monthNames[parseInt(iso[1], 10) - 1] || "";
+    }
+    return { year, month };
+  };
+
+  const fetchDOIData = async () => {
+    const cleanDoi = form.doi.trim().replace(/^https?:\/\/doi\.org\//i, "");
+    if (!cleanDoi) { toast.error("Please enter a DOI"); return; }
+    setDoiFetching(true);
+    setDoiFetched(null);
+    setScopusIndexed(false);
+    try {
+      const scopusRes = await fetch(
+        `https://api.elsevier.com/content/search/scopus?query=DOI(${encodeURIComponent(cleanDoi)})`,
+        { headers: { "X-ELS-APIKey": ELSEVIER_API_KEY, Accept: "application/json" } }
+      );
+      if (!scopusRes.ok) {
+        if (scopusRes.status === 401) toast.error("Scopus API key unauthorized. Please contact admin.");
+        else if (scopusRes.status === 429) toast.error("Scopus API rate limit exceeded. Try again later.");
+        else toast.error(`Scopus API error (HTTP ${scopusRes.status}). Please fill manually.`);
+        setDoiFetched(false);
+        return;
+      }
+      const scopusJson = await scopusRes.json();
+      const entry = scopusJson?.["search-results"]?.entry?.[0];
+
+      if (!entry || entry.error || (!entry["dc:title"] && !entry["prism:publicationName"])) {
+        toast.warning("This DOI was not found in Scopus. Please fill details manually.");
+        setScopusIndexed(false);
+        setDoiFetched(false);
+        return;
+      }
+
+      const chapterTitle = entry["dc:title"] || "";
+      const publisher = entry["prism:publisher"] || entry["dc:publisher"] || "";
+      const dateRaw = entry["prism:coverDisplayDate"] || entry["prism:coverDate"] || "";
+      const { year, month } = parseDateStr(dateRaw);
+
+      toast.success("Chapter found in Scopus! Details fetched successfully.");
+      setDoiFetched(true);
+      setScopusIndexed(true);
+
+      setForm(prev => ({
+        ...prev,
+        chapterTitle: chapterTitle || prev.chapterTitle,
+        publisher: publisher || prev.publisher,
+        year: year || prev.year,
+        month: month || prev.month,
+      }));
+    } catch (err) {
+      toast.error("Network error connecting to Scopus. Please fill the fields manually.");
+      setDoiFetched(false);
+    } finally {
+      setDoiFetching(false);
+    }
+  };
+
+  const fetchISBNData = async () => {
+    const isbn = form.isbnNumber.trim().replace(/-/g, "");
+    if (!isbn) { toast.error("Please enter an ISBN"); return; }
+    if (isbn.length !== 10 && isbn.length !== 13) {
+      toast.error("ISBN must be 10 or 13 digits"); return;
+    }
+    setIsbnFetching(true);
+    try {
+      // Try Open Library first
+      const olRes = await fetch(
+        `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
+      );
+      if (olRes.ok) {
+        const olJson = await olRes.json();
+        const bookData = olJson[`ISBN:${isbn}`];
+        if (bookData && bookData.title) {
+          setForm(prev => ({ ...prev, textBookName: bookData.title }));
+          toast.success(`Book title fetched: "${bookData.title}"`);
+          return;
+        }
+      }
+      // Fallback: Google Books API
+      const gbRes = await fetch(
+        `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`
+      );
+      if (gbRes.ok) {
+        const gbJson = await gbRes.json();
+        const item = gbJson?.items?.[0];
+        const title = item?.volumeInfo?.title;
+        if (title) {
+          setForm(prev => ({ ...prev, textBookName: title }));
+          toast.success(`Book title fetched: "${title}"`);
+          return;
+        }
+      }
+      toast.warning("Book title not found for this ISBN. Please enter it manually.");
+    } catch (err) {
+      toast.error("Error fetching book title. Please enter it manually.");
+    } finally {
+      setIsbnFetching(false);
+    }
   };
 
   const verifyFaculty = async () => {
@@ -229,7 +350,6 @@ export default function RndBookChapterDataEntry() {
     const val = e.target.value;
     setForm((prev) => {
       let newForm = { ...prev, isStudentsInvolved: val };
-      
       if (val === "Yes") {
         newForm.applyIncentive = "No";
       } else {
@@ -240,8 +360,8 @@ export default function RndBookChapterDataEntry() {
             delete newAuthor.CoAuthorType;
             delete newAuthor.studentId;
             if (author.CoAuthorType === "student" && newAuthor.affiliationType === "Aditya University") {
-               newAuthor.affiliationType = "";
-               newAuthor.affiliationName = "";
+              newAuthor.affiliationType = "";
+              newAuthor.affiliationName = "";
             }
             return newAuthor;
           });
@@ -255,7 +375,7 @@ export default function RndBookChapterDataEntry() {
     if (!file) return true;
     const allowed = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
     if (!allowed.includes(file.type)) { toast.error("Only PDF, JPG, and PNG files are allowed"); return false; }
-    if (file.size > 500 * 1024) { toast.error("File size exceeds 500KB limit"); return false; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("File size exceeds 5MB limit"); return false; }
     return true;
   };
 
@@ -270,7 +390,7 @@ export default function RndBookChapterDataEntry() {
       toast.error("Please verify a valid Target Faculty Employee ID first");
       return;
     }
-    if (!form.chapterTitle.trim() || !form.bookTitle.trim() || !form.publisher.trim() || !form.isbn.trim() || !form.month || !form.year) {
+    if (!form.chapterTitle.trim() || !form.textBookName.trim() || !form.publisher.trim() || !form.isbnNumber.trim() || !form.month || !form.year) {
       toast.error("Please fill in all required fields marked with *");
       return;
     }
@@ -282,8 +402,8 @@ export default function RndBookChapterDataEntry() {
       toast.error("Please select Appraisal Eligible status");
       return;
     }
-    if (!files.publishedChapter) {
-      toast.error("Please attach the Published Chapter document");
+    if (!files.authorAffiliation) {
+      toast.error("Please attach the Author Affiliation Page");
       return;
     }
 
@@ -301,9 +421,9 @@ export default function RndBookChapterDataEntry() {
       })).filter(ca => ca.name && ca.affiliation);
 
       const fields = [
-        "doi", "chapterTitle", "bookTitle", "publisher", "isbn", "indexing", "scope",
-        "applyIncentive", "applyingSeedGrant", "totalAuthors", "userAuthorPosition", "isStudentsInvolved",
-        "appraisalEligible", "approvedAmount"
+        "doi", "chapterTitle", "textBookName", "publisher", "isbnNumber", "scope",
+        "totalAuthors", "userAuthorPosition", "isStudentsInvolved",
+        "applyIncentive", "applyingSeedGrant", "appraisalEligible", "approvedAmount"
       ];
       fields.forEach(k => {
         fd.append(k, form[k] ?? "");
@@ -311,20 +431,24 @@ export default function RndBookChapterDataEntry() {
 
       fd.append("month", form.month);
       fd.append("year", form.year);
+      fd.append("yearOfPublication", form.year);
+      fd.append("publicationScope", form.scope || "National");
       fd.append("coAuthors", JSON.stringify(coAuthorsList));
       fd.append("academicYear", selectedYear);
       fd.append("college", targetFacultyDetails?.college || user?.college || "");
       fd.append("panNumber", targetFacultyDetails?.panNumber || user?.panNumber || "");
       fd.append("isDirectEntry", "true");
       fd.append("targetFacultyEmpId", targetFacultyEmpId);
+      fd.append("scopusIndexed", scopusIndexed ? "Yes" : "No");
 
-      if (files.publishedChapter) fd.append("publishedChapter", files.publishedChapter);
-      if (files.indexProof) fd.append("indexProof", files.indexProof);
+      if (files.authorAffiliation) fd.append("authorAffiliation", files.authorAffiliation);
 
       await API.post("/api/research/book-chapter", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Book Chapter record added directly for faculty!");
       setForm(emptyForm);
-      setFiles({ publishedChapter: null, indexProof: null });
+      setFiles({ authorAffiliation: null });
+      setScopusIndexed(false);
+      setDoiFetched(false);
       setTargetFacultyEmpId("");
       setTargetFacultyName("");
       setIsTargetFacultyValid(false);
@@ -399,46 +523,93 @@ export default function RndBookChapterDataEntry() {
           {/* ── Book Chapter Details ── */}
           <SubLabel text="Details of the Book Chapter:" />
           <Grid2 sx={{ mt: 1 }}>
+            <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 2.5, p: 2.5, borderRadius: "12px", border: "2px solid var(--color-primary)", background: "var(--bg-accent-1)", boxShadow: "0 2px 12px rgba(var(--color-primary-rgb,99,102,241),0.08)" }}>
+              <Typography sx={{ ...labelStyle, mb: 1 }}>DOI (Digital Object Identifier) : * <span style={{ fontWeight: 400, textTransform: "none", fontSize: 10, opacity: 0.7 }}>— Enter DOI to verify Scopus indexing &amp; auto-fill details</span></Typography>
+              <Box sx={{ display: "flex", gap: 1.5, alignItems: "flex-start", flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                  size="small"
+                  fullWidth
+                  value={form.doi}
+                  onChange={set("doi")}
+                  placeholder="e.g. 10.1007/978-3-031-12345-6_10"
+                  onKeyDown={(e) => { if (e.key === "Enter") fetchDOIData(); }}
+                  slotProps={{
+                    input: {
+                      sx: { background: "var(--bg-panel)" },
+                      endAdornment: doiFetched ? (
+                        <Box component="span" sx={{ display: "flex", alignItems: "center", color: "#10b981", fontSize: 18, mr: 0.5 }}>✓</Box>
+                      ) : null
+                    }
+                  }}
+                />
+                <Button
+                  variant="contained"
+                  onClick={fetchDOIData}
+                  disabled={doiFetching || !form.doi.trim()}
+                  sx={{ minWidth: 120, height: "40px", background: "var(--gradient-primary)", textTransform: "none", fontWeight: 700, flexShrink: 0, "&:hover": { opacity: 0.9 }, "&.Mui-disabled": { opacity: 0.5 }, width: { xs: '100%', sm: 'auto' } }}
+                >
+                  {doiFetching ? "Fetching..." : "Fetch Details"}
+                </Button>
+              </Box>
+              {scopusIndexed && (
+                <Typography sx={{ mt: 1, fontSize: 11, color: "#10b981", fontWeight: 700 }}>✓ Found in Scopus — Scopus Indexed</Typography>
+              )}
+              {doiFetched === false && (
+                <Typography sx={{ mt: 1, fontSize: 11, color: "#ef4444", fontWeight: 700 }}>✗ Not found in Scopus or Invalid DOI</Typography>
+              )}
+            </Box>
+
             <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
               <Typography sx={labelStyle}>Title of the Chapter : *</Typography>
               <TextField size="small" fullWidth multiline rows={2} value={form.chapterTitle} onChange={set("chapterTitle")} placeholder="Enter chapter title" />
             </Box>
-            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-              <Typography sx={labelStyle}>Title of the Book : *</Typography>
-              <TextField size="small" fullWidth value={form.bookTitle} onChange={set("bookTitle")} placeholder="Enter book title" />
-            </Box>
-            <Box>
-              <Typography sx={labelStyle}>Publisher : *</Typography>
-              <TextField size="small" fullWidth value={form.publisher} onChange={set("publisher")} placeholder="e.g. Elsevier, Springer" />
-            </Box>
+
+            {/* ISBN + Book Title fetch */}
             <Box>
               <Typography sx={labelStyle}>ISBN Number : *</Typography>
-              <TextField size="small" fullWidth value={form.isbn} onChange={set("isbn")} placeholder="e.g. 978-3-16-148410-0" />
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <TextField
+                  size="small"
+                  fullWidth
+                  placeholder="e.g. 9780590353427"
+                  value={form.isbnNumber}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (/^[0-9-]*$/.test(val)) setForm(p => ({ ...p, isbnNumber: val }));
+                  }}
+                  slotProps={{ htmlInput: { inputMode: "numeric" } }}
+                />
+                <Button
+                  variant="outlined"
+                  onClick={fetchISBNData}
+                  disabled={isbnFetching || !form.isbnNumber.trim()}
+                  sx={{ minWidth: 90, height: "40px", textTransform: "none", fontWeight: 700, flexShrink: 0, borderColor: "var(--color-primary)", color: "var(--color-primary)", "&:hover": { background: "var(--bg-accent-1)" }, "&.Mui-disabled": { opacity: 0.5 } }}
+                >
+                  {isbnFetching ? "Fetching..." : "Fetch Title"}
+                </Button>
+              </Box>
             </Box>
+
             <Box>
-              <Typography sx={labelStyle}>DOI (Digital Object Identifier) :</Typography>
-              <TextField size="small" fullWidth value={form.doi} onChange={set("doi")} placeholder="e.g. 10.1007/978-3-030" />
+              <Typography sx={labelStyle}>Title of the Book : *</Typography>
+              <TextField size="small" fullWidth value={form.textBookName} onChange={set("textBookName")} placeholder="Auto-filled from ISBN or enter manually" />
             </Box>
+
             <Box>
-              <Typography sx={labelStyle}>Indexing :</Typography>
-              <Select size="small" fullWidth displayEmpty value={form.indexing} onChange={set("indexing")}>
-                <MenuItem value="">Select Indexing</MenuItem>
-                <MenuItem value="Scopus">Scopus</MenuItem>
-                <MenuItem value="Web of Science">Web of Science</MenuItem>
-                <MenuItem value="Others">Others</MenuItem>
-              </Select>
-            </Box>
-            <Box>
-              <Typography sx={labelStyle}>Scope :</Typography>
+              <Typography sx={labelStyle}>Publication Scope : *</Typography>
               <Select size="small" fullWidth displayEmpty value={form.scope} onChange={set("scope")}>
-                <MenuItem value="">Select Scope</MenuItem>
+                <MenuItem value="" disabled>Select Scope</MenuItem>
                 <MenuItem value="National">National</MenuItem>
                 <MenuItem value="International">International</MenuItem>
               </Select>
             </Box>
+
+            <Box>
+              <Typography sx={labelStyle}>Name of the Publisher : *</Typography>
+              <TextField size="small" fullWidth value={form.publisher} onChange={set("publisher")} placeholder="e.g. Elsevier, Springer" />
+            </Box>
           </Grid2>
 
-          {/* ── Publication Date ── */}
           <SubLabel text="Date of the Publication:" />
           <Grid2>
             <Box>
@@ -491,7 +662,7 @@ export default function RndBookChapterDataEntry() {
 
             {parseInt(form.totalAuthors) > 1 && (
               <Box sx={{ mt: 3 }}>
-                <Typography sx={{ ...labelStyle, mb: 1 }}>Name & Affiliation of Co-Author(s) :</Typography>
+                <Typography sx={{ ...labelStyle, mb: 1 }}>Name &amp; Affiliation of Co-Author(s) :</Typography>
                 {form.otherAuthors.map((ca) => (
                   <Box
                     key={ca.authorPosition}
@@ -624,61 +795,58 @@ export default function RndBookChapterDataEntry() {
             )}
           </Box>
 
-          {/* ── Incentive & Funding Options ── */}
-          <SubLabel text="Incentive & Funding Options:" />
-          <Grid2>
-            <Box>
-              <Typography sx={labelStyle}>Applying Seed Grant Work? : *</Typography>
-              <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")}>
-                <MenuItem value="">Select Option</MenuItem>
-                <MenuItem value="Yes">Yes</MenuItem>
-                <MenuItem value="No">No</MenuItem>
-              </Select>
-            </Box>
-            <Box>
-              <Typography sx={labelStyle}>Apply For Incentive? : *</Typography>
-              <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"} sx={form.isStudentsInvolved === "Yes" ? disabledField : {}}>
-                <MenuItem value="">Select Option</MenuItem>
-                <MenuItem value="Yes">Yes</MenuItem>
-                <MenuItem value="No">No</MenuItem>
-              </Select>
-            </Box>
-            {form.applyIncentive === "Yes" && (
-              <Box>
-                <Typography sx={labelStyle}>Approved Incentive Amount (₹) : *</Typography>
-                <TextField
-                  size="small"
-                  fullWidth
-                  type="number"
-                  placeholder="Enter approved amount"
-                  value={form.approvedAmount}
-                  onChange={set("approvedAmount")}
-                />
-              </Box>
-            )}
-            <Box>
-              <Typography sx={labelStyle}>Article Eligibility for Appraisal : *</Typography>
-              <Select size="small" fullWidth displayEmpty value={form.appraisalEligible} onChange={set("appraisalEligible")}>
-                <MenuItem value="Yes">Yes</MenuItem>
-                <MenuItem value="No">No</MenuItem>
-              </Select>
-            </Box>
-          </Grid2>
+          <NoteBox />
 
-          {/* ── Attachments ── */}
-          <SubLabel text="Upload Required Documents:" />
-          <FormCard title="File Attachments (PDF or Images, Max 500KB each)">
+          {/* ── Attachments & Options ── */}
+          <Box sx={{ p: 2, borderRadius: "12px", border: "1px solid var(--border-color)", background: "var(--bg-panel)", mt: 3 }}>
             <Grid2>
-              <Box>
-                <Typography sx={labelStyle}>Published Chapter Document : *</Typography>
-                <FileField onChange={setFile("publishedChapter")} label="Attach Chapter Document" file={files.publishedChapter} />
+              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", mb: 1, fontSize: "0.85rem", textTransform: "uppercase" }}>ATTACH PAGE DISPLAYING AUTHOR AFFILIATION AND CHAPTER TITLE *</Typography>
+                <FileField onChange={setFile("authorAffiliation")} label="No file chosen" file={files.authorAffiliation} />
               </Box>
+
               <Box>
-                <Typography sx={labelStyle}>Indexing Proof (Optional) :</Typography>
-                <FileField onChange={setFile("indexProof")} label="Attach Indexing Proof" file={files.indexProof} />
+                <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", mb: 1, fontSize: "0.85rem", textTransform: "uppercase" }}>Applying as a Seed Grant Work? *</Typography>
+                <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")}>
+                  <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="Yes">Yes</MenuItem>
+                  <MenuItem value="No">No</MenuItem>
+                </Select>
+              </Box>
+
+              <Box>
+                <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", mb: 1, fontSize: "0.85rem", textTransform: "uppercase" }}>Apply Incentive? *</Typography>
+                <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"}>
+                  <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="Yes">Yes</MenuItem>
+                  <MenuItem value="No">No</MenuItem>
+                </Select>
+              </Box>
+
+              {form.applyIncentive === "Yes" && (
+                <Box>
+                  <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", mb: 1, fontSize: "0.85rem", textTransform: "uppercase" }}>Incentive Amount :</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    type="number"
+                    placeholder="Enter approved amount"
+                    value={form.approvedAmount}
+                    onChange={set("approvedAmount")}
+                  />
+                </Box>
+              )}
+
+              <Box>
+                <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", mb: 1, fontSize: "0.85rem", textTransform: "uppercase" }}>Article Eligibility for Appraisal : *</Typography>
+                <Select size="small" fullWidth displayEmpty value={form.appraisalEligible} onChange={set("appraisalEligible")}>
+                  <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="Yes">Yes</MenuItem>
+                  <MenuItem value="No">No</MenuItem>
+                </Select>
               </Box>
             </Grid2>
-          </FormCard>
+          </Box>
 
           <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
             <SubmitBtn onClick={handleSubmit} disabled={loading || !isTargetFacultyValid}>
