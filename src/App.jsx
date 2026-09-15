@@ -196,6 +196,14 @@ function App() {
     return () => window.removeEventListener("resize", handleResize);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (isLoading) {
+      document.body.classList.add('global-loading-active');
+    } else {
+      document.body.classList.remove('global-loading-active');
+    }
+  }, [isLoading]);
+
   return (
     <>
       <Toaster

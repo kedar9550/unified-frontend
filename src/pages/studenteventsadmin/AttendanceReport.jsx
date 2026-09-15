@@ -586,7 +586,7 @@ const AttendanceReport = () => {
 
       {/* Summary Cards */}
       <Box sx={{ mt: 1, mb: 3 }}>
-        <CountBand 
+        <CountBand
           items={[
             {
               id: 'male',
@@ -710,12 +710,12 @@ const AttendanceReport = () => {
               py: 0.8,
               fontWeight: 700,
               width: { xs: '100%', sm: 'auto' },
-              background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
+              background: 'var(--gradient-primary)',
               color: '#ffffff',
-              boxShadow: '0 4px 14px rgba(22, 163, 74, 0.35)',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
               '&:hover': {
-                background: 'linear-gradient(135deg, #15803d 0%, #166534 100%)',
-                boxShadow: '0 6px 20px rgba(22, 163, 74, 0.5)',
+                background: 'var(--gradient-primary-hover)',
+                boxShadow: '0 6px 20px rgba(0, 0, 0, 0.2)',
               },
               '&.Mui-disabled': {
                 background: 'rgba(148, 163, 184, 0.12)',
@@ -724,7 +724,7 @@ const AttendanceReport = () => {
               },
             }}
           >
-            Download Excel ({filteredParticipants.length})
+            Download Excel
           </Button>
         </Box>
       </Paper>

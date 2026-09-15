@@ -43,6 +43,7 @@ import { PageContainer, EmptyState } from '../../components/common/design-system
 import ActionButton from '../../components/common/ActionButton';
 import StatCard from '../../components/common/StatCard';
 import StatCardGrid from '../../components/common/StatCardGrid';
+import CountBand from '../../components/common/design-system/CountBand';
 import API from '../../api/axios';
 import { fetchEventDepartments } from '../../api/eventDepartmentApi';
 import { toast } from 'sonner';
@@ -564,49 +565,54 @@ const Participants = ({ mode = 'all' }) => {
       />
 
 
-      {/* Summary Cards */}
-      <StatCardGrid sx={{ mt: 1, mb: 3 }}>
-        <StatCard
-          title={mode === 'all' ? 'Filtered Participants' : mode === 'accommodation' ? 'Accommodation Needed' : 'No Accommodation'}
-          value={filteredParticipants.length}
-          color="#d97706"
-          icon={<PeopleIcon />}
-        />
-        {mode !== 'all' && (
-          <>
-            <StatCard
-              title="Male Participants"
-              value={maleCount}
-              color="#2563eb"
-              icon={<PeopleIcon />}
-            />
-            <StatCard
-              title="Female Participants"
-              value={femaleCount}
-              color="#db2777"
-              icon={<PeopleIcon />}
-            />
-          </>
-        )}
-        <StatCard
-          title="Events"
-          value={uniqueEvents.length}
-          color="#9333ea"
-          icon={<EventIcon />}
-        />
-        <StatCard
-          title="Present"
-          value={presentCount}
-          color="#16a34a"
-          icon={<CheckCircleIcon />}
-        />
-        <StatCard
-          title="Absent"
-          value={absentCount}
-          color="#dc2626"
-          icon={<CancelIcon />}
-        />
-      </StatCardGrid>
+        {/* Summary Cards */}
+        <Box sx={{ mt: 1, mb: 3 }}>
+          <CountBand 
+            items={[
+              {
+                id: 'events',
+                title: "Events",
+                value: uniqueEvents.length,
+                color: "purple",
+                icon: <EventIcon />
+              },
+              ...(mode !== 'all' ? [
+                {
+                  id: 'male',
+                  title: "Male Participants",
+                  value: maleCount,
+                  color: "blue",
+                  icon: <PeopleIcon />
+                },
+                {
+                  id: 'female',
+                  title: "Female Participants",
+                  value: femaleCount,
+                  color: "purple",
+                  icon: <PeopleIcon />
+                }
+              ] : []),
+              {
+                id: 'present',
+                title: "Present",
+                value: presentCount,
+                color: "green",
+                icon: <CheckCircleIcon />
+              },
+              {
+                id: 'absent',
+                title: "Absent",
+                value: absentCount,
+                color: "red",
+                icon: <CancelIcon />
+              }
+            ]}
+            total={{
+              title: mode === 'all' ? 'Filtered Participants' : mode === 'accommodation' ? 'Accommodation Needed' : 'No Accommodation',
+              value: filteredParticipants.length
+            }}
+          />
+        </Box>
 
       {/* Filter Controls Bar */}
       <Paper
