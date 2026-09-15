@@ -2,7 +2,8 @@ import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
     Box, Typography, Grid, Card, Button, TextField,
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack, Divider
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack, Divider,
+    Dialog, DialogTitle, DialogContent, DialogActions
 } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PersonIcon from '@mui/icons-material/Person';
@@ -25,6 +26,8 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
+    const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+    const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
 
     const isHOD = !role || role === 'HOD';
     const isDean = role === 'RESEARCH_DEAN';
@@ -65,6 +68,8 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
             });
             if (res.data?.success) {
                 toast.success(`Appraisal ${action === 'Approve' ? 'Approved' : 'Rejected'} successfully`);
+                setApproveDialogOpen(false);
+                setRejectDialogOpen(false);
                 onBack(); 
             }
         } catch (error) {
@@ -158,19 +163,20 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
                     </Box>
                     <Box sx={{ textAlign: { xs: "center", sm: "right" } }}>
                         <Box sx={{ display: "flex", gap: 1, justifyContent: { xs: "center", sm: "flex-end" }, flexWrap: "wrap", mb: 1 }}>
-                            <Chip 
-                                label={(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "R&D Direct Entry" : "Faculty Self Entry"} 
-                                sx={{ 
-                                    bgcolor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.12)" : "rgba(59, 130, 246, 0.12)", 
-                                    color: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "#7c3aed" : "#2563eb", 
-                                    fontWeight: 800, 
-                                    borderRadius: "8px", 
-                                    textTransform: "uppercase", 
-                                    fontSize: "0.65rem",
-                                    border: "1px solid",
-                                    borderColor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.3)" : "rgba(59, 130, 246, 0.3)"
-                                }} 
-                            />
+                            {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
+                                <Chip 
+                                    label="R&D Direct Entry" 
+                                    sx={{ 
+                                        bgcolor: "rgba(124, 58, 237, 0.12)", 
+                                        color: "#7c3aed", 
+                                        fontWeight: 800, 
+                                        borderRadius: "8px", 
+                                        textTransform: "uppercase", 
+                                        fontSize: "0.65rem",
+                                        border: "1px solid rgba(124, 58, 237, 0.3)"
+                                    }} 
+                                />
+                            )}
                             <Chip label="Ph.D. Scholar Guiding" sx={{ bgcolor: "rgba(59, 130, 246, 0.1)", color: "#3b82f6", fontWeight: 800, borderRadius: "8px", textTransform: "uppercase", fontSize: "0.65rem" }} />
                         </Box>
                         <Typography variant="caption" sx={{ display: "block", mt: 1, color: "var(--text-secondary)", fontWeight: 700 }}>Submitted on {new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</Typography>
@@ -244,29 +250,48 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
                 <Card sx={{ ...cardStyle, flex: { xs: "1 1 100%", lg: "1 1 48%" }, mb: 0 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><ArticleIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Scholar Details</Typography></Box>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
+                        {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
+                            <LabelValue 
+                                label="Entry Source" 
+                                horizontal 
+                                chip={
+                                    <Chip 
+                                        label="R&D Direct Entry" 
+                                        size="small" 
+                                        sx={{ 
+                                            bgcolor: "rgba(124, 58, 237, 0.1)", 
+                                            color: "#7c3aed", 
+                                            fontWeight: 800, 
+                                            border: "1px solid rgba(124, 58, 237, 0.3)" 
+                                        }} 
+                                    />
+                                } 
+                            />
+                        )}
+                        <LabelValue label="Scholar Roll Number" value={data.rollNumber} horizontal />
+                        <LabelValue label="Scholar Student Name" value={data.studentName} horizontal />
+                        <LabelValue label="Course / Program" value={data.course} horizontal />
+                        <LabelValue label="Branch / Specialization" value={data.branch || "N/A"} horizontal />
+                        <LabelValue label="University" value={data.university || "Aditya University"} horizontal />
                         <LabelValue 
-                            label="Entry Source" 
+                            label="Scholar Type" 
                             horizontal 
                             chip={
                                 <Chip 
-                                    label={(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "R&D Direct Entry (Admin)" : "Faculty Self Entry"} 
+                                    label={data.scholarType || "Full-Time"} 
                                     size="small" 
                                     sx={{ 
-                                        bgcolor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.1)" : "rgba(59, 130, 246, 0.1)", 
-                                        color: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "#7c3aed" : "#2563eb", 
-                                        fontWeight: 800, 
-                                        border: "1px solid", 
-                                        borderColor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.3)" : "rgba(59, 130, 246, 0.3)"
+                                        bgcolor: data.scholarType === 'Part-Time' ? "rgba(234, 88, 12, 0.1)" : "rgba(14, 165, 233, 0.1)", 
+                                        color: data.scholarType === 'Part-Time' ? "#ea580c" : "#0284c7", 
+                                        fontWeight: 800,
+                                        borderRadius: "6px"
                                     }} 
                                 />
                             } 
                         />
-                        <LabelValue label="Scholar Roll Number" value={data.rollNumber} horizontal />
-                        <LabelValue label="Scholar Student Name" value={data.studentName} horizontal />
-                        <LabelValue label="Course Name" value={data.course} horizontal />
-                        <LabelValue label="Branch" value={data.branch || "N/A"} horizontal />
+                        <LabelValue label="Guide / Co-Guide" value={data.type === 'co-guide' ? 'Co-Guide' : 'Guide'} horizontal />
                         <LabelValue 
-                            label="Appraisal Status" 
+                            label="Scholar Status" 
                             horizontal 
                             chip={
                                 <Chip 
@@ -280,7 +305,7 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
                                 />
                             } 
                         />
-                        <LabelValue label="Admission / Award Date" value={new Date(data.admissionOrAwardDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} horizontal />
+                        <LabelValue label={data.scholarStatus === 'Awarded' ? "Award Date" : "Admission Date"} value={new Date(data.admissionOrAwardDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} horizontal />
                     </Box>
                 </Card>
             </Box>
@@ -298,15 +323,36 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
                 {data.hodComment && <Box sx={{ flex: 1, minWidth: 300 }}><Card sx={{ ...cardStyle, borderLeft: "4px solid #ffc107", height: "100%", mb: 0 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><HistoryIcon sx={{ color: "#ffc107" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>HOD Review</Typography></Box><Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}><Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.hodComment}"</Typography></Box></Card></Box>}
                 
                 <Box sx={{ flex: 1, minWidth: 350 }}>
-                    {(isResearchAdmin && data.status === 'Pending at R&D') ? (
+                    {((isResearchAdmin && data.status === 'Pending at R&D') || (isHOD && data.status === 'Pending at HOD')) ? (
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+                                <GavelIcon sx={{ color: "var(--color-primary)" }} />
+                                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography>
+                            </Box>
 
-                            <TextField fullWidth multiline rows={3} placeholder="Provide your review comments..." value={remarks} onChange={e => setRemarks(e.target.value)} sx={{ mb: 3, "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }} />
+                            <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3 }}>
+                                Please review the details above and choose an action to proceed with this Ph.D. scholar submission.
+                            </Typography>
 
-                            <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => handleAction('Reject')} sx={{ px: 3 }}>Reject</Button>
-                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => handleAction('Approve')} sx={{ px: 4 }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
+                            <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-start" }}>
+                                <Button 
+                                    variant="outlined" 
+                                    color="error" 
+                                    disabled={actionLoading} 
+                                    onClick={() => setRejectDialogOpen(true)} 
+                                    sx={{ px: 3, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}
+                                >
+                                    Reject
+                                </Button>
+                                <Button 
+                                    variant="contained" 
+                                    color="success" 
+                                    disabled={actionLoading} 
+                                    onClick={() => setApproveDialogOpen(true)} 
+                                    sx={{ px: 4, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}
+                                >
+                                    {isHOD ? "Approve & Forward" : "Final Approve"}
+                                </Button>
                             </Box>
                         </Card>
                     ) : (
@@ -323,6 +369,74 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
                     )}
                 </Box>
             </Box>
+
+            {/* Approve Dialog */}
+            <Dialog open={approveDialogOpen} onClose={() => setApproveDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>
+                <DialogTitle sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                    {isHOD ? "Approve & Forward Submission" : "Final Approve Submission"}
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 2.5 }}>
+                        Please confirm approval details for this Ph.D. scholar submission:
+                    </Typography>
+
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--color-primary)", fontSize: "0.8rem" }}>
+                            REMARKS / COMMENTS (OPTIONAL)
+                        </Typography>
+                        <TextField 
+                            fullWidth multiline rows={3} 
+                            placeholder="Provide review comments..." 
+                            value={remarks} 
+                            onChange={e => setRemarks(e.target.value)} 
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={() => setApproveDialogOpen(false)} disabled={actionLoading} sx={{ color: "var(--text-secondary)", textTransform: "none" }}>
+                        Cancel
+                    </Button>
+                    <Button 
+                        variant="contained" color="success" disabled={actionLoading} 
+                        onClick={() => handleAction('Approve')}
+                        sx={{ borderRadius: "8px", px: 3, textTransform: "none", fontWeight: 700 }}
+                    >
+                        {actionLoading ? "Processing..." : (isHOD ? "Confirm & Forward" : "Confirm Approve")}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Reject Dialog */}
+            <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>
+                <DialogTitle sx={{ fontWeight: 800, color: "#d32f2f" }}>
+                    Reject Submission
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 2 }}>
+                        Please provide a reason for rejecting this submission:
+                    </Typography>
+                    <TextField 
+                        fullWidth multiline rows={3} 
+                        placeholder="Provide rejection comments (Required)..." 
+                        value={remarks} 
+                        onChange={e => setRemarks(e.target.value)} 
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
+                    />
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={() => setRejectDialogOpen(false)} disabled={actionLoading} sx={{ color: "var(--text-secondary)", textTransform: "none" }}>
+                        Cancel
+                    </Button>
+                    <Button 
+                        variant="contained" color="error" disabled={actionLoading || !remarks.trim()} 
+                        onClick={() => handleAction('Reject')}
+                        sx={{ borderRadius: "8px", px: 3, textTransform: "none", fontWeight: 700 }}
+                    >
+                        {actionLoading ? "Processing..." : "Confirm Reject"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
             {isResearchAdmin && (
                 <EditResearchDetailsDialog
                     open={editOpen}

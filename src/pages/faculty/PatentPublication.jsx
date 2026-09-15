@@ -1156,19 +1156,30 @@ export default function PatentPublication() {
                 </Typography>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap", flexShrink: 0 }}>
+                {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
+                  <Chip
+                    label="R&D Direct Entry"
+                    sx={{
+                      bgcolor: "rgba(124, 58, 237, 0.1)",
+                      color: "#7c3aed",
+                      border: "1px solid rgba(124, 58, 237, 0.3)",
+                      fontWeight: 700,
+                      borderRadius: "20px",
+                      px: 1,
+                      py: 0.5
+                    }}
+                  />
+                )}
                 <Chip
-                  label={(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "R&D Direct Entry" : "Faculty Self Entry"}
-                  sx={{
-                    bgcolor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.1)" : "rgba(59, 130, 246, 0.1)",
-                    color: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "#7c3aed" : "#2563eb",
-                    border: `1px solid ${(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.3)" : "rgba(59, 130, 246, 0.3)"}`,
-                    fontWeight: 700,
-                    borderRadius: "20px",
-                    px: 1,
-                    py: 0.5
-                  }}
-                />
-                <Chip
+                  icon={
+                    /approved/i.test(data.status) ? (
+                      <CheckCircleOutlineIcon sx={{ fontSize: "16px !important", color: "inherit" }} />
+                    ) : /reject/i.test(data.status) ? (
+                      <Close sx={{ fontSize: "16px !important", color: "inherit" }} />
+                    ) : (
+                      <AccessTime sx={{ fontSize: "16px !important", color: "inherit" }} />
+                    )
+                  }
                   label={data.status || "Pending at R&D"}
                   sx={{
                     bgcolor: /approved/i.test(data.status) ? "rgba(46, 125, 50, 0.1)" : /reject/i.test(data.status) ? "rgba(211, 47, 47, 0.1)" : "rgba(237, 108, 2, 0.1)",
@@ -1220,7 +1231,7 @@ export default function PatentPublication() {
                 <Box sx={{ display: "flex", flexDirection: "column" }}>
                   {[
                     { label: "Academic Year", value: data.academicYear?.year || "-", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    { label: "Entry Source", value: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "R&D Direct Entry (Admin)" : "Faculty Self Entry", icon: <PersonIcon sx={{ fontSize: 18, color: "var(--color-primary)" }} /> },
+                    ...((data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? [{ label: "Entry Source", value: "R&D Direct Entry", icon: <PersonIcon sx={{ fontSize: 18, color: "var(--color-primary)" }} /> }] : []),
                     { label: "Filed in Institution Name", value: data.patentFiledInInstitution || "Yes", icon: <AccountBalanceIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Name of Applicant in Patent", value: data.patentName || "-", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Area of Patent", value: data.area || "-", icon: <CategoryIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },

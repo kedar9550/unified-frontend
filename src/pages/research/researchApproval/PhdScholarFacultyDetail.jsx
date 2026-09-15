@@ -208,16 +208,25 @@ const PhdScholarFacultyDetail = ({ facultyId, onBack, role }) => {
                             <Grid item xs={12} md={8} sx={{ p: 3, borderRight: { md: "1px solid var(--border-color)" } }}>
                                 <Grid container spacing={2}>
                                     <Grid item xs={12} sm={6}>
-                                        <LabelValue label="Course" value={app.course} />
+                                        <LabelValue label="Course / Program" value={app.course} />
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
-                                        <LabelValue label="Branch" value={app.branch || "N/A"} />
+                                        <LabelValue label="Branch / Specialization" value={app.branch || "N/A"} />
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
-                                        <LabelValue label="Admission / Award Date" value={new Date(app.admissionOrAwardDate).toLocaleDateString("en-GB")} />
+                                        <LabelValue label="University" value={app.university || "Aditya University"} />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <LabelValue label="Scholar Type" value={app.scholarType || "Full-Time"} />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <LabelValue label="Guide / Co-Guide" value={app.type === 'co-guide' ? 'Co-Guide' : 'Guide'} />
                                     </Grid>
                                     <Grid item xs={12} sm={6}>
                                         <LabelValue label="Scholar Status" value={app.scholarStatus} />
+                                    </Grid>
+                                    <Grid item xs={12} sm={6}>
+                                        <LabelValue label={app.scholarStatus === "Awarded" ? "Award Date" : "Admission Date"} value={new Date(app.admissionOrAwardDate).toLocaleDateString("en-GB")} />
                                     </Grid>
                                 </Grid>
 

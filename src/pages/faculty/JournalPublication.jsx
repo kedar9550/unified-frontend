@@ -1549,9 +1549,27 @@ export default function JournalPublication() {
                   </Typography>
                 </Box>
               </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0, flexWrap: "wrap" }}>
+                {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
+                  <Chip
+                    label="R&D Direct Entry"
+                    sx={{
+                      bgcolor: "rgba(124, 58, 237, 0.1)",
+                      color: "#7c3aed",
+                      border: "1px solid rgba(124, 58, 237, 0.3)",
+                      fontWeight: 700,
+                      borderRadius: "20px",
+                      px: 1,
+                      py: 0.5
+                    }}
+                  />
+                )}
                 <Chip
-                  icon={<AccessTimeIcon sx={{ fontSize: "16px !important", color: "inherit" }} />}
+                  icon={
+                    /approved/i.test(data.status) ? <CheckCircleOutlineIcon sx={{ fontSize: "16px !important", color: "inherit" }} /> :
+                    /reject/i.test(data.status) ? <Close sx={{ fontSize: "16px !important", color: "inherit" }} /> :
+                    <AccessTimeIcon sx={{ fontSize: "16px !important", color: "inherit" }} />
+                  }
                   label={data.status || "Pending at HOD"}
                   sx={{
                     bgcolor: /approved/i.test(data.status) ? "rgba(46, 125, 50, 0.1)" : /reject/i.test(data.status) ? "rgba(211, 47, 47, 0.1)" : "rgba(237, 108, 2, 0.1)",

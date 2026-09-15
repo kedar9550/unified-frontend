@@ -820,13 +820,19 @@ export default function RndJournalDataEntry() {
               <TextField
                 size="small"
                 fullWidth
-                placeholder="Enter Employee ID (e.g., ADITYA123)"
+                placeholder="Enter Employee ID"
                 value={targetFacultyEmpId}
                 onChange={(e) => {
                   setTargetFacultyEmpId(e.target.value);
                   setIsTargetFacultyValid(false);
                   setTargetFacultyName("");
                   setTargetFacultyDetails(null);
+                  setForm(emptyForm);
+                  setFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
+                  setExistingFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
+                  setEditJournalId(null);
+                  setDoiFetched(false);
+                  setDoiFetchedFields({});
                 }}
               />
               <Button
