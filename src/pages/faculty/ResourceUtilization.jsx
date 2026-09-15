@@ -82,7 +82,7 @@ const ROLES_BY_CATEGORY = {
   ]
 };
 
-export default function ResourceUtilization() {
+export default function ResourceUtilization({ isDirectEntry = false }) {
   const { user } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -95,6 +95,50 @@ export default function ResourceUtilization() {
   const [selectedActivityDetails, setSelectedActivityDetails] = useState(null);
   const [previewBlobUrl, setPreviewBlobUrl] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ open: false, type: "", id: null, message: "", title: "" });
+
+  const [targetFacultyEmpId, setTargetFacultyEmpId] = useState("");
+  const [targetFacultyName, setTargetFacultyName] = useState("");
+  const [isTargetFacultyValid, setIsTargetFacultyValid] = useState(false);
+  const [verifyingFaculty, setVerifyingFaculty] = useState(false);
+  const [targetFacultyDetails, setTargetFacultyDetails] = useState(null);
+
+  const verifyFaculty = async () => {
+    if (!targetFacultyEmpId.trim()) {
+      toast.error("Please enter Employee ID");
+      return;
+    }
+    setVerifyingFaculty(true);
+    try {
+      const res = await API.get(`/api/employees/by-empid/${targetFacultyEmpId.trim()}`);
+      if (res.data?.success && res.data?.data) {
+        const emp = res.data.data;
+        if (emp.isActive) {
+          setTargetFacultyName(emp.name);
+          setIsTargetFacultyValid(true);
+          setTargetFacultyDetails(emp);
+          toast.success(`Faculty Verified: ${emp.name}`);
+        } else {
+          setTargetFacultyName("Inactive Faculty");
+          setIsTargetFacultyValid(false);
+          setTargetFacultyDetails(null);
+          toast.error("This faculty member is inactive and cannot be selected.");
+        }
+      } else {
+        setTargetFacultyName("Not Found");
+        setIsTargetFacultyValid(false);
+        setTargetFacultyDetails(null);
+        toast.error("Faculty not found. Ensure the exact Employee ID is entered.");
+      }
+    } catch (err) {
+      const msg = err?.response?.data?.message || "Faculty not found";
+      toast.error(msg);
+      setIsTargetFacultyValid(false);
+      setTargetFacultyName("Not Found");
+      setTargetFacultyDetails(null);
+    } finally {
+      setVerifyingFaculty(false);
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -285,6 +329,10 @@ export default function ResourceUtilization() {
     });
     setIsDocumentRemoved(false);
     setProofFile(null);
+    setTargetFacultyEmpId("");
+    setTargetFacultyName("");
+    setIsTargetFacultyValid(false);
+    setTargetFacultyDetails(null);
     setOpenFormModal(true);
   };
 
@@ -347,7 +395,7 @@ export default function ResourceUtilization() {
       return;
     }
 
-    if (form.eventEndDate) {
+    if (form.eventEndDate && !isDirectEntry) {
       const end = new Date(form.eventEndDate);
       end.setHours(0, 0, 0, 0);
       const today = new Date();
@@ -460,6 +508,15 @@ export default function ResourceUtilization() {
     setLoading(true);
     try {
       const fd = new FormData();
+      if (isDirectEntry) {
+        if (!isTargetFacultyValid || !targetFacultyEmpId) {
+          toast.error("Please verify Target Faculty before submitting.");
+          setLoading(false);
+          return;
+        }
+        fd.append("isDirectEntry", "true");
+        fd.append("targetFacultyEmpId", targetFacultyEmpId);
+      }
       fd.append("academicYear", form.academicYear);
       fd.append("activityCategory", form.activityCategory);
       fd.append("activityType", form.activityType);
@@ -1148,8 +1205,46 @@ export default function ResourceUtilization() {
 
   const renderFormContent = () => (
     <>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2, mb: 3, flexWrap: "wrap", gap: 2 }}>
-        <Typography sx={{
+      {isDirectEntry && (
+        <Box sx={{ mb: 3, p: 2, border: '1px solid #e2e8f0', borderRadius: '8px', bgcolor: '#f8fafc' }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 800, color: "var(--text-primary)", mb: 2, textTransform: "uppercase", letterSpacing: "0.03em" }}>
+            Target Faculty Identification: *
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+            <Box sx={{ flex: 1 }}>
+              <TextField
+                size="small"
+                fullWidth
+                placeholder="Enter Employee ID (e.g., ADITYA123)"
+                value={targetFacultyEmpId}
+                disabled={!!editingId}
+                onChange={(e) => {
+                  setTargetFacultyEmpId(e.target.value);
+                  setIsTargetFacultyValid(false);
+                  setTargetFacultyName("");
+                  setTargetFacultyDetails(null);
+                }}
+              />
+              {targetFacultyName && (
+                <Typography variant="caption" color={isTargetFacultyValid ? "success.main" : "error.main"} sx={{ mt: 1, display: 'block', fontWeight: 600 }}>
+                  {isTargetFacultyValid ? `✓ Validated: ${targetFacultyName}` : `✗ ${targetFacultyName}`}
+                </Typography>
+              )}
+            </Box>
+            <Button
+              variant="contained"
+              onClick={verifyFaculty}
+              disabled={verifyingFaculty || !targetFacultyEmpId || !!editingId}
+              sx={{ whiteSpace: 'nowrap', textTransform: 'none', height: 40 }}
+            >
+              {verifyingFaculty ? "Verifying..." : "Verify"}
+            </Button>
+          </Box>
+        </Box>
+      )}
+      <Box sx={{ opacity: (isDirectEntry && !isTargetFacultyValid) ? 0.5 : 1, pointerEvents: (isDirectEntry && !isTargetFacultyValid) ? 'none' : 'auto' }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2, mb: 3, flexWrap: "wrap", gap: 2 }}>
+          <Typography sx={{
           fontSize: 13,
           fontWeight: 800,
           color: "var(--text-primary)",
@@ -1488,6 +1583,7 @@ export default function ResourceUtilization() {
             onChange={handleFileChange}
           />
         )}
+      </Box>
       </Box>
     </>
   );

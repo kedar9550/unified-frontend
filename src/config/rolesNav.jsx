@@ -173,6 +173,13 @@ export const ROLE_ROUTES = {
       ]
     },
     { text: "Research Uploads", path: "/uniprime/research-uploads", icon: <CloudUpload /> },
+    // {
+    //   text: "Special Data Entry",
+    //   icon: <Description />,
+    //   nested: [
+    //     { text: "Resource Utilization", path: "/uniprime/special-data-entry/resource-utilization" },
+    //   ]
+    // },
     {
       text: "Utilities",
       icon: <Build />,
