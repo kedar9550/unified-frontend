@@ -405,13 +405,16 @@ export default function RndConferenceDataEntry() {
               <TextField
                 size="small"
                 fullWidth
-                placeholder="Enter Employee ID (e.g., ADITYA123)"
+                placeholder="Enter Employee ID"
                 value={targetFacultyEmpId}
                 onChange={(e) => {
                   setTargetFacultyEmpId(e.target.value);
                   setIsTargetFacultyValid(false);
                   setTargetFacultyName("");
                   setTargetFacultyDetails(null);
+                  setForm(emptyForm);
+                  setFiles({ certificate: null, proceedings: null });
+                  setDoiFetched(false);
                 }}
               />
               <Button

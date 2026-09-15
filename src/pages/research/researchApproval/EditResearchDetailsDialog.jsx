@@ -713,10 +713,10 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                             <TextField fullWidth label="Student Name" name="studentName" value={formData.studentName || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
-                            <TextField fullWidth label="Course" name="course" value={formData.course || ""} onChange={handleChange} variant="outlined" size="small" />
+                            <TextField fullWidth label="Course / Program" name="course" value={formData.course || "Ph.D."} disabled variant="outlined" size="small" />
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
-                            <TextField fullWidth label="Branch" name="branch" value={formData.branch || ""} onChange={handleChange} variant="outlined" size="small" />
+                            <TextField fullWidth label="Branch / Specialization" name="branch" value={formData.branch || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                             <TextField fullWidth label="University" name="university" value={formData.university || ""} onChange={handleChange} variant="outlined" size="small" />
@@ -749,6 +749,15 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                                 <Select label="Scholar Type" name="scholarType" value={formData.scholarType || ""} onChange={handleChange}>
                                     <MenuItem value="Full-Time">Full-Time</MenuItem>
                                     <MenuItem value="Part-Time">Part-Time</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Box>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Guide / Co-Guide</InputLabel>
+                                <Select label="Guide / Co-Guide" name="type" value={formData.type || "guide"} onChange={handleChange}>
+                                    <MenuItem value="guide">Guide</MenuItem>
+                                    <MenuItem value="co-guide">Co-Guide</MenuItem>
                                 </Select>
                             </FormControl>
                         </Box>

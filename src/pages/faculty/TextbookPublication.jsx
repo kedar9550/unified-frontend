@@ -1381,6 +1381,9 @@ export default function TextbookPublication() {
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <MenuBook sx={{ color: "#fff" }} />
             <Typography variant="h6" component="div" sx={{ fontWeight: 800 }}>Text Book Details</Typography>
+            {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
+              <Chip label="R&D Direct Entry" size="small" sx={{ bgcolor: "rgba(255, 255, 255, 0.2)", color: "#fff", fontWeight: 800, borderRadius: "6px" }} />
+            )}
           </Box>
           <IconButton onClick={handleCloseDetails} sx={{ color: "#fff" }}><Close /></IconButton>
         </DialogTitle>
@@ -1398,6 +1401,15 @@ export default function TextbookPublication() {
                 label="Status"
                 chip={
                   <Chip
+                    icon={
+                      /approved/i.test(data.status) ? (
+                        <CheckCircle sx={{ fontSize: "16px !important", color: "inherit" }} />
+                      ) : /reject/i.test(data.status) ? (
+                        <Cancel sx={{ fontSize: "16px !important", color: "inherit" }} />
+                      ) : (
+                        <AccessTime sx={{ fontSize: "16px !important", color: "inherit" }} />
+                      )
+                    }
                     label={data.status}
                     size="small"
                     sx={{

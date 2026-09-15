@@ -28,7 +28,7 @@ export default function RndPatentDataEntry() {
   const [verifyingFaculty, setVerifyingFaculty] = useState(false);
   const [targetFacultyDetails, setTargetFacultyDetails] = useState(null);
 
-  const [form, setForm] = useState({
+  const initialFormState = {
     title: "",
     applicantName: "",
     patentName: "",
@@ -46,7 +46,9 @@ export default function RndPatentDataEntry() {
     otherInventors: [],
     appraisalEligible: "",
     approvedAmount: ""
-  });
+  };
+
+  const [form, setForm] = useState(initialFormState);
   const [files, setFiles] = useState({ eFilingReceipt: null, form1: null });
   const [loading, setLoading] = useState(false);
 
@@ -325,13 +327,15 @@ export default function RndPatentDataEntry() {
             <TextField
               size="small"
               fullWidth
-              placeholder="Enter Employee ID (e.g., ADITYA123)"
+              placeholder="Enter Employee ID"
               value={targetFacultyEmpId}
               onChange={(e) => {
                 setTargetFacultyEmpId(e.target.value);
                 setIsTargetFacultyValid(false);
                 setTargetFacultyName("");
                 setTargetFacultyDetails(null);
+                setForm(initialFormState);
+                setFiles({ eFilingReceipt: null, form1: null });
               }}
             />
             <Button

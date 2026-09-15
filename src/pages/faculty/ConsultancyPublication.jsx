@@ -1008,17 +1008,23 @@ export default function ConsultancyPublication() {
                 </Box>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0, flexWrap: "wrap" }}>
+                {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
+                  <Chip
+                    label="R&D Direct Entry"
+                    sx={{
+                      bgcolor: "rgba(124, 58, 237, 0.1)",
+                      color: "#7c3aed",
+                      border: "1px solid rgba(124, 58, 237, 0.3)",
+                      fontWeight: 700, borderRadius: '20px', px: 1, py: 0.5
+                    }}
+                  />
+                )}
                 <Chip
-                  label={data.entryType === 'Admin' ? 'Entry: R&D Admin' : 'Entry: Self (Faculty)'}
-                  sx={{
-                    bgcolor: data.entryType === 'Admin' ? 'rgba(156, 39, 176, 0.1)' : 'rgba(3, 169, 244, 0.1)',
-                    color: data.entryType === 'Admin' ? '#9c27b0' : '#0288d1',
-                    border: `1px solid ${data.entryType === 'Admin' ? 'rgba(156, 39, 176, 0.3)' : 'rgba(3, 169, 244, 0.3)'}`,
-                    fontWeight: 700, borderRadius: '20px', px: 1, py: 0.5
-                  }}
-                />
-                <Chip
-                  icon={<AccessTime sx={{ fontSize: "16px !important", color: "inherit" }} />}
+                  icon={
+                    /approved/i.test(data.status) ? <CheckCircle sx={{ fontSize: "16px !important", color: "inherit" }} /> :
+                    /reject/i.test(data.status) ? <Close sx={{ fontSize: "16px !important", color: "inherit" }} /> :
+                    <AccessTime sx={{ fontSize: "16px !important", color: "inherit" }} />
+                  }
                   label={data.status || "Pending at R&D"}
                   sx={{
                     bgcolor: /approved/i.test(data.status) ? "rgba(46, 125, 50, 0.1)" : /reject/i.test(data.status) ? "rgba(211, 47, 47, 0.1)" : "rgba(237, 108, 2, 0.1)",
@@ -1049,7 +1055,6 @@ export default function ConsultancyPublication() {
               {[
                 { label: "Academic Year", value: data.academicYear?.year || "-" },
                 { label: "Client / Funding Agency", value: data.fundingAgency || "-" },
-                { label: "Internal Funding (Aditya University)?", value: data.fundingAdityaUniversity || "No" },
                 { label: "Sanctioned Amount", value: data.amount ? `₹${data.amount}` : "-" },
                 { label: "Duration (Months)", value: data.duration || "-" },
                 { label: "Commencement Month / Year", value: `${data.month || ""} ${data.year || ""}`.trim() || "-" },

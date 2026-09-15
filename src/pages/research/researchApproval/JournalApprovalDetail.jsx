@@ -432,18 +432,20 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         </Box>
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
-                            <Chip
-                                label={(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "R&D Direct Entry" : "Faculty Self Entry"}
-                                sx={{
-                                    bgcolor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.1)" : "rgba(59, 130, 246, 0.1)",
-                                    color: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "#7c3aed" : "#2563eb",
-                                    border: `1px solid ${(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.3)" : "rgba(59, 130, 246, 0.3)"}`,
-                                    fontWeight: 700,
-                                    borderRadius: "20px",
-                                    px: 1,
-                                    py: 0.5
-                                }}
-                            />
+                            {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
+                                <Chip
+                                    label="R&D Direct Entry"
+                                    sx={{
+                                        bgcolor: "rgba(124, 58, 237, 0.1)",
+                                        color: "#7c3aed",
+                                        border: "1px solid rgba(124, 58, 237, 0.3)",
+                                        fontWeight: 700,
+                                        borderRadius: "20px",
+                                        px: 1,
+                                        py: 0.5
+                                    }}
+                                />
+                            )}
                             <Chip
                                 icon={
                                     /approved/i.test(data.status) ? <CheckCircleOutlineIcon sx={{ fontSize: "16px !important", color: "inherit" }} /> :
@@ -631,7 +633,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         <Box sx={{ display: "flex", flexDirection: "column" }}>
                             {[
                                 { key: "academicYear", label: "Academic Year", value: data.academicYear?.year || "-", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
-                                { key: "entryType", label: "Entry Source", value: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "R&D Direct Entry (Admin)" : "Faculty Self Entry", icon: <PersonIcon sx={{ fontSize: 18, color: "var(--color-primary)" }} />, editable: false },
+                                ...((data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? [{ key: "entryType", label: "Entry Source", value: "R&D Direct Entry", icon: <PersonIcon sx={{ fontSize: 18, color: "var(--color-primary)" }} />, editable: false }] : []),
                                 { key: "doi", label: "DOI", value: data.doi || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
                                 { key: "authorPos", label: "Applicant Author Position", chip: (
                                     (() => {
