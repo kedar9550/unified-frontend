@@ -243,6 +243,7 @@ function App() {
 
         {/* Value Addition Modules */}
         <Route path="/value-addition/resource-utilization" element={<ProtectedRoute element={<ResourceUtilization />} />} />
+        <Route path="/uniprime/special-data-entry/resource-utilization" element={<ProtectedRoute element={<ResourceUtilization isDirectEntry={true} />} />} />
         <Route path="/value-addition/contribution" element={<ProtectedRoute element={<Contribution />} />} />
         <Route path="/hod/value-addition/resource-utilization" element={<ProtectedRoute element={<ResourceUtilizationApproval />} />} />
         <Route path="/hod/value-addition/contribution" element={<ProtectedRoute element={<ContributionApproval />} />} />

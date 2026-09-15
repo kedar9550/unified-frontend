@@ -146,7 +146,7 @@ const NotificationBell = forwardRef((props, ref) => {
                     } else if (link.includes('/faculty/')) {
                         targetRole = 'FACULTY';
                     }
-                } else if (link.includes('/research') || link.includes('/hod') || link.includes('/research-dean') || link.includes('/research-coordinator')) {
+                } else if (link.includes('/research') || link.includes('/hod') || link.includes('/research-dean') || link.includes('/research-coordinator') || link.includes('/value-addition') || link.includes('/faculty/')) {
                     if (link.includes('/hod/')) {
                         if (userRoles.includes('HOD')) {
                             targetRole = 'HOD';
