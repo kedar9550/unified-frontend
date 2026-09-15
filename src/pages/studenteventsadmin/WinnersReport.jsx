@@ -722,69 +722,6 @@ const WinnersReport = () => {
         }
       />
 
-      {/* Top Navigation Tabs Switcher */}
-      <Box
-        sx={{
-          display: 'flex',
-          gap: 1.5,
-          mb: 3,
-          p: 0.75,
-          bgcolor: 'var(--bg-panel, #ffffff)',
-          borderRadius: '14px',
-          border: '1px solid var(--border-color, rgba(0,0,0,0.08))',
-          width: 'fit-content',
-        }}
-      >
-        <Button
-          variant="text"
-          startIcon={<GroupsIcon />}
-          onClick={() => navigate('/Eventveda/participants/all')}
-          sx={{
-            borderRadius: '10px',
-            textTransform: 'none',
-            fontWeight: 600,
-            px: 2,
-            py: 0.75,
-            color: 'text.secondary',
-            '&:hover': { bgcolor: 'action.hover' }
-          }}
-        >
-          All Participants
-        </Button>
-        <Button
-          variant="text"
-          startIcon={<AssignmentTurnedInIcon />}
-          onClick={() => navigate('/Eventveda/participants/attendance-report')}
-          sx={{
-            borderRadius: '10px',
-            textTransform: 'none',
-            fontWeight: 600,
-            px: 2,
-            py: 0.75,
-            color: 'text.secondary',
-            '&:hover': { bgcolor: 'action.hover', color: '#16a34a' }
-          }}
-        >
-          Attendance Report
-        </Button>
-        <Button
-          variant="contained"
-          startIcon={<TrophyIcon />}
-          sx={{
-            borderRadius: '10px',
-            textTransform: 'none',
-            fontWeight: 700,
-            px: 2.2,
-            py: 0.75,
-            bgcolor: '#f59e0b',
-            color: '#fff',
-            boxShadow: '0 4px 12px rgba(245, 158, 11, 0.3)',
-            '&:hover': { bgcolor: '#d97706' }
-          }}
-        >
-          Winners Report ({winningTeams.length})
-        </Button>
-      </Box>
 
       {/* Summary Cards */}
       <StatCardGrid sx={{ mt: 1, mb: 3 }}>

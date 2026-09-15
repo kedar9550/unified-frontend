@@ -19,6 +19,8 @@ import {
 } from '@mui/material';
 import {
   People as PeopleIcon,
+  Male as MaleIcon,
+  Female as FemaleIcon,
   Refresh as RefreshIcon,
   Download as DownloadIcon,
   Visibility as ViewIcon,
@@ -37,8 +39,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
 import { PageContainer, EmptyState } from '../../components/common/design-system';
-import StatCard from '../../components/common/StatCard';
-import StatCardGrid from '../../components/common/StatCardGrid';
+import CountBand from '../../components/common/design-system/CountBand';
 import API from '../../api/axios';
 import { fetchEventDepartments } from '../../api/eventDepartmentApi';
 import { toast } from 'sonner';
@@ -582,109 +583,32 @@ const AttendanceReport = () => {
         }
       />
 
-      {/* Top Navigation Tabs Switcher */}
-      <Box
-        sx={{
-          display: 'flex',
-          gap: 1.5,
-          mb: 3,
-          p: 0.75,
-          bgcolor: 'var(--bg-panel, #ffffff)',
-          borderRadius: '14px',
-          border: '1px solid var(--border-color, rgba(0,0,0,0.08))',
-          width: 'fit-content',
-        }}
-      >
-        <Button
-          variant="text"
-          startIcon={<GroupsIcon />}
-          onClick={() => navigate('/Eventveda/participants/all')}
-          sx={{
-            borderRadius: '10px',
-            textTransform: 'none',
-            fontWeight: 600,
-            px: 2,
-            py: 0.75,
-            color: 'text.secondary',
-            '&:hover': { bgcolor: 'action.hover' }
-          }}
-        >
-          All Participants
-        </Button>
-        <Button
-          variant="contained"
-          startIcon={<AssignmentTurnedInIcon />}
-          sx={{
-            borderRadius: '10px',
-            textTransform: 'none',
-            fontWeight: 700,
-            px: 2.2,
-            py: 0.75,
-            bgcolor: '#16a34a',
-            color: '#fff',
-            boxShadow: '0 4px 12px rgba(22, 163, 74, 0.25)',
-            '&:hover': { bgcolor: '#15803d' }
-          }}
-        >
-          Attendance Report ({allAttendedParticipants.length})
-        </Button>
-        <Button
-          variant="text"
-          startIcon={<TrophyIcon />}
-          onClick={() => navigate('/Eventveda/participants/winners-report')}
-          sx={{
-            borderRadius: '10px',
-            textTransform: 'none',
-            fontWeight: 600,
-            px: 2,
-            py: 0.75,
-            color: 'text.secondary',
-            '&:hover': { bgcolor: 'action.hover', color: '#f59e0b' }
-          }}
-        >
-          Winners Report
-        </Button>
-      </Box>
 
       {/* Summary Cards */}
-      <StatCardGrid sx={{ mt: 1, mb: 3 }}>
-        <StatCard
-          title="Total Attended"
-          value={allAttendedParticipants.length}
-          color="#16a34a"
-          icon={<CheckCircleIcon />}
+      <Box sx={{ mt: 1, mb: 3 }}>
+        <CountBand 
+          items={[
+            {
+              id: 'male',
+              title: 'Male Attended',
+              value: maleCount,
+              color: 'blue',
+              icon: <MaleIcon sx={{ color: '#3B82F6', fontSize: 24 }} />
+            },
+            {
+              id: 'female',
+              title: 'Female Attended',
+              value: femaleCount,
+              color: 'purple',
+              icon: <FemaleIcon sx={{ color: '#8B5CF6', fontSize: 24 }} />
+            }
+          ]}
+          total={{
+            title: 'Total Attended',
+            value: allAttendedParticipants.length
+          }}
         />
-        {/* <StatCard
-          title="Filtered Attended"
-          value={filteredParticipants.length}
-          color="#d97706"
-          icon={<PeopleIcon />}
-        />
-        <StatCard
-          title="Events Represented"
-          value={uniqueEvents.length}
-          color="#9333ea"
-          icon={<EventIcon />}
-        />
-        <StatCard
-          title="Colleges Represented"
-          value={uniqueCollegesCount}
-          color="#2563eb"
-          icon={<SchoolIcon />}
-        /> */}
-        <StatCard
-          title="Male Attended"
-          value={maleCount}
-          color="#0284c7"
-          icon={<PeopleIcon />}
-        />
-        <StatCard
-          title="Female Attended"
-          value={femaleCount}
-          color="#db2777"
-          icon={<PeopleIcon />}
-        />
-      </StatCardGrid>
+      </Box>
 
       {/* Filter Controls Bar */}
       <Paper
@@ -714,6 +638,7 @@ const AttendanceReport = () => {
           size="small"
           value={eventFilter}
           onChange={(e) => setEventFilter(e.target.value)}
+          SelectProps={{ MenuProps: { disableScrollLock: true } }}
           sx={{ width: { xs: '100%', sm: 200 } }}
         >
           <MenuItem value="ALL">All Events</MenuItem>
@@ -730,6 +655,7 @@ const AttendanceReport = () => {
           size="small"
           value={schoolFilter}
           onChange={(e) => setSchoolFilter(e.target.value)}
+          SelectProps={{ MenuProps: { disableScrollLock: true } }}
           sx={{ width: { xs: '100%', sm: 180 } }}
         >
           <MenuItem value="ALL">All Schools</MenuItem>
@@ -746,6 +672,7 @@ const AttendanceReport = () => {
           size="small"
           value={departmentFilter}
           onChange={(e) => setDepartmentFilter(e.target.value)}
+          SelectProps={{ MenuProps: { disableScrollLock: true } }}
           sx={{ width: { xs: '100%', sm: 160 } }}
         >
           <MenuItem value="ALL">All Depts</MenuItem>
@@ -762,6 +689,7 @@ const AttendanceReport = () => {
           size="small"
           value={genderFilter}
           onChange={(e) => setGenderFilter(e.target.value)}
+          SelectProps={{ MenuProps: { disableScrollLock: true } }}
           sx={{ width: { xs: '100%', sm: 140 } }}
         >
           <MenuItem value="ALL">All Genders</MenuItem>
