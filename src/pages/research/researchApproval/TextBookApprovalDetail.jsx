@@ -240,7 +240,6 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
     );
 
     const cardStyle = {
-        position: "relative",
         p: 3,
         mb: 3,
         borderRadius: "16px",
@@ -248,17 +247,6 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
         boxShadow: "0 4px 24px rgba(0,0,0,0.04)",
         background: "var(--bg-glass)",
         backdropFilter: "blur(10px)",
-        overflow: "hidden",
-        "&::after": {
-            content: '""',
-            position: "absolute",
-            top: 0,
-            right: 0,
-            width: "140px",
-            height: "140px",
-            background: "radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)",
-            zIndex: 0
-        }
     };
 
     return (
@@ -299,21 +287,26 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                             <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-primary)" }}>{data.title}</Typography>
                         </Box>
                     </Box>
-                    <Box sx={{ textAlign: { xs: "center", sm: "right" } }}>
-                        <Chip
-                            label="Text Book Publication"
-                            sx={{
-                                bgcolor: "rgba(25, 118, 210, 0.1)",
-                                color: "var(--color-primary)",
-                                fontWeight: 700,
-                                borderRadius: "6px",
-                                textTransform: "uppercase",
-                                fontSize: "0.7rem",
-                                letterSpacing: "1px",
-                                "& .MuiChip-label": { px: 2 }
-                            }}
-                        />
-                        <Typography variant="caption" sx={{ display: "block", mt: 1, color: "var(--text-secondary)", fontWeight: 600 }}>
+                    <Box sx={{ textAlign: { xs: "center", sm: "right" }, display: "flex", flexDirection: "column", alignItems: { xs: "center", sm: "flex-end" }, gap: 0.5 }}>
+                        <Box sx={{ display: "flex", gap: 1 }}>
+                            {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
+                                <Chip label="R&D Direct Entry" sx={{ bgcolor: "rgba(124, 58, 237, 0.1)", color: "#7c3aed", border: "1px solid rgba(124, 58, 237, 0.3)", fontWeight: 800, borderRadius: "8px", fontSize: "0.65rem" }} />
+                            )}
+                            <Chip
+                                label="Text Book Publication"
+                                sx={{
+                                    bgcolor: "rgba(25, 118, 210, 0.1)",
+                                    color: "var(--color-primary)",
+                                    fontWeight: 700,
+                                    borderRadius: "6px",
+                                    textTransform: "uppercase",
+                                    fontSize: "0.7rem",
+                                    letterSpacing: "1px",
+                                    "& .MuiChip-label": { px: 2 }
+                                }}
+                            />
+                        </Box>
+                        <Typography variant="caption" sx={{ display: "block", mt: 0.5, color: "var(--text-secondary)", fontWeight: 600 }}>
                             Submitted on {new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                         </Typography>
                     </Box>

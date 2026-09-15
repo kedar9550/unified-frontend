@@ -1630,7 +1630,21 @@ export default function BookChapterPublication() {
                   </Typography>
                 </Box>
               </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0, flexWrap: "wrap" }}>
+                {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
+                  <Chip
+                    label="R&D Direct Entry"
+                    sx={{
+                      bgcolor: "rgba(124, 58, 237, 0.1)",
+                      color: "#7c3aed",
+                      border: "1px solid rgba(124, 58, 237, 0.3)",
+                      fontWeight: 700,
+                      borderRadius: "20px",
+                      px: 1,
+                      py: 0.5
+                    }}
+                  />
+                )}
                 <Chip
                   icon={
                     /approved/i.test(data.status)

@@ -505,13 +505,17 @@ export default function RndTextbookDataEntry() {
               <TextField
                 size="small"
                 fullWidth
-                placeholder="Enter Employee ID (e.g., ADITYA123)"
+                placeholder="Enter Employee ID"
                 value={targetFacultyEmpId}
                 onChange={(e) => {
                   setTargetFacultyEmpId(e.target.value);
                   setIsTargetFacultyValid(false);
                   setTargetFacultyName("");
                   setTargetFacultyDetails(null);
+                  setForm(emptyForm);
+                  setFiles({ coverPage: null, authorAffiliation: null, index: null });
+                  setIsbnFetched(false);
+                  setIsbnFetchedFields({ title: false, publisher: false });
                 }}
               />
               <Button

@@ -2,8 +2,7 @@ import Loader from "../../../components/common/Loader";
 import React, { useState, useEffect } from "react";
 import {
     Box, Typography, Grid, Card, Button, TextField, Select, MenuItem,
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack,
-    Dialog, DialogTitle, DialogContent, DialogActions
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack
 } from "@mui/material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
@@ -127,7 +126,6 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
     );
 
     const cardStyle = {
-        position: "relative",
         p: 3,
         mb: 3,
         borderRadius: "20px",
@@ -135,17 +133,6 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
         background: "var(--bg-glass)",
         backdropFilter: "blur(10px)",
         boxShadow: "var(--shadow-premium)",
-        overflow: "hidden",
-        "&::after": {
-            content: '""',
-            position: "absolute",
-            top: 0,
-            right: 0,
-            width: "140px",
-            height: "140px",
-            background: "radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)",
-            zIndex: 0
-        }
     };
 
     return (
@@ -163,9 +150,14 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                             <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Funding Agency: {data.fundingAgency}</Typography>
                         </Box>
                     </Box>
-                    <Box sx={{ textAlign: { xs: "center", sm: "right" } }}>
-                        <Chip label="Consultancy Work" sx={{ bgcolor: "rgba(190, 24, 93, 0.1)", color: "#BE185D", fontWeight: 800, borderRadius: "8px", textTransform: "uppercase", fontSize: "0.65rem" }} />
-                        <Typography variant="caption" sx={{ display: "block", mt: 1, color: "var(--text-secondary)", fontWeight: 700 }}>Submitted on {new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</Typography>
+                    <Box sx={{ textAlign: { xs: "center", sm: "right" }, display: "flex", flexDirection: "column", alignItems: { xs: "center", sm: "flex-end" }, gap: 0.5 }}>
+                        <Box sx={{ display: "flex", gap: 1 }}>
+                            {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
+                                <Chip label="R&D Direct Entry" sx={{ bgcolor: "rgba(124, 58, 237, 0.1)", color: "#7c3aed", border: "1px solid rgba(124, 58, 237, 0.3)", fontWeight: 800, borderRadius: "8px", fontSize: "0.65rem" }} />
+                            )}
+                            <Chip label="Consultancy Work" sx={{ bgcolor: "rgba(190, 24, 93, 0.1)", color: "#BE185D", fontWeight: 800, borderRadius: "8px", textTransform: "uppercase", fontSize: "0.65rem" }} />
+                        </Box>
+                        <Typography variant="caption" sx={{ display: "block", mt: 0.5, color: "var(--text-secondary)", fontWeight: 700 }}>Submitted on {new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</Typography>
                     </Box>
                 </Box>
 
@@ -237,14 +229,14 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                         <LabelValue label="Title of Work" value={data.title} horizontal />
                         <LabelValue label="Funding Agency" value={data.fundingAgency} horizontal />
-                        <LabelValue label="Internal Funding (AUS)" value={data.fundingAdityaUniversity} horizontal />
                         <LabelValue label="Consultancy Amount" value={`₹${data.amount}`} horizontal />
                         <LabelValue label="Duration" value={data.duration} horizontal />
                         <LabelValue label="Commencement Month" value={data.month} horizontal />
                         <LabelValue label="Commencement Year" value={data.year} horizontal />
                         <LabelValue label="Investigator Type" value={data.investigatorType || (data.principalInvestigator === 'Yes' ? 'Principal Investigator (PI)' : 'Co-Principal Investigator (Co-PI)')} horizontal />
-                        <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} horizontal />
-                        <LabelValue label="Entry Type" value={data.entryType === 'Admin' ? 'Entry: R&D Admin' : 'Entry: Self (Faculty)'} horizontal />
+                        {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
+                            <LabelValue label="Entry Type" value="R&D Direct Entry" horizontal />
+                        )}
                         <LabelValue label="Appraisal Eligible?" value={data.status === "Approved" ? (data.appraisalEligible || "No") : "Not yet decided"} horizontal />
                         <LabelValue label="Appraisal Claimant(s)" value={appraisalClaimantsStr} horizontal />
                     </Box>
@@ -303,93 +295,73 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                 {data.hodComment && <Box sx={{ flex: 1, minWidth: 300 }}><Card sx={{ ...cardStyle, borderLeft: "4px solid #ffc107", height: "100%", mb: 0 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><HistoryIcon sx={{ color: "#ffc107" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>HOD Review</Typography></Box><Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}><Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.hodComment}"</Typography></Box></Card></Box>}
 
                 <Box sx={{ flex: 1, minWidth: 350 }}>
-                    {(isResearchAdmin && data.status === 'Pending at R&D') ? (
+                    {(isResearchAdmin && /pending/i.test(data.status)) ? (
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
-                            
-                            <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-                                <Button variant="outlined" color="error" onClick={() => setDecisionMode('Reject')} sx={{ px: 3, fontWeight: 700 }}>Reject</Button>
-                                <Button variant="contained" color="success" onClick={() => setDecisionMode('Approve')} sx={{ px: 4, fontWeight: 700 }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
-                            </Box>
-                        </Card>
-                    ) : (
-                        <Card sx={{ ...cardStyle, p: 4, textAlign: "center", mb: 0 }}>
-                            <Typography variant="h6" color="var(--text-secondary)" sx={{ fontWeight: 800 }}>Request already processed</Typography>
-                            <Typography variant="body2" sx={{ mt: 1, fontWeight: 700 }}>Current Status: <span style={{ color: statusStyle.color }}>{data.status}</span></Typography>
-                            {data.rndComment && (
-                                <Box sx={{ mt: 3, textAlign: "left", p: 2, bgcolor: "rgba(16, 185, 129, 0.05)", borderRadius: "10px", border: "1px solid #10b98133" }}>
-                                    <Typography variant="caption" sx={{ fontWeight: 900, color: "#10b981", textTransform: "uppercase" }}>R&D Remarks:</Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>"{data.rndComment}"</Typography>
-                                    {data.approvedAmount && <Typography variant="h6" sx={{ mt: 2, fontWeight: 900, color: "#10b981" }}>Approved Amount: ₹{data.approvedAmount}</Typography>}
+
+                            {!decisionMode ? (
+                                <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end", position: "relative", zIndex: 1 }}>
+                                    <Button variant="outlined" color="error" onClick={() => setDecisionMode('Reject')} sx={{ px: 3, cursor: "pointer" }}>Reject</Button>
+                                    <Button variant="contained" color="success" onClick={() => setDecisionMode('Approve')} sx={{ px: 4, cursor: "pointer" }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
+                                </Box>
+                            ) : (
+                                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                                    {decisionMode === 'Approve' && isResearchAdmin && (
+                                        <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                                            <Box sx={{ flex: "1 1 200px" }}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>CONSULTANCY ELIGIBILITY FOR APPRAISAL *</Typography>
+                                                <Select 
+                                                    fullWidth size="small" 
+                                                    value={appraisalEligible} 
+                                                    onChange={e => setAppraisalEligible(e.target.value)} 
+                                                    displayEmpty 
+                                                    sx={{ borderRadius: "10px", bgcolor: "var(--bg-panel)" }}
+                                                >
+                                                    <MenuItem value="" disabled>Select Eligibility</MenuItem>
+                                                    <MenuItem value="Yes">Yes</MenuItem>
+                                                    <MenuItem value="No">No</MenuItem>
+                                                </Select>
+                                            </Box>
+                                        </Box>
+                                    )}
+
+                                    <Box>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>REMARKS {decisionMode === 'Reject' ? '*' : ''}</Typography>
+                                        <TextField fullWidth multiline rows={3} placeholder={`Provide your ${decisionMode.toLowerCase()} comments...`} value={remarks} onChange={e => setRemarks(e.target.value)} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }} />
+                                    </Box>
+
+                                    <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end", mt: 1 }}>
+                                        <Button variant="outlined" color="inherit" onClick={() => setDecisionMode(null)} sx={{ px: 3 }}>Cancel</Button>
+                                        <Button 
+                                            variant="contained" 
+                                            color={decisionMode === 'Reject' ? "error" : "success"} 
+                                            disabled={actionLoading} 
+                                            onClick={() => handleAction(decisionMode)} 
+                                            sx={{ px: 4 }}
+                                        >
+                                            {decisionMode === 'Reject' ? (actionLoading ? "Rejecting..." : "Confirm Reject") : (actionLoading ? "Saving..." : "Save Record")}
+                                        </Button>
+                                    </Box>
                                 </Box>
                             )}
                         </Card>
+                    ) : (
+                        <Stack spacing={3}>
+                            <Card sx={{ ...cardStyle, p: 4, textAlign: "center", mb: 0 }}>
+                                <Typography variant="h6" color="var(--text-secondary)" sx={{ fontWeight: 800 }}>Request already processed</Typography>
+                                <Typography variant="body2" sx={{ mt: 1, fontWeight: 700 }}>Current Status: <span style={{ color: statusStyle.color }}>{data.status}</span></Typography>
+                                {data.rndComment && (
+                                    <Box sx={{ mt: 3, textAlign: "left", p: 2, bgcolor: "rgba(16, 185, 129, 0.05)", borderRadius: "10px", border: "1px solid #10b98133" }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 900, color: "#10b981", textTransform: "uppercase" }}>R&D Remarks:</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>"{data.rndComment}"</Typography>
+                                        {data.approvedAmount && <Typography variant="h6" sx={{ mt: 2, fontWeight: 900, color: "#10b981" }}>Approved Amount: ₹{data.approvedAmount}</Typography>}
+                                    </Box>
+                                )}
+                            </Card>
+                        </Stack>
                     )}
                 </Box>
             </Box>
-
-            {/* Decision Dialog Modal */}
-            <Dialog
-                open={!!decisionMode}
-                onClose={() => setDecisionMode(null)}
-                maxWidth="sm"
-                fullWidth
-                slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}
-            >
-                <DialogTitle sx={{ fontWeight: 800, color: decisionMode === 'Reject' ? '#d32f2f' : 'var(--color-primary)' }}>
-                    {decisionMode === 'Reject' ? 'Reject Consultancy Request' : 'Approve Consultancy Request'}
-                </DialogTitle>
-                <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2.5, pt: 2 }}>
-                    {decisionMode === 'Approve' && isResearchAdmin && (
-                        <Box>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--text-primary)" }}>
-                                APPRAISAL ELIGIBILITY *
-                            </Typography>
-                            <Select 
-                                fullWidth 
-                                size="small" 
-                                value={appraisalEligible} 
-                                onChange={e => setAppraisalEligible(e.target.value)} 
-                                displayEmpty 
-                                sx={{ borderRadius: "10px" }}
-                            >
-                                <MenuItem value="" disabled>Select Eligibility</MenuItem>
-                                <MenuItem value="Yes">Yes</MenuItem>
-                                <MenuItem value="No">No</MenuItem>
-                            </Select>
-                        </Box>
-                    )}
-
-                    <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: "var(--text-primary)" }}>
-                            REMARKS {decisionMode === 'Reject' ? '*' : '(OPTIONAL)'}
-                        </Typography>
-                        <TextField 
-                            fullWidth 
-                            multiline 
-                            rows={3} 
-                            placeholder={decisionMode === 'Reject' ? "Provide reason for rejection..." : "Provide review comments..."} 
-                            value={remarks} 
-                            onChange={e => setRemarks(e.target.value)} 
-                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
-                        />
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ p: 2, pt: 1 }}>
-                    <Button onClick={() => setDecisionMode(null)} color="inherit" sx={{ fontWeight: 700 }}>
-                        Cancel
-                    </Button>
-                    <Button 
-                        variant="contained" 
-                        color={decisionMode === 'Reject' ? "error" : "success"} 
-                        disabled={actionLoading} 
-                        onClick={() => handleAction(decisionMode)} 
-                        sx={{ px: 3, fontWeight: 700, borderRadius: "8px" }}
-                    >
-                        {decisionMode === 'Reject' ? "Confirm Reject" : (isHOD ? "Confirm Approve" : "Final Approve")}
-                    </Button>
-                </DialogActions>
-            </Dialog>
             {isResearchAdmin && (
                 <EditResearchDetailsDialog
                     open={editOpen}

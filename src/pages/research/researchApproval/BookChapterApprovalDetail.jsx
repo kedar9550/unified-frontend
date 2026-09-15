@@ -153,7 +153,6 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
     );
 
     const cardStyle = {
-        position: "relative",
         p: 3,
         mb: 3,
         borderRadius: "20px",
@@ -161,17 +160,6 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
         background: "var(--bg-glass)",
         backdropFilter: "blur(10px)",
         boxShadow: "var(--shadow-premium)",
-        overflow: "hidden",
-        "&::after": {
-            content: '""',
-            position: "absolute",
-            top: 0,
-            right: 0,
-            width: "140px",
-            height: "140px",
-            background: "radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)",
-            zIndex: 0
-        }
     };
 
     return (
@@ -191,6 +179,9 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
                         </Box>
                     </Box>
                     <Box sx={{ textAlign: { xs: "center", sm: "right" } }}>
+                        {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
+                            <Chip label="R&D Direct Entry" sx={{ bgcolor: "rgba(2, 132, 199, 0.1)", color: "#0284c7", fontWeight: 800, borderRadius: "8px", textTransform: "uppercase", fontSize: "0.65rem", mr: 1 }} />
+                        )}
                         <Chip label="Book Chapter Publication" sx={{ bgcolor: "rgba(22, 101, 52, 0.1)", color: "#2e7d32", fontWeight: 800, borderRadius: "8px", textTransform: "uppercase", fontSize: "0.65rem" }} />
                         <Typography variant="caption" sx={{ display: "block", mt: 1, color: "var(--text-secondary)", fontWeight: 700 }}>Submitted on {new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</Typography>
                     </Box>

@@ -179,19 +179,20 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                     </Box>
                     <Box sx={{ textAlign: { xs: "center", sm: "right" } }}>
                         <Box sx={{ display: "flex", gap: 1, justifyContent: { xs: "center", sm: "flex-end" }, flexWrap: "wrap", mb: 1 }}>
-                            <Chip 
-                                label={(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "R&D Direct Entry" : "Faculty Self Entry"} 
-                                sx={{ 
-                                    bgcolor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.12)" : "rgba(59, 130, 246, 0.12)", 
-                                    color: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "#7c3aed" : "#2563eb", 
-                                    fontWeight: 800, 
-                                    borderRadius: "8px", 
-                                    textTransform: "uppercase", 
-                                    fontSize: "0.65rem",
-                                    border: "1px solid",
-                                    borderColor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.3)" : "rgba(59, 130, 246, 0.3)"
-                                }} 
-                            />
+                            {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
+                                <Chip 
+                                    label="R&D Direct Entry" 
+                                    sx={{ 
+                                        bgcolor: "rgba(124, 58, 237, 0.12)", 
+                                        color: "#7c3aed", 
+                                        fontWeight: 800, 
+                                        borderRadius: "8px", 
+                                        textTransform: "uppercase", 
+                                        fontSize: "0.65rem",
+                                        border: "1px solid rgba(124, 58, 237, 0.3)"
+                                    }} 
+                                />
+                            )}
                             <Chip label="Patent Application" sx={{ bgcolor: "rgba(22, 101, 52, 0.1)", color: "#2e7d32", fontWeight: 800, borderRadius: "8px", textTransform: "uppercase", fontSize: "0.65rem" }} />
                         </Box>
                         <Typography variant="caption" sx={{ display: "block", mt: 1, color: "var(--text-secondary)", fontWeight: 700 }}>Submitted on {new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</Typography>
@@ -265,23 +266,24 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                 <Card sx={{ ...cardStyle, flex: { xs: "1 1 100%", lg: "1 1 48%" }, mb: 0 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><ArticleIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Patent Details</Typography></Box>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
-                        <LabelValue 
-                            label="Entry Source" 
-                            horizontal 
-                            chip={
-                                <Chip 
-                                    label={(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "R&D Direct Entry (Admin)" : "Faculty Self Entry"} 
-                                    size="small" 
-                                    sx={{ 
-                                        bgcolor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.1)" : "rgba(59, 130, 246, 0.1)", 
-                                        color: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "#7c3aed" : "#2563eb", 
-                                        fontWeight: 800, 
-                                        border: "1px solid", 
-                                        borderColor: (data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? "rgba(124, 58, 237, 0.3)" : "rgba(59, 130, 246, 0.3)"
-                                    }} 
-                                />
-                            } 
-                        />
+                        {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
+                            <LabelValue 
+                                label="Entry Source" 
+                                horizontal 
+                                chip={
+                                    <Chip 
+                                        label="R&D Direct Entry" 
+                                        size="small" 
+                                        sx={{ 
+                                            bgcolor: "rgba(124, 58, 237, 0.1)", 
+                                            color: "#7c3aed", 
+                                            fontWeight: 800, 
+                                            border: "1px solid rgba(124, 58, 237, 0.3)" 
+                                        }} 
+                                    />
+                                } 
+                            />
+                        )}
                         <LabelValue label="Applicant Name" value={data.applicantName} horizontal />
                         <LabelValue 
                             label="Filed in Institution Name" 
