@@ -353,7 +353,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
       : 0;
 
   return (
-    <Box sx={{ width: "100%", display: "flex", flexDirection: "column", gap: 1, minWidth: 0, fontFamily: "'Stem', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+    <Box sx={{ width: "100%", display: "flex", flexDirection: "column", gap: 1, minWidth: 0, fontFamily: "'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif" }}>
       {/*  TOOLBAR: Filters on left, Search & View Toggles on right */}
       <Box sx={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 2, mb: 1, flexWrap: "wrap" }}>
         {/* Left slot: Filters */}
@@ -387,7 +387,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
               "& .MuiInputBase-input": {
                 color: "var(--text-primary)",
                 fontSize: "0.875rem",
-                fontFamily: "'Stem', sans-serif",
+                fontFamily: "'Google Sans', sans-serif",
                 py: 0,
                 height: "100%",
               },
@@ -498,7 +498,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                 minWidth: "100%",
                 width: "auto",
                 borderCollapse: "collapse",
-                "& th, & td": { whiteSpace: "nowrap", fontFamily: "'Stem', sans-serif" },
+                "& th, & td": { whiteSpace: "nowrap", fontFamily: "'Google Sans', sans-serif" },
               }}
             >
               {/* HEADER */}
@@ -511,7 +511,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                     fontSize: "0.75rem",
                     textTransform: "uppercase",
                     letterSpacing: "0.08em",
-                    fontFamily: "'Stem', sans-serif",
+                    fontFamily: "'Google Sans', sans-serif",
                     py: 2,
                     px: 3,
                     userSelect: "none",
@@ -544,7 +544,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                           width: columnWidths[index] || "auto",
                           textAlign: alignments[index] || "center",
                           cursor: isSortable ? "pointer" : "default",
-                          fontFamily: "'Stem', sans-serif",
+                          fontFamily: "'Google Sans', sans-serif",
                           "&:first-of-type": {
                             borderTopLeftRadius: "12px",
                             bgcolor: "rgba(0,0,0,0.1)", // Slightly darker first column header
@@ -557,7 +557,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                           },
                         }}
                       >
-                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: alignments[index] === "left" || alignments[index] === "start" ? "flex-start" : "center", gap: 0.5, fontFamily: "'Stem', sans-serif" }}>
+                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: alignments[index] === "left" || alignments[index] === "start" ? "flex-start" : "center", gap: 0.5, fontFamily: "'Google Sans', sans-serif" }}>
                           {col}
                           {isSortable && (
                             <Box
@@ -566,7 +566,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                                 fontSize: "0.9rem",
                                 fontWeight: "bold",
                                 color: sortIndex === index ? "#ffffff" : "rgba(255,255,255,0.3)",
-                                fontFamily: "'Stem', sans-serif",
+                                fontFamily: "'Google Sans', sans-serif",
                               }}
                             >
                               {sortIndex === index
@@ -599,7 +599,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                         "&:hover": {
                           background: "var(--bg-accent-1)",
                         },
-                        "& td": { border: "none", fontFamily: "'Stem', sans-serif" },
+                        "& td": { border: "none", fontFamily: "'Google Sans', sans-serif" },
                       }}
                     >
                       {row.map((cell, j) => (
@@ -613,7 +613,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                             px: 3,
                             color: "var(--text-primary)",
                             fontSize: "0.875rem",
-                            fontFamily: "'Stem', sans-serif",
+                            fontFamily: "'Google Sans', sans-serif",
                           }}
                         >
                           {cell?.display ?? cell?.value ?? cell}
@@ -626,7 +626,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                     <TableCell
                       colSpan={columns.length}
                       align="center"
-                      sx={{ py: 6, color: "var(--text-secondary)", border: "none", background: "var(--bg-glass)", fontFamily: "'Stem', sans-serif" }}
+                      sx={{ py: 6, color: "var(--text-secondary)", border: "none", background: "var(--bg-glass)", fontFamily: "'Google Sans', sans-serif" }}
                     >
                       No data found
                     </TableCell>
@@ -796,7 +796,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
             },
             gap: 2.5,
             width: "100%",
-            fontFamily: "'Stem', sans-serif",
+            fontFamily: "'Google Sans', sans-serif",
           }}
         >
           {paginatedRows.length > 0 ? (
@@ -846,7 +846,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                     display: "flex",
                     flexDirection: "column",
                     gap: 1.25,
-                    fontFamily: "'Stem', sans-serif",
+                    fontFamily: "'Google Sans', sans-serif",
                     transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                     boxShadow: "0 6px 20px rgba(0, 0, 0, 0.12)",
                     "&:hover": {
@@ -865,7 +865,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                       WebkitTextFillColor: "transparent",
                       fontSize: "1.05rem",
                       letterSpacing: "0.02em",
-                      fontFamily: "'Stem', sans-serif",
+                      fontFamily: "'Google Sans', sans-serif",
                       mb: 0.5,
                     }}
                   >
@@ -878,7 +878,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                     const cell = row[idx];
                     const cellValue = cell?.display ?? cell?.value ?? cell;
                     return (
-                      <Box key={idx} sx={{ display: "flex", alignItems: "flex-start", gap: 1, fontSize: "0.875rem", fontFamily: "'Stem', sans-serif" }}>
+                      <Box key={idx} sx={{ display: "flex", alignItems: "flex-start", gap: 1, fontSize: "0.875rem", fontFamily: "'Google Sans', sans-serif" }}>
                         <Typography
                           sx={{
                             fontWeight: 500,
@@ -889,7 +889,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                             flexShrink: 0,
                             fontSize: "0.875rem",
                             lineHeight: 1.5,
-                            fontFamily: "'Stem', sans-serif",
+                            fontFamily: "'Google Sans', sans-serif",
                           }}
                         >
                           {col}
@@ -903,7 +903,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                             flexShrink: 0,
                             fontSize: "0.875rem",
                             lineHeight: 1.5,
-                            fontFamily: "'Stem', sans-serif",
+                            fontFamily: "'Google Sans', sans-serif",
                           }}
                         >
                           :
@@ -916,7 +916,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                             wordBreak: "break-word",
                             fontSize: "0.875rem",
                             lineHeight: 1.5,
-                            fontFamily: "'Stem', sans-serif",
+                            fontFamily: "'Google Sans', sans-serif",
                           }}
                         >
                           {cellValue}
@@ -945,7 +945,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                     const cell = row[idx];
                     const cellValue = cell?.display ?? cell?.value ?? cell;
                     return (
-                      <Box key={idx} sx={{ display: "flex", alignItems: "flex-start", gap: 1, fontSize: "0.875rem", fontFamily: "'Stem', sans-serif" }}>
+                      <Box key={idx} sx={{ display: "flex", alignItems: "flex-start", gap: 1, fontSize: "0.875rem", fontFamily: "'Google Sans', sans-serif" }}>
                         <Typography
                           sx={{
                             fontWeight: 500,
@@ -956,7 +956,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                             flexShrink: 0,
                             fontSize: "0.875rem",
                             lineHeight: 1.5,
-                            fontFamily: "'Stem', sans-serif",
+                            fontFamily: "'Google Sans', sans-serif",
                           }}
                         >
                           {col}
@@ -970,7 +970,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                             flexShrink: 0,
                             fontSize: "0.875rem",
                             lineHeight: 1.5,
-                            fontFamily: "'Stem', sans-serif",
+                            fontFamily: "'Google Sans', sans-serif",
                           }}
                         >
                           :
@@ -983,7 +983,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                             wordBreak: "break-word",
                             fontSize: "0.875rem",
                             lineHeight: 1.5,
-                            fontFamily: "'Stem', sans-serif",
+                            fontFamily: "'Google Sans', sans-serif",
                           }}
                         >
                           {cellValue}
@@ -1004,7 +1004,7 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
                 background: "var(--bg-glass)",
                 borderRadius: "16px",
                 border: "1px solid var(--border-color)",
-                fontFamily: "'Stem', sans-serif",
+                fontFamily: "'Google Sans', sans-serif",
               }}
             >
               No data found
@@ -1031,9 +1031,9 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
           overflowX: "auto",
           maxWidth: "100%",
           width: "100%",
-          fontFamily: "'Stem', sans-serif",
+          fontFamily: "'Google Sans', sans-serif",
           "& *": {
-            fontFamily: "'Stem', sans-serif",
+            fontFamily: "'Google Sans', sans-serif",
           },
           "& .MuiTablePagination-toolbar": {
             paddingLeft: { xs: 1, sm: 2 },
@@ -1045,13 +1045,13 @@ export default function DataTable({ columns, rows, toolbarLeft, nonSortableColum
           "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
             fontSize: { xs: "0.725rem", sm: "0.875rem" },
             margin: 0,
-            fontFamily: "'Stem', sans-serif",
+            fontFamily: "'Google Sans', sans-serif",
           },
           "& .MuiSelect-select": {
             fontSize: { xs: "0.725rem", sm: "0.875rem" },
             paddingLeft: { xs: "4px", sm: "8px" },
             paddingRight: { xs: "20px !important", sm: "24px !important" },
-            fontFamily: "'Stem', sans-serif",
+            fontFamily: "'Google Sans', sans-serif",
           },
           "& .MuiTablePagination-actions": {
             marginLeft: { xs: "auto", sm: 2 },

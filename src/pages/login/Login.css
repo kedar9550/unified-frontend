@@ -16,7 +16,7 @@
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  font-family: 'Stem', sans-serif;
+  font-family: 'Google Sans', sans-serif;
   background: var(--bg-main);
 }
 
@@ -183,7 +183,7 @@
   border-radius: 40px;
   background: transparent;
   font-size: 0.95rem;
-  font-family: 'Stem', sans-serif;
+  font-family: 'Google Sans', sans-serif;
   color: var(--text-primary);
   outline: none;
   transition: all 0.2s ease-in-out;
@@ -257,7 +257,7 @@
   border-radius: 40px;
   background: transparent;
   font-size: 0.95rem;
-  font-family: 'Stem', sans-serif;
+  font-family: 'Google Sans', sans-serif;
   color: var(--text-primary);
   cursor: pointer;
   display: flex;
@@ -540,7 +540,7 @@
   color: #fff;
   font-size: 0.86rem;
   font-weight: 700;
-  font-family: 'Stem', sans-serif;
+  font-family: 'Google Sans', sans-serif;
   letter-spacing: 1.4px;
   cursor: pointer;
   box-shadow: none;
@@ -735,7 +735,7 @@
   color: #fff;
   font-size: 0.8rem;
   font-weight: 700;
-  font-family: 'Stem', sans-serif;
+  font-family: 'Google Sans', sans-serif;
   letter-spacing: 1.4px;
   cursor: pointer;
   transition: background 0.25s, transform 0.2s;

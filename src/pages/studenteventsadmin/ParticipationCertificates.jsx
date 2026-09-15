@@ -129,7 +129,7 @@ const AutoFitParticipantName = ({ name, roll }) => {
       <Typography
         ref={textRef}
         sx={{
-          fontFamily: '"Stem", sans-serif',
+          fontFamily: '"Google Sans", sans-serif',
           fontWeight: 800,
           fontSize: '2.8cqh',
           color: '#E75A24',
@@ -828,7 +828,7 @@ const ParticipationCertificates = () => {
                           mr: 1.5
                         }}>
                           <Typography sx={{
-                            fontFamily: '"Stem", sans-serif',
+                            fontFamily: '"Google Sans", sans-serif',
                             fontWeight: 800,
                             fontSize: '2.1cqh',
                             color: '#E75A24',
@@ -977,7 +977,7 @@ const ParticipationCertificates = () => {
                       borderRadius: 0
                     }}>
                       <Typography sx={{
-                        fontFamily: '"Stem", "Arial", sans-serif',
+                        fontFamily: '"Google Sans", "Arial", sans-serif',
                         fontSize: '2cqh',
                         fontWeight: 200,
                         letterSpacing: '0.5px',

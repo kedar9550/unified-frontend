@@ -42,7 +42,7 @@ export const useVersionCheck = () => {
             id: "version-update-toast",
             duration: Infinity, // Don't auto dismiss
             style: {
-              fontFamily: "'Stem', sans-serif",
+              fontFamily: "'Google Sans', sans-serif",
             },
             action: {
               label: "Update",
@@ -55,7 +55,7 @@ export const useVersionCheck = () => {
               background: "var(--gradient-primary)",
               color: "white",
               border: "none",
-              fontFamily: "'Stem', sans-serif",
+              fontFamily: "'Google Sans', sans-serif",
             }
           }
         );

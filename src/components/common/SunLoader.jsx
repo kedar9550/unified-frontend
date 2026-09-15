@@ -32,7 +32,7 @@ const SunLoader = ({ progress = 0, size = 180 }) => {
     const centerX = 960.6;
     const centerY = 542.5;
     const boxSize = 180;
-    const viewBox = `${centerX - boxSize/2} ${centerY - boxSize/2} ${boxSize} ${boxSize}`;
+    const viewBox = `${centerX - boxSize / 2} ${centerY - boxSize / 2} ${boxSize} ${boxSize}`;
 
     // Top values for liquid mapped to the 180x180 foreignObject size
     const topPosition = `calc(${100 - progress}% - 10px)`;
@@ -84,7 +84,7 @@ const SunLoader = ({ progress = 0, size = 180 }) => {
                 <g>
                     {/* Sun Liquid Fill */}
                     <g mask={`url(#sun-mask-${idSuffix})`}>
-                        <foreignObject x={centerX - boxSize/2} y={centerY - boxSize/2} width={boxSize} height={boxSize}>
+                        <foreignObject x={centerX - boxSize / 2} y={centerY - boxSize / 2} width={boxSize} height={boxSize}>
                             <div style={{ position: "relative", width: "100%", height: "100%" }}>
                                 <div className="wave-layer" style={{ top: topPosition, backgroundImage: `url("${isDarkMode ? goldBack : orangeBack}")`, animation: "slideRight 2s linear infinite", opacity: 0.8, marginTop: "-5px" }} />
                                 <div className="wave-layer" style={{ top: topPosition, backgroundImage: `url("${isDarkMode ? goldFront : orangeFront}")`, animation: "slideLeft 1.5s linear infinite", opacity: 0.95 }} />
@@ -101,7 +101,7 @@ const SunLoader = ({ progress = 0, size = 180 }) => {
                 <g>
                     {/* 'A' Liquid Fill */}
                     <g clipPath={`url(#a-clip-${idSuffix})`}>
-                        <foreignObject x={centerX - boxSize/2} y={centerY - boxSize/2} width={boxSize} height={boxSize}>
+                        <foreignObject x={centerX - boxSize / 2} y={centerY - boxSize / 2} width={boxSize} height={boxSize}>
                             <div style={{ position: "relative", width: "100%", height: "100%" }}>
                                 <div className="wave-layer" style={{ top: topPosition, backgroundImage: `url("${isDarkMode ? goldBack : blueBack}")`, animation: "slideRight 2s linear infinite", opacity: 0.8, marginTop: "-5px" }} />
                                 <div className="wave-layer" style={{ top: topPosition, backgroundImage: `url("${isDarkMode ? goldFront : blueFront}")`, animation: "slideLeft 1.5s linear infinite", opacity: 0.95 }} />

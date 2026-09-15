@@ -172,7 +172,7 @@ const Payslips = () => {
         const targetYear = row.year || "";
 
         return `
-            <div style="padding: 25px; background: #ffffff; color: #000000; font-family: 'Stem', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; width: 720px; margin: 0 auto; box-sizing: border-box;">
+            <div style="padding: 25px; background: #ffffff; color: #000000; font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; width: 720px; margin: 0 auto; box-sizing: border-box;">
                 <div style="text-align: center; margin-bottom: 18px;">
                     <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 6px;">
                         <img src="/AUS Long Logo.png" alt="Aditya University Logo" style="max-width: 100%; height: 58px; width: auto; object-fit: contain;" />
@@ -750,7 +750,7 @@ const Payslips = () => {
                                 p: { xs: 1.5, sm: 3 },
                                 bgcolor: "#ffffff",
                                 color: "#000000 !important",
-                                fontFamily: "'Stem', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                                fontFamily: "'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                                 maxWidth: "800px",
                                 margin: "0 auto",
                                 "& *": {
