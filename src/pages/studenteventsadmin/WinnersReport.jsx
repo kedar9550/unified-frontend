@@ -48,6 +48,7 @@ import DataTable from '../../components/data/DataTable';
 import { PageContainer, EmptyState } from '../../components/common/design-system';
 import StatCard from '../../components/common/StatCard';
 import StatCardGrid from '../../components/common/StatCardGrid';
+import CountBand from '../../components/common/design-system/CountBand';
 import API from '../../api/axios';
 import { fetchEventDepartments } from '../../api/eventDepartmentApi';
 import { toast } from 'sonner';
@@ -724,38 +725,44 @@ const WinnersReport = () => {
 
 
       {/* Summary Cards */}
-      <StatCardGrid sx={{ mt: 1, mb: 3 }}>
-        <StatCard
-          title="Total Winning Teams"
-          value={winningTeams.length}
-          color="#f59e0b"
-          icon={<TrophyIcon />}
+      <Box sx={{ mt: 1, mb: 3 }}>
+        <CountBand
+          items={[
+            {
+              id: '1st',
+              title: "1st Prize Teams",
+              value: firstPrizeTeams,
+              color: "blue",
+              icon: <TrophyIcon />
+            },
+            {
+              id: '2nd',
+              title: "2nd Prize Teams",
+              value: secondPrizeTeams,
+              color: "green",
+              icon: <MedalIcon />
+            },
+            {
+              id: '3rd',
+              title: "3rd Prize Teams",
+              value: thirdPrizeTeams,
+              color: "purple",
+              icon: <MedalIcon />
+            },
+            {
+              id: 'participants',
+              title: "Winning Participants",
+              value: totalWinningParticipants,
+              color: "red",
+              icon: <PeopleIcon />
+            }
+          ]}
+          total={{
+            title: "Total Winning Teams",
+            value: winningTeams.length
+          }}
         />
-        <StatCard
-          title="1st Prize Teams"
-          value={firstPrizeTeams}
-          color="#eab308"
-          icon={<TrophyIcon />}
-        />
-        <StatCard
-          title="2nd Prize Teams"
-          value={secondPrizeTeams}
-          color="#64748b"
-          icon={<MedalIcon />}
-        />
-        <StatCard
-          title="3rd Prize Teams"
-          value={thirdPrizeTeams}
-          color="#b45309"
-          icon={<MedalIcon />}
-        />
-        <StatCard
-          title="Winning Participants"
-          value={totalWinningParticipants}
-          color="#0284c7"
-          icon={<PeopleIcon />}
-        />
-      </StatCardGrid>
+      </Box>
 
       {/* Filter Controls Bar */}
       <Paper
@@ -854,12 +861,12 @@ const WinnersReport = () => {
               py: 0.8,
               fontWeight: 700,
               width: { xs: '100%', sm: 'auto' },
-              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              background: 'var(--gradient-primary)',
               color: '#ffffff',
-              boxShadow: '0 4px 14px rgba(245, 158, 11, 0.35)',
+              boxShadow: '0 4px 14px rgba(0, 0, 0, 0.15)',
               '&:hover': {
-                background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
-                boxShadow: '0 6px 20px rgba(245, 158, 11, 0.5)',
+                background: 'var(--gradient-primary-hover)',
+                boxShadow: '0 6px 20px rgba(0, 0, 0, 0.2)',
               },
               '&.Mui-disabled': {
                 background: 'rgba(148, 163, 184, 0.12)',
@@ -868,7 +875,7 @@ const WinnersReport = () => {
               },
             }}
           >
-            Download Excel ({filteredTeams.length})
+            Download Excel
           </Button>
         </Box>
       </Paper>

@@ -601,3 +601,208 @@ body.dark-mode .mobile-search-input-box .MuiInputBase-input {
   border: none !important;
   outline: none !important;
 }
+body.global-loading-active .MuiCircularProgress-root {
+  display: none !important;
+}
+
+/* =========================================
+   COUNTBAND DESIGN SYSTEM COMPONENT
+   ========================================= */
+
+.count-band-wrapper {
+  display: flex;
+  align-items: stretch;
+  background: white;
+  border-radius: 100px;
+  padding: 6px;
+  width: 100%;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.04);
+  font-family: 'Google Sans', sans-serif;
+}
+
+.count-band-segment {
+  display: flex;
+  align-items: center;
+  border-radius: 100px;
+  padding: 12px 24px 12px 12px;
+  position: relative;
+  flex: 1;
+  transition: all 0.3s ease;
+  box-shadow: 4px 0 16px rgba(0,0,0,0.06);
+}
+
+.count-band-segment:not(:first-child) {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  margin-left: -48px;
+  padding-left: 60px;
+}
+
+/* Colors */
+.segment-blue { background-color: #F0F4FF; }
+.segment-blue .segment-title { color: #64748B; }
+
+.segment-purple { background-color: #F4EFFF; }
+.segment-purple .segment-title { color: #64748B; }
+
+.segment-green { background-color: #E6FBF0; }
+.segment-green .segment-title { color: #64748B; }
+
+.segment-red { background-color: #FEEDED; }
+.segment-red .segment-title { color: #64748B; }
+
+.segment-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+}
+
+.segment-icon-wrapper svg {
+  fill: url(#countband-primary-gradient);
+}
+
+.gradient-start-stop { stop-color: var(--gradient-start); }
+.gradient-mid-stop { stop-color: var(--gradient-mid); }
+.gradient-end-stop { stop-color: var(--gradient-end); }
+
+.segment-text-wrapper {
+  display: flex;
+  flex-direction: column;
+  margin-left: 14px;
+  flex-grow: 1;
+}
+
+.segment-title {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.segment-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0F172A;
+  line-height: 1;
+}
+
+/* Total Segment */
+.count-band-total {
+  display: flex;
+  align-items: center;
+  padding: 12px 24px 12px 12px;
+  margin-left: -48px;
+  padding-left: 68px;
+  position: relative;
+  flex-shrink: 0;
+  background: white;
+  border-radius: 100px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.total-divider {
+  width: 1px;
+  height: 40px;
+  background-color: #E2E8F0;
+  margin-right: 20px;
+}
+
+.total-text-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.total-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748B;
+  margin-bottom: 2px;
+}
+
+.total-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0F172A;
+  line-height: 1;
+}
+
+/* Mobile Responsive */
+@media (max-width: 1200px) {
+  .count-band-wrapper {
+    flex-direction: column;
+    border-radius: 24px;
+    padding: 12px;
+    gap: 8px;
+  }
+  
+  .count-band-segment, .count-band-segment:not(:first-child) {
+    width: 100%;
+    margin-left: 0;
+    padding: 12px 20px;
+    border-radius: 100px;
+  }
+  
+  .count-band-total {
+    width: 100%;
+    margin-left: 0;
+    padding: 12px 20px;
+    border-radius: 100px;
+    justify-content: center;
+  }
+  
+  .total-divider {
+    display: none;
+  }
+}
+
+/* Dark Mode Overrides */
+body.dark-mode .count-band-wrapper {
+  background: var(--bg-panel, #1E293B);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .count-band-total {
+  background: var(--bg-panel, #1E293B);
+}
+
+body.dark-mode .segment-blue { background-color: #223657; }
+body.dark-mode .segment-blue .segment-title { color: #94A3B8; }
+
+body.dark-mode .segment-purple { background-color: #2E3157; }
+body.dark-mode .segment-purple .segment-title { color: #94A3B8; }
+
+body.dark-mode .segment-green { background-color: #1C3F46; }
+body.dark-mode .segment-green .segment-title { color: #94A3B8; }
+
+body.dark-mode .segment-red { background-color: #3D2D3C; }
+body.dark-mode .segment-red .segment-title { color: #94A3B8; }
+
+body.dark-mode .segment-icon-wrapper {
+  background: #334155;
+  box-shadow: none;
+}
+
+body.dark-mode .segment-value,
+body.dark-mode .total-value {
+  color: #F8FAFC;
+}
+
+body.dark-mode .total-title {
+  color: #94A3B8;
+}
+
+body.dark-mode .total-divider {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .count-band-segment {
+  box-shadow: 4px 0 16px rgba(0,0,0,0.25);
+}
+

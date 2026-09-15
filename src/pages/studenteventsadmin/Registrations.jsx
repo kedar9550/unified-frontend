@@ -39,6 +39,7 @@ import { PageContainer, EmptyState } from '../../components/common/design-system
 import ActionButton from '../../components/common/ActionButton';
 import StatCard from '../../components/common/StatCard';
 import StatCardGrid from '../../components/common/StatCardGrid';
+import CountBand from '../../components/common/design-system/CountBand';
 import API from '../../api/axios';
 import { fetchEventDepartments } from '../../api/eventDepartmentApi';
 import { toast } from 'sonner';
@@ -606,34 +607,31 @@ const Registrations = () => {
         ]}
       />
 
-      {/* Metrics Cards */}
-      <StatCardGrid columns={{ xs: 1, sm: 2, md: 3 }} sx={{ mb: 3 }}>
-        <StatCard
-          title="Total Registrations"
-          value={filteredParticipants.length}
-          icon={<PeopleIcon />}
-          color="primary"
-          subtitle={
-            accommodationFilter !== 'ALL' || eventFilter !== 'ALL' || schoolFilter !== 'ALL' || departmentFilter !== 'ALL' || searchQuery
-              ? `Filtered from ${allParticipants.length}`
-              : 'Paid registrations'
-          }
-        />
-        <StatCard
-          title="Total Teams / Entries"
-          value={payments.length}
-          icon={<PaymentIcon />}
-          color="success"
-          subtitle="Distinct payment records"
-        />
-        <StatCard
-          title="Events Count"
-          value={uniqueEvents.length}
-          icon={<EventIcon />}
-          color="info"
-          subtitle={allEvents.length > 0 ? `Total available events: ${allEvents.length}` : 'Unique registered events'}
-        />
-      </StatCardGrid>
+        {/* Metrics Cards */}
+        <Box sx={{ mb: 3 }}>
+          <CountBand 
+            items={[
+              {
+                id: 1,
+                title: "Total Registrations",
+                value: filteredParticipants.length,
+                icon: <PeopleIcon />,
+                color: "blue"
+              },
+              {
+                id: 2,
+                title: "Total Teams / Entries",
+                value: payments.length,
+                icon: <PaymentIcon />,
+                color: "green"
+              }
+            ]}
+            total={{
+              title: "Events Count",
+              value: uniqueEvents.length
+            }}
+          />
+        </Box>
 
       {/* Filter Bar */}
       <Paper
