@@ -1250,7 +1250,15 @@ const AcademicStructure = () => {
                 value={activeTab}
                 onChange={(_, val) => setActiveTab(val)}
                 tabs={[
-                    { label: "Serving Departments & Specializations", icon: <Business /> },
+                    { 
+                        label: (
+                            <Box component="span">
+                                <Box component="span" sx={{ display: { xs: 'none', md: 'inline' } }}>Serving Departments & Specializations</Box>
+                                <Box component="span" sx={{ display: { xs: 'inline', md: 'none' } }}>Serving Dept & Specializations</Box>
+                            </Box>
+                        ), 
+                        icon: <Business /> 
+                    },
                     { label: "Programs", icon: <School /> },
                 ]}
             />

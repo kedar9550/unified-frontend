@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Box, Typography, Card, CardContent, Grid, Button, IconButton, Chip, Avatar, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Autocomplete, CircularProgress, Alert, InputAdornment, Paper, Tabs, Tab } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Search as SearchIcon, CloudUpload as CloudUploadIcon, PersonAdd as PersonAddIcon } from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Search as SearchIcon, CloudUpload as CloudUploadIcon, PersonAdd as PersonAddIcon, Star as StarIcon, People as PeopleIcon, AccountBalance as AccountBalanceIcon, Badge as BadgeIcon, Person as PersonIcon } from '@mui/icons-material';
 import { PageContainer } from '../../components/common/design-system';
 import PageHeader from '../../components/common/PageHeader';
+import CustomTabs from '../../components/common/CustomTabs';
+import ProfileCard from '../../components/common/ProfileCard';
 import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
@@ -508,32 +510,25 @@ const ReadOnlyCoordinators = ({ type }) => {
           <Typography variant="body1" color="text.secondary">No coordinators found.</Typography>
         </Box>
       ) : (
-        <Grid container spacing={3} sx={{ mt: 1 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3, mt: 1 }}>
           {coordinators.map(coord => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={coord.id}>
-              <Card sx={{
-                height: '100%', display: 'flex', flexDirection: 'column',
-                borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-                transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 8px 30px rgba(0,0,0,0.1)' }
-              }}>
-                <CardContent sx={{ flexGrow: 1, textAlign: 'center', pt: 4 }}>
-                  <CoordinatorPhoto employeeCode={coord.id} name={coord.name} sx={{ width: 80, height: 80, mx: 'auto', mb: 2, borderRadius: '50%', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', display: 'block' }} />
-                  <Typography variant="h6" fontWeight="700" gutterBottom>{coord.name}</Typography>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    {coord.designation} {coord.department && coord.department !== 'N/A' ? `- ${coord.department}` : ''}
-                  </Typography>
-                  <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', fontWeight: 600 }}>ID: {coord.id}</Typography>
-                  <Typography variant="caption" sx={{ display: 'block', mb: 2, color: 'text.secondary', fontWeight: 600 }}>Ph: {coord.phone}</Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: 'center', mt: 2 }}>
-                    {coord.labels.map(l => (
-                      <Chip key={l} label={l} size="small" color="primary" variant="outlined" sx={{ borderRadius: '8px', fontWeight: 600 }} />
-                    ))}
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+              <ProfileCard
+                key={coord.id}
+                name={coord.name}
+                role={`${coord.designation} ${coord.department && coord.department !== 'N/A' ? `- ${coord.department}` : ''}`}
+                employeeId={coord.id}
+                phone={coord.phone}
+                labels={coord.labels}
+                avatarComponent={
+                  <CoordinatorPhoto
+                    employeeCode={coord.id}
+                    name={coord.name}
+                    sx={{ width: 110, height: 110, border: '2px solid #fff', borderRadius: '50%' }}
+                  />
+                }
+              />
           ))}
-        </Grid>
+        </Box>
       )}
     </Box>
   );
@@ -555,15 +550,17 @@ const OrganisationCommittee = () => {
         title="Organisation Committee"
         subtitle="Manage Conveners, Members, and view Coordinators"
       />
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 3, backgroundColor: 'background.paper', borderRadius: 1 }}>
-        <Tabs value={tabValue} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
-          <Tab label="Conveners" />
-          <Tab label="Members" />
-          <Tab label="School Coordinators" />
-          <Tab label="Faculty Coordinators" />
-          <Tab label="Student Coordinators" />
-        </Tabs>
-      </Box>
+      <CustomTabs
+        value={tabValue}
+        onChange={handleTabChange}
+        tabs={[
+          { label: 'Conveners', icon: <StarIcon /> },
+          { label: 'Members', icon: <PeopleIcon /> },
+          { label: 'School Coordinators', icon: <AccountBalanceIcon /> },
+          { label: 'Faculty Coordinators', icon: <BadgeIcon /> },
+          { label: 'Student Coordinators', icon: <PersonIcon /> },
+        ]}
+      />
 
       <Box sx={{ mt: 3 }}>
         {tabValue === 0 && <CommitteeRoleManager role="Convener" />}

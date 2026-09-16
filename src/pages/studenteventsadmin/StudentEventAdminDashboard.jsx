@@ -24,6 +24,8 @@ import {
   CurrencyRupee as CurrencyRupeeIcon,
   TrendingUp as TrendingUpIcon,
   Hotel as HotelIcon,
+  Dashboard as DashboardIcon,
+  Event as EventIcon,
 } from '@mui/icons-material';
 import {
   BarChart,
@@ -376,10 +378,10 @@ const StudentEventAdminDashboard = () => {
         value={currentTab}
         onChange={(e, newValue) => setCurrentTab(newValue)}
         tabs={[
-          { label: 'All' },
-          { label: 'Schools' },
-          { label: 'Departments' },
-          { label: 'Events' },
+          { label: 'All', icon: <DashboardIcon /> },
+          { label: 'Schools', icon: <SchoolIcon /> },
+          { label: 'Departments', icon: <BusinessIcon /> },
+          { label: 'Events', icon: <EventIcon /> },
         ]}
       />
 

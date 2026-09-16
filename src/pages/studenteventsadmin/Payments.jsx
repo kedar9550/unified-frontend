@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Button,
+  Card,
   CircularProgress,
   Typography,
   Dialog,
@@ -20,7 +21,9 @@ import {
   TableRow,
   IconButton,
   ToggleButton,
-  ToggleButtonGroup
+  ToggleButtonGroup,
+  Menu,
+  MenuItem
 } from '@mui/material';
 import {
   ReceiptLong as ReceiptIcon,
@@ -38,9 +41,10 @@ import {
   CloudUpload as CloudUploadIcon,
   FileUpload as FileUploadIcon,
   Error as ErrorOutlineIcon,
+  Tune as TuneIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { TextField, MenuItem } from '@mui/material';
+import { TextField } from '@mui/material';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
 import { PageContainer, EmptyState } from '../../components/common/design-system';
@@ -72,6 +76,7 @@ const Payments = () => {
   const [departmentsDialogOpen, setDepartmentsDialogOpen] = useState(false);
   const [departmentsToView, setDepartmentsToView] = useState([]);
   const [activeTab, setActiveTab] = useState('ALL');
+  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
 
   const [addParticipantDialogOpen, setAddParticipantDialogOpen] = useState(false);
   const [selectedPaymentForAdd, setSelectedPaymentForAdd] = useState(null);
@@ -217,7 +222,7 @@ const Payments = () => {
   const fetchPayments = useCallback(async () => {
     setLoading(true);
     try {
-      const eventsRes = await API.get('/api/events', { skipGlobalLoader: true });
+      const eventsRes = await API.get('/api/events');
       const events = eventsRes.data?.events || [];
       setAllEvents(events);
 
@@ -234,7 +239,7 @@ const Payments = () => {
         allowedEventNames = userEvents.map(e => e.eventName);
       }
 
-      const response = await API.get('/api/razorpay/registrations', { skipGlobalLoader: true });
+      const response = await API.get('/api/razorpay/registrations');
       let fetchedPayments = response.data?.payments || [];
 
       if (allowedEventNames) {
@@ -454,8 +459,83 @@ const Payments = () => {
       <PageHeader
         title="VEDA Event Payments"
         subtitle="View Razorpay payment registrations and invoices for student events"
-        action={
-          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+      />
+
+      <Card sx={{
+        p: 2,
+        mb: 3,
+        borderRadius: '16px',
+        border: '1px solid',
+        borderColor: 'var(--border-color)',
+        bgcolor: 'var(--bg-paper)',
+        boxShadow: 'none'
+      }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center' }}>
+
+          {/* Left side: Filter Registrations */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+            {payments.length > 0 && (
+              <>
+                <Button
+                  variant="outlined"
+                  onClick={(e) => setFilterAnchorEl(e.currentTarget)}
+                  startIcon={<TuneIcon />}
+                  sx={{
+                    borderRadius: '24px',
+                    textTransform: 'none',
+                    px: 3,
+                    py: 0.75,
+                    fontWeight: 600,
+                    color: '#334155',
+                    borderColor: '#e2e8f0',
+                    bgcolor: '#fff',
+                    '&:hover': {
+                      bgcolor: '#f8fafc',
+                      borderColor: '#cbd5e1'
+                    }
+                  }}
+                >
+                  Filters
+                </Button>
+                <Menu
+                  anchorEl={filterAnchorEl}
+                  open={Boolean(filterAnchorEl)}
+                  onClose={() => setFilterAnchorEl(null)}
+                  PaperProps={{
+                    sx: { mt: 1, borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', minWidth: 220 }
+                  }}
+                >
+                  <MenuItem
+                    selected={activeTab === 'SUCCESSFUL'}
+                    onClick={() => { setActiveTab('SUCCESSFUL'); setFilterAnchorEl(null); }}
+                    sx={{ py: 1.5, fontWeight: activeTab === 'SUCCESSFUL' ? 600 : 400 }}
+                  >
+                    <CheckCircleIcon sx={{ fontSize: 18, mr: 1.5, color: activeTab === 'SUCCESSFUL' ? '#059669' : 'text.secondary' }} />
+                    Successful (Paid) ({payments.filter(p => (p.paymentStatus || (p.verified ? 'PAID' : 'PENDING')) === 'PAID').length})
+                  </MenuItem>
+                  <MenuItem
+                    selected={activeTab === 'ALL'}
+                    onClick={() => { setActiveTab('ALL'); setFilterAnchorEl(null); }}
+                    sx={{ py: 1.5, fontWeight: activeTab === 'ALL' ? 600 : 400 }}
+                  >
+                    <Box sx={{ width: 18, mr: 1.5 }} />
+                    All Registrations ({payments.length})
+                  </MenuItem>
+                  <MenuItem
+                    selected={activeTab === 'PENDING'}
+                    onClick={() => { setActiveTab('PENDING'); setFilterAnchorEl(null); }}
+                    sx={{ py: 1.5, fontWeight: activeTab === 'PENDING' ? 600 : 400 }}
+                  >
+                    <HourglassEmptyIcon sx={{ fontSize: 18, mr: 1.5, color: activeTab === 'PENDING' ? '#d97706' : 'text.secondary' }} />
+                    Pending / Incomplete ({payments.filter(p => (p.paymentStatus || (p.verified ? 'PAID' : 'PENDING')) !== 'PAID').length})
+                  </MenuItem>
+                </Menu>
+              </>
+            )}
+          </Box>
+
+          {/* Right side: Action Buttons */}
+          <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             <Button
               variant="contained"
               color="primary"
@@ -489,8 +569,8 @@ const Payments = () => {
               Refresh
             </ActionButton>
           </Box>
-        }
-      />
+        </Box>
+      </Card>
 
       {loading ? (
         <Box sx={{ display: 'grid', placeItems: 'center', py: 10 }}>
@@ -498,33 +578,7 @@ const Payments = () => {
         </Box>
       ) : (
         <Box sx={{ mt: 2 }}>
-          {payments.length > 0 && (
-            <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap', p: 1.5, bgcolor: '#f8fafc', borderRadius: '12px' }}>
-              <Typography variant="body2" sx={{ fontWeight: 700, color: '#475569' }}>Filter Registrations:</Typography>
-              <ToggleButtonGroup
-                value={activeTab}
-                exclusive
-                onChange={(e, newTab) => { if (newTab) setActiveTab(newTab); }}
-                size="small"
-                sx={{
-                  '& .MuiToggleButton-root': { textTransform: 'none', px: 2, py: 0.5, borderRadius: '20px !important', mx: 0.5, border: '1px solid #cbd5e1 !important', fontWeight: 600, color: '#64748b' },
-                  '& .Mui-selected': { bgcolor: '#f1f5f9', color: '#0f172a !important', borderColor: '#94a3b8 !important' },
-                  '& .MuiToggleButton-root[value="SUCCESSFUL"].Mui-selected': { bgcolor: '#ecfdf5', color: '#059669 !important', borderColor: '#10b981 !important' },
-                  '& .MuiToggleButton-root[value="PENDING"].Mui-selected': { bgcolor: '#fefce8', color: '#d97706 !important', borderColor: '#fbbf24 !important' }
-                }}
-              >
-                <ToggleButton value="SUCCESSFUL">
-                  <CheckCircleIcon sx={{ fontSize: 16, mr: 0.5 }} /> Successful (Paid) ({payments.filter(p => (p.paymentStatus || (p.verified ? 'PAID' : 'PENDING')) === 'PAID').length})
-                </ToggleButton>
-                <ToggleButton value="ALL">
-                  All Registrations ({payments.length})
-                </ToggleButton>
-                <ToggleButton value="PENDING">
-                  Pending / Incomplete ({payments.filter(p => (p.paymentStatus || (p.verified ? 'PAID' : 'PENDING')) !== 'PAID').length})
-                </ToggleButton>
-              </ToggleButtonGroup>
-            </Box>
-          )}
+
 
           {filteredPayments.length === 0 ? (
             <EmptyState
@@ -1193,12 +1247,12 @@ const Payments = () => {
                       if (reportTabFilter === 'ERRORS') return res.status === 'ERROR';
                       return true;
                     }).length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={6} align="center" sx={{ py: 3, color: 'text.secondary' }}>
-                          No records found for this filter tab.
-                        </TableCell>
-                      </TableRow>
-                    )}
+                        <TableRow>
+                          <TableCell colSpan={6} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                            No records found for this filter tab.
+                          </TableCell>
+                        </TableRow>
+                      )}
                   </TableBody>
                 </Table>
               </TableContainer>

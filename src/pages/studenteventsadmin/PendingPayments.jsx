@@ -850,15 +850,16 @@ const PendingPayments = () => {
         sx={{
           p: { xs: 2, md: 2.5 },
           borderRadius: '18px',
-          border: '1px solid #dfe7f2',
-          background: 'linear-gradient(180deg, #f8fafc 0%, #f2f6fb 100%)',
-          boxShadow: '0 10px 30px rgba(15, 23, 42, 0.04)',
+          border: '1px solid',
+          borderColor: 'var(--border-color)',
+          bgcolor: 'var(--bg-paper)',
+          boxShadow: 'none',
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1.25 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-            <FilterAltIcon sx={{ fontSize: 20, color: '#3b4d8b' }} />
-            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#1e293b', letterSpacing: '0.01em' }}>
+            <FilterAltIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '0.01em' }}>
               Filter Pending Registrations
             </Typography>
             <Chip
@@ -979,10 +980,10 @@ const PendingPayments = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon sx={{ color: '#94a3b8', fontSize: 18 }} />
+                    <SearchIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
                   </InputAdornment>
                 ),
-                sx: { borderRadius: '12px', background: '#fff', height: '42px' }
+                sx: { borderRadius: '12px', height: '42px' }
               }}
             />
           </Grid>
@@ -1002,10 +1003,10 @@ const PendingPayments = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SchoolIcon sx={{ color: '#94a3b8', fontSize: 18 }} />
+                    <SchoolIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
                   </InputAdornment>
                 ),
-                sx: { borderRadius: '12px', background: '#fff', height: '42px' }
+                sx: { borderRadius: '12px', height: '42px' }
               }}
             >
               <MenuItem value=""><em>All Schools</em></MenuItem>
@@ -1027,10 +1028,10 @@ const PendingPayments = () => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <EventIcon sx={{ color: '#94a3b8', fontSize: 18 }} />
+                    <EventIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
                   </InputAdornment>
                 ),
-                sx: { borderRadius: '12px', background: '#fff', height: '42px' }
+                sx: { borderRadius: '12px', height: '42px' }
               }}
             >
               <MenuItem value=""><em>All Events</em></MenuItem>
