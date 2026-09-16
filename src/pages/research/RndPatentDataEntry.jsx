@@ -33,6 +33,7 @@ export default function RndPatentDataEntry() {
     applicantName: "",
     patentName: "",
     patentFiledInInstitution: "Yes",
+    isInstitutionRecord: "No",
     area: "",
     filingNo: "",
     dateOfFiling: "",
@@ -68,6 +69,17 @@ export default function RndPatentDataEntry() {
       const newForm = { ...p, [k]: val };
       if (k === "isStudentsInvolved" && val === "Yes") {
         newForm.applyIncentive = "No";
+      }
+      if (k === "isInstitutionRecord") {
+        if (val === "Yes") {
+          newForm.applyIncentive = "No";
+          newForm.appraisalEligible = "No";
+          newForm.approvedAmount = "";
+        } else {
+          newForm.applyIncentive = "";
+          newForm.appraisalEligible = "";
+          newForm.approvedAmount = "";
+        }
       }
       return newForm;
     });
@@ -280,6 +292,7 @@ export default function RndPatentDataEntry() {
       fd.append("patentFiledCountry", form.patentFiledCountry === 'Others' ? form.customCountryName : form.patentFiledCountry);
       fd.append("coInventors", JSON.stringify(coInventorsList));
       fd.append("isStudentsInvolved", form.isStudentsInvolved || "No");
+      fd.append("isInstitutionRecord", form.isInstitutionRecord || "No");
       fd.append("applyIncentive", form.applyIncentive);
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
       fd.append("appraisalEligible", form.appraisalEligible || "Yes");
@@ -297,9 +310,10 @@ export default function RndPatentDataEntry() {
       await API.post("/api/research/patent", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Patent record added directly for faculty!");
       setForm({
-        title: "", applicantName: "", patentName: "", patentFiledInInstitution: "Yes", area: "", filingNo: "", dateOfFiling: "",
-        status: "", patentFiledCountry: "India", customCountryName: "", applyingSeedGrant: "No", isStudentsInvolved: "No", applyIncentive: "No",
-        totalInventors: 1, otherInventors: [], appraisalEligible: "Yes", approvedAmount: ""
+        title: "", applicantName: "", patentName: "", patentFiledInInstitution: "Yes", isInstitutionRecord: "No",
+        area: "", filingNo: "", dateOfFiling: "",
+        status: "", patentFiledCountry: "India", customCountryName: "", applyingSeedGrant: "No", isStudentsInvolved: "No", applyIncentive: "",
+        totalInventors: 1, otherInventors: [], appraisalEligible: "", approvedAmount: ""
       });
       setFiles({ eFilingReceipt: null, form1: null });
       setTargetFacultyEmpId("");
@@ -359,299 +373,328 @@ export default function RndPatentDataEntry() {
 
           {/* Details of the Patent */}
           <FormCard title="Patent Details">
-        <Grid2>
-          <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, p: 2, background: "var(--bg-panel)", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-              <Typography sx={{ ...labelStyle, mb: 0, fontWeight: 700, color: "var(--text-primary)" }}>Is Patent filed in Institution Name? *</Typography>
-              <RadioGroup
-                row
-                value={form.patentFiledInInstitution || "Yes"}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setForm(prev => ({
-                    ...prev,
-                    patentFiledInInstitution: val,
-                    patentName: val === "Yes" ? (PATENT_APPLICANTS.includes(prev.patentName) ? prev.patentName : "") : (targetFacultyName || prev.patentName || "")
-                  }));
-                }}
-              >
-                <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
-                <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
-              </RadioGroup>
-            </Box>
-          </Box>
-
-          <Box>
-            <Typography sx={labelStyle}>Academic Year :</Typography>
-            <Select fullWidth size="small" value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
-              {academicYears.map(y => <MenuItem key={y._id} value={y._id}>{y.yearRange || y.year}</MenuItem>)}
-            </Select>
-          </Box>
-          <Box>
-            <Typography sx={labelStyle}>Name of the Applicant in Patent : <span style={{ color: 'red' }}>*</span></Typography>
-            {(form.patentFiledInInstitution || "Yes") === "Yes" ? (
-              <Select size="small" fullWidth displayEmpty value={form.patentName} onChange={set("patentName")}>
-                <MenuItem value="" disabled>--Select--</MenuItem>
-                {PATENT_APPLICANTS.map((option) => (
-                  <MenuItem key={option} value={option}>{option}</MenuItem>
-                ))}
-              </Select>
-            ) : (
-              <TextField
-                size="small"
-                fullWidth
-                value={form.patentName}
-                onChange={set("patentName")}
-                placeholder="Enter Applicant Name in Patent"
-              />
-            )}
-          </Box>
-          <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-            <Typography sx={labelStyle}>Title of the Patent : <span style={{ color: 'red' }}>*</span></Typography>
-            <TextField size="small" fullWidth value={form.title} onChange={set("title")} placeholder="Full title of the patent" />
-          </Box>
-          <Box>
-            <Typography sx={labelStyle}>Area of Patent :</Typography>
-            <TextField size="small" fullWidth value={form.area} onChange={set("area")} placeholder="e.g. AI / Embedded Systems" />
-          </Box>
-          <Box>
-            <Typography sx={labelStyle}>Patent Filing No : <span style={{ color: 'red' }}>*</span></Typography>
-            <TextField
-              size="small"
-              fullWidth
-              value={form.filingNo}
-              onChange={(e) => {
-                const val = e.target.value;
-                if (val === "" || /^[A-Za-z0-9\/.-]+$/.test(val)) {
-                  setForm(p => ({ ...p, filingNo: val }));
-                }
-              }}
-              placeholder="e.g. 202341012345"
-            />
-          </Box>
-          <Box>
-            <Typography sx={labelStyle}>Date of Filing : <span style={{ color: 'red' }}>*</span></Typography>
-            <TextField size="small" fullWidth type="date" value={form.dateOfFiling} onChange={set("dateOfFiling")} slotProps={{ inputLabel: { shrink: true } }} />
-          </Box>
-          <Box>
-            <Typography sx={labelStyle}>Status of Patent Application :</Typography>
-            <Select size="small" fullWidth displayEmpty value={form.status} onChange={set("status")}>
-              <MenuItem value="">--Select--</MenuItem>
-              {PATENT_STATUSES.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
-            </Select>
-          </Box>
-          <Box>
-            <Typography sx={labelStyle}>Patent Filed Country :</Typography>
-            <Select size="small" fullWidth value={form.patentFiledCountry} onChange={set("patentFiledCountry")}>
-              <MenuItem value="India">India</MenuItem>
-              <MenuItem value="Others">Others</MenuItem>
-            </Select>
-          </Box>
-          {form.patentFiledCountry === 'Others' && (
-            <Box>
-              <Typography sx={labelStyle}>Enter Country Name :</Typography>
-              <TextField size="small" fullWidth value={form.customCountryName} onChange={set("customCountryName")} placeholder="e.g. USA, UK" />
-            </Box>
-          )}
-          <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-            <Typography sx={{ ...labelStyle, mb: 0 }}>Are students involved in this work as co-inventors? *</Typography>
-            <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={handleStudentsInvolvedChange}>
-              <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
-              <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
-            </RadioGroup>
-          </Box>
-          <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-            <Typography sx={labelStyle}>Total Number of Inventors :</Typography>
-            <TextField
-              size="small"
-              type="number"
-              value={form.totalInventors}
-              onChange={set("totalInventors")}
-              slotProps={{ htmlInput: { min: 1 } }}
-              sx={{ maxWidth: 250 }}
-            />
-          </Box>
-          {parseInt(form.totalInventors) > 1 && (
-            <Box sx={{ gridColumn: { sm: "1 / -1" }, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-              <Typography sx={{ ...labelStyle, mb: 1, fontWeight: 700 }}>Name & Affiliation of Co-Inventor(s) :</Typography>
-              {form.otherInventors.map((ca) => (
-                <Box key={ca.inventorPosition} sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)" }}>
-                  <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", sm: "nowrap" }, alignItems: "center" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "30px", height: "30px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, flexShrink: 0 }}>
-                      {ca.inventorPosition}
-                    </Box>
-
-                    {/* Co-Inventor Type (if students are involved) */}
-                    {form.isStudentsInvolved === "Yes" && (
-                      <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "130px" } }}>
-                        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVENTOR TYPE</Typography>
-                        <Select
-                          size="small"
-                          fullWidth
-                          displayEmpty
-                          value={ca.CoInventorType || "faculty"}
-                          onChange={(e) => handleCoInventorChange(ca.inventorPosition, "CoInventorType", e.target.value)}
-                          MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}
-                        >
-                          <MenuItem value="faculty">Faculty</MenuItem>
-                          <MenuItem value="student">Student</MenuItem>
-                        </Select>
-                      </Box>
-                    )}
-
-                    <Box sx={{ flex: 1, minWidth: "150px" }}>
-                      <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE</Typography>
-                      <Select
-                        size="small"
-                        fullWidth
-                        value={ca.CoInventorType === "student" ? "Aditya University" : ca.affiliationType}
-                        onChange={(e) => handleCoInventorChange(ca.inventorPosition, "affiliationType", e.target.value)}
-                        displayEmpty
-                      >
-                        <MenuItem value="" disabled>Select Affiliation</MenuItem>
-                        <MenuItem value="Aditya University">Aditya University</MenuItem>
-                        {ca.CoInventorType !== "student" && (
-                          <MenuItem value="Others">Others</MenuItem>
-                        )}
-                      </Select>
-                    </Box>
-
-                    {ca.affiliationType === "Aditya University" ? (
-                      ca.CoInventorType === "student" ? (
-                        <>
-                          <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
-                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT ROLL NO</Typography>
-                            <TextField
-                              size="small"
-                              fullWidth
-                              value={ca.studentId || ""}
-                              onChange={(e) => handleCoInventorChange(ca.inventorPosition, "studentId", e.target.value)}
-                              placeholder="e.g. 21A91A0501"
-                            />
-                          </Box>
-                          <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
-                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVENTOR NAME</Typography>
-                            <TextField
-                              size="small"
-                              fullWidth
-                              value={ca.name}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (!/\d/.test(val)) handleCoInventorChange(ca.inventorPosition, "name", val);
-                              }}
-                              placeholder="Student Name"
-                            />
-                          </Box>
-                        </>
-                      ) : (
-                        <>
-                          <Box sx={{ flex: 1, minWidth: "120px" }}>
-                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
-                            <TextField
-                              size="small"
-                              fullWidth
-                              value={ca.empId}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (/^\d*$/.test(val)) handleCoInventorChange(ca.inventorPosition, "empId", val);
-                              }}
-                              placeholder="e.g. 5741"
-                            />
-                          </Box>
-                          <Box sx={{ flex: 2, minWidth: "200px" }}>
-                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVENTOR NAME</Typography>
-                            <TextField
-                              size="small"
-                              fullWidth
-                              value={ca.name}
-                              disabled
-                              placeholder="Auto-fetched"
-                              sx={{ background: "rgba(0,0,0,0.02)" }}
-                            />
-                          </Box>
-                        </>
-                      )
-                    ) : (
-                      <>
-                        <Box sx={{ flex: 1, minWidth: "180px" }}>
-                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVENTOR NAME</Typography>
-                          <TextField
-                            size="small"
-                            fullWidth
-                            value={ca.name}
-                            onChange={(e) => handleCoInventorChange(ca.inventorPosition, "name", e.target.value)}
-                            placeholder="Full Name"
-                          />
-                        </Box>
-                        <Box sx={{ flex: 2, minWidth: "200px" }}>
-                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION</Typography>
-                          <TextField
-                            size="small"
-                            fullWidth
-                            value={ca.affiliation}
-                            onChange={(e) => handleCoInventorChange(ca.inventorPosition, "affiliation", e.target.value)}
-                            placeholder="Organization / College"
-                          />
-                        </Box>
-                      </>
-                    )}
-                  </Box>
+            <Grid2>
+              {/* Is this an Institution Record? */}
+              <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, p: 2, background: "var(--bg-panel)", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                  <Typography sx={{ ...labelStyle, mb: 0, fontWeight: 700, color: "var(--text-primary)" }}>Is this an Institution Record? *</Typography>
+                  <RadioGroup row value={form.isInstitutionRecord} onChange={set("isInstitutionRecord")}>
+                    <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+                    <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+                  </RadioGroup>
+                  {form.isInstitutionRecord === "Yes" && (
+                    <Typography variant="caption" sx={{ color: "var(--color-warning, #f59e0b)", fontWeight: 600 }}>
+                      ⚠ Institution Record: Apply Incentive and Appraisal Eligibility are Not Applicable
+                    </Typography>
+                  )}
                 </Box>
-              ))}
-            </Box>
-          )}
-        </Grid2>
-      </FormCard>
+              </Box>
 
-      {/* Attachments Section */}
-      <FormCard title="Attachments & Additional Information" icon={<AttachFile sx={{ color: "var(--color-primary)" }} />}>
-        <Grid2>
-          <FileField label="e-Filing Receipt Document:" onChange={(e) => setFiles(p => ({ ...p, eFilingReceipt: e.target.files[0] }))} />
-          <FileField label="Form-1 Document:" onChange={(e) => setFiles(p => ({ ...p, form1: e.target.files[0] }))} />
-          <Box>
-            <Typography sx={labelStyle}>Applying as a Seed Grant Work?</Typography>
-            <Select size="small" fullWidth value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")}>
-              <MenuItem value="Yes">Yes</MenuItem>
-              <MenuItem value="No">No</MenuItem>
-            </Select>
-          </Box>
-          <Box>
-            <Typography sx={labelStyle}>Apply Incentive? : *</Typography>
-            <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"}>
-              <MenuItem value="" disabled>Select Option</MenuItem>
-              <MenuItem value="Yes">Yes</MenuItem>
-              <MenuItem value="No">No</MenuItem>
-            </Select>
-          </Box>
-          {form.applyIncentive === "Yes" && (
-            <Box>
-              <Typography sx={labelStyle}>Approved Incentive Amount (₹) : *</Typography>
-              <TextField
-                size="small"
-                fullWidth
-                type="number"
-                placeholder="Enter approved amount"
-                value={form.approvedAmount}
-                onChange={set("approvedAmount")}
-              />
-            </Box>
-          )}
-          <Box>
-            <Typography sx={labelStyle}>Article Eligibility for Appraisal : *</Typography>
-            <Select size="small" fullWidth displayEmpty value={form.appraisalEligible} onChange={set("appraisalEligible")}>
-              <MenuItem value="" disabled>Select Option</MenuItem>
-              <MenuItem value="Yes">Yes</MenuItem>
-              <MenuItem value="No">No</MenuItem>
-            </Select>
-          </Box>
-        </Grid2>
-      </FormCard>
+              {/* Is Patent filed in Institution Name? */}
+              <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, p: 2, background: "var(--bg-panel)", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                  <Typography sx={{ ...labelStyle, mb: 0, fontWeight: 700, color: "var(--text-primary)" }}>Is Patent filed in Institution Name? *</Typography>
+                  <RadioGroup
+                    row
+                    value={form.patentFiledInInstitution || "Yes"}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setForm(prev => ({
+                        ...prev,
+                        patentFiledInInstitution: val,
+                        patentName: val === "Yes" ? (PATENT_APPLICANTS.includes(prev.patentName) ? prev.patentName : "") : (targetFacultyName || prev.patentName || "")
+                      }));
+                    }}
+                  >
+                    <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+                    <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+                  </RadioGroup>
+                </Box>
+              </Box>
 
-      <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
-        <SubmitBtn onClick={handleSubmit} disabled={loading || !isTargetFacultyValid}>
-          {loading ? "Submitting..." : "Submit Patent Record Directly"}
-        </SubmitBtn>
-      </Box>
+              <Box>
+                <Typography sx={labelStyle}>Academic Year :</Typography>
+                <Select fullWidth size="small" value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
+                  {academicYears.map(y => <MenuItem key={y._id} value={y._id}>{y.yearRange || y.year}</MenuItem>)}
+                </Select>
+              </Box>
+              <Box>
+                <Typography sx={labelStyle}>Name of the Applicant in Patent : <span style={{ color: 'red' }}>*</span></Typography>
+                {(form.patentFiledInInstitution || "Yes") === "Yes" ? (
+                  <Select size="small" fullWidth displayEmpty value={form.patentName} onChange={set("patentName")}>
+                    <MenuItem value="" disabled>--Select--</MenuItem>
+                    {PATENT_APPLICANTS.map((option) => (
+                      <MenuItem key={option} value={option}>{option}</MenuItem>
+                    ))}
+                  </Select>
+                ) : (
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={form.patentName}
+                    onChange={set("patentName")}
+                    placeholder="Enter Applicant Name in Patent"
+                  />
+                )}
+              </Box>
+              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                <Typography sx={labelStyle}>Title of the Patent : <span style={{ color: 'red' }}>*</span></Typography>
+                <TextField size="small" fullWidth value={form.title} onChange={set("title")} placeholder="Full title of the patent" />
+              </Box>
+              <Box>
+                <Typography sx={labelStyle}>Area of Patent :</Typography>
+                <TextField size="small" fullWidth value={form.area} onChange={set("area")} placeholder="e.g. AI / Embedded Systems" />
+              </Box>
+              <Box>
+                <Typography sx={labelStyle}>Patent Filing No : <span style={{ color: 'red' }}>*</span></Typography>
+                <TextField
+                  size="small"
+                  fullWidth
+                  value={form.filingNo}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "" || /^[A-Za-z0-9\/.-]+$/.test(val)) {
+                      setForm(p => ({ ...p, filingNo: val }));
+                    }
+                  }}
+                  placeholder="e.g. 202341012345"
+                />
+              </Box>
+              <Box>
+                <Typography sx={labelStyle}>Date of Filing : <span style={{ color: 'red' }}>*</span></Typography>
+                <TextField size="small" fullWidth type="date" value={form.dateOfFiling} onChange={set("dateOfFiling")} slotProps={{ inputLabel: { shrink: true } }} />
+              </Box>
+              <Box>
+                <Typography sx={labelStyle}>Status of Patent Application :</Typography>
+                <Select size="small" fullWidth displayEmpty value={form.status} onChange={set("status")}>
+                  <MenuItem value="">--Select--</MenuItem>
+                  {PATENT_STATUSES.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
+                </Select>
+              </Box>
+              <Box>
+                <Typography sx={labelStyle}>Patent Filed Country :</Typography>
+                <Select size="small" fullWidth value={form.patentFiledCountry} onChange={set("patentFiledCountry")}>
+                  <MenuItem value="India">India</MenuItem>
+                  <MenuItem value="Others">Others</MenuItem>
+                </Select>
+              </Box>
+              {form.patentFiledCountry === 'Others' && (
+                <Box>
+                  <Typography sx={labelStyle}>Enter Country Name :</Typography>
+                  <TextField size="small" fullWidth value={form.customCountryName} onChange={set("customCountryName")} placeholder="e.g. USA, UK" />
+                </Box>
+              )}
+              <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                <Typography sx={{ ...labelStyle, mb: 0 }}>Are students involved in this work as co-inventors? *</Typography>
+                <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={handleStudentsInvolvedChange}>
+                  <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+                  <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+                </RadioGroup>
+              </Box>
+              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                <Typography sx={labelStyle}>Total Number of Inventors :</Typography>
+                <TextField
+                  size="small"
+                  type="number"
+                  value={form.totalInventors}
+                  onChange={set("totalInventors")}
+                  slotProps={{ htmlInput: { min: 1 } }}
+                  sx={{ maxWidth: 250 }}
+                />
+              </Box>
+              {parseInt(form.totalInventors) > 1 && (
+                <Box sx={{ gridColumn: { sm: "1 / -1" }, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)" }}>
+                  <Typography sx={{ ...labelStyle, mb: 1, fontWeight: 700 }}>Name & Affiliation of Co-Inventor(s) :</Typography>
+                  {form.otherInventors.map((ca) => (
+                    <Box key={ca.inventorPosition} sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)" }}>
+                      <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", sm: "nowrap" }, alignItems: "center" }}>
+                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "30px", height: "30px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, flexShrink: 0 }}>
+                          {ca.inventorPosition}
+                        </Box>
+
+                        {/* Co-Inventor Type (if students are involved) */}
+                        {form.isStudentsInvolved === "Yes" && (
+                          <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "130px" } }}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVENTOR TYPE</Typography>
+                            <Select
+                              size="small"
+                              fullWidth
+                              displayEmpty
+                              value={ca.CoInventorType || "faculty"}
+                              onChange={(e) => handleCoInventorChange(ca.inventorPosition, "CoInventorType", e.target.value)}
+                              MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}
+                            >
+                              <MenuItem value="faculty">Faculty</MenuItem>
+                              <MenuItem value="student">Student</MenuItem>
+                            </Select>
+                          </Box>
+                        )}
+
+                        <Box sx={{ flex: 1, minWidth: "150px" }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE</Typography>
+                          <Select
+                            size="small"
+                            fullWidth
+                            value={ca.CoInventorType === "student" ? "Aditya University" : ca.affiliationType}
+                            onChange={(e) => handleCoInventorChange(ca.inventorPosition, "affiliationType", e.target.value)}
+                            displayEmpty
+                          >
+                            <MenuItem value="" disabled>Select Affiliation</MenuItem>
+                            <MenuItem value="Aditya University">Aditya University</MenuItem>
+                            {ca.CoInventorType !== "student" && (
+                              <MenuItem value="Others">Others</MenuItem>
+                            )}
+                          </Select>
+                        </Box>
+
+                        {ca.affiliationType === "Aditya University" ? (
+                          ca.CoInventorType === "student" ? (
+                            <>
+                              <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
+                                <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT ROLL NO</Typography>
+                                <TextField
+                                  size="small"
+                                  fullWidth
+                                  value={ca.studentId || ""}
+                                  onChange={(e) => handleCoInventorChange(ca.inventorPosition, "studentId", e.target.value)}
+                                  placeholder="e.g. 21A91A0501"
+                                />
+                              </Box>
+                              <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
+                                <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVENTOR NAME</Typography>
+                                <TextField
+                                  size="small"
+                                  fullWidth
+                                  value={ca.name}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (!/\d/.test(val)) handleCoInventorChange(ca.inventorPosition, "name", val);
+                                  }}
+                                  placeholder="Student Name"
+                                />
+                              </Box>
+                            </>
+                          ) : (
+                            <>
+                              <Box sx={{ flex: 1, minWidth: "120px" }}>
+                                <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
+                                <TextField
+                                  size="small"
+                                  fullWidth
+                                  value={ca.empId}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (/^\d*$/.test(val)) handleCoInventorChange(ca.inventorPosition, "empId", val);
+                                  }}
+                                  placeholder="e.g. 5741"
+                                />
+                              </Box>
+                              <Box sx={{ flex: 2, minWidth: "200px" }}>
+                                <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVENTOR NAME</Typography>
+                                <TextField
+                                  size="small"
+                                  fullWidth
+                                  value={ca.name}
+                                  disabled
+                                  placeholder="Auto-fetched"
+                                  sx={{ background: "rgba(0,0,0,0.02)" }}
+                                />
+                              </Box>
+                            </>
+                          )
+                        ) : (
+                          <>
+                            <Box sx={{ flex: 1, minWidth: "180px" }}>
+                              <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVENTOR NAME</Typography>
+                              <TextField
+                                size="small"
+                                fullWidth
+                                value={ca.name}
+                                onChange={(e) => handleCoInventorChange(ca.inventorPosition, "name", e.target.value)}
+                                placeholder="Full Name"
+                              />
+                            </Box>
+                            <Box sx={{ flex: 2, minWidth: "200px" }}>
+                              <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION</Typography>
+                              <TextField
+                                size="small"
+                                fullWidth
+                                value={ca.affiliation}
+                                onChange={(e) => handleCoInventorChange(ca.inventorPosition, "affiliation", e.target.value)}
+                                placeholder="Organization / College"
+                              />
+                            </Box>
+                          </>
+                        )}
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </Grid2>
+          </FormCard>
+
+          {/* Attachments Section */}
+          <FormCard title="Attachments & Additional Information" icon={<AttachFile sx={{ color: "var(--color-primary)" }} />}>
+            <Grid2>
+              <FileField label="e-Filing Receipt Document:" onChange={(e) => setFiles(p => ({ ...p, eFilingReceipt: e.target.files[0] }))} />
+              <FileField label="Form-1 Document:" onChange={(e) => setFiles(p => ({ ...p, form1: e.target.files[0] }))} />
+              <Box>
+                <Typography sx={labelStyle}>Applying as a Seed Grant Work?</Typography>
+                <Select size="small" fullWidth value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")}>
+                  <MenuItem value="Yes">Yes</MenuItem>
+                  <MenuItem value="No">No</MenuItem>
+                </Select>
+              </Box>
+              <Box>
+                <Typography sx={labelStyle}>Apply Incentive? : *</Typography>
+                <Select
+                  size="small" fullWidth displayEmpty
+                  value={form.applyIncentive}
+                  onChange={set("applyIncentive")}
+                  disabled={form.isInstitutionRecord === "Yes" || form.isStudentsInvolved === "Yes"}
+                  sx={(form.isInstitutionRecord === "Yes" || form.isStudentsInvolved === "Yes") ? { opacity: 0.6 } : {}}
+                >
+                  <MenuItem value="" disabled>Select Option</MenuItem>
+                  <MenuItem value="Yes">Yes</MenuItem>
+                  <MenuItem value="No">No</MenuItem>
+                </Select>
+              </Box>
+              {form.applyIncentive === "Yes" && (
+                <Box>
+                  <Typography sx={labelStyle}>Approved Incentive Amount (₹) : *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    type="number"
+                    placeholder="Enter approved amount"
+                    value={form.approvedAmount}
+                    onChange={set("approvedAmount")}
+                  />
+                </Box>
+              )}
+              <Box>
+                <Typography sx={labelStyle}>Article Eligibility for Appraisal : *</Typography>
+                <Select
+                  size="small" fullWidth displayEmpty
+                  value={form.appraisalEligible}
+                  onChange={set("appraisalEligible")}
+                  disabled={form.isInstitutionRecord === "Yes"}
+                  sx={form.isInstitutionRecord === "Yes" ? { opacity: 0.6 } : {}}
+                >
+                  <MenuItem value="" disabled>Select Option</MenuItem>
+                  <MenuItem value="Yes">Yes</MenuItem>
+                  <MenuItem value="No">No</MenuItem>
+                </Select>
+              </Box>
+            </Grid2>
+          </FormCard>
+
+          <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
+            <SubmitBtn onClick={handleSubmit} disabled={loading || !isTargetFacultyValid}>
+              {loading ? "Submitting..." : "Submit Patent Record Directly"}
+            </SubmitBtn>
+          </Box>
         </>
       )}
     </PageContainer>

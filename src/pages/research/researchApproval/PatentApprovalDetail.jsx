@@ -179,6 +179,20 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                     </Box>
                     <Box sx={{ textAlign: { xs: "center", sm: "right" } }}>
                         <Box sx={{ display: "flex", gap: 1, justifyContent: { xs: "center", sm: "flex-end" }, flexWrap: "wrap", mb: 1 }}>
+                            {data.isInstitutionRecord === 'Yes' && (
+                                <Chip 
+                                    label="Institution Record" 
+                                    sx={{ 
+                                        bgcolor: "rgba(2, 136, 209, 0.12)", 
+                                        color: "#0288d1", 
+                                        fontWeight: 800, 
+                                        borderRadius: "8px", 
+                                        textTransform: "uppercase", 
+                                        fontSize: "0.65rem",
+                                        border: "1px solid rgba(2, 136, 209, 0.3)"
+                                    }} 
+                                />
+                            )}
                             {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
                                 <Chip 
                                     label="R&D Direct Entry" 
@@ -285,6 +299,23 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                             />
                         )}
                         <LabelValue label="Applicant Name" value={data.applicantName} horizontal />
+                        <LabelValue 
+                            label="Institution Record" 
+                            horizontal 
+                            chip={
+                                <Chip 
+                                    label={data.isInstitutionRecord === 'Yes' ? 'Yes (Institution Record)' : 'No'} 
+                                    size="small" 
+                                    sx={{ 
+                                        bgcolor: data.isInstitutionRecord === 'Yes' ? "rgba(2, 136, 209, 0.1)" : "var(--bg-panel)", 
+                                        color: data.isInstitutionRecord === 'Yes' ? "#0288d1" : "var(--text-secondary)", 
+                                        fontWeight: 800, 
+                                        border: "1px solid", 
+                                        borderColor: data.isInstitutionRecord === 'Yes' ? "rgba(2, 136, 209, 0.3)" : "var(--border-color)" 
+                                    }} 
+                                />
+                            } 
+                        />
                         <LabelValue 
                             label="Filed in Institution Name" 
                             horizontal 

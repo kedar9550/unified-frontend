@@ -195,6 +195,7 @@ export default function RndJournalDataEntry() {
   };
 
   const [form, setForm] = useState(emptyForm);
+  const [isDoiAvailable, setIsDoiAvailable] = useState("Yes");
   const [files, setFiles] = useState({ publishedPaper: null, referencePages: null, completeJournal: null });
   const [existingFiles, setExistingFiles] = useState({ publishedPaper: null, referencePages: null, completeJournal: null });
   const [editJournalId, setEditJournalId] = useState(null);
@@ -272,7 +273,7 @@ export default function RndJournalDataEntry() {
         }
       }
     };
-    
+
     const delay = setTimeout(fetchJcr, 800);
     return () => clearTimeout(delay);
   }, [form.journalName]);
@@ -609,7 +610,7 @@ export default function RndJournalDataEntry() {
     const val = e.target.value;
     setForm((prev) => {
       let newForm = { ...prev, isStudentsInvolved: val };
-      
+
       if (val === "Yes") {
         newForm.applyIncentive = "No";
       } else {
@@ -620,8 +621,8 @@ export default function RndJournalDataEntry() {
             delete newAuthor.CoAuthorType;
             delete newAuthor.studentId;
             if (author.CoAuthorType === "student" && newAuthor.affiliationType === "Aditya University") {
-               newAuthor.affiliationType = "";
-               newAuthor.affiliationName = "";
+              newAuthor.affiliationType = "";
+              newAuthor.affiliationName = "";
             }
             return newAuthor;
           });
@@ -641,8 +642,8 @@ export default function RndJournalDataEntry() {
       toast.error("Please enter and verify a valid Target Faculty Employee ID");
       return;
     }
-    if (!form.doi || !form.paperTitle || !form.journalName || !form.month || !form.year) {
-      toast.error("Please fill all required fields");
+    if (!form.doi || !form.paperTitle || !form.journalName || !form.month || !form.year || !form.issn || !form.eissn || !form.journalQuartile || !form.journalType || !form.isScopus || !form.jcrImpactFactor) {
+      toast.error("Please fill all mandatory fields (*)");
       return;
     }
 
@@ -753,6 +754,7 @@ export default function RndJournalDataEntry() {
       }
 
       setForm(emptyForm);
+      setIsDoiAvailable("Yes");
       setFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
       setExistingFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
       setEditJournalId(null);
@@ -876,59 +878,109 @@ export default function RndJournalDataEntry() {
 
             {/* ── DOI Section ── */}
             <Box sx={{ mb: 2.5, p: 2.5, borderRadius: "12px", border: "2px solid var(--color-primary)", background: "var(--bg-accent-1)", boxShadow: "0 2px 12px rgba(var(--color-primary-rgb,99,102,241),0.08)" }}>
-              <Typography sx={{ ...labelStyle, color: "var(--color-primary)", mb: 1 }}>
-                DOI (Digital Object Identifier) : *
-                <span style={{ fontWeight: 400, textTransform: "none", fontSize: 10, opacity: 0.7 }}> — Enter DOI to auto-fill details (only journal papers accepted)</span>
-              </Typography>
-              <Box sx={{ display: "flex", gap: 1.5, flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "stretch", sm: "flex-start" } }}>
-                <TextField
-                  size="small"
-                  fullWidth
-                  value={form.doi}
-                  onChange={set("doi")}
-                  placeholder="e.g. 10.1038/s41598-024-12345-y"
-                  onKeyDown={(e) => { if (e.key === "Enter") fetchDOIData(); }}
-                  slotProps={{
-                    input: {
-                      sx: { background: "var(--bg-panel)" },
-                      endAdornment: doiFetched ? (
-                        <Box component="span" sx={{ display: "flex", alignItems: "center", color: "#10b981", fontSize: 18, mr: 0.5 }}>✓</Box>
-                      ) : null
+              {/* Radio Question: Is DOI Available? */}
+              <Box sx={{ mb: 2, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                <Typography sx={{ ...labelStyle, color: "var(--color-primary)", mb: 0, fontWeight: 700 }}>
+                  Is DOI Available? *
+                </Typography>
+                <RadioGroup
+                  row
+                  value={isDoiAvailable}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setIsDoiAvailable(val);
+                    setFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
+                    setExistingFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
+                    setDoiFetched(false);
+                    setDoiFetchedFields({});
+                    setScannedSdgResults(null);
+
+                    if (val === "No") {
+                      const generatedDoi = `NODOI-AUS-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
+                      setForm({ ...emptyForm, doi: generatedDoi });
+                    } else {
+                      setForm({ ...emptyForm, doi: "" });
                     }
                   }}
-                />
-                <Button
-                  variant="contained"
-                  onClick={fetchDOIData}
-                  disabled={doiFetching || !form.doi.trim()}
-                  sx={{
-                    width: { xs: "100%", sm: "auto" },
-                    minWidth: 110,
-                    height: "40px",
-                    background: "var(--gradient-primary)",
-                    textTransform: "none",
-                    fontWeight: 700,
-                    flexShrink: 0,
-                    "&:hover": { opacity: 0.9 },
-                    "&.Mui-disabled": { opacity: 0.5 }
-                  }}
                 >
-                  {doiFetching ? "Fetching..." : "Fetch Details"}
-                </Button>
+                  <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+                  <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+                </RadioGroup>
               </Box>
-              {doiFetched && (
-                <Typography sx={{ mt: 1, fontSize: 11, color: form.isScopus === "Yes" ? "#10b981" : "#f59e0b", fontWeight: 700 }}>
-                  {form.isScopus === "Yes"
-                    ? "✓ Details auto-filled from Scopus. Review and complete any remaining fields below."
-                    : "✓ Details auto-filled from Crossref (Not found in Scopus). Review and complete any remaining fields below."}
-                </Typography>
+
+              {isDoiAvailable === "Yes" ? (
+                <>
+                  <Typography sx={{ ...labelStyle, color: "var(--color-primary)", mb: 1 }}>
+                    DOI (Digital Object Identifier) : *
+                    <span style={{ fontWeight: 400, textTransform: "none", fontSize: 10, opacity: 0.7 }}> — Enter DOI to auto-fill details (only journal papers accepted)</span>
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 1.5, flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "stretch", sm: "flex-start" } }}>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      value={form.doi}
+                      onChange={set("doi")}
+                      placeholder="e.g. 10.1038/s41598-024-12345-y"
+                      onKeyDown={(e) => { if (e.key === "Enter") fetchDOIData(); }}
+                      slotProps={{
+                        input: {
+                          sx: { background: "var(--bg-panel)" },
+                          endAdornment: doiFetched ? (
+                            <Box component="span" sx={{ display: "flex", alignItems: "center", color: "#10b981", fontSize: 18, mr: 0.5 }}>✓</Box>
+                          ) : null
+                        }
+                      }}
+                    />
+                    <Button
+                      variant="contained"
+                      onClick={fetchDOIData}
+                      disabled={doiFetching || !form.doi.trim()}
+                      sx={{
+                        width: { xs: "100%", sm: "auto" },
+                        minWidth: 110,
+                        height: "40px",
+                        background: "var(--gradient-primary)",
+                        textTransform: "none",
+                        fontWeight: 700,
+                        flexShrink: 0,
+                        "&:hover": { opacity: 0.9 },
+                        "&.Mui-disabled": { opacity: 0.5 }
+                      }}
+                    >
+                      {doiFetching ? "Fetching..." : "Fetch Details"}
+                    </Button>
+                  </Box>
+                  {doiFetched && (
+                    <Typography sx={{ mt: 1, fontSize: 11, color: form.isScopus === "Yes" ? "#10b981" : "#f59e0b", fontWeight: 700 }}>
+                      {form.isScopus === "Yes"
+                        ? "✓ Details auto-filled from Scopus. Review and complete any remaining fields below."
+                        : "✓ Details auto-filled from Crossref (Not found in Scopus). Review and complete any remaining fields below."}
+                    </Typography>
+                  )}
+                </>
+              ) : (
+                <Box>
+                  <Typography sx={{ ...labelStyle, color: "var(--color-primary)", mb: 1 }}>
+                    Generated System Reference Code (DOI Field) :
+                  </Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={form.doi}
+                    disabled
+                    sx={{ background: "rgba(0,0,0,0.03)" }}
+                  />
+                  <Typography sx={{ mt: 1, fontSize: 11, color: "#10b981", fontWeight: 700 }}>
+                    ✓ Unique Non-DOI Reference Code ({form.doi}) assigned. Please fill in all journal article details manually below.
+                  </Typography>
+                </Box>
               )}
             </Box>
           </FormCard>
 
           {/* ── Article Details ── */}
           <SubLabel text="Details of the Journal Article:" />
-          
+
           <Box sx={{ mt: 2, p: 2, borderRadius: "12px", border: "1px solid var(--border-color)", background: "var(--bg-panel)" }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
               <Typography sx={{ ...labelStyle, mb: 0 }}>Is this an Institution Record? *</Typography>
@@ -936,6 +988,11 @@ export default function RndJournalDataEntry() {
                 <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
                 <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
               </RadioGroup>
+              {form.isInstitutionRecord === "Yes" && (
+                <Typography variant="caption" sx={{ color: "var(--color-warning, #f59e0b)", fontWeight: 600 }}>
+                  ⚠ Institution Record: Apply Incentive and Appraisal Eligibility are Not Applicable
+                </Typography>
+              )}
             </Box>
           </Box>
 
@@ -954,13 +1011,13 @@ export default function RndJournalDataEntry() {
 
             {/* ISSN */}
             <Box>
-              <Typography sx={labelStyle}>ISSN :</Typography>
+              <Typography sx={labelStyle}>ISSN : *</Typography>
               <TextField size="small" fullWidth value={form.issn || ""} onChange={set("issn")} placeholder="e.g. 23644176" />
             </Box>
 
             {/* e-ISSN */}
             <Box>
-              <Typography sx={labelStyle}>e-ISSN :</Typography>
+              <Typography sx={labelStyle}>e-ISSN : *</Typography>
               <TextField size="small" fullWidth value={form.eissn || ""} onChange={set("eissn")} placeholder="e.g. 23644184" />
             </Box>
 
@@ -975,7 +1032,7 @@ export default function RndJournalDataEntry() {
 
             {/* Journal Type */}
             <Box>
-              <Typography sx={labelStyle}>Type of Journal :</Typography>
+              <Typography sx={labelStyle}>Type of Journal : *</Typography>
               <Select size="small" fullWidth displayEmpty value={form.journalType || ""} onChange={set("journalType")}>
                 <MenuItem value="">Select or auto-fill</MenuItem>
                 {(form.journalType && !JOURNAL_TYPES.includes(form.journalType)
@@ -987,7 +1044,7 @@ export default function RndJournalDataEntry() {
 
             {/* Indexed in Scopus */}
             <Box>
-              <Typography sx={labelStyle}>Indexed in Scopus :</Typography>
+              <Typography sx={labelStyle}>Indexed in Scopus : *</Typography>
               <Select size="small" fullWidth displayEmpty value={form.isScopus || ""} onChange={set("isScopus")}>
                 <MenuItem value="">Select or auto-fill</MenuItem>
                 <MenuItem value="Yes">Yes</MenuItem>
@@ -1003,7 +1060,7 @@ export default function RndJournalDataEntry() {
 
             {/* Impact Factor */}
             <Box>
-              <Typography sx={labelStyle}>Impact Factor (JCR) :</Typography>
+              <Typography sx={labelStyle}>Impact Factor (JCR) : *</Typography>
               <TextField size="small" fullWidth value={form.jcrImpactFactor} onChange={handleNumericChange("jcrImpactFactor", true)} placeholder="e.g. 2.5" />
             </Box>
 
@@ -1284,16 +1341,16 @@ export default function RndJournalDataEntry() {
                 <MenuItem value="No">No</MenuItem>
               </Select>
             </Box>
-            
+
             <Box>
               <Typography sx={labelStyle}>Article Eligibility for Appraisal : *</Typography>
-              <Select 
-                size="small" 
-                fullWidth 
-                displayEmpty 
-                value={form.appraisalEligible} 
-                onChange={set("appraisalEligible")} 
-                disabled={form.isInstitutionRecord === "Yes"} 
+              <Select
+                size="small"
+                fullWidth
+                displayEmpty
+                value={form.appraisalEligible}
+                onChange={set("appraisalEligible")}
+                disabled={form.isInstitutionRecord === "Yes"}
                 sx={form.isInstitutionRecord === "Yes" ? disabledField : {}}
               >
                 <MenuItem value="">Select</MenuItem>
@@ -1304,13 +1361,13 @@ export default function RndJournalDataEntry() {
 
             <Box>
               <Typography sx={labelStyle}>Apply Incentive? : *</Typography>
-              <Select 
-                size="small" 
-                fullWidth 
-                displayEmpty 
-                value={form.applyIncentive} 
-                onChange={set("applyIncentive")} 
-                disabled={form.isInstitutionRecord === "Yes" || form.isStudentsInvolved === "Yes"} 
+              <Select
+                size="small"
+                fullWidth
+                displayEmpty
+                value={form.applyIncentive}
+                onChange={set("applyIncentive")}
+                disabled={form.isInstitutionRecord === "Yes" || form.isStudentsInvolved === "Yes"}
                 sx={(form.isInstitutionRecord === "Yes" || form.isStudentsInvolved === "Yes") ? disabledField : {}}
               >
                 <MenuItem value="">Select</MenuItem>
@@ -1322,12 +1379,12 @@ export default function RndJournalDataEntry() {
             {form.applyIncentive === "Yes" && (
               <Box>
                 <Typography sx={labelStyle}>Incentive Amount :</Typography>
-                <TextField 
-                  size="small" 
-                  fullWidth 
-                  value={form.approvedAmount} 
-                  onChange={handleNumericChange("approvedAmount", true)} 
-                  placeholder="e.g. 10000" 
+                <TextField
+                  size="small"
+                  fullWidth
+                  value={form.approvedAmount}
+                  onChange={handleNumericChange("approvedAmount", true)}
+                  placeholder="e.g. 10000"
                 />
               </Box>
             )}
