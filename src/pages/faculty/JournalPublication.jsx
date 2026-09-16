@@ -23,6 +23,10 @@ import mammoth from "mammoth";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import ausLogo from "../../assets/AUS Long Logo.png";
+
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -154,6 +158,349 @@ export default function JournalPublication() {
     if (cleanCode.startsWith("SDG-")) return cleanCode;
     const key = `SDG-${cleanCode}`;
     return sdgMap[key] || cleanCode;
+  };
+
+  const generateOfflineFormPDF = async (userData) => {
+    try {
+      const doc = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = doc.internal.pageSize.getWidth();
+
+      // Load Logo Image
+      const loadImage = (src) => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.crossOrigin = 'Anonymous';
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null);
+          img.src = src;
+        });
+      };
+
+      const logoImg = await loadImage(ausLogo);
+      let bannerStartY = 12;
+
+      if (logoImg) {
+        const imgWidth = 115;
+        const imgHeight = (logoImg.height * imgWidth) / logoImg.width;
+        doc.addImage(logoImg, 'PNG', (pageWidth - imgWidth) / 2, 5, imgWidth, imgHeight);
+        bannerStartY = 5 + imgHeight + 4;
+      }
+
+      // Header Titles (Black text on clean white page)
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text("RESEARCH & CONSULTANCY CELL", pageWidth / 2, bannerStartY + 3, { align: "center" });
+
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.text("OFFLINE JOURNAL PUBLICATION ENTRY FORM", pageWidth / 2, bannerStartY + 8.5, { align: "center" });
+
+      let y = bannerStartY + 14;
+
+      // Notice Box
+      doc.setDrawColor(200, 200, 200);
+      doc.setFillColor(248, 249, 250);
+      doc.roundedRect(12, y, pageWidth - 24, 12, 2, 2, 'FD');
+      doc.setTextColor(80, 80, 80);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "italic");
+      doc.text("Instructions: Please fill all required fields clearly in BLOCK LETTERS and submit this hardcopy application form along with mandatory document attachments (Paper 1st Page, Tick-marked References, Complete Journal) to the R&C Office.", 15, y + 5, { maxWidth: pageWidth - 30 });
+
+      y += 16;
+
+      // Section 1: Faculty Information
+      doc.setFillColor(0, 78, 146);
+      doc.rect(12, y, pageWidth - 24, 6.5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8.5);
+      doc.setFont("helvetica", "bold");
+      doc.text("1. APPLICANT FACULTY INFORMATION", 15, y + 4.5);
+
+      y += 8.5;
+
+      const profile = userData || user || {};
+      const contactNo = profile?.phone || profile?.contactNumber || profile?.mobile || profile?.mobileNumber || "";
+
+      autoTable(doc, {
+        startY: y,
+        margin: { left: 12, right: 12 },
+        styles: { fontSize: 8, cellPadding: 3, textColor: [30, 30, 30] },
+        theme: 'grid',
+        body: [
+          [
+            { content: "Applicant Name:", fontStyle: "bold" }, profile?.name || "",
+            { content: "Employee ID:", fontStyle: "bold" }, profile?.institutionId || ""
+          ],
+          [
+            { content: "Department:", fontStyle: "bold" }, profile?.department || "",
+            { content: "College / Campus:", fontStyle: "bold" }, profile?.college || "Aditya University"
+          ],
+          [
+            { content: "PAN Number:", fontStyle: "bold" }, profile?.panNumber || "",
+            { content: "Contact Number:", fontStyle: "bold" }, contactNo || ""
+          ]
+        ]
+      });
+
+      y = doc.lastAutoTable.finalY + 5;
+
+      // Section 2: Journal Details
+      doc.setFillColor(0, 78, 146);
+      doc.rect(12, y, pageWidth - 24, 6.5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8.5);
+      doc.setFont("helvetica", "bold");
+      doc.text("2. JOURNAL ARTICLE DETAILS", 15, y + 4.5);
+
+      y += 8.5;
+
+      autoTable(doc, {
+        startY: y,
+        margin: { left: 12, right: 12 },
+        styles: { fontSize: 8, cellPadding: 2.8, textColor: [30, 30, 30] },
+        columnStyles: {
+          0: { cellWidth: 35, fontStyle: 'bold' },
+          1: { cellWidth: 58 },
+          2: { cellWidth: 35, fontStyle: 'bold' },
+          3: { cellWidth: 58 }
+        },
+        theme: 'grid',
+        body: [
+          [
+            "Is DOI Available? *", "[ ] YES    [ ] NO",
+            "DOI / Ref Code: *", ""
+          ],
+          [
+            "Title of Paper: *", { content: "", colSpan: 3, styles: { minCellHeight: 22 } }
+          ],
+          [
+            "Name of Journal: *", { content: "", colSpan: 3, styles: { minCellHeight: 14 } }
+          ],
+          [
+            "ISSN : *", "",
+            "e-ISSN : *", ""
+          ],
+          [
+            "Journal Quartile: *", "[ ] Q1  [ ] Q2  [ ] Q3  [ ] Q4  [ ] None",
+            "Type of Journal: *", "[ ] SCI  [ ] SCIE  [ ] ESCI  [ ] None"
+          ],
+          [
+            "Indexed in Scopus? *", "[ ] YES    [ ] NO",
+            "Impact Factor (JCR): *", ""
+          ],
+          [
+            "H-Index:", "",
+            "Citations:", ""
+          ],
+          [
+            "Volume:", "",
+            "Issue:", ""
+          ],
+          [
+            "Publication Month: *", "",
+            "Publication Year: *", ""
+          ],
+          [
+            "AGEC Ref Numbers:", "",
+            "AGEC Ref Count:", ""
+          ]
+        ]
+      });
+
+      y = doc.lastAutoTable.finalY + 5;
+
+      // Section 3: Authors & Co-Authors
+      doc.setFillColor(0, 78, 146);
+      doc.rect(12, y, pageWidth - 24, 6.5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8.5);
+      doc.setFont("helvetica", "bold");
+      doc.text("3. AUTHORS & CO-AUTHORS DETAILS", 15, y + 4.5);
+
+      y += 8.5;
+
+      autoTable(doc, {
+        startY: y,
+        margin: { left: 12, right: 12 },
+        styles: { fontSize: 8, cellPadding: 2.8, textColor: [30, 30, 30] },
+        columnStyles: {
+          0: { cellWidth: 50, fontStyle: 'bold' },
+          1: { cellWidth: 43 },
+          2: { cellWidth: 50, fontStyle: 'bold' },
+          3: { cellWidth: 43 }
+        },
+        theme: 'grid',
+        body: [
+          [
+            { content: "Are students involved in this work as co-authors? *", fontStyle: "bold", colSpan: 2 },
+            { content: "[ ] YES    [ ] NO", colSpan: 2 }
+          ],
+          [
+            "Total Number of Authors : *", "",
+            "Applicant Author Position : *", ""
+          ]
+        ]
+      });
+
+      y = doc.lastAutoTable.finalY + 3;
+
+      autoTable(doc, {
+        startY: y,
+        margin: { left: 12, right: 12 },
+        styles: { fontSize: 8, cellPadding: 3, textColor: [30, 30, 30] },
+        headStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0], fontStyle: 'bold' },
+        theme: 'grid',
+        head: [["Pos", "Author Name", "Type (Faculty / Student)", "Emp ID / Roll No", "Affiliation (Aditya Univ / Others)"]],
+        body: [
+          ["1", "", "", "", ""],
+          ["2", "", "", "", ""],
+          ["3", "", "", "", ""],
+          ["4", "", "", "", ""],
+          ["5", "", "", "", ""],
+          ["6", "", "", "", ""],
+          ["7", "", "", "", ""],
+          ["8", "", "", "", ""],
+          ["9", "", "", "", ""],
+          ["10", "", "", "", ""]
+        ]
+      });
+
+      y = doc.lastAutoTable.finalY + 5;
+
+      // Section 4: Incentive & Seed Grant Declarations
+      doc.setFillColor(0, 78, 146);
+      doc.rect(12, y, pageWidth - 24, 6.5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8.5);
+      doc.setFont("helvetica", "bold");
+      doc.text("4. INCENTIVE & SEED GRANT DECLARATION", 15, y + 4.5);
+
+      y += 8.5;
+
+      autoTable(doc, {
+        startY: y,
+        margin: { left: 12, right: 12 },
+        styles: { fontSize: 8, cellPadding: 3, textColor: [30, 30, 30] },
+        columnStyles: {
+          0: { cellWidth: 50, fontStyle: 'bold' },
+          1: { cellWidth: 38 },
+          2: { cellWidth: 60, fontStyle: 'bold' },
+          3: { cellWidth: 38 }
+        },
+        theme: 'grid',
+        body: [
+          [
+            "Applying as Seed Grant Work? *", "[  ] YES      [  ] NO",
+            "Whether you want to apply for incentive? *", "[  ] YES      [  ] NO"
+          ],
+          [
+            "Publication Scope: *", { content: "[  ] National      [  ] International", colSpan: 3 }
+          ]
+        ]
+      });
+
+      y = doc.lastAutoTable.finalY + 5;
+
+      // Section 5: Mandatory Attachments Checklist
+      doc.setFillColor(0, 78, 146);
+      doc.rect(12, y, pageWidth - 24, 6.5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8.5);
+      doc.setFont("helvetica", "bold");
+      doc.text("5. MANDATORY ATTACHMENTS CHECKLIST", 15, y + 4.5);
+
+      y += 8.5;
+
+      autoTable(doc, {
+        startY: y,
+        margin: { left: 12, right: 12 },
+        styles: { fontSize: 8, cellPadding: 3, textColor: [30, 30, 30] },
+        theme: 'grid',
+        body: [
+          [
+            "[  ]  1. Published Paper – 1st Page (Showing Title, Journal Name, Authors, Affiliation, DOI, Vol & Issue)",
+          ],
+          [
+            "[  ]  2. Reference Pages (With clear tick marks / highlights)",
+          ],
+          [
+            "[  ]  3. Complete Journal Document (PDF / Hardcopy)",
+          ]
+        ]
+      });
+
+      y = doc.lastAutoTable.finalY + 5;
+
+      // Section 6: Office Use Only (R&D Approval Section)
+      doc.setFillColor(70, 70, 70);
+      doc.rect(12, y, pageWidth - 24, 6.5, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(8.5);
+      doc.setFont("helvetica", "bold");
+      doc.text("6. FOR R&C OFFICE USE ONLY (TO BE FILLED & APPROVED BY RESEARCH DEAN)", 15, y + 4.5);
+
+      y += 8.5;
+
+      autoTable(doc, {
+        startY: y,
+        margin: { left: 12, right: 12 },
+        styles: { fontSize: 8, cellPadding: 3.5, textColor: [30, 30, 30] },
+        columnStyles: {
+          0: { cellWidth: 68, fontStyle: 'bold' },
+          1: { cellWidth: 118 }
+        },
+        theme: 'grid',
+        body: [
+          [
+            "Article Eligibility for Appraisal : *",
+            "[  ] YES      [  ] NO"
+          ],
+          [
+            "Approved Incentive Amount (Rs.) :",
+            ""
+          ],
+          [
+            "Verification Status :",
+            "[  ] APPROVED      [  ] REJECTED"
+          ],
+          [
+            "Remarks :",
+            { content: "", styles: { minCellHeight: 12 } }
+          ]
+        ]
+      });
+
+      y = doc.lastAutoTable.finalY + 14;
+
+      if (y > 255) {
+        doc.addPage();
+        y = 20;
+      }
+
+      // Signatures
+      doc.setFontSize(8.5);
+      doc.setTextColor(0, 0, 0);
+
+      // Applicant on Left
+      doc.setFont("helvetica", "normal");
+      doc.text("_________________________", 15, y);
+      doc.setFont("helvetica", "bold");
+      doc.text("Signature of Applicant", 15, y + 5);
+
+      // Dean R&C on Right
+      const rightSigX = pageWidth - 12 - 48;
+      doc.setFont("helvetica", "normal");
+      doc.text("_________________________", rightSigX, y);
+      doc.setFont("helvetica", "bold");
+      doc.text("Signature of Dean R&C", rightSigX, y + 5);
+
+      doc.save("Journal_Offline_Application_Form.pdf");
+      toast.success("Offline Application Form downloaded successfully!");
+    } catch (err) {
+      console.error("Failed to generate PDF", err);
+      toast.error("Failed to generate PDF form. Please try again.");
+    }
   };
 
   const emptyForm = {
@@ -549,7 +896,7 @@ export default function JournalPublication() {
     const val = e.target.value;
     setForm((prev) => {
       let newForm = { ...prev, isStudentsInvolved: val };
-      
+
       if (val === "Yes") {
         newForm.applyIncentive = "No";
       } else {
@@ -560,7 +907,7 @@ export default function JournalPublication() {
             delete newAuthor.CoAuthorType;
             delete newAuthor.studentId;
             if (author.CoAuthorType === "student" && newAuthor.affiliationType === "Aditya University") {
-               newAuthor.affiliationType = "";
+              newAuthor.affiliationType = "";
             }
             return newAuthor;
           });
@@ -769,21 +1116,43 @@ export default function JournalPublication() {
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Journal Publications</Typography>
 
-        <Button
-          variant="contained"
-          onClick={() => {
-            const activeYear = academicYears.length > 0;
-            if (activeYear) {
-              setSelectedYear("");
-              setViewMode("select-year");
-            } else {
-              setNoActiveYearAlertOpen(true);
-            }
-          }}
-          sx={{ background: "var(--gradient-primary)", px: 3, fontWeight: 700, textTransform: "none", "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }, transition: "all 0.2s ease" }}
-        >
-          Apply New
-        </Button>
+        <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
+          <Button
+            variant="outlined"
+            startIcon={<Download />}
+            onClick={() => generateOfflineFormPDF(user)}
+            sx={{
+              borderColor: "var(--color-primary)",
+              color: "var(--color-primary)",
+              fontWeight: 700,
+              textTransform: "none",
+              borderRadius: "8px",
+              px: 2,
+              "&:hover": {
+                bgcolor: "rgba(190, 147, 55, 0.08)",
+                borderColor: "var(--color-primary)"
+              }
+            }}
+          >
+            Download Offline Form
+          </Button>
+
+          <Button
+            variant="contained"
+            onClick={() => {
+              const activeYear = academicYears.length > 0;
+              if (activeYear) {
+                setSelectedYear("");
+                setViewMode("select-year");
+              } else {
+                setNoActiveYearAlertOpen(true);
+              }
+            }}
+            sx={{ background: "var(--gradient-primary)", px: 3, fontWeight: 700, textTransform: "none", "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }, transition: "all 0.2s ease" }}
+          >
+            Apply New
+          </Button>
+        </Box>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -1567,8 +1936,8 @@ export default function JournalPublication() {
                 <Chip
                   icon={
                     /approved/i.test(data.status) ? <CheckCircleOutlineIcon sx={{ fontSize: "16px !important", color: "inherit" }} /> :
-                    /reject/i.test(data.status) ? <Close sx={{ fontSize: "16px !important", color: "inherit" }} /> :
-                    <AccessTimeIcon sx={{ fontSize: "16px !important", color: "inherit" }} />
+                      /reject/i.test(data.status) ? <Close sx={{ fontSize: "16px !important", color: "inherit" }} /> :
+                        <AccessTimeIcon sx={{ fontSize: "16px !important", color: "inherit" }} />
                   }
                   label={data.status || "Pending at HOD"}
                   sx={{
