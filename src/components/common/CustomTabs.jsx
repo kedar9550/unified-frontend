@@ -1,5 +1,6 @@
 import React from "react";
-import { Paper, Tabs, Tab } from "@mui/material";
+import { Paper, Tabs, Tab, Box, IconButton, Divider } from "@mui/material";
+import { ChevronLeft as ChevronLeftIcon, ChevronRight as ChevronRightIcon } from "@mui/icons-material";
 
 export default function CustomTabs({
   tabs = [],
@@ -16,10 +17,10 @@ export default function CustomTabs({
         mt: 3,
         mb: 3,
         mx: { xs: 0, md: "auto" },
-        borderRadius: "16px",
+        borderRadius: "9999px",
         border: "1px solid var(--border-color)",
         background: "var(--bg-paper)",
-        overflow: "hidden",
+        p: 0.5,
         boxShadow: "0 2px 12px rgba(0, 0, 0, 0.03)",
         display: "flex",
         width: { xs: "100%", md: "fit-content" },
@@ -28,6 +29,42 @@ export default function CustomTabs({
         ...sx,
       }}
     >
+      {/* Mobile View */}
+      <Box sx={{ display: { xs: 'flex', md: 'none' }, width: '100%', alignItems: 'center', justifyContent: 'space-between' }}>
+        <IconButton size="small" onClick={(e) => onChange(e, Math.max(0, value - 1))} disabled={value <= 0} sx={{ ml: 0.5 }}>
+          <ChevronLeftIcon />
+        </IconButton>
+        
+        <Divider orientation="vertical" flexItem sx={{ my: 1, borderColor: 'var(--border-color)' }} />
+        
+        <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <Box sx={{
+            background: "var(--bg-accent-4)",
+            color: "var(--color-primary)",
+            fontWeight: 700,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            py: { xs: 0.75, sm: 1 },
+            px: { xs: 2, sm: 2.5 },
+            borderRadius: "9999px",
+            fontSize: { xs: "0.825rem", sm: "0.875rem" },
+            display: "flex",
+            alignItems: "center"
+          }}>
+            {tabs[value]?.icon && React.cloneElement(tabs[value].icon, {
+              sx: { fontSize: 18, mr: 0.5, color: "inherit", ...(tabs[value].icon.props?.sx || {}) }
+            })}
+            {tabs[value]?.label}
+          </Box>
+        </Box>
+
+        <Divider orientation="vertical" flexItem sx={{ my: 1, borderColor: 'var(--border-color)' }} />
+        
+        <IconButton size="small" onClick={(e) => onChange(e, Math.min(tabs.length - 1, value + 1))} disabled={value >= tabs.length - 1} sx={{ mr: 0.5 }}>
+          <ChevronRightIcon />
+        </IconButton>
+      </Box>
+
+      {/* Desktop View */}
       <Tabs
         value={value}
         onChange={onChange}
@@ -36,8 +73,9 @@ export default function CustomTabs({
         allowScrollButtonsMobile={false}
         {...props}
         sx={{
+          display: { xs: 'none', md: 'flex' },
           width: "100%",
-          minHeight: { xs: "46px", sm: "52px" },
+          minHeight: { xs: "36px", sm: "40px" },
           "& .MuiTabs-scroller": {
             display: "flex",
             overflowX: "auto !important",
@@ -61,12 +99,12 @@ export default function CustomTabs({
             width: "auto",
             maxWidth: "none",
             minWidth: "auto",
-            minHeight: { xs: "46px", sm: "52px" },
-            py: { xs: 1, sm: 1.25 },
-            px: { xs: 2, sm: 2.5, md: 3.5 },
+            minHeight: { xs: "36px", sm: "40px" },
+            py: { xs: 0.75, sm: 1 },
+            px: { xs: 2, sm: 2.5, md: 3 },
             textTransform: "none",
-            fontWeight: 700,
-            fontSize: { xs: "0.825rem", sm: "0.875rem", md: "0.925rem" },
+            fontWeight: 600,
+            fontSize: { xs: "0.825rem", sm: "0.875rem", md: "0.9rem" },
             whiteSpace: "nowrap !important",
             wordBreak: "normal !important",
             lineHeight: 1.25,
@@ -76,14 +114,10 @@ export default function CustomTabs({
             display: "inline-flex !important",
             flexDirection: "row !important",
             color: "var(--text-secondary)",
-            borderRight: "1px solid var(--border-color)",
+            borderRadius: "9999px",
             transition: "all 0.2s ease",
             position: "relative",
-            "&:last-of-type": {
-              borderRight: "none",
-            },
             "& span, & div": {
-              display: "inline-flex !important",
               alignItems: "center !important",
               justifyContent: "center !important",
               textAlign: "center !important",
@@ -91,28 +125,16 @@ export default function CustomTabs({
             },
             "&.Mui-selected": {
               background: "var(--bg-accent-4)",
-              fontWeight: 800,
-              "&::after": {
-                content: '""',
-                position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
-                height: "3.5px",
-                background: "var(--gradient-primary)",
-                borderRadius: "3px 3px 0 0",
-              },
+              color: "var(--color-primary)",
+              fontWeight: 700,
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
               "& .MuiSvgIcon-root": {
-                color: "var(--color-primary)",
-              },
-              "&, & span": {
-                background: "var(--gradient-primary)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-              },
+                color: "inherit",
+              }
             },
             "&:hover:not(.Mui-selected)": {
               background: "var(--bg-hover)",
+              color: "var(--text-primary)",
             },
           },
         }}

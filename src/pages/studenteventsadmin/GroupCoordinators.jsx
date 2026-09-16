@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import PageHeader from '../../components/common/PageHeader';
 import { PageContainer } from '../../components/common/design-system';
+import ProfileCard from '../../components/common/ProfileCard';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 
@@ -137,62 +138,25 @@ const GroupCoordinators = () => {
           </Typography>
         </Box>
       ) : (
-        <Grid container spacing={3} sx={{ mt: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(3, 1fr)' }, gap: 3, mt: 2 }}>
           {coordinators.map(coord => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={coord.id}>
-              <Card sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                borderRadius: '16px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-                transition: 'transform 0.2s',
-                '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 8px 30px rgba(0,0,0,0.1)' }
-              }}>
-                <CardContent sx={{ flexGrow: 1, textAlign: 'center', pt: 4 }}>
+              <ProfileCard
+                key={coord.id}
+                name={coord.name}
+                role={`${coord.designation} ${coord.department && coord.department !== 'N/A' ? `- ${coord.department}` : ''}`}
+                employeeId={coord.id}
+                phone={coord.phone}
+                labels={coord.event_schools}
+                avatarComponent={
                   <CoordinatorPhoto
                     employeeCode={coord.id}
                     name={coord.name}
-                    sx={{
-                      width: 80,
-                      height: 80,
-                      mx: 'auto',
-                      mb: 2,
-                      borderRadius: '50%',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                      display: 'block'
-                    }}
+                    sx={{ width: 110, height: 110, border: '2px solid #fff', borderRadius: '50%' }}
                   />
-                  <Typography variant="h6" fontWeight="700" gutterBottom>
-                    {coord.name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    {coord.designation} {coord.department && coord.department !== 'N/A' ? `- ${coord.department}` : ''}
-                  </Typography>
-                  <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', fontWeight: 600 }}>
-                    ID: {coord.id}
-                  </Typography>
-                  <Typography variant="caption" sx={{ display: 'block', mb: 2, color: 'text.secondary', fontWeight: 600 }}>
-                    Ph: {coord.phone}
-                  </Typography>
-
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: 'center', mt: 2 }}>
-                    {coord.event_schools.map(g => (
-                      <Chip
-                        key={g}
-                        label={g}
-                        size="small"
-                        color="primary"
-                        variant="outlined"
-                        sx={{ borderRadius: '8px', fontWeight: 600 }}
-                      />
-                    ))}
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+                }
+              />
           ))}
-        </Grid>
+        </Box>
       )}
     </PageContainer>
   );
