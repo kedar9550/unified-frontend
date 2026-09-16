@@ -42,7 +42,7 @@ export default function ConferencePublication() {
     title: "", conferenceName: "", scope: "", indexing: "",
     month: "", year: "",
     publisher: "", issnIsbn: "",
-    applyIncentive: "", applyingSeedGrant: "",
+    applyIncentive: "No", applyingSeedGrant: "",
     isStudentsInvolved: "No",
     totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
   });
@@ -93,10 +93,9 @@ export default function ConferencePublication() {
             authorName: a.CoAuthorType === "student" ? "" : a.authorName,
             empId: a.CoAuthorType === "student" ? "" : a.empId
           }));
-          newForm.applyIncentive = "";
-        } else if (val === "Yes") {
-          newForm.applyIncentive = "No";
         }
+        // applyIncentive is always "No" — organisation does not provide conference incentives
+        newForm.applyIncentive = "No";
       }
       return newForm;
     });
@@ -142,7 +141,7 @@ export default function ConferencePublication() {
       year: pub.year || "",
       publisher: pub.publisher || "",
       issnIsbn: pub.issnIsbn || "",
-      applyIncentive: pub.applyIncentive || "",
+      applyIncentive: "No", // Organisation does not provide conference incentives
       applyingSeedGrant: pub.applyingSeedGrant || "",
       isStudentsInvolved: pub.isStudentsInvolved || "No",
       totalAuthors: pub.totalAuthors || 1,
@@ -395,11 +394,9 @@ export default function ConferencePublication() {
     const val = e.target.value;
     setForm((prev) => {
       let newForm = { ...prev, isStudentsInvolved: val };
-      
-      if (val === "Yes") {
-        newForm.applyIncentive = "No";
-      } else {
-        newForm.applyIncentive = "";
+      // applyIncentive is always "No" — organisation does not provide conference incentives
+      newForm.applyIncentive = "No";
+      if (val === "No") {
         if (newForm.otherAuthors) {
           newForm.otherAuthors = newForm.otherAuthors.map(author => {
             const newAuthor = { ...author };
@@ -527,7 +524,7 @@ export default function ConferencePublication() {
         title: "", conferenceName: "", scope: "", indexing: "",
         month: "", year: "",
         publisher: "", issnIsbn: "",
-        applyIncentive: "", applyingSeedGrant: "",
+        applyIncentive: "No", applyingSeedGrant: "",
         isStudentsInvolved: "No",
         totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
       });
@@ -1110,10 +1107,8 @@ export default function ConferencePublication() {
           </Select>
         </Box>
         <Box>
-          <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"} sx={form.isStudentsInvolved === "Yes" ? disabledField : {}}>
-            <MenuItem value="" disabled>Select</MenuItem>
-            <MenuItem value="Yes">Yes</MenuItem>
+          <Typography sx={labelStyle}>Apply Incentive? : *</Typography>
+          <Select size="small" fullWidth displayEmpty value="No" disabled sx={disabledField}>
             <MenuItem value="No">No</MenuItem>
           </Select>
         </Box>

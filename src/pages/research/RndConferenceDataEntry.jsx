@@ -43,7 +43,7 @@ export default function RndConferenceDataEntry() {
     year: "",
     publisher: "",
     issnIsbn: "",
-    applyIncentive: "",
+    applyIncentive: "No", // Organisation does not provide conference incentives
     applyingSeedGrant: "",
     isStudentsInvolved: "No",
     totalAuthors: 1,
@@ -95,10 +95,9 @@ export default function RndConferenceDataEntry() {
             authorName: a.CoAuthorType === "student" ? "" : a.authorName,
             empId: a.CoAuthorType === "student" ? "" : a.empId
           }));
-          newForm.applyIncentive = "";
-        } else if (val === "Yes") {
-          newForm.applyIncentive = "No";
         }
+        // applyIncentive is always "No" — organisation does not provide conference incentives
+        newForm.applyIncentive = "No";
       }
       return newForm;
     });
@@ -279,11 +278,9 @@ export default function RndConferenceDataEntry() {
     const val = e.target.value;
     setForm((prev) => {
       let newForm = { ...prev, isStudentsInvolved: val };
-      
-      if (val === "Yes") {
-        newForm.applyIncentive = "No";
-      } else {
-        newForm.applyIncentive = "";
+      // applyIncentive is always "No" — organisation does not provide conference incentives
+      newForm.applyIncentive = "No";
+      if (val === "No") {
         if (newForm.otherAuthors) {
           newForm.otherAuthors = newForm.otherAuthors.map(author => {
             const newAuthor = { ...author };
@@ -331,10 +328,7 @@ export default function RndConferenceDataEntry() {
       return;
     }
 
-    if (form.applyIncentive === "Yes" && (!form.approvedAmount || Number(form.approvedAmount) <= 0)) {
-      toast.error("Please enter a valid Approved Incentive Amount");
-      return;
-    }
+    // applyIncentive is always "No" — no validation needed for approved amount
 
     if (!files.certificate || !files.proceedings) {
       toast.error("Please attach all required documents (Certificate & Proceedings)");
@@ -757,9 +751,7 @@ export default function RndConferenceDataEntry() {
             </Box>
             <Box>
               <Typography sx={labelStyle}>Apply Incentive? : *</Typography>
-              <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"} sx={form.isStudentsInvolved === "Yes" ? disabledField : {}}>
-                <MenuItem value="" disabled>Select Option</MenuItem>
-                <MenuItem value="Yes">Yes</MenuItem>
+              <Select size="small" fullWidth displayEmpty value="No" disabled sx={disabledField}>
                 <MenuItem value="No">No</MenuItem>
               </Select>
             </Box>
@@ -771,19 +763,6 @@ export default function RndConferenceDataEntry() {
                 <MenuItem value="No">No</MenuItem>
               </Select>
             </Box>
-            {form.applyIncentive === "Yes" && (
-              <Box>
-                <Typography sx={labelStyle}>Approved Incentive Amount (₹) : *</Typography>
-                <TextField
-                  size="small"
-                  fullWidth
-                  type="number"
-                  placeholder="Enter Approved Incentive Amount"
-                  value={form.approvedAmount}
-                  onChange={set("approvedAmount")}
-                />
-              </Box>
-            )}
           </Grid2>
 
           {/* ── Attachments ── */}

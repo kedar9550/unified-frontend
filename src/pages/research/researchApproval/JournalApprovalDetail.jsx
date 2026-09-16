@@ -432,6 +432,20 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         </Box>
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
+                            {data.isInstitutionRecord === 'Yes' && (
+                                <Chip
+                                    label="Institution Record"
+                                    sx={{
+                                        bgcolor: "rgba(2, 136, 209, 0.1)",
+                                        color: "#0288d1",
+                                        border: "1px solid rgba(2, 136, 209, 0.3)",
+                                        fontWeight: 700,
+                                        borderRadius: "20px",
+                                        px: 1,
+                                        py: 0.5
+                                    }}
+                                />
+                            )}
                             {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
                                 <Chip
                                     label="R&D Direct Entry"
@@ -633,6 +647,24 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         <Box sx={{ display: "flex", flexDirection: "column" }}>
                             {[
                                 { key: "academicYear", label: "Academic Year", value: data.academicYear?.year || "-", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                ...(data.isInstitutionRecord === 'Yes' ? [{
+                                    key: "isInstitutionRecord",
+                                    label: "Institution Record",
+                                    chip: (
+                                        <Chip
+                                            label="Yes (Institution Record)"
+                                            size="small"
+                                            sx={{
+                                                bgcolor: "rgba(2, 136, 209, 0.1)",
+                                                color: "#0288d1",
+                                                border: "1px solid rgba(2, 136, 209, 0.3)",
+                                                fontWeight: 800,
+                                            }}
+                                        />
+                                    ),
+                                    icon: <SchoolIcon sx={{ fontSize: 18, color: "#0288d1" }} />,
+                                    editable: false
+                                }] : []),
                                 ...((data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? [{ key: "entryType", label: "Entry Source", value: "R&D Direct Entry", icon: <PersonIcon sx={{ fontSize: 18, color: "var(--color-primary)" }} />, editable: false }] : []),
                                 { key: "doi", label: "DOI", value: data.doi || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
                                 { key: "authorPos", label: "Applicant Author Position", chip: (

@@ -579,8 +579,8 @@ export default function JournalPublication() {
       toast.error("Please update your profile with PAN Number and College before submitting");
       return;
     }
-    if (!form.doi || !form.paperTitle || !form.journalName || !form.month || !form.year) {
-      toast.error("Please fill all required fields");
+    if (!form.doi || !form.paperTitle || !form.journalName || !form.month || !form.year || !form.journalQuartile || !form.journalType || !form.isScopus) {
+      toast.error("Please fill all mandatory fields (*)");
       return;
     }
 
@@ -1073,7 +1073,7 @@ export default function JournalPublication() {
 
         {/* Journal Type */}
         <Box>
-          <Typography sx={labelStyle}>Type of Journal :</Typography>
+          <Typography sx={labelStyle}>Type of Journal : *</Typography>
           <Select size="small" fullWidth displayEmpty value={form.journalType || ""} onChange={set("journalType")} disabled={true} sx={disabledField}>
             <MenuItem value="">Auto-filled from DOI</MenuItem>
             {(form.journalType && !JOURNAL_TYPES.includes(form.journalType)
@@ -1085,7 +1085,7 @@ export default function JournalPublication() {
 
         {/* Indexed in Scopus */}
         <Box>
-          <Typography sx={labelStyle}>Indexed in Scopus :</Typography>
+          <Typography sx={labelStyle}>Indexed in Scopus : *</Typography>
           <TextField size="small" fullWidth value={form.isScopus || ""} disabled={true} sx={disabledField} placeholder="Auto-filled from DOI" />
         </Box>
 

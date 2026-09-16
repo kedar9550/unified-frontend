@@ -129,6 +129,30 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                             <TextField fullWidth label="DOI" name="doi" value={formData.doi || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Is this an Institution Record?</InputLabel>
+                                <Select
+                                    label="Is this an Institution Record?"
+                                    name="isInstitutionRecord"
+                                    value={formData.isInstitutionRecord || "No"}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setFormData(prev => {
+                                            const updated = { ...prev, isInstitutionRecord: val };
+                                            if (val === "Yes") {
+                                                updated.applyIncentive = "No";
+                                                updated.appraisalEligible = "No";
+                                            }
+                                            return updated;
+                                        });
+                                    }}
+                                >
+                                    <MenuItem value="Yes">Yes</MenuItem>
+                                    <MenuItem value="No">No</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" } }}>
                             <FormControl fullWidth size="small">
                                 <InputLabel>Journal Type</InputLabel>
@@ -367,6 +391,30 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                             <TextField fullWidth label="Applicant Name" name="applicantName" value={formData.applicantName || ""} onChange={handleChange} variant="outlined" size="small" />
+                        </Box>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Is this an Institution Record?</InputLabel>
+                                <Select
+                                    label="Is this an Institution Record?"
+                                    name="isInstitutionRecord"
+                                    value={formData.isInstitutionRecord || "No"}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setFormData(prev => {
+                                            const updated = { ...prev, isInstitutionRecord: val };
+                                            if (val === "Yes") {
+                                                updated.applyIncentive = "No";
+                                                updated.appraisalEligible = "No";
+                                            }
+                                            return updated;
+                                        });
+                                    }}
+                                >
+                                    <MenuItem value="Yes">Yes</MenuItem>
+                                    <MenuItem value="No">No</MenuItem>
+                                </Select>
+                            </FormControl>
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                             <FormControl fullWidth size="small">
