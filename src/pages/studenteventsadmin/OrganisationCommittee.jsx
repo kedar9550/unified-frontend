@@ -1,12 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  Box, Tabs, Tab, Card, CardContent, Typography, Grid, CircularProgress, Chip,
-  Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Autocomplete,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton
-} from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import PageHeader from '../../components/common/PageHeader';
+import { Box, Typography, Card, CardContent, Grid, Button, IconButton, Chip, Avatar, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, Autocomplete, CircularProgress, Alert, InputAdornment, Paper, Tabs, Tab } from '@mui/material';
+import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Search as SearchIcon, CloudUpload as CloudUploadIcon, PersonAdd as PersonAddIcon } from '@mui/icons-material';
 import { PageContainer } from '../../components/common/design-system';
+import PageHeader from '../../components/common/PageHeader';
+import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 
@@ -132,9 +129,9 @@ const CommitteeRoleManager = ({ role }) => {
 
   return (
     <Box sx={{ mt: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h6">{role}s List</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpen()}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b', fontSize: '1.25rem' }}>{role}s List</Typography>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpen()} sx={{ borderRadius: '9999px', textTransform: 'none', px: 3, py: 1, backgroundColor: '#0f172a', fontWeight: 600, '&:hover': { backgroundColor: '#1e293b' }, boxShadow: 'none' }}>
           Add {role}
         </Button>
       </Box>
@@ -142,50 +139,50 @@ const CommitteeRoleManager = ({ role }) => {
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}><CircularProgress /></Box>
       ) : (
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
-          <Table>
-            <TableHead sx={{ backgroundColor: 'background.default' }}>
-              <TableRow>
-                <TableCell>Photo</TableCell>
-                <TableCell>Employee Details</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {members.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} align="center" sx={{ py: 3 }}>No {role}s found.</TableCell>
-                </TableRow>
-              ) : (
-                members.map((member) => (
-                  <TableRow key={member._id}>
-                    <TableCell>
-                      <CoordinatorPhoto
-                        employeeCode={member.employee?.institutionId || member.employee?.employeeCode}
-                        name={member.employee?.name}
-                        sx={{ width: 50, height: 50, borderRadius: '50%' }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body1" fontWeight={600}>{member.employee?.name || member.employee?.employeeName}</Typography>
-                      <Typography variant="body2" color="textSecondary">Emp ID: {member.employee?.institutionId || member.employee?.employeeCode}</Typography>
-                      <Typography variant="caption" color="textSecondary" sx={{ display: 'block' }}>Ph: {member.employee?.phone || 'N/A'}</Typography>
-                      <Typography variant="caption" color="primary" sx={{ display: 'block', fontWeight: 'bold' }}>Order No: {member.orderNumber || 0}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip label={member.status} color={member.status === 'Active' ? 'success' : 'default'} size="small" />
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton color="primary" onClick={() => handleOpen(member)}><EditIcon /></IconButton>
-                      <IconButton color="error" onClick={() => handleDelete(member._id)}><DeleteIcon /></IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <DataTable
+          columns={['Photo', 'Employee Details', 'Status', 'Actions']}
+          rows={members.map((member) => [
+            {
+              value: member.employee?.name || member.employee?.employeeName || 'Unknown',
+              display: (
+                <CoordinatorPhoto
+                  employeeCode={member.employee?.institutionId || member.employee?.employeeCode}
+                  name={member.employee?.name}
+                  sx={{ width: 48, height: 48, borderRadius: '50%' }}
+                />
+              )
+            },
+            {
+              value: member.employee?.name || member.employee?.employeeName || '',
+              display: (
+                <Box sx={{ textAlign: 'left' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1e293b', fontSize: '0.875rem', mb: 0.5 }}>{member.employee?.name || member.employee?.employeeName}</Typography>
+                  <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.875rem' }}>Emp ID: {member.employee?.institutionId || member.employee?.employeeCode}</Typography>
+                  <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.875rem' }}>Ph: {member.employee?.phone || 'N/A'}</Typography>
+                  <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, color: '#0284c7', mt: 0.5, fontSize: '0.75rem' }}>Order No: {member.orderNumber || 0}</Typography>
+                </Box>
+              )
+            },
+            {
+              value: member.status,
+              display: (
+                <Chip label={member.status} sx={{ backgroundColor: member.status === 'Active' ? '#16a34a' : '#e2e8f0', color: member.status === 'Active' ? '#ffffff' : '#475569', fontWeight: 600, fontSize: '0.75rem', height: '24px', borderRadius: '9999px', px: 1 }} />
+              )
+            },
+            {
+              value: 'Actions',
+              display: (
+                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <IconButton onClick={() => handleOpen(member)} size="small" sx={{ mr: 1, color: '#0284c7' }}><EditIcon fontSize="small" /></IconButton>
+                  <IconButton onClick={() => handleDelete(member._id)} size="small" sx={{ color: '#ef4444' }}><DeleteIcon fontSize="small" /></IconButton>
+                </Box>
+              )
+            }
+          ])}
+          alignments={['center', 'left', 'center', 'center']}
+          columnWidths={['10%', '50%', '20%', '20%']}
+          nonSortableColumns={[0, 3]}
+        />
       )}
 
       <Dialog open={openModal} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -329,9 +326,9 @@ const StudentCoordinatorManager = () => {
 
   return (
     <Box sx={{ mt: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h6">{role}s List</Typography>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpen()}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, color: '#1e293b', fontSize: '1.25rem' }}>{role}s List</Typography>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpen()} sx={{ borderRadius: '9999px', textTransform: 'none', px: 3, py: 1, backgroundColor: '#0f172a', fontWeight: 600, '&:hover': { backgroundColor: '#1e293b' }, boxShadow: 'none' }}>
           Add {role}
         </Button>
       </Box>
@@ -339,50 +336,50 @@ const StudentCoordinatorManager = () => {
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}><CircularProgress /></Box>
       ) : (
-        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
-          <Table>
-            <TableHead sx={{ backgroundColor: 'background.default' }}>
-              <TableRow>
-                <TableCell>Photo</TableCell>
-                <TableCell>Student Details</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {members.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} align="center" sx={{ py: 3 }}>No {role}s found.</TableCell>
-                </TableRow>
-              ) : (
-                members.map((member) => (
-                  <TableRow key={member._id}>
-                    <TableCell>
-                      <StudentPhoto
-                        rollNo={member.rollNo}
-                        name={member.rollNo}
-                        sx={{ width: 50, height: 50, borderRadius: '50%' }}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body1" fontWeight={600}>{member.studentName || 'Name not found'}</Typography>
-                      <Typography variant="body2" color="textSecondary">Roll No: {member.rollNo || 'N/A'}</Typography>
-                      {member.mobileNumber && <Typography variant="caption" color="textSecondary" display="block">Ph: {member.mobileNumber}</Typography>}
-                      <Typography variant="caption" color="primary" sx={{ display: 'block', fontWeight: 'bold' }}>Order No: {member.orderNumber || 0}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip label={member.status} color={member.status === 'Active' ? 'success' : 'default'} size="small" />
-                    </TableCell>
-                    <TableCell align="right">
-                      <IconButton color="primary" onClick={() => handleOpen(member)}><EditIcon /></IconButton>
-                      <IconButton color="error" onClick={() => handleDelete(member._id)}><DeleteIcon /></IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <DataTable
+          columns={['Photo', 'Student Details', 'Status', 'Actions']}
+          rows={members.map((member) => [
+            {
+              value: member.studentName || member.rollNo || 'Unknown',
+              display: (
+                <StudentPhoto
+                  rollNo={member.rollNo}
+                  name={member.studentName}
+                  sx={{ width: 48, height: 48, borderRadius: '50%' }}
+                />
+              )
+            },
+            {
+              value: member.studentName || member.rollNo || '',
+              display: (
+                <Box sx={{ textAlign: 'left' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1e293b', fontSize: '0.875rem', mb: 0.5 }}>{member.studentName || 'Name not found'}</Typography>
+                  <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.875rem' }}>Roll No: {member.rollNo || 'N/A'}</Typography>
+                  {member.mobileNumber && <Typography variant="body2" sx={{ color: '#64748b', fontSize: '0.875rem' }}>Ph: {member.mobileNumber}</Typography>}
+                  <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, color: '#0284c7', mt: 0.5, fontSize: '0.75rem' }}>Order No: {member.orderNumber || 0}</Typography>
+                </Box>
+              )
+            },
+            {
+              value: member.status,
+              display: (
+                <Chip label={member.status} sx={{ backgroundColor: member.status === 'Active' ? '#16a34a' : '#e2e8f0', color: member.status === 'Active' ? '#ffffff' : '#475569', fontWeight: 600, fontSize: '0.75rem', height: '24px', borderRadius: '9999px', px: 1 }} />
+              )
+            },
+            {
+              value: 'Actions',
+              display: (
+                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <IconButton onClick={() => handleOpen(member)} size="small" sx={{ mr: 1, color: '#0284c7' }}><EditIcon fontSize="small" /></IconButton>
+                  <IconButton onClick={() => handleDelete(member._id)} size="small" sx={{ color: '#ef4444' }}><DeleteIcon fontSize="small" /></IconButton>
+                </Box>
+              )
+            }
+          ])}
+          alignments={['center', 'left', 'center', 'center']}
+          columnWidths={['10%', '50%', '20%', '20%']}
+          nonSortableColumns={[0, 3]}
+        />
       )}
 
       <Dialog open={openModal} onClose={handleClose} maxWidth="sm" fullWidth>
