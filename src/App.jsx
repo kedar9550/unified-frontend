@@ -113,6 +113,8 @@ import Registrations from "./pages/studenteventsadmin/Registrations";
 import Participants from "./pages/studenteventsadmin/Participants";
 import AttendanceReport from "./pages/studenteventsadmin/AttendanceReport";
 import WinnersReport from "./pages/studenteventsadmin/WinnersReport";
+import ParticipantPayments from "./pages/studenteventsadmin/ParticipantPayments";
+import WinnersWithPayments from "./pages/studenteventsadmin/WinnersWithPayments";
 import AddTeamMember from "./pages/studenteventsadmin/AddTeamMember";
 import ApplyAccommodation from "./pages/studenteventsadmin/ApplyAccommodation";
 import ScanPass from "./pages/studenteventsadmin/ScanPass";
@@ -356,6 +358,10 @@ function App() {
         <Route path="/Eventveda/participants/attendance-report" element={<ProtectedRoute element={<AttendanceReport />} />} />
         <Route path="/Eventveda/participants/attendance" element={<ProtectedRoute element={<AttendanceReport />} />} />
         <Route path="/Eventveda/participants/winners-report" element={<ProtectedRoute element={<WinnersReport />} />} />
+        <Route path="/Eventveda/participants/participant-payments" element={<ProtectedRoute element={<ParticipantPayments />} />} />
+        <Route path="/Eventveda/participants/participant-payments-report" element={<ProtectedRoute element={<ParticipantPayments />} />} />
+        <Route path="/Eventveda/participants/winners-with-payments" element={<ProtectedRoute element={<WinnersWithPayments />} />} />
+        <Route path="/Eventveda/participants/winnerswithpayments" element={<ProtectedRoute element={<WinnersWithPayments />} />} />
         <Route path="/Eventveda/participants/attendance-report/winners" element={<ProtectedRoute element={<WinnersReport />} />} />
         <Route path="/Eventveda/participants/accommodation" element={<ProtectedRoute element={<Participants mode="accommodation" />} />} />
         <Route path="/Eventveda/participants/no-accommodation" element={<ProtectedRoute element={<Participants mode="no-accommodation" />} />} />

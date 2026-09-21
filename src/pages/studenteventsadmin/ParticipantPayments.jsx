@@ -26,29 +26,22 @@ import {
 import {
   EmojiEvents as TrophyIcon,
   MilitaryTech as MedalIcon,
-  WorkspacePremium as PremiumIcon,
   People as PeopleIcon,
   Refresh as RefreshIcon,
   Download as DownloadIcon,
   Visibility as ViewIcon,
   Close as CloseIcon,
-  School as SchoolIcon,
-  Event as EventIcon,
-  Badge as BadgeIcon,
-  CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon,
   QrCode as QrCodeIcon,
-  AssignmentTurnedIn as AssignmentTurnedInIcon,
-  Groups as GroupsIcon,
-  Payment as PaymentIcon,
+  Receipt as ReceiptIcon,
+  CreditCard as CreditCardIcon,
+  ArrowBack as ArrowBackIcon,
+  WorkspacePremium as PremiumIcon,
 } from '@mui/icons-material';
 import * as XLSX from 'xlsx-js-style';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import DataTable from '../../components/data/DataTable';
 import { PageContainer, EmptyState } from '../../components/common/design-system';
-import StatCard from '../../components/common/StatCard';
-import StatCardGrid from '../../components/common/StatCardGrid';
 import CountBand from '../../components/common/design-system/CountBand';
 import API from '../../api/axios';
 import { fetchEventDepartments } from '../../api/eventDepartmentApi';
@@ -56,7 +49,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import EventPassCard from '../../components/EventPass/EventPassCard';
 
-const WinnersReport = () => {
+const ParticipantPayments = () => {
   const navigate = useNavigate();
   const { activeRole, user } = useAuth();
 
@@ -80,7 +73,7 @@ const WinnersReport = () => {
   const [departmentFilter, setDepartmentFilter] = useState('ALL');
   const [branchMap, setBranchMap] = useState({});
 
-  const fetchWinners = useCallback(async () => {
+  const fetchParticipantPayments = useCallback(async () => {
     setLoading(true);
     try {
       const [eventsRes, deptsRes] = await Promise.all([
@@ -94,45 +87,63 @@ const WinnersReport = () => {
 
       let allowedEventNames = null;
       if (activeRole === 'FACULTY_COORDINATOR' && user) {
-        const userEvents = fetchedEvents.filter(e => {
+        const userEvents = fetchedEvents.filter((e) => {
           const coords = e.facultyCoordinators || (e.facultyCoordinator ? [e.facultyCoordinator] : []);
-          return coords.some(c =>
-            c.employeeId === user.institutionId ||
-            c.employeeId === user.employeeId ||
-            c.employeeId === user.employeeCode
+          return coords.some(
+            (c) =>
+              c.employeeId === user.institutionId ||
+              c.employeeId === user.employeeId ||
+              c.employeeId === user.employeeCode
           );
         });
-        allowedEventNames = userEvents.map(e => e.eventName);
+        allowedEventNames = userEvents.map((e) => e.eventName);
       }
 
-      // Query razorpay registrations with winnersOnly filter
-      const response = await API.get('/api/razorpay/registrations?winnersOnly=true');
+      // Query all paid registrations
+      const response = await API.get('/api/razorpay/registrations?paymentStatus=PAID');
       let fetchedPayments = response.data?.payments || [];
 
-      fetchedPayments = fetchedPayments.filter(p => {
+      fetchedPayments = fetchedPayments.filter((p) => {
         const isPaid = p.paymentStatus === 'PAID' || p.verified === true;
-        const isWinner = p.isFirstWinner || p.isSecondWinner || p.isThirdWinner;
-        return isPaid && isWinner;
+        return isPaid;
       });
 
       if (allowedEventNames) {
-        fetchedPayments = fetchedPayments.filter(p => allowedEventNames.includes(p.eventName || p.category));
+        fetchedPayments = fetchedPayments.filter((p) =>
+          allowedEventNames.includes(p.eventName || p.category)
+        );
       }
 
-      fetchedPayments = fetchedPayments.map(p => {
-        const eventMatch = fetchedEvents.find(e => e.eventName === (p.eventName || p.category));
+      fetchedPayments = fetchedPayments.map((p) => {
+        const eventMatch = fetchedEvents.find(
+          (e) => e.eventName === (p.eventName || p.category)
+        );
+        const amountInRupees =
+          p.amountRupees !== undefined && p.amountRupees !== null
+            ? p.amountRupees
+            : p.amount
+            ? p.amount > 1000
+              ? p.amount / 100
+              : p.amount
+            : 0;
+
         return {
           ...p,
-          venue: eventMatch ? (
-            eventMatch.venueType === 'Indoor' && eventMatch.building && eventMatch.floor
-              ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.building.name || eventMatch.building} - ${eventMatch.floor.name || eventMatch.floor}`
+          amountRupees: amountInRupees,
+          venue: eventMatch
+            ? eventMatch.venueType === 'Indoor' && eventMatch.building && eventMatch.floor
+              ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${
+                  eventMatch.building.name || eventMatch.building
+                } - ${eventMatch.floor.name || eventMatch.floor}`
               : eventMatch.venueType === 'Outdoor' && eventMatch.ground
-                ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${eventMatch.ground.name || eventMatch.ground}`
-                : eventMatch.venue
-          ) : null,
+              ? `${eventMatch.roomNo ? `Room No: ${eventMatch.roomNo}, ` : ''}${
+                  eventMatch.ground.name || eventMatch.ground
+                }`
+              : eventMatch.venue
+            : null,
           eventGroup: eventMatch?.group?.name || eventMatch?.group || '-',
           eventCategory: eventMatch?.category?.name || eventMatch?.category || p.category || '-',
-          eventSchool: eventMatch?.eventSchool?.name || p.category || p.schoolId || '-'
+          eventSchool: eventMatch?.eventSchool?.name || p.category || p.schoolId || '-',
         };
       });
 
@@ -140,10 +151,15 @@ const WinnersReport = () => {
 
       // Branch resolution for rolls missing branch
       const missingRolls = new Set();
-      fetchedPayments.forEach(pay => {
+      fetchedPayments.forEach((pay) => {
         if (Array.isArray(pay.participants)) {
-          pay.participants.forEach(p => {
-            if (!p.branch && p.roll && p.roll.length > 5 && (!p.college || p.college.toLowerCase().includes('aditya'))) {
+          pay.participants.forEach((p) => {
+            if (
+              !p.branch &&
+              p.roll &&
+              p.roll.length > 5 &&
+              (!p.college || p.college.toLowerCase().includes('aditya'))
+            ) {
               missingRolls.add(p.roll.toUpperCase());
             }
           });
@@ -157,39 +173,45 @@ const WinnersReport = () => {
             const res = await API.get(`/api/razorpay/registrations/branch/${roll}`);
             const data = res.data;
             let branch = null;
-            const studentObj = Array.isArray(data) && data.length > 0 ? data[0] : (data?.value && Array.isArray(data.value) && data.value.length > 0 ? data.value[0] : (data && typeof data === 'object' ? data : null));
+            const studentObj =
+              Array.isArray(data) && data.length > 0
+                ? data[0]
+                : data?.value && Array.isArray(data.value) && data.value.length > 0
+                ? data.value[0]
+                : data && typeof data === 'object'
+                ? data
+                : null;
             if (studentObj) {
               branch = studentObj.branch || studentObj.branch_name || studentObj.branchName || studentObj.BRANCH;
             }
             if (branch) {
-              setBranchMap(prev => ({ ...prev, [roll]: String(branch).trim() }));
+              setBranchMap((prev) => ({ ...prev, [roll]: String(branch).trim() }));
             }
           } catch (err) {
             console.error(`Failed to fetch branch for ${roll}`, err);
           }
         });
       }
-
     } catch (error) {
-      console.error('Error fetching winners report:', error);
-      toast.error(error.response?.data?.message || 'Failed to load winners report');
+      console.error('Error fetching participant payments:', error);
+      toast.error(error.response?.data?.message || 'Failed to load participant payments report');
     } finally {
       setLoading(false);
     }
   }, [activeRole, user]);
 
   useEffect(() => {
-    fetchWinners();
-  }, [fetchWinners]);
+    fetchParticipantPayments();
+  }, [fetchParticipantPayments]);
 
   const deptLookupMap = useMemo(() => {
     const map = {};
-    allDepartments.forEach(d => {
+    allDepartments.forEach((d) => {
       if (d && d.name) {
         const canonical = d.name.trim();
         map[canonical.toUpperCase()] = canonical;
         if (d.alternativeNames) {
-          d.alternativeNames.split(',').forEach(alt => {
+          d.alternativeNames.split(',').forEach((alt) => {
             const cleanAlt = alt.trim().toUpperCase();
             if (cleanAlt) {
               map[cleanAlt] = canonical;
@@ -201,96 +223,118 @@ const WinnersReport = () => {
     return map;
   }, [allDepartments]);
 
-  const resolveStudentDepartment = useCallback((p) => {
-    if (!p) return '';
-    const rawDept = String(p.department || '').trim();
-    if (rawDept && deptLookupMap[rawDept.toUpperCase()]) {
-      return deptLookupMap[rawDept.toUpperCase()];
-    }
-    if (rawDept) return rawDept;
-
-    const rawBranch = String(p.computedBranch || p.branch || '').trim();
-    if (rawBranch && deptLookupMap[rawBranch.toUpperCase()]) {
-      return deptLookupMap[rawBranch.toUpperCase()];
-    }
-    return rawBranch || '';
-  }, [deptLookupMap]);
-
-  // Transform each payment into a winning team record
-  const winningTeams = useMemo(() => {
-    return payments.map(payment => {
-      const participants = Array.isArray(payment.participants) ? payment.participants.map((p, idx) => ({
-        ...p,
-        id: `${payment._id || payment.receipt}-${idx}`,
-        computedBranch: p.branch || branchMap[p.roll?.toUpperCase()] || '',
-        resolvedDept: resolveStudentDepartment({ ...p, computedBranch: p.branch || branchMap[p.roll?.toUpperCase()] || '' })
-      })) : [];
-
-      let prizeType = 'None';
-      let prizeRank = 99;
-      if (payment.isFirstWinner) {
-        prizeType = 'First Prize';
-        prizeRank = 1;
-      } else if (payment.isSecondWinner) {
-        prizeType = 'Second Prize';
-        prizeRank = 2;
-      } else if (payment.isThirdWinner) {
-        prizeType = 'Third Prize';
-        prizeRank = 3;
+  const resolveStudentDepartment = useCallback(
+    (p) => {
+      if (!p) return '';
+      const rawDept = String(p.department || '').trim();
+      if (rawDept && deptLookupMap[rawDept.toUpperCase()]) {
+        return deptLookupMap[rawDept.toUpperCase()];
       }
+      if (rawDept) return rawDept;
 
-      const attendedCount = participants.filter(p => p.attended).length;
+      const rawBranch = String(p.computedBranch || p.branch || '').trim();
+      if (rawBranch && deptLookupMap[rawBranch.toUpperCase()]) {
+        return deptLookupMap[rawBranch.toUpperCase()];
+      }
+      return rawBranch || '';
+    },
+    [deptLookupMap]
+  );
 
-      return {
-        ...payment,
-        prizeType,
-        prizeRank,
-        participants,
-        attendedCount,
-        totalMembers: participants.length || payment.teamSize || 1,
-      };
-    }).sort((a, b) => {
-      // Sort by Prize Rank (1st, then 2nd, then 3rd) then eventName
-      if (a.prizeRank !== b.prizeRank) return a.prizeRank - b.prizeRank;
-      return (a.eventName || '').localeCompare(b.eventName || '');
-    });
+  // Transform each payment into a team record with payment & winner info
+  const paidTeams = useMemo(() => {
+    return payments
+      .map((payment) => {
+        const participants = Array.isArray(payment.participants)
+          ? payment.participants.map((p, idx) => ({
+              ...p,
+              id: `${payment._id || payment.receipt}-${idx}`,
+              computedBranch: p.branch || branchMap[p.roll?.toUpperCase()] || '',
+              resolvedDept: resolveStudentDepartment({
+                ...p,
+                computedBranch: p.branch || branchMap[p.roll?.toUpperCase()] || '',
+              }),
+            }))
+          : [];
+
+        let prizeType = 'Participant';
+        let prizeRank = 99;
+        if (payment.isFirstWinner) {
+          prizeType = 'First Prize';
+          prizeRank = 1;
+        } else if (payment.isSecondWinner) {
+          prizeType = 'Second Prize';
+          prizeRank = 2;
+        } else if (payment.isThirdWinner) {
+          prizeType = 'Third Prize';
+          prizeRank = 3;
+        }
+
+        const attendedCount = participants.filter((p) => p.attended).length;
+
+        const formattedPaidDate = payment.paidAt || payment.createdAt
+          ? new Date(payment.paidAt || payment.createdAt).toLocaleString('en-IN', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true,
+            })
+          : '-';
+
+        return {
+          ...payment,
+          prizeType,
+          prizeRank,
+          participants,
+          attendedCount,
+          formattedPaidDate,
+          totalMembers: participants.length || payment.teamSize || 1,
+        };
+      })
+      .sort((a, b) => {
+        if (a.prizeRank !== b.prizeRank) return a.prizeRank - b.prizeRank;
+        return (a.eventName || '').localeCompare(b.eventName || '');
+      });
   }, [payments, branchMap, resolveStudentDepartment]);
 
   const uniqueEvents = useMemo(() => {
     const eventsSet = new Set();
-    winningTeams.forEach(t => {
+    paidTeams.forEach((t) => {
       if (t.eventName) eventsSet.add(t.eventName);
     });
     return Array.from(eventsSet).sort();
-  }, [winningTeams]);
+  }, [paidTeams]);
 
   const uniqueSchools = useMemo(() => {
     const set = new Set();
-    winningTeams.forEach(t => {
+    paidTeams.forEach((t) => {
       const school = t.eventSchool || t.category || t.schoolId;
       if (school && school !== '-') set.add(school);
     });
     return Array.from(set).sort();
-  }, [winningTeams]);
+  }, [paidTeams]);
 
   const uniqueDepartments = useMemo(() => {
     const set = new Set();
-    allDepartments.forEach(d => {
+    allDepartments.forEach((d) => {
       if (d?.name) set.add(d.name.trim());
     });
-    winningTeams.forEach(t => {
-      t.participants.forEach(p => {
+    paidTeams.forEach((t) => {
+      t.participants.forEach((p) => {
         if (p.resolvedDept) set.add(p.resolvedDept);
       });
     });
     return Array.from(set).filter(Boolean).sort();
-  }, [allDepartments, winningTeams]);
+  }, [allDepartments, paidTeams]);
 
   const filteredTeams = useMemo(() => {
-    return winningTeams.filter(t => {
+    return paidTeams.filter((t) => {
       if (prizeFilter === 'FIRST' && !t.isFirstWinner) return false;
       if (prizeFilter === 'SECOND' && !t.isSecondWinner) return false;
       if (prizeFilter === 'THIRD' && !t.isThirdWinner) return false;
+      if (prizeFilter === 'NON_WINNERS' && (t.isFirstWinner || t.isSecondWinner || t.isThirdWinner)) return false;
 
       if (eventFilter !== 'ALL' && t.eventName !== eventFilter) return false;
 
@@ -300,7 +344,9 @@ const WinnersReport = () => {
       }
 
       if (departmentFilter !== 'ALL') {
-        const hasDept = t.participants.some(p => (p.resolvedDept || '').toUpperCase() === departmentFilter.toUpperCase());
+        const hasDept = t.participants.some(
+          (p) => (p.resolvedDept || '').toUpperCase() === departmentFilter.toUpperCase()
+        );
         if (!hasDept) return false;
       }
 
@@ -310,17 +356,34 @@ const WinnersReport = () => {
         const receipt = (t.receipt || '').toLowerCase();
         const eventName = (t.eventName || '').toLowerCase();
         const school = (t.eventSchool || t.category || '').toLowerCase();
+        const paymentId = (t.razorpayPaymentId || '').toLowerCase();
+        const orderId = (t.razorpayOrderId || '').toLowerCase();
 
-        const matchesTeam = teamId.includes(query) || receipt.includes(query) || eventName.includes(query) || school.includes(query);
+        const matchesTeam =
+          teamId.includes(query) ||
+          receipt.includes(query) ||
+          eventName.includes(query) ||
+          school.includes(query) ||
+          paymentId.includes(query) ||
+          orderId.includes(query);
 
-        const matchesMember = t.participants.some(p => {
+        const matchesMember = t.participants.some((p) => {
           const name = (p.name || '').toLowerCase();
           const roll = (p.roll || '').toLowerCase();
           const email = (p.email || '').toLowerCase();
           const mobile = (p.mobile || '').toLowerCase();
           const college = (p.college || '').toLowerCase();
           const dept = (p.resolvedDept || '').toLowerCase();
-          return name.includes(query) || roll.includes(query) || email.includes(query) || mobile.includes(query) || college.includes(query) || dept.includes(query);
+          const accPayId = (p.accommodationPayment?.razorpayPaymentId || '').toLowerCase();
+          return (
+            name.includes(query) ||
+            roll.includes(query) ||
+            email.includes(query) ||
+            mobile.includes(query) ||
+            college.includes(query) ||
+            dept.includes(query) ||
+            accPayId.includes(query)
+          );
         });
 
         return matchesTeam || matchesMember;
@@ -328,37 +391,92 @@ const WinnersReport = () => {
 
       return true;
     });
-  }, [winningTeams, prizeFilter, eventFilter, schoolFilter, departmentFilter, searchQuery]);
+  }, [paidTeams, prizeFilter, eventFilter, schoolFilter, departmentFilter, searchQuery]);
 
   // Statistics
-  const firstPrizeTeams = useMemo(() => winningTeams.filter(t => t.isFirstWinner).length, [winningTeams]);
-  const secondPrizeTeams = useMemo(() => winningTeams.filter(t => t.isSecondWinner).length, [winningTeams]);
-  const thirdPrizeTeams = useMemo(() => winningTeams.filter(t => t.isThirdWinner).length, [winningTeams]);
-  const totalWinningParticipants = useMemo(() => {
-    return winningTeams.reduce((acc, t) => acc + (t.participants?.length || 0), 0);
-  }, [winningTeams]);
+  const firstPrizeTeams = useMemo(() => paidTeams.filter((t) => t.isFirstWinner).length, [paidTeams]);
+  const secondPrizeTeams = useMemo(() => paidTeams.filter((t) => t.isSecondWinner).length, [paidTeams]);
+  const thirdPrizeTeams = useMemo(() => paidTeams.filter((t) => t.isThirdWinner).length, [paidTeams]);
+  const totalPaidParticipants = useMemo(() => {
+    return paidTeams.reduce((acc, t) => acc + (t.participants?.length || 0), 0);
+  }, [paidTeams]);
 
-  // Export to Excel with xlsx-js-style
+  const totalRevenueCollected = useMemo(() => {
+    return paidTeams.reduce((acc, t) => acc + Number(t.amountRupees || 0), 0);
+  }, [paidTeams]);
+
+  // Export to Excel with xlsx-js-style (Includes all Paid Participants & Payment details)
   const handleExportExcel = () => {
     if (filteredTeams.length === 0) {
-      toast.error('No winning teams data to export.');
+      toast.error('No paid participant data to export.');
       return;
     }
 
     const headers = [
-      'S.No', 'Prize Won', 'Team ID', 'Event Name', 'School Name', 'Event Department(s)',
-      'Team Size', 'Participant Name', 'Roll No', 'Gender', 'College', 'Branch',
-      'Student Department', 'Year', 'Mobile', 'Email', 'Attended'
+      'S.No',
+      'Prize / Status',
+      'Team ID',
+      'Receipt No',
+      'Event Name',
+      'School Name',
+      'Event Department(s)',
+      'Registration Fee (₹)',
+      'Payment Status',
+      'Razorpay Payment ID',
+      'Razorpay Order ID',
+      'Payment Date & Time',
+      'Team Size',
+      'Participant Name',
+      'Roll No',
+      'Gender',
+      'College',
+      'Branch',
+      'Student Department',
+      'Year',
+      'Mobile',
+      'Email',
+      'Attended',
+      'Accommodation Required',
+      'Accommodation Days',
+      'Acc Fee Paid (₹)',
+      'Acc Payment ID',
+      'Acc Paid Date',
     ];
 
     const colWidths = [
-      { wch: 6 }, { wch: 14 }, { wch: 16 }, { wch: 28 }, { wch: 22 }, { wch: 30 },
-      { wch: 10 }, { wch: 26 }, { wch: 16 }, { wch: 10 }, { wch: 26 }, { wch: 16 },
-      { wch: 20 }, { wch: 8 }, { wch: 16 }, { wch: 28 }, { wch: 12 }
+      { wch: 6 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 28 },
+      { wch: 22 },
+      { wch: 30 },
+      { wch: 18 },
+      { wch: 14 },
+      { wch: 24 },
+      { wch: 24 },
+      { wch: 22 },
+      { wch: 10 },
+      { wch: 26 },
+      { wch: 16 },
+      { wch: 10 },
+      { wch: 26 },
+      { wch: 16 },
+      { wch: 20 },
+      { wch: 8 },
+      { wch: 16 },
+      { wch: 28 },
+      { wch: 10 },
+      { wch: 20 },
+      { wch: 16 },
+      { wch: 16 },
+      { wch: 24 },
+      { wch: 16 },
     ];
 
-    const applySheetStyles = (ws, headerColsCount, headerBgRgb = 'B45309') => {
+    const applySheetStyles = (ws, totalRowsCount, headerColsCount, headerBgRgb = '0F172A') => {
       ws['!cols'] = colWidths;
+      // Header row styling
       for (let c = 0; c < headerColsCount; c++) {
         const cellRef = XLSX.utils.encode_cell({ r: 0, c });
         if (ws[cellRef]) {
@@ -370,8 +488,27 @@ const WinnersReport = () => {
               top: { style: 'thin', color: { rgb: 'CBD5E1' } },
               bottom: { style: 'thin', color: { rgb: 'CBD5E1' } },
               left: { style: 'thin', color: { rgb: 'CBD5E1' } },
-              right: { style: 'thin', color: { rgb: 'CBD5E1' } }
-            }
+              right: { style: 'thin', color: { rgb: 'CBD5E1' } },
+            },
+          };
+        }
+      }
+
+      // Total summary row styling (last row)
+      const lastRowIdx = totalRowsCount - 1;
+      for (let c = 0; c < headerColsCount; c++) {
+        const cellRef = XLSX.utils.encode_cell({ r: lastRowIdx, c });
+        if (ws[cellRef]) {
+          ws[cellRef].s = {
+            font: { bold: true, color: { rgb: '0F172A' }, sz: 11 },
+            fill: { fgColor: { rgb: 'E2E8F0' } },
+            alignment: { horizontal: c === 7 || c === 25 ? 'right' : 'center', vertical: 'center' },
+            border: {
+              top: { style: 'medium', color: { rgb: '0F172A' } },
+              bottom: { style: 'double', color: { rgb: '0F172A' } },
+              left: { style: 'thin', color: { rgb: 'CBD5E1' } },
+              right: { style: 'thin', color: { rgb: 'CBD5E1' } },
+            },
           };
         }
       }
@@ -380,24 +517,50 @@ const WinnersReport = () => {
     const buildRowsForTeams = (teamsList) => {
       const rows = [];
       let sNo = 1;
-      teamsList.forEach(t => {
+      teamsList.forEach((t) => {
         const schoolCategory = t.eventSchool || t.category || t.schoolId || '-';
-        const relatedEvent = allEvents.find(e => e._id === t.eventId);
+        const relatedEvent = allEvents.find((e) => e._id === t.eventId);
         let eventDeptStr = '-';
         if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
-          eventDeptStr = relatedEvent.department.map(d => d.name).join(', ');
+          eventDeptStr = relatedEvent.department.map((d) => d.name).join(', ');
         }
 
+        const regFee = t.amountRupees || 0;
+        const pStatus = t.paymentStatus || (t.verified ? 'PAID' : 'PENDING');
+        const payId = t.razorpayPaymentId || '-';
+        const orderId = t.razorpayOrderId || '-';
+        const payDate = t.formattedPaidDate;
+
         if (t.participants && t.participants.length > 0) {
-          t.participants.forEach(p => {
-            const collegeName = p.college === 'Other College' && p.otherCollege ? p.otherCollege : (p.college || '');
+          t.participants.forEach((p, pIdx) => {
+            const collegeName =
+              p.college === 'Other College' && p.otherCollege
+                ? p.otherCollege
+                : p.college || '';
+            const accReq = p.accommodation || 'No';
+            const accDays = p.daysCount || p.days || p.dayscount || '-';
+            const accPaidAmt = p.accommodationPayment?.amount || 0;
+            const accPayId = p.accommodationPayment?.razorpayPaymentId || '-';
+            const accPaidDate = p.accommodationPayment?.paidAt
+              ? new Date(p.accommodationPayment.paidAt).toLocaleDateString('en-IN')
+              : '-';
+
+            // Show registration fee ONLY on the 1st participant row of each team so Excel SUM matches team total!
+            const memberRegFee = pIdx === 0 ? regFee : 0;
+
             rows.push([
               sNo++,
               t.prizeType,
               t.teamId || t.receipt || '-',
+              t.receipt || '-',
               t.eventName || '-',
               schoolCategory,
               eventDeptStr,
+              memberRegFee,
+              pStatus,
+              payId,
+              orderId,
+              payDate,
               t.totalMembers,
               p.name || '',
               p.roll || '',
@@ -408,7 +571,12 @@ const WinnersReport = () => {
               p.year || '',
               p.mobile || '',
               p.email || '',
-              p.attended ? 'Yes' : 'No'
+              p.attended ? 'Yes' : 'No',
+              accReq,
+              accDays,
+              accPaidAmt,
+              accPayId,
+              accPaidDate,
             ]);
           });
         } else {
@@ -416,55 +584,124 @@ const WinnersReport = () => {
             sNo++,
             t.prizeType,
             t.teamId || t.receipt || '-',
+            t.receipt || '-',
             t.eventName || '-',
             schoolCategory,
             eventDeptStr,
+            regFee,
+            pStatus,
+            payId,
+            orderId,
+            payDate,
             t.totalMembers,
-            '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'
+            '-',
+            '-',
+            '-',
+            '-',
+            '-',
+            '-',
+            '-',
+            '-',
+            '-',
+            '-',
+            '-',
+            '-',
+            '-',
+            '-',
+            '-',
           ]);
         }
       });
+
+      // Add TOTAL summary row
+      const grandRegFee = teamsList.reduce((acc, t) => acc + Number(t.amountRupees || 0), 0);
+      const grandAccFee = teamsList.reduce((acc, t) => {
+        const teamAcc = t.participants?.reduce((pAcc, p) => pAcc + Number(p.accommodationPayment?.amount || 0), 0) || 0;
+        return acc + teamAcc;
+      }, 0);
+      const totalParticipantsCount = teamsList.reduce((acc, t) => acc + (t.participants?.length || 0), 0);
+
+      rows.push([
+        'TOTAL',
+        `Teams: ${teamsList.length}`,
+        '',
+        '',
+        '',
+        '',
+        '',
+        grandRegFee,
+        '',
+        '',
+        '',
+        '',
+        `Members: ${totalParticipantsCount}`,
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        grandAccFee,
+        '',
+        ''
+      ]);
+
       return rows;
     };
 
     const workbook = XLSX.utils.book_new();
 
-    // 1. Master Sheet: All Winners
+    // 1. Master Sheet: All Paid Participants
     const allRows = [headers, ...buildRowsForTeams(filteredTeams)];
     const allWs = XLSX.utils.aoa_to_sheet(allRows);
-    applySheetStyles(allWs, headers.length, 'B45309'); // Rich bronze/gold header
-    XLSX.utils.book_append_sheet(workbook, allWs, 'All Winners');
+    applySheetStyles(allWs, allRows.length, headers.length, '0F172A'); // Slate 900 header
+    XLSX.utils.book_append_sheet(workbook, allWs, 'All Paid Participants');
 
     // 2. 1st Prize Winners Sheet
-    const firstTeams = filteredTeams.filter(t => t.isFirstWinner);
+    const firstTeams = filteredTeams.filter((t) => t.isFirstWinner);
     if (firstTeams.length > 0) {
       const firstRows = [headers, ...buildRowsForTeams(firstTeams)];
       const firstWs = XLSX.utils.aoa_to_sheet(firstRows);
-      applySheetStyles(firstWs, headers.length, 'CA8A04'); // Gold
+      applySheetStyles(firstWs, firstRows.length, headers.length, 'B45309'); // Gold/Amber
       XLSX.utils.book_append_sheet(workbook, firstWs, '1st Prize Winners');
     }
 
     // 3. 2nd Prize Winners Sheet
-    const secondTeams = filteredTeams.filter(t => t.isSecondWinner);
+    const secondTeams = filteredTeams.filter((t) => t.isSecondWinner);
     if (secondTeams.length > 0) {
       const secondRows = [headers, ...buildRowsForTeams(secondTeams)];
       const secondWs = XLSX.utils.aoa_to_sheet(secondRows);
-      applySheetStyles(secondWs, headers.length, '475569'); // Silver/Slate
+      applySheetStyles(secondWs, secondRows.length, headers.length, '475569'); // Silver/Slate
       XLSX.utils.book_append_sheet(workbook, secondWs, '2nd Prize Winners');
     }
 
     // 4. 3rd Prize Winners Sheet
-    const thirdTeams = filteredTeams.filter(t => t.isThirdWinner);
+    const thirdTeams = filteredTeams.filter((t) => t.isThirdWinner);
     if (thirdTeams.length > 0) {
       const thirdRows = [headers, ...buildRowsForTeams(thirdTeams)];
       const thirdWs = XLSX.utils.aoa_to_sheet(thirdRows);
-      applySheetStyles(thirdWs, headers.length, '92400E'); // Bronze
+      applySheetStyles(thirdWs, thirdRows.length, headers.length, '92400E'); // Bronze
       XLSX.utils.book_append_sheet(workbook, thirdWs, '3rd Prize Winners');
     }
 
+    // 5. General Participants Sheet (Non-Winners)
+    const nonWinnerTeams = filteredTeams.filter((t) => !t.isFirstWinner && !t.isSecondWinner && !t.isThirdWinner);
+    if (nonWinnerTeams.length > 0) {
+      const nonWinnerRows = [headers, ...buildRowsForTeams(nonWinnerTeams)];
+      const nonWinnerWs = XLSX.utils.aoa_to_sheet(nonWinnerRows);
+      applySheetStyles(nonWinnerWs, nonWinnerRows.length, headers.length, '1E293B');
+      XLSX.utils.book_append_sheet(workbook, nonWinnerWs, 'General Participants');
+    }
+
     const dateStr = new Date().toISOString().slice(0, 10);
-    XLSX.writeFile(workbook, `VEDA_Winners_Report_${dateStr}.xlsx`);
-    toast.success(`Winners report exported successfully (${filteredTeams.length} teams)`);
+    XLSX.writeFile(workbook, `VEDA_Participant_Payments_Report_${dateStr}.xlsx`);
+    toast.success(`Participant payments report exported successfully (${filteredTeams.length} teams)`);
   };
 
   const getPrizeChip = (prizeType) => {
@@ -515,20 +752,32 @@ const WinnersReport = () => {
           />
         );
       default:
-        return <Chip label="Participant" size="small" />;
+        return (
+          <Chip
+            label="Paid Participant"
+            size="small"
+            sx={{
+              fontWeight: 700,
+              borderRadius: '8px',
+              bgcolor: 'rgba(5, 150, 105, 0.1)',
+              color: '#059669',
+              border: '1px solid rgba(5, 150, 105, 0.2)',
+            }}
+          />
+        );
     }
   };
 
   const columns = [
     'S.No',
-    'Prize',
-    'Team ID',
+    'Status / Winner',
+    'Team ID / Receipt',
     'Event Name',
     'School Name',
-    'Department(s)',
+    'Registration Payment Info',
     'Team Members & Details',
     'Attendance',
-    'Actions'
+    'Actions',
   ];
 
   const handleOpenTeam = (team) => {
@@ -544,14 +793,14 @@ const WinnersReport = () => {
       receipt: team.receipt,
       eventSchool: team.eventSchool,
       category: team.category,
-      eventId: team.eventId
+      eventId: team.eventId,
     });
     setPassDialogOpen(true);
   };
 
   const rows = filteredTeams.map((team, index) => {
     const schoolCategory = team.eventSchool || team.category || team.schoolId || '-';
-    const relatedEvent = allEvents.find(e => e._id === team.eventId);
+    const relatedEvent = allEvents.find((e) => e._id === team.eventId);
     let departmentNode = '-';
     if (relatedEvent && relatedEvent.department && relatedEvent.department.length > 0) {
       if (relatedEvent.department.length > 1) {
@@ -567,16 +816,17 @@ const WinnersReport = () => {
             >
               All Departments
             </span>
-          )
+          ),
         };
       } else {
         departmentNode = relatedEvent.department[0].name;
       }
     }
 
-    const attendancePercentage = team.totalMembers > 0
-      ? Math.round((team.attendedCount / team.totalMembers) * 100)
-      : 0;
+    const attendancePercentage =
+      team.totalMembers > 0
+        ? Math.round((team.attendedCount / team.totalMembers) * 100)
+        : 0;
 
     return [
       index + 1,
@@ -588,20 +838,46 @@ const WinnersReport = () => {
         value: team.teamId || team.receipt || '-',
         display: (
           <Box>
-            <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 800, color: '#1e293b' }}>
+            <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 800, color: '#0f172a' }}>
               {team.teamId || team.receipt || '-'}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              Receipt: {team.receipt || '-'}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               Size: {team.totalMembers} Member{team.totalMembers > 1 ? 's' : ''}
             </Typography>
           </Box>
-        )
+        ),
       },
       team.eventName || '-',
       schoolCategory,
-      departmentNode,
       {
-        value: team.participants.map(p => p.name).join(', '),
+        value: `${team.amountRupees} ${team.razorpayPaymentId} ${team.paymentStatus}`,
+        display: (
+          <Box sx={{ p: 1, borderRadius: '8px', bgcolor: 'rgba(15, 23, 42, 0.02)', border: '1px solid rgba(0,0,0,0.06)' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+              <Typography variant="body2" sx={{ fontWeight: 800, color: '#059669' }}>
+                ₹{team.amountRupees}
+              </Typography>
+              <Chip
+                label={team.paymentStatus || 'PAID'}
+                color={team.paymentStatus === 'PAID' || team.verified ? 'success' : 'warning'}
+                size="small"
+                sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }}
+              />
+            </Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontFamily: 'monospace' }}>
+              Pay ID: {team.razorpayPaymentId || '-'}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.7rem' }}>
+              Date: {team.formattedPaidDate}
+            </Typography>
+          </Box>
+        ),
+      },
+      {
+        value: team.participants.map((p) => p.name).join(', '),
         display: (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, maxWidth: 360 }}>
             {team.participants.map((p, pIdx) => (
@@ -614,7 +890,7 @@ const WinnersReport = () => {
                   border: '1px solid rgba(0,0,0,0.04)',
                   display: 'flex',
                   justifyContent: 'space-between',
-                  alignItems: 'center'
+                  alignItems: 'center',
                 }}
               >
                 <Box>
@@ -625,8 +901,13 @@ const WinnersReport = () => {
                     Roll: <strong>{p.roll || '-'}</strong> | {p.college || '-'}
                   </Typography>
                   {p.resolvedDept && (
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                       Dept: {p.resolvedDept} {p.year ? `(${p.year} Yr)` : ''}
+                    </Typography>
+                  )}
+                  {p.accommodation === 'Yes' && (
+                    <Typography variant="caption" sx={{ color: '#0284c7', fontWeight: 600 }}>
+                      Acc: Yes ({p.accommodationPayment?.paid ? `Paid ₹${p.accommodationPayment.amount || 0}` : 'Unpaid'})
                     </Typography>
                   )}
                 </Box>
@@ -649,7 +930,7 @@ const WinnersReport = () => {
               </Box>
             ))}
           </Box>
-        )
+        ),
       },
       {
         value: `${team.attendedCount}/${team.totalMembers}`,
@@ -657,7 +938,13 @@ const WinnersReport = () => {
           <Box sx={{ textAlign: 'center' }}>
             <Chip
               label={`${team.attendedCount} / ${team.totalMembers} Attended`}
-              color={attendancePercentage === 100 ? 'success' : attendancePercentage > 0 ? 'warning' : 'default'}
+              color={
+                attendancePercentage === 100
+                  ? 'success'
+                  : attendancePercentage > 0
+                  ? 'warning'
+                  : 'default'
+              }
               size="small"
               sx={{ fontWeight: 700, borderRadius: '8px' }}
             />
@@ -665,13 +952,13 @@ const WinnersReport = () => {
               {attendancePercentage}% Attended
             </Typography>
           </Box>
-        )
+        ),
       },
       {
         value: 'Actions',
         display: (
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <Tooltip title="View Full Team Details">
+            <Tooltip title="View Team & Payment Details">
               <Button
                 variant="outlined"
                 size="small"
@@ -686,53 +973,52 @@ const WinnersReport = () => {
                   px: 1.5,
                   borderColor: '#3b82f6',
                   color: '#2563eb',
-                  '&:hover': { bgcolor: 'rgba(59, 130, 246, 0.08)' }
+                  '&:hover': { bgcolor: 'rgba(59, 130, 246, 0.08)' },
                 }}
               >
-                Team Info
+                Full Details
               </Button>
             </Tooltip>
           </Box>
-        )
-      }
+        ),
+      },
     ];
   });
 
   return (
     <PageContainer>
       <PageHeader
-        title="Winners Report"
-        subtitle="Team-wise report of 1st, 2nd, and 3rd prize winners across all events"
+        title="Participant Payments Report"
+        subtitle="All paid participants report with complete registration, event, and accommodation payment information"
         action={
           <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
             <Button
               variant="outlined"
-              onClick={() => navigate('/Eventveda/participants/participant-payments')}
-              startIcon={<PaymentIcon />}
+              onClick={() => navigate('/Eventveda/participants/winners-report')}
+              startIcon={<ArrowBackIcon />}
               sx={{
                 borderRadius: '12px',
                 textTransform: 'none',
                 px: 2,
                 py: 0.8,
-                borderColor: '#059669',
-                color: '#059669',
-                fontWeight: 700,
-                '&:hover': { bgcolor: 'rgba(5, 150, 105, 0.08)' }
+                borderColor: '#64748b',
+                color: '#475569',
+                '&:hover': { bgcolor: 'rgba(100, 116, 139, 0.08)' },
               }}
             >
-              Participant Payments
+              Winners Report
             </Button>
             <Button
               variant="contained"
-              onClick={fetchWinners}
+              onClick={fetchParticipantPayments}
               startIcon={<RefreshIcon />}
               sx={{
                 borderRadius: '12px',
                 textTransform: 'none',
                 px: 2.5,
-                py: 1,
+                py: 0.8,
                 bgcolor: '#3b82f6',
-                '&:hover': { bgcolor: '#2563eb' }
+                '&:hover': { bgcolor: '#2563eb' },
               }}
             >
               Refresh
@@ -741,43 +1027,49 @@ const WinnersReport = () => {
         }
       />
 
-
       {/* Summary Cards */}
       <Box sx={{ mt: 1, mb: 3 }}>
         <CountBand
           items={[
             {
-              id: '1st',
-              title: "1st Prize Teams",
-              value: firstPrizeTeams,
-              color: "blue",
-              icon: <TrophyIcon />
-            },
-            {
-              id: '2nd',
-              title: "2nd Prize Teams",
-              value: secondPrizeTeams,
-              color: "green",
-              icon: <MedalIcon />
-            },
-            {
-              id: '3rd',
-              title: "3rd Prize Teams",
-              value: thirdPrizeTeams,
-              color: "purple",
-              icon: <MedalIcon />
+              id: 'teams',
+              title: 'Total Paid Teams',
+              value: paidTeams.length,
+              color: 'blue',
+              icon: <PeopleIcon />,
             },
             {
               id: 'participants',
-              title: "Winning Participants",
-              value: totalWinningParticipants,
-              color: "red",
-              icon: <PeopleIcon />
-            }
+              title: 'Total Paid Participants',
+              value: totalPaidParticipants,
+              color: 'purple',
+              icon: <PeopleIcon />,
+            },
+            {
+              id: 'revenue',
+              title: 'Total Revenue Collected',
+              value: `₹${totalRevenueCollected.toLocaleString('en-IN')}`,
+              color: 'green',
+              icon: <CreditCardIcon />,
+            },
+            {
+              id: '1st',
+              title: '1st Prize Teams',
+              value: firstPrizeTeams,
+              color: 'orange',
+              icon: <TrophyIcon />,
+            },
+            {
+              id: '2nd_3rd',
+              title: '2nd & 3rd Prize Teams',
+              value: secondPrizeTeams + thirdPrizeTeams,
+              color: 'red',
+              icon: <MedalIcon />,
+            },
           ]}
           total={{
-            title: "Total Winning Teams",
-            value: winningTeams.length
+            title: 'Paid Registrations',
+            value: paidTeams.length,
           }}
         />
       </Box>
@@ -797,25 +1089,26 @@ const WinnersReport = () => {
         }}
       >
         <TextField
-          placeholder="Search by team ID, participant, event, college..."
+          placeholder="Search team ID, receipt, payment ID, roll, participant..."
           size="small"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{ width: { xs: '100%', sm: 280 }, flex: { sm: 1 } }}
+          sx={{ width: { xs: '100%', sm: 300 }, flex: { sm: 1 } }}
         />
 
         <TextField
           select
-          label="Filter Prize"
+          label="Filter Prize / Winner Status"
           size="small"
           value={prizeFilter}
           onChange={(e) => setPrizeFilter(e.target.value)}
-          sx={{ width: { xs: '100%', sm: 170 } }}
+          sx={{ width: { xs: '100%', sm: 200 } }}
         >
-          <MenuItem value="ALL">All Prizes</MenuItem>
-          <MenuItem value="FIRST">🥇 1st Prize</MenuItem>
-          <MenuItem value="SECOND">🥈 2nd Prize</MenuItem>
-          <MenuItem value="THIRD">🥉 3rd Prize</MenuItem>
+          <MenuItem value="ALL">All Paid Registrations</MenuItem>
+          <MenuItem value="FIRST">🥇 1st Prize Winners</MenuItem>
+          <MenuItem value="SECOND">🥈 2nd Prize Winners</MenuItem>
+          <MenuItem value="THIRD">🥉 3rd Prize Winners</MenuItem>
+          <MenuItem value="NON_WINNERS">👥 Non-Winner Participants</MenuItem>
         </TextField>
 
         <TextField
@@ -824,7 +1117,7 @@ const WinnersReport = () => {
           size="small"
           value={eventFilter}
           onChange={(e) => setEventFilter(e.target.value)}
-          sx={{ width: { xs: '100%', sm: 200 } }}
+          sx={{ width: { xs: '100%', sm: 190 } }}
         >
           <MenuItem value="ALL">All Events</MenuItem>
           {uniqueEvents.map((evt) => (
@@ -840,7 +1133,7 @@ const WinnersReport = () => {
           size="small"
           value={schoolFilter}
           onChange={(e) => setSchoolFilter(e.target.value)}
-          sx={{ width: { xs: '100%', sm: 170 } }}
+          sx={{ width: { xs: '100%', sm: 160 } }}
         >
           <MenuItem value="ALL">All Schools</MenuItem>
           {uniqueSchools.map((s) => (
@@ -856,7 +1149,7 @@ const WinnersReport = () => {
           size="small"
           value={departmentFilter}
           onChange={(e) => setDepartmentFilter(e.target.value)}
-          sx={{ width: { xs: '100%', sm: 160 } }}
+          sx={{ width: { xs: '100%', sm: 150 } }}
         >
           <MenuItem value="ALL">All Depts</MenuItem>
           {uniqueDepartments.map((d) => (
@@ -907,8 +1200,8 @@ const WinnersReport = () => {
         <Box sx={{ mt: 2 }}>
           {filteredTeams.length === 0 ? (
             <EmptyState
-              title="No Winning Teams Found"
-              description="No teams matching the selected prize or filter criteria were found."
+              title="No Paid Participants Found"
+              description="No paid participant records matching the selected search or filter criteria were found."
             />
           ) : (
             <DataTable
@@ -921,13 +1214,13 @@ const WinnersReport = () => {
         </Box>
       )}
 
-      {/* Team Details Modal */}
+      {/* Team & Payment Details Modal */}
       {selectedTeam && (
         <Dialog
           open={dialogOpen}
           onClose={() => setDialogOpen(false)}
           fullWidth
-          maxWidth="md"
+          maxWidth="lg"
           PaperProps={{
             sx: { borderRadius: '20px', overflow: 'hidden' },
           }}
@@ -944,9 +1237,9 @@ const WinnersReport = () => {
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <TrophyIcon sx={{ color: '#f59e0b' }} />
+              <ReceiptIcon sx={{ color: '#38bdf8' }} />
               <Typography variant="h6" sx={{ fontWeight: 800, color: '#fff' }}>
-                Winning Team Details ({selectedTeam.teamId || selectedTeam.receipt})
+                Participant Payment Details ({selectedTeam.teamId || selectedTeam.receipt})
               </Typography>
             </Box>
             <IconButton
@@ -958,6 +1251,7 @@ const WinnersReport = () => {
           </DialogTitle>
 
           <DialogContent dividers sx={{ p: 3, background: 'var(--bg-panel, #ffffff)' }}>
+            {/* Event & Status Header */}
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
               <Box>
                 <Typography variant="h5" sx={{ fontWeight: 800, color: 'var(--text-primary)' }}>
@@ -974,8 +1268,65 @@ const WinnersReport = () => {
 
             <Divider sx={{ my: 2 }} />
 
+            {/* Registration Payment Details Grid */}
+            <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1.5, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <ReceiptIcon sx={{ color: '#059669' }} /> Registration Payment Information
+            </Typography>
+
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+              <Grid item xs={12} sm={6} md={3}>
+                <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '12px', bgcolor: 'rgba(5, 150, 105, 0.04)' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    Registration Fee Paid
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: '#059669' }}>
+                    ₹{selectedTeam.amountRupees}
+                  </Typography>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '12px' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    Payment Status
+                  </Typography>
+                  <Box sx={{ mt: 0.5 }}>
+                    <Chip
+                      label={selectedTeam.paymentStatus || 'PAID'}
+                      color={selectedTeam.paymentStatus === 'PAID' || selectedTeam.verified ? 'success' : 'warning'}
+                      size="small"
+                      sx={{ fontWeight: 700 }}
+                    />
+                  </Box>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '12px' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    Razorpay Payment ID
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, fontFamily: 'monospace', color: '#1e293b' }}>
+                    {selectedTeam.razorpayPaymentId || '-'}
+                  </Typography>
+                </Paper>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '12px' }}>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                    Razorpay Order ID & Date
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, fontFamily: 'monospace', color: '#1e293b' }}>
+                    {selectedTeam.razorpayOrderId || '-'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {selectedTeam.formattedPaidDate}
+                  </Typography>
+                </Paper>
+              </Grid>
+            </Grid>
+
+            {/* Participants & Accommodation Payment Details */}
             <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1.5, color: 'var(--text-primary)' }}>
-              Team Participants ({selectedTeam.participants.length})
+              Team Participants & Accommodation Payments ({selectedTeam.participants.length})
             </Typography>
 
             <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: '12px' }}>
@@ -985,10 +1336,10 @@ const WinnersReport = () => {
                     <TableCell sx={{ fontWeight: 700 }}>#</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Name</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Roll Number</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>College</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Branch & Dept</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>College & Dept</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Contact</TableCell>
                     <TableCell sx={{ fontWeight: 700, textAlign: 'center' }}>Attended</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Accommodation Details</TableCell>
                     <TableCell sx={{ fontWeight: 700, textAlign: 'center' }}>Pass</TableCell>
                   </TableRow>
                 </TableHead>
@@ -998,13 +1349,12 @@ const WinnersReport = () => {
                       <TableCell>{idx + 1}</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>{p.name || '-'}</TableCell>
                       <TableCell sx={{ fontFamily: 'monospace' }}>{p.roll || '-'}</TableCell>
-                      <TableCell>{p.college === 'Other College' && p.otherCollege ? p.otherCollege : (p.college || '-')}</TableCell>
                       <TableCell>
-                        <Typography variant="caption" sx={{ display: 'block' }}>
-                          {p.computedBranch ? `Branch: ${p.computedBranch}` : ''}
+                        <Typography variant="body2">
+                          {p.college === 'Other College' && p.otherCollege ? p.otherCollege : (p.college || '-')}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {p.resolvedDept ? `Dept: ${p.resolvedDept}` : ''} {p.year ? `(${p.year} Yr)` : ''}
+                          {p.computedBranch ? `Branch: ${p.computedBranch}` : ''} {p.resolvedDept ? `| Dept: ${p.resolvedDept}` : ''}
                         </Typography>
                       </TableCell>
                       <TableCell>
@@ -1018,6 +1368,27 @@ const WinnersReport = () => {
                           size="small"
                           sx={{ fontWeight: 700 }}
                         />
+                      </TableCell>
+                      <TableCell>
+                        {p.accommodation === 'Yes' ? (
+                          <Box sx={{ p: 0.75, borderRadius: '6px', bgcolor: 'rgba(2, 132, 199, 0.05)', border: '1px solid rgba(2, 132, 199, 0.15)' }}>
+                            <Typography variant="caption" sx={{ fontWeight: 700, color: '#0284c7', display: 'block' }}>
+                              Required ({p.daysCount || p.days || p.dayscount || 1} Day{ (p.daysCount || p.days || 1) > 1 ? 's' : '' })
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                              Status: <strong>{p.accommodationPayment?.paid ? 'Paid' : 'Unpaid'}</strong> | Amt: ₹{p.accommodationPayment?.amount || 0}
+                            </Typography>
+                            {p.accommodationPayment?.razorpayPaymentId && (
+                              <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace', fontSize: '0.65rem', display: 'block' }}>
+                                Pay ID: {p.accommodationPayment.razorpayPaymentId}
+                              </Typography>
+                            )}
+                          </Box>
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">
+                            Not Required
+                          </Typography>
+                        )}
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center' }}>
                         <IconButton size="small" onClick={() => handleOpenPass(p, selectedTeam)} sx={{ color: '#059669' }}>
@@ -1062,9 +1433,9 @@ const WinnersReport = () => {
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <BadgeIcon sx={{ color: '#38bdf8' }} />
+              <QrCodeIcon sx={{ color: '#38bdf8' }} />
               <Typography variant="h6" sx={{ fontWeight: 800, color: '#fff' }}>
-                Event Pass (Winner Member)
+                Event Pass
               </Typography>
             </Box>
             <IconButton
@@ -1101,4 +1472,4 @@ const WinnersReport = () => {
   );
 };
 
-export default WinnersReport;
+export default ParticipantPayments;

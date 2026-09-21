@@ -649,6 +649,7 @@ export const ROLE_ROUTES = {
             { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
             { text: "Attendance Report", path: "/Eventveda/participants/attendance-report", icon: <AssignmentTurnedIn /> },
             { text: "Winners Report", path: "/Eventveda/participants/winners-report", icon: <WorkspacePremium /> },
+            { text: "Participant Payments", path: "/Eventveda/participants/participant-payments", icon: <Payment /> },
           ]
         },
         {
@@ -713,6 +714,7 @@ export const ROLE_ROUTES = {
             { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
             { text: "Attendance Report", path: "/Eventveda/participants/attendance-report", icon: <AssignmentTurnedIn /> },
             { text: "Winners Report", path: "/Eventveda/participants/winners-report", icon: <WorkspacePremium /> },
+            { text: "Participant Payments", path: "/Eventveda/participants/participant-payments", icon: <Payment /> },
           ]
         },
         // {
@@ -793,6 +795,7 @@ export const ROLE_ROUTES = {
             { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
             { text: "Attendance Report", path: "/Eventveda/participants/attendance-report", icon: <AssignmentTurnedIn /> },
             { text: "Winners Report", path: "/Eventveda/participants/winners-report", icon: <WorkspacePremium /> },
+            { text: "Participant Payments", path: "/Eventveda/participants/participant-payments", icon: <Payment /> },
           ]
         }
       ]
@@ -877,6 +880,7 @@ export const ROLE_ROUTES = {
         { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
         { text: "Attendance Report", path: "/Eventveda/participants/attendance-report", icon: <AssignmentTurnedIn /> },
         { text: "Winners Report", path: "/Eventveda/participants/winners-report", icon: <WorkspacePremium /> },
+        { text: "Participant Payments", path: "/Eventveda/participants/participant-payments", icon: <Payment /> },
         // { text: "Accommodation", path: "/Eventveda/participants/accommodation", icon: <Hotel /> },
         // { text: "No Accommodation", path: "/Eventveda/participants/no-accommodation", icon: <Hotel /> }
       ]
@@ -911,6 +915,7 @@ export const ROLE_ROUTES = {
         { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
         { text: "Attendance Report", path: "/Eventveda/participants/attendance-report", icon: <AssignmentTurnedIn /> },
         { text: "Winners Report", path: "/Eventveda/participants/winners-report", icon: <WorkspacePremium /> },
+        { text: "Participant Payments", path: "/Eventveda/participants/participant-payments", icon: <Payment /> },
       ]
     },
     {
@@ -942,6 +947,7 @@ export const ROLE_ROUTES = {
         { text: "All", path: "/Eventveda/participants/all", icon: <Groups /> },
         { text: "Attendance Report", path: "/Eventveda/participants/attendance-report", icon: <AssignmentTurnedIn /> },
         { text: "Winners Report", path: "/Eventveda/participants/winners-report", icon: <WorkspacePremium /> },
+        { text: "Participant Payments", path: "/Eventveda/participants/participant-payments", icon: <Payment /> },
         { text: "Accommodation", path: "/Eventveda/participants/accommodation", icon: <Hotel /> },
         { text: "No Accommodation", path: "/Eventveda/participants/no-accommodation", icon: <Hotel /> }
       ]
