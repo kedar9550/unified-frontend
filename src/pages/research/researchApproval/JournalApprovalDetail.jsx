@@ -94,6 +94,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
     const [citations, setCitations] = useState("");
     const [quartile, setQuartile] = useState("");
     const [journalType, setJournalType] = useState("");
+    const [journalCategory, setJournalCategory] = useState("");
     const [issn, setIssn] = useState("");
     const [eissn, setEissn] = useState("");
     const [appraisalEligible, setAppraisalEligible] = useState("");
@@ -231,6 +232,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                     if (journal.journalQuartile) setQuartile(journal.journalQuartile);
                     else if (journal.categoryOfJournal) setQuartile(journal.categoryOfJournal);
                     if (journal.journalType) setJournalType(journal.journalType);
+                    if (journal.journalCategory) setJournalCategory(journal.journalCategory);
                     if (journal.issn) setIssn(journal.issn);
                     if (journal.eissn) setEissn(journal.eissn);
                     if (journal.appraisalEligible) setAppraisalEligible(journal.appraisalEligible);
@@ -293,6 +295,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
             if (isResearchAdmin && citations) payload.citations = citations;
             if (isResearchAdmin && quartile) payload.journalQuartile = quartile;
             if (isResearchAdmin && journalType) payload.journalType = journalType;
+            if (isResearchAdmin && journalCategory) payload.journalCategory = journalCategory;
             if (isResearchAdmin && action === 'Approve' && appraisalEligible) payload.appraisalEligible = appraisalEligible;
 
             const res = await API.put(endpoint, payload);
@@ -317,6 +320,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 citations,
                 journalQuartile: quartile,
                 journalType,
+                journalCategory,
                 issn,
                 eissn
             });
@@ -329,6 +333,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 if (res.data.data.citations) setCitations(res.data.data.citations);
                 if (res.data.data.journalQuartile) setQuartile(res.data.data.journalQuartile);
                 if (res.data.data.journalType) setJournalType(res.data.data.journalType);
+                if (res.data.data.journalCategory) setJournalCategory(res.data.data.journalCategory);
                 if (res.data.data.issn) setIssn(res.data.data.issn);
                 if (res.data.data.eissn) setEissn(res.data.data.eissn);
             }
@@ -627,6 +632,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                                     journalQuartile: data.journalQuartile || data.categoryOfJournal || "",
                                                     isScopus: data.isScopus || "",
                                                     journalType: data.journalType || "",
+                                                    journalCategory: data.journalCategory || "",
                                                     vol: data.vol || "",
                                                     issue: data.issue || "",
                                                     hIndex: data.hIndex || "",
@@ -700,7 +706,8 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                 ), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
                                 { key: "journalQuartile", label: "Journal Quartile", value: data.journalQuartile || data.categoryOfJournal || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Q1", "Q2", "Q3", "Q4", "None"] },
                                 { key: "isScopus", label: "Scopus", value: data.isScopus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
-                                { key: "journalType", label: "Journal Type", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["SCI", "SCIE", "ESCI", "None"] },
+                                { key: "journalType", label: "Type of Journal", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["SCI", "SCIE", "ESCI", "None"] },
+                                { key: "journalCategory", label: "Journal Category", value: data.journalCategory || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["IEEE", "ASME", "ASCE", "ACM", "FT-50", "Scopus Top 10%", "OTHERS"] },
                                 { key: "issn", label: "ISSN", value: data.issn || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
                                 { key: "eissn", label: "e-ISSN", value: data.eissn || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
                                 { key: "vol", label: "Volume", value: data.vol || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
@@ -779,20 +786,9 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                     flexDirection: "column",
                     gap: 3
                 }}>
-                    {/* Top Right Card: Scope, Eligibility, Claimant */}
+                    {/* Top Right Card: Eligibility, Claimant */}
                     <Card sx={{ ...cardStyle, mb: 0, flexShrink: 0 }}>
                         <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 2, borderBottom: "1px solid var(--border-color)" }}>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                                    <PublicIcon sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
-                                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
-                                        Publication Scope
-                                    </Typography>
-                                </Box>
-                                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                                    {data.scope || data.publicationScope || data.incentiveApplied || "National"}
-                                </Typography>
-                            </Box>
 
                             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 2, borderBottom: "1px solid var(--border-color)" }}>
                                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -1024,7 +1020,9 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                                     </Box>
                                                 </TableCell>
                                                 <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
-                                                <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)", textTransform: "capitalize" }}>{ca.CoAuthorType || "-"}</TableCell>
+                                                <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)", textTransform: "capitalize" }}>
+                                                    {ca.CoAuthorType === "student" && ca.studentQualification ? `Student (${ca.studentQualification})` : (ca.CoAuthorType || "-")}
+                                                </TableCell>
                                                 <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
                                             </TableRow>
                                         );
@@ -1168,6 +1166,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         if (updated.citations) setCitations(updated.citations);
                         if (updated.journalQuartile) setQuartile(updated.journalQuartile);
                         if (updated.journalType) setJournalType(updated.journalType);
+                        if (updated.journalCategory) setJournalCategory(updated.journalCategory);
                         if (updated.appraisalEligible) setAppraisalEligible(updated.appraisalEligible);
                         if (updated.approvedAmount) setApprovedAmount(updated.approvedAmount);
                     }}

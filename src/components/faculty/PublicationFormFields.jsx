@@ -76,22 +76,21 @@ export function NoteBox() {
         <Typography sx={{ fontSize: 13, fontWeight: 700, color: "#f59e0b" }}>Important Upload Guidelines</Typography>
       </Box>
       <Typography variant="caption" sx={{ color: "var(--text-primary)", fontWeight: 500, fontSize: "0.8rem" }}>
-        1. Please Upload (PNG or JPG or JPEG or PDF) Only.
+        1. Please Upload PDF Only.
       </Typography>
       <Typography variant="caption" sx={{ color: "var(--text-primary)", fontWeight: 500, fontSize: "0.8rem" }}>
-        2. File Size Should not Exceed <strong style={{ color: "#f59e0b" }}>200KB</strong>
+        2. File Size: Up to <strong style={{ color: "#f59e0b" }}>5MB</strong> for Complete Journal and <strong style={{ color: "#f59e0b" }}>200KB</strong> for other documents.
       </Typography>
       <Box sx={{ mt: 1, pt: 1, borderTop: "1px solid rgba(245, 158, 11, 0.1)", display: "flex", flexWrap: "wrap", gap: 2 }}>
         <Typography sx={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>Optimizer Links:</Typography>
-        <Box component="a" href="https://www.iloveimg.com/compress-image" target="_blank" sx={{ fontSize: 11, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>1. Image Compressor</Box>
-        <Box component="a" href="https://www.ilovepdf.com/compress_pdf" target="_blank" sx={{ fontSize: 11, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>2. PDF Compressor</Box>
+        <Box component="a" href="https://www.ilovepdf.com/compress_pdf" target="_blank" sx={{ fontSize: 11, fontWeight: 700, color: "var(--color-primary)", textDecoration: "none", "&:hover": { textDecoration: "underline" } }}>PDF Compressor</Box>
       </Box>
     </Box>
   );
 }
 
 // File upload field
-export function FileField({ label, name, onChange, error, onError, accept = ".png,.jpg,.jpeg,.pdf", maxSize = 200 * 1024, existingFileUrl, existingFileName, onRemoveExisting }) {
+export function FileField({ label, name, onChange, error, onError, accept = ".pdf", maxSize = 200 * 1024, existingFileUrl, existingFileName, onRemoveExisting }) {
   const [fileName, setFileName] = useState("");
   const [preview, setPreview] = useState(null);
   const [fileType, setFileType] = useState("");
@@ -107,6 +106,22 @@ export function FileField({ label, name, onChange, error, onError, accept = ".pn
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      const allowedExts = accept.split(',').map(s => s.trim().toLowerCase());
+      const fName = file.name.toLowerCase();
+      const isExtAllowed = allowedExts.some(ext => fName.endsWith(ext) || ext === file.type);
+      
+      if (!isExtAllowed || (accept === ".pdf" && !fName.endsWith('.pdf') && file.type !== "application/pdf")) {
+        const msg = `${label}: Only PDF files are allowed.`;
+        if (onError) onError(msg);
+        else toast.error(msg);
+        e.target.value = "";
+        setFileName("");
+        setPreview(null);
+        setFileType("");
+        onChange({ target: { name, files: [] } });
+        return;
+      }
+
       if (file.size > maxSize) {
         const sizeStr = maxSize >= 1024 * 1024 ? `${(maxSize / 1024 / 1024).toFixed(0)}MB` : `${Math.round(maxSize / 1024)}KB`;
         const msg = `${label} is too large. Max size is ${sizeStr}.`;

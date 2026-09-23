@@ -84,6 +84,7 @@ const getMatchedSdgBadgeList = (sdgInput) => {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const JOURNAL_TYPES = ["SCI", "SCIE", "ESCI", "None"];
+const JOURNAL_CATEGORIES = ["IEEE", "ASME", "ASCE", "ACM", "OTHERS"];
 const QUARTILE_OPTIONS = ["Q1", "Q2", "Q3", "Q4", "None"];
 const INCENTIVE_OPTIONS = ["National", "International"];
 
@@ -166,11 +167,12 @@ export default function RndJournalDataEntry() {
     journalName: "",
     journalQuartile: "",
     journalType: "",
+    journalCategory: "",
     vol: "",
     issue: "",
     pageNos: "",
-    hIndex: "",
-    jcrImpactFactor: "",
+    hIndex: "0",
+    jcrImpactFactor: "0",
     numberOfReferencesBelongingToAGEC: 0,
     agecReferencingNumbers: "",
     month: "",
@@ -179,7 +181,6 @@ export default function RndJournalDataEntry() {
     appraisalEligible: "",
     approvedAmount: "",
     applyIncentive: "",
-    publicationScope: "",
     applyingSeedGrant: "",
     completeJournalName: "",
     sdgs: "",
@@ -229,6 +230,7 @@ export default function RndJournalDataEntry() {
           authorPosition: i,
           CoAuthorType: "faculty",
           studentId: "",
+          studentQualification: "",
           affiliationType: "",
           empId: "",
           authorName: "",
@@ -288,11 +290,12 @@ export default function RndJournalDataEntry() {
         newForm.journalName = "";
         newForm.journalQuartile = "";
         newForm.journalType = "";
+        newForm.journalCategory = "";
         newForm.vol = "";
         newForm.issue = "";
         newForm.pageNos = "";
-        newForm.hIndex = "";
-        newForm.jcrImpactFactor = "";
+        newForm.hIndex = "0";
+        newForm.jcrImpactFactor = "0";
         newForm.month = "";
         newForm.year = "";
         newForm.sdgs = "";
@@ -306,17 +309,21 @@ export default function RndJournalDataEntry() {
       }
       if (k === "isStudentsInvolved") {
         if (val === "No") {
-          newForm.otherAuthors = newForm.otherAuthors.map(a => ({
+          newForm.otherAuthors = (newForm.otherAuthors || []).map(a => ({
             ...a,
             CoAuthorType: "faculty",
             studentId: "",
+            studentQualification: "",
             authorName: a.CoAuthorType === "student" ? "" : a.authorName,
             empId: a.CoAuthorType === "student" ? "" : a.empId
           }));
-          newForm.applyIncentive = "";
-          newForm.approvedAmount = "";
-        } else if (val === "Yes") {
+        }
+        const hasPg = val === "Yes" && (newForm.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+        if (hasPg) {
           newForm.applyIncentive = "No";
+          newForm.approvedAmount = "";
+        } else {
+          newForm.applyIncentive = "";
           newForm.approvedAmount = "";
         }
       }
@@ -360,9 +367,9 @@ export default function RndJournalDataEntry() {
 
   const validateFile = (file) => {
     if (!file) return true;
-    const allowed = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
-    if (!allowed.includes(file.type)) { toast.error("Only PDF, JPG, and PNG files are allowed"); return false; }
-    if (file.size > 500 * 1024) { toast.error("File size exceeds 500KB limit"); return false; }
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (!isPdf) { toast.error("Only PDF files are allowed"); return false; }
+    if (file.size > 200 * 1024) { toast.error("File size exceeds 200KB limit"); return false; }
     return true;
   };
 
@@ -517,7 +524,9 @@ export default function RndJournalDataEntry() {
         issn: data.issn || "",
         eissn: data.eissn || "",
         isScopus: data.isScopus || "No",
-        citations: data.citations || ""
+        citations: data.citations || "",
+        jcrImpactFactor: data.jcrImpactFactor !== undefined && data.jcrImpactFactor !== null ? String(data.jcrImpactFactor) : "0",
+        hIndex: data.hIndex !== undefined && data.hIndex !== null ? String(data.hIndex) : "0"
       };
 
       Object.entries(map).forEach(([k, v]) => {
@@ -562,46 +571,71 @@ export default function RndJournalDataEntry() {
   };
 
   const handleCoAuthorChange = (pos, field, value) => {
-    const updated = form.otherAuthors.map(a => {
-      if (a.authorPosition !== pos) return a;
-      const newA = { ...a, [field]: value };
+    setForm(p => {
+      const hadPg = p.isStudentsInvolved === "Yes" && (p.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+      const updated = p.otherAuthors.map(a => {
+        if (a.authorPosition !== pos) return a;
+        const newA = { ...a, [field]: value };
 
-      if (field === "CoAuthorType") {
-        if (value === "faculty") {
-          newA.studentId = "";
-          if (a.CoAuthorType === "student") {
+        if (field === "CoAuthorType") {
+          if (value === "faculty") {
+            newA.studentId = "";
+            newA.studentQualification = "";
+            if (a.CoAuthorType === "student") {
+              newA.authorName = "";
+              newA.empId = "";
+            }
+          } else if (value === "student") {
+            newA.empId = "";
+            newA.affiliationType = "Aditya University";
+            newA.affiliationName = "Aditya University";
+            newA.studentQualification = "";
+            if (a.CoAuthorType === "faculty") {
+              newA.authorName = "";
+            }
+          }
+        }
+
+        if (field === "affiliationType") {
+          if (value === "Aditya University") {
+            newA.affiliationName = "Aditya University";
             newA.authorName = "";
             newA.empId = "";
-          }
-        } else if (value === "student") {
-          newA.empId = "";
-          newA.affiliationType = "Aditya University";
-          newA.affiliationName = "Aditya University";
-          if (a.CoAuthorType === "faculty") {
+            newA.studentId = "";
+            newA.studentQualification = "";
+          } else {
+            newA.affiliationName = "";
+            newA.empId = "";
             newA.authorName = "";
+            newA.studentId = "";
+            newA.studentQualification = "";
           }
         }
+        return newA;
+      });
+
+      const hasPg = p.isStudentsInvolved === "Yes" && updated.some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+
+      let newApplyIncentive = p.applyIncentive;
+      let newApprovedAmount = p.approvedAmount;
+      if (hasPg) {
+        newApplyIncentive = "No";
+        newApprovedAmount = "";
+      } else if (field === "studentQualification" || (hadPg && !hasPg) || field === "CoAuthorType") {
+        newApplyIncentive = "";
+        newApprovedAmount = "";
       }
 
-      if (field === "affiliationType") {
-        if (value === "Aditya University") {
-          newA.affiliationName = "Aditya University";
-          newA.authorName = "";
-          newA.empId = "";
-          newA.studentId = "";
-        } else {
-          newA.affiliationName = "";
-          newA.empId = "";
-          newA.authorName = "";
-          newA.studentId = "";
-        }
-      }
-      return newA;
+      return {
+        ...p,
+        otherAuthors: updated,
+        applyIncentive: newApplyIncentive,
+        approvedAmount: newApprovedAmount
+      };
     });
-    setForm(p => ({ ...p, otherAuthors: updated }));
 
     if (field === "empId" && value.length >= 3) {
-      const author = updated.find(a => a.authorPosition === pos);
+      const author = form.otherAuthors.find(a => a.authorPosition === pos);
       if (author?.affiliationType === "Aditya University" && author?.CoAuthorType !== "student") fetchCoAuthorName(pos, value);
     }
   };
@@ -611,15 +645,13 @@ export default function RndJournalDataEntry() {
     setForm((prev) => {
       let newForm = { ...prev, isStudentsInvolved: val };
 
-      if (val === "Yes") {
-        newForm.applyIncentive = "No";
-      } else {
-        newForm.applyIncentive = "";
+      if (val === "No") {
         if (newForm.otherAuthors) {
           newForm.otherAuthors = newForm.otherAuthors.map(author => {
             const newAuthor = { ...author };
             delete newAuthor.CoAuthorType;
             delete newAuthor.studentId;
+            delete newAuthor.studentQualification;
             if (author.CoAuthorType === "student" && newAuthor.affiliationType === "Aditya University") {
               newAuthor.affiliationType = "";
               newAuthor.affiliationName = "";
@@ -627,6 +659,17 @@ export default function RndJournalDataEntry() {
             return newAuthor;
           });
         }
+        newForm.applyIncentive = "";
+        newForm.approvedAmount = "";
+      }
+
+      const hasPg = val === "Yes" && (newForm.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+      if (hasPg) {
+        newForm.applyIncentive = "No";
+        newForm.approvedAmount = "";
+      } else if (val === "Yes") {
+        newForm.applyIncentive = "";
+        newForm.approvedAmount = "";
       }
       return newForm;
     });
@@ -642,7 +685,7 @@ export default function RndJournalDataEntry() {
       toast.error("Please enter and verify a valid Target Faculty Employee ID");
       return;
     }
-    if (!form.doi || !form.paperTitle || !form.journalName || !form.month || !form.year || !form.issn || !form.eissn || !form.journalQuartile || !form.journalType || !form.isScopus || !form.jcrImpactFactor) {
+    if (!form.doi || !form.paperTitle || !form.journalName || !form.month || !form.year || !form.issn || !form.eissn || !form.journalQuartile || !form.journalType || !form.journalCategory || !form.isScopus) {
       toast.error("Please fill all mandatory fields (*)");
       return;
     }
@@ -665,10 +708,6 @@ export default function RndJournalDataEntry() {
       toast.error("Please select whether you want to apply for an incentive");
       return;
     }
-    if (!form.publicationScope) {
-      toast.error("Please select National or International for Publication Scope");
-      return;
-    }
 
     // Validate co-authors
     const total = parseInt(form.totalAuthors) || 1;
@@ -682,9 +721,9 @@ export default function RndJournalDataEntry() {
           !a.affiliationType ||
           (a.affiliationType === "Others" && (!a.authorName || !a.affiliationName)) ||
           (a.affiliationType === "Aditya University" && a.CoAuthorType === "faculty" && (!a.empId || !a.authorName)) ||
-          (a.affiliationType === "Aditya University" && a.CoAuthorType === "student" && (!a.studentId || !a.authorName))
+          (a.affiliationType === "Aditya University" && a.CoAuthorType === "student" && (!a.studentId || !a.authorName || !a.studentQualification))
         ) {
-          toast.error(`Please complete details for Author Position ${a.authorPosition}.`);
+          toast.error(`Please complete details and qualification for Author Position ${a.authorPosition}.`);
           return;
         }
       }
@@ -711,18 +750,22 @@ export default function RndJournalDataEntry() {
         affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliationName || ""),
         employeeId: (a.affiliationType === "Aditya University" && a.CoAuthorType !== "student") ? a.empId : null,
         studentId: (a.affiliationType === "Aditya University" && a.CoAuthorType === "student") ? a.studentId : null,
+        studentQualification: (a.affiliationType === "Aditya University" && a.CoAuthorType === "student") ? (a.studentQualification || null) : null,
         CoAuthorType: form.isStudentsInvolved === "Yes" ? (a.CoAuthorType || "faculty") : "faculty",
         authorPosition: a.authorPosition
       })).filter(ca => ca.name && ca.affiliation);
 
       const fields = [
-        "doi", "paperTitle", "journalName", "journalType",
-        "vol", "issue", "agecReferencingNumbers", "applyIncentive", "publicationScope",
+        "doi", "paperTitle", "journalName", "journalType", "journalCategory",
+        "vol", "issue", "agecReferencingNumbers", "applyIncentive",
         "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor", "isStudentsInvolved",
         "issn", "eissn", "isScopus", "citations", "isInstitutionRecord", "appraisalEligible", "approvedAmount"
       ];
       fields.forEach(k => {
-        fd.append(k, form[k] ?? "");
+        let val = form[k] ?? "";
+        if (k === "hIndex" && (val === "" || val === undefined || val === null)) val = "0";
+        if (k === "jcrImpactFactor" && (val === "" || val === undefined || val === null)) val = "0";
+        fd.append(k, val);
       });
 
       fd.append("numberOfReferencesBelongingToAGEC", form.numberOfReferencesBelongingToAGEC || 0);
@@ -1042,6 +1085,18 @@ export default function RndJournalDataEntry() {
               </Select>
             </Box>
 
+            {/* Journal Category */}
+            <Box>
+              <Typography sx={labelStyle}>Journal Category : *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.journalCategory || ""} onChange={set("journalCategory")}>
+                <MenuItem value="">Select Category</MenuItem>
+                {(form.journalCategory && !JOURNAL_CATEGORIES.includes(form.journalCategory)
+                  ? [...JOURNAL_CATEGORIES, form.journalCategory]
+                  : JOURNAL_CATEGORIES
+                ).map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+              </Select>
+            </Box>
+
             {/* Indexed in Scopus */}
             <Box>
               <Typography sx={labelStyle}>Indexed in Scopus : *</Typography>
@@ -1054,14 +1109,30 @@ export default function RndJournalDataEntry() {
 
             {/* H-Index */}
             <Box>
-              <Typography sx={labelStyle}>H-Index :</Typography>
-              <TextField size="small" fullWidth value={form.hIndex} onChange={handleNumericChange("hIndex", false)} placeholder="e.g. 10" />
+              <Typography sx={labelStyle}>H-Index : *</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                value={form.hIndex === "" || form.hIndex === undefined || form.hIndex === null ? "0" : form.hIndex}
+                onChange={handleNumericChange("hIndex", false)}
+                placeholder="0"
+                helperText="Default is 0, update if applicable"
+                FormHelperTextProps={{ sx: { fontSize: "0.75rem", color: "var(--text-secondary)", mt: 0.5 } }}
+              />
             </Box>
 
             {/* Impact Factor */}
             <Box>
-              <Typography sx={labelStyle}>Impact Factor (JCR) : *</Typography>
-              <TextField size="small" fullWidth value={form.jcrImpactFactor} onChange={handleNumericChange("jcrImpactFactor", true)} placeholder="e.g. 2.5" />
+              <Typography sx={labelStyle}>JCR Impact Factor : *</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                value={form.jcrImpactFactor === "" || form.jcrImpactFactor === undefined || form.jcrImpactFactor === null ? "0" : form.jcrImpactFactor}
+                onChange={handleNumericChange("jcrImpactFactor", true)}
+                placeholder="0"
+                helperText="Auto-fetched / Default is 0, update if applicable"
+                FormHelperTextProps={{ sx: { fontSize: "0.75rem", color: "var(--text-secondary)", mt: 0.5 } }}
+              />
             </Box>
 
             {/* Vol */}
@@ -1190,7 +1261,7 @@ export default function RndJournalDataEntry() {
                       {ca.affiliationType === "Aditya University" ? (
                         ca.CoAuthorType === "student" ? (
                           <>
-                            <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
+                            <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "110px" } }}>
                               <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT ROLL NO</Typography>
                               <TextField
                                 size="small"
@@ -1200,7 +1271,7 @@ export default function RndJournalDataEntry() {
                                 placeholder="e.g. 21A91A0501"
                               />
                             </Box>
-                            <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
+                            <Box sx={{ flex: 1.5, minWidth: { xs: "100%", sm: "160px" } }}>
                               <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT NAME</Typography>
                               <TextField
                                 size="small"
@@ -1209,6 +1280,21 @@ export default function RndJournalDataEntry() {
                                 onChange={(e) => handleCoAuthorChange(ca.authorPosition, "authorName", e.target.value)}
                                 placeholder="Full Name"
                               />
+                            </Box>
+                            <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "110px" } }}>
+                              <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>QUALIFICATION</Typography>
+                              <Select
+                                size="small"
+                                fullWidth
+                                displayEmpty
+                                value={ca.studentQualification || ""}
+                                onChange={(e) => handleCoAuthorChange(ca.authorPosition, "studentQualification", e.target.value)}
+                              >
+                                <MenuItem value="" disabled>Select</MenuItem>
+                                <MenuItem value="UG">UG</MenuItem>
+                                <MenuItem value="PG">PG</MenuItem>
+                                <MenuItem value="Ph.D">Ph.D</MenuItem>
+                              </Select>
                             </Box>
                           </>
                         ) : (
@@ -1360,20 +1446,33 @@ export default function RndJournalDataEntry() {
             </Box>
 
             <Box>
-              <Typography sx={labelStyle}>Apply Incentive? : *</Typography>
-              <Select
-                size="small"
-                fullWidth
-                displayEmpty
-                value={form.applyIncentive}
-                onChange={set("applyIncentive")}
-                disabled={form.isInstitutionRecord === "Yes" || form.isStudentsInvolved === "Yes"}
-                sx={(form.isInstitutionRecord === "Yes" || form.isStudentsInvolved === "Yes") ? disabledField : {}}
-              >
-                <MenuItem value="">Select</MenuItem>
-                <MenuItem value="Yes">Yes</MenuItem>
-                <MenuItem value="No">No</MenuItem>
-              </Select>
+              {(() => {
+                const hasPgStudent = form.isStudentsInvolved === "Yes" && (form.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+                const isIncentiveDisabled = form.isInstitutionRecord === "Yes" || hasPgStudent;
+                return (
+                  <>
+                    <Typography sx={labelStyle}>Apply Incentive? : *</Typography>
+                    <Select
+                      size="small"
+                      fullWidth
+                      displayEmpty
+                      value={isIncentiveDisabled ? "No" : form.applyIncentive}
+                      onChange={set("applyIncentive")}
+                      disabled={isIncentiveDisabled}
+                      sx={isIncentiveDisabled ? disabledField : {}}
+                    >
+                      <MenuItem value="">Select</MenuItem>
+                      <MenuItem value="Yes">Yes</MenuItem>
+                      <MenuItem value="No">No</MenuItem>
+                    </Select>
+                    {hasPgStudent && (
+                      <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                        * Incentive is not applicable for publications with PG student co-authors.
+                      </Typography>
+                    )}
+                  </>
+                );
+              })()}
             </Box>
 
             {form.applyIncentive === "Yes" && (
@@ -1388,14 +1487,6 @@ export default function RndJournalDataEntry() {
                 />
               </Box>
             )}
-
-            <Box>
-              <Typography sx={labelStyle}>Publication Scope : *</Typography>
-              <Select size="small" fullWidth displayEmpty value={form.publicationScope} onChange={set("publicationScope")}>
-                <MenuItem value="">Select</MenuItem>
-                {INCENTIVE_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
-              </Select>
-            </Box>
           </Grid2>
 
           {/* ── Actions ── */}

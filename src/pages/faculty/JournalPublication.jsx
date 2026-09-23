@@ -87,6 +87,7 @@ const getMatchedSdgBadgeList = (sdgInput) => {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const JOURNAL_TYPES = ["SCI", "SCIE", "ESCI", "None"];
+const JOURNAL_CATEGORIES = ["IEEE", "ASME", "ASCE", "ACM", "OTHERS"];
 const QUARTILE_OPTIONS = ["Q1", "Q2", "Q3", "Q4", "None"];
 const INCENTIVE_OPTIONS = ["National", "International"];
 
@@ -509,17 +510,17 @@ export default function JournalPublication() {
     journalName: "",
     journalQuartile: "",
     journalType: "",
+    journalCategory: "",
     vol: "",
     issue: "",
     pageNos: "",
-    hIndex: "",
-    jcrImpactFactor: "",
+    hIndex: "0",
+    jcrImpactFactor: "0",
     numberOfReferencesBelongingToAGEC: 0,
     agecReferencingNumbers: "",
     month: "",
     year: "",
     applyIncentive: "",
-    publicationScope: "",
     applyingSeedGrant: "",
     completeJournalName: "",
     sdgs: "",
@@ -568,6 +569,7 @@ export default function JournalPublication() {
           authorPosition: i,
           CoAuthorType: "faculty",
           studentId: "",
+          studentQualification: "",
           affiliationType: "",
           empId: "",
           authorName: "",
@@ -598,11 +600,12 @@ export default function JournalPublication() {
         newForm.journalName = "";
         newForm.journalQuartile = "";
         newForm.journalType = "";
+        newForm.journalCategory = "";
         newForm.vol = "";
         newForm.issue = "";
         newForm.pageNos = "";
-        newForm.hIndex = "";
-        newForm.jcrImpactFactor = "";
+        newForm.hIndex = "0";
+        newForm.jcrImpactFactor = "0";
         newForm.month = "";
         newForm.year = "";
         newForm.sdgs = "";
@@ -616,16 +619,20 @@ export default function JournalPublication() {
       }
       if (k === "isStudentsInvolved") {
         if (val === "No") {
-          newForm.otherAuthors = newForm.otherAuthors.map(a => ({
+          newForm.otherAuthors = (newForm.otherAuthors || []).map(a => ({
             ...a,
             CoAuthorType: "faculty",
             studentId: "",
+            studentQualification: "",
             authorName: a.CoAuthorType === "student" ? "" : a.authorName,
             empId: a.CoAuthorType === "student" ? "" : a.empId
           }));
-          newForm.applyIncentive = "";
-        } else if (val === "Yes") {
+        }
+        const hasPg = val === "Yes" && (newForm.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+        if (hasPg) {
           newForm.applyIncentive = "No";
+        } else {
+          newForm.applyIncentive = "";
         }
       }
       return newForm;
@@ -652,9 +659,9 @@ export default function JournalPublication() {
 
   const validateFile = (file) => {
     if (!file) return true;
-    const allowed = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
-    if (!allowed.includes(file.type)) { toast.error("Only PDF, JPG, and PNG files are allowed"); return false; }
-    if (file.size > 500 * 1024) { toast.error("File size exceeds 500KB limit"); return false; }
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (!isPdf) { toast.error("Only PDF files are allowed"); return false; }
+    if (file.size > 200 * 1024) { toast.error("File size exceeds 200KB limit"); return false; }
     return true;
   };
 
@@ -809,7 +816,9 @@ export default function JournalPublication() {
         issn: data.issn || "",
         eissn: data.eissn || "",
         isScopus: data.isScopus || "No",
-        citations: data.citations || ""
+        citations: data.citations || "",
+        jcrImpactFactor: data.jcrImpactFactor !== undefined && data.jcrImpactFactor !== null ? String(data.jcrImpactFactor) : "0",
+        hIndex: data.hIndex !== undefined && data.hIndex !== null ? String(data.hIndex) : "0"
       };
 
       Object.entries(map).forEach(([k, v]) => {
@@ -854,39 +863,58 @@ export default function JournalPublication() {
   };
 
   const handleCoAuthorChange = (pos, field, value) => {
-    const updated = form.otherAuthors.map(a => {
-      if (a.authorPosition !== pos) return a;
-      const newA = { ...a, [field]: value };
+    setForm(p => {
+      const hadPg = p.isStudentsInvolved === "Yes" && (p.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+      const updated = p.otherAuthors.map(a => {
+        if (a.authorPosition !== pos) return a;
+        const newA = { ...a, [field]: value };
 
-      if (field === "CoAuthorType") {
-        if (value === "student") {
-          newA.empId = "";
-          newA.affiliationType = "Aditya University";
-          newA.affiliationName = "Aditya University";
-          newA.authorName = "";
-        } else {
-          newA.studentId = "";
-          newA.authorName = "";
+        if (field === "CoAuthorType") {
+          if (value === "student") {
+            newA.empId = "";
+            newA.affiliationType = "Aditya University";
+            newA.affiliationName = "Aditya University";
+            newA.authorName = "";
+            newA.studentQualification = "";
+          } else {
+            newA.studentId = "";
+            newA.authorName = "";
+            newA.studentQualification = "";
+          }
         }
+
+        if (field === "affiliationType") {
+          if (value === "Aditya University") {
+            newA.affiliationName = "Aditya University";
+            newA.authorName = "";
+            newA.empId = "";
+          } else {
+            newA.affiliationName = "";
+            newA.empId = "";
+            newA.authorName = "";
+          }
+        }
+        return newA;
+      });
+
+      const hasPg = p.isStudentsInvolved === "Yes" && updated.some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+
+      let newApplyIncentive = p.applyIncentive;
+      if (hasPg) {
+        newApplyIncentive = "No";
+      } else if (field === "studentQualification" || (hadPg && !hasPg) || field === "CoAuthorType") {
+        newApplyIncentive = "";
       }
 
-      if (field === "affiliationType") {
-        if (value === "Aditya University") {
-          newA.affiliationName = "Aditya University";
-          newA.authorName = "";
-          newA.empId = "";
-        } else {
-          newA.affiliationName = "";
-          newA.empId = "";
-          newA.authorName = "";
-        }
-      }
-      return newA;
+      return {
+        ...p,
+        otherAuthors: updated,
+        applyIncentive: newApplyIncentive
+      };
     });
-    setForm(p => ({ ...p, otherAuthors: updated }));
 
     if (field === "empId" && value.length >= 3) {
-      const author = updated.find(a => a.authorPosition === pos);
+      const author = form.otherAuthors.find(a => a.authorPosition === pos);
       if (author?.affiliationType === "Aditya University") fetchCoAuthorName(pos, value);
     }
   };
@@ -897,21 +925,27 @@ export default function JournalPublication() {
     setForm((prev) => {
       let newForm = { ...prev, isStudentsInvolved: val };
 
-      if (val === "Yes") {
-        newForm.applyIncentive = "No";
-      } else {
-        newForm.applyIncentive = "";
+      if (val === "No") {
         if (newForm.otherAuthors) {
           newForm.otherAuthors = newForm.otherAuthors.map(author => {
             const newAuthor = { ...author };
             delete newAuthor.CoAuthorType;
             delete newAuthor.studentId;
+            delete newAuthor.studentQualification;
             if (author.CoAuthorType === "student" && newAuthor.affiliationType === "Aditya University") {
               newAuthor.affiliationType = "";
             }
             return newAuthor;
           });
         }
+        newForm.applyIncentive = "";
+      }
+
+      const hasPg = val === "Yes" && (newForm.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+      if (hasPg) {
+        newForm.applyIncentive = "No";
+      } else if (val === "Yes") {
+        newForm.applyIncentive = "";
       }
       return newForm;
     });
@@ -926,7 +960,19 @@ export default function JournalPublication() {
       toast.error("Please update your profile with PAN Number and College before submitting");
       return;
     }
-    if (!form.doi || !form.paperTitle || !form.journalName || !form.month || !form.year || !form.journalQuartile || !form.journalType || !form.isScopus) {
+    if (
+      !form.doi ||
+      !form.paperTitle ||
+      !form.journalName ||
+      !form.month ||
+      !form.year ||
+      !form.journalQuartile ||
+      !form.journalType ||
+      !form.journalCategory ||
+      !form.isScopus ||
+      !form.issn ||
+      !form.eissn
+    ) {
       toast.error("Please fill all mandatory fields (*)");
       return;
     }
@@ -949,10 +995,6 @@ export default function JournalPublication() {
       toast.error("Please select whether you want to apply for an incentive");
       return;
     }
-    if (!form.publicationScope) {
-      toast.error("Please select National or International for Publication Scope");
-      return;
-    }
 
     // Validate co-authors
     const total = parseInt(form.totalAuthors) || 1;
@@ -966,9 +1008,9 @@ export default function JournalPublication() {
           !a.affiliationType ||
           (a.affiliationType === "Others" && (!a.authorName || !a.affiliationName)) ||
           (a.affiliationType === "Aditya University" && a.CoAuthorType === "faculty" && (!a.empId || !a.authorName)) ||
-          (a.affiliationType === "Aditya University" && a.CoAuthorType === "student" && (!a.studentId || !a.authorName))
+          (a.affiliationType === "Aditya University" && a.CoAuthorType === "student" && (!a.studentId || !a.authorName || !a.studentQualification))
         ) {
-          toast.error(`Please complete details for Author Position ${a.authorPosition}.`);
+          toast.error(`Please complete details and qualification for Author Position ${a.authorPosition}.`);
           return;
         }
       }
@@ -995,18 +1037,22 @@ export default function JournalPublication() {
         affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliationName || ""),
         employeeId: (a.affiliationType === "Aditya University" && a.CoAuthorType !== "student") ? a.empId : null,
         studentId: (a.affiliationType === "Aditya University" && a.CoAuthorType === "student") ? a.studentId : null,
+        studentQualification: (a.affiliationType === "Aditya University" && a.CoAuthorType === "student") ? (a.studentQualification || null) : null,
         CoAuthorType: form.isStudentsInvolved === "Yes" ? (a.CoAuthorType || "faculty") : "faculty",
         authorPosition: a.authorPosition
       })).filter(ca => ca.name && ca.affiliation);
 
       const fields = [
-        "doi", "paperTitle", "journalName", "journalType",
-        "vol", "issue", "agecReferencingNumbers", "applyIncentive", "publicationScope",
+        "doi", "paperTitle", "journalName", "journalType", "journalCategory",
+        "vol", "issue", "agecReferencingNumbers", "applyIncentive",
         "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor", "isStudentsInvolved",
         "issn", "eissn", "isScopus", "citations"
       ];
       fields.forEach(k => {
-        fd.append(k, form[k] ?? "");
+        let val = form[k] ?? "";
+        if (k === "hIndex" && (val === "" || val === undefined || val === null)) val = "0";
+        if (k === "jcrImpactFactor" && (val === "" || val === undefined || val === null)) val = "0";
+        fd.append(k, val);
       });
 
       fd.append("numberOfReferencesBelongingToAGEC", form.numberOfReferencesBelongingToAGEC || 0);
@@ -1060,6 +1106,7 @@ export default function JournalPublication() {
       journalName: pub.journalName || "",
       journalQuartile: pub.journalQuartile || pub.categoryOfJournal || "",
       journalType: pub.journalType || "",
+      journalCategory: pub.journalCategory || "",
       vol: pub.vol || "",
       issue: pub.issue || "",
       pageNos: pub.pageNos || pub.pageRange || "",
@@ -1070,7 +1117,6 @@ export default function JournalPublication() {
       month: pub.publishedMonth || pub.month || "",
       year: pub.publishedYear || pub.year || "",
       applyIncentive: pub.applyIncentive || pub.incentiveApplied || "",
-      publicationScope: pub.publicationScope || "",
       applyingSeedGrant: pub.applyingSeedGrant || "",
       completeJournalName: pub.completeJournalName || "",
       sdgs: pub.sdgs || "",
@@ -1085,6 +1131,7 @@ export default function JournalPublication() {
         authorPosition: ca.authorPosition,
         CoAuthorType: ca.CoAuthorType || "faculty",
         studentId: ca.studentId || "",
+        studentQualification: ca.studentQualification || "",
         affiliationType: ca.affiliation || "",
         empId: ca.employeeId || "",
         authorName: ca.name || "",
@@ -1452,10 +1499,79 @@ export default function JournalPublication() {
           </Select>
         </Box>
 
+        {/* Journal Category */}
+        <Box>
+          <Typography sx={labelStyle}>Journal Category : *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.journalCategory || ""} onChange={set("journalCategory")}>
+            <MenuItem value="">Select Category</MenuItem>
+            {(form.journalCategory && !JOURNAL_CATEGORIES.includes(form.journalCategory)
+              ? [...JOURNAL_CATEGORIES, form.journalCategory]
+              : JOURNAL_CATEGORIES
+            ).map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+          </Select>
+        </Box>
+
         {/* Indexed in Scopus */}
         <Box>
           <Typography sx={labelStyle}>Indexed in Scopus : *</Typography>
           <TextField size="small" fullWidth value={form.isScopus || ""} disabled={true} sx={disabledField} placeholder="Auto-filled from DOI" />
+        </Box>
+
+        {/* ISSN */}
+        <Box>
+          <Typography sx={labelStyle}>ISSN : *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            value={form.issn || ""}
+            onChange={set("issn")}
+            disabled={isFetched("issn")}
+            sx={isFetched("issn") ? disabledField : {}}
+            placeholder={isFetched("issn") ? "Auto-filled from DOI" : "Enter ISSN (e.g. 1234-5678)"}
+          />
+        </Box>
+
+        {/* e-ISSN */}
+        <Box>
+          <Typography sx={labelStyle}>e-ISSN : *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            value={form.eissn || ""}
+            onChange={set("eissn")}
+            disabled={isFetched("eissn")}
+            sx={isFetched("eissn") ? disabledField : {}}
+            placeholder={isFetched("eissn") ? "Auto-filled from DOI" : "Enter e-ISSN (e.g. 1234-5678)"}
+          />
+        </Box>
+
+        {/* H-Index */}
+        <Box>
+          <Typography sx={labelStyle}>H-Index : *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            type="number"
+            value={form.hIndex === "" || form.hIndex === undefined || form.hIndex === null ? "0" : form.hIndex}
+            onChange={set("hIndex")}
+            placeholder="0"
+            helperText="Default is 0, update if applicable"
+            FormHelperTextProps={{ sx: { fontSize: "0.75rem", color: "var(--text-secondary)", mt: 0.5 } }}
+          />
+        </Box>
+
+        {/* JCR Impact Factor */}
+        <Box>
+          <Typography sx={labelStyle}>JCR Impact Factor : *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            value={form.jcrImpactFactor === "" || form.jcrImpactFactor === undefined || form.jcrImpactFactor === null ? "0" : form.jcrImpactFactor}
+            onChange={set("jcrImpactFactor")}
+            placeholder="0"
+            helperText="Auto-fetched / Default is 0, update if applicable"
+            FormHelperTextProps={{ sx: { fontSize: "0.75rem", color: "var(--text-secondary)", mt: 0.5 } }}
+          />
         </Box>
 
         {/* Vol */}
@@ -1588,7 +1704,7 @@ export default function JournalPublication() {
                   {ca.affiliationType === "Aditya University" ? (
                     ca.CoAuthorType === "student" ? (
                       <>
-                        <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
+                        <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "110px" } }}>
                           <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT ROLL NO</Typography>
                           <TextField
                             size="small"
@@ -1598,7 +1714,7 @@ export default function JournalPublication() {
                             placeholder="e.g. 21A91A0501"
                           />
                         </Box>
-                        <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
+                        <Box sx={{ flex: 1.5, minWidth: { xs: "100%", sm: "160px" } }}>
                           <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT NAME</Typography>
                           <TextField
                             size="small"
@@ -1607,6 +1723,21 @@ export default function JournalPublication() {
                             onChange={(e) => handleCoAuthorChange(ca.authorPosition, "authorName", e.target.value)}
                             placeholder="Full Name"
                           />
+                        </Box>
+                        <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "110px" } }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>QUALIFICATION</Typography>
+                          <Select
+                            size="small"
+                            fullWidth
+                            displayEmpty
+                            value={ca.studentQualification || ""}
+                            onChange={(e) => handleCoAuthorChange(ca.authorPosition, "studentQualification", e.target.value)}
+                          >
+                            <MenuItem value="" disabled>Select</MenuItem>
+                            <MenuItem value="UG">UG</MenuItem>
+                            <MenuItem value="PG">PG</MenuItem>
+                            <MenuItem value="Ph.D">Ph.D</MenuItem>
+                          </Select>
                         </Box>
                       </>
                     ) : (
@@ -1740,19 +1871,32 @@ export default function JournalPublication() {
           </Select>
         </Box>
         <Box>
-          <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"} sx={form.isStudentsInvolved === "Yes" ? disabledField : {}}>
-            <MenuItem value="">Select</MenuItem>
-            <MenuItem value="Yes">Yes</MenuItem>
-            <MenuItem value="No">No</MenuItem>
-          </Select>
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>Publication Scope : *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.publicationScope} onChange={set("publicationScope")}>
-            <MenuItem value="">Select</MenuItem>
-            {INCENTIVE_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
-          </Select>
+          {(() => {
+            const hasPgStudent = form.isStudentsInvolved === "Yes" && (form.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+            return (
+              <>
+                <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
+                <Select
+                  size="small"
+                  fullWidth
+                  displayEmpty
+                  value={hasPgStudent ? "No" : form.applyIncentive}
+                  onChange={set("applyIncentive")}
+                  disabled={hasPgStudent}
+                  sx={hasPgStudent ? disabledField : {}}
+                >
+                  <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="Yes">Yes</MenuItem>
+                  <MenuItem value="No">No</MenuItem>
+                </Select>
+                {hasPgStudent && (
+                  <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                    * Incentive is not applicable for publications with PG student co-authors.
+                  </Typography>
+                )}
+              </>
+            );
+          })()}
         </Box>
       </Grid2>
 
@@ -2026,7 +2170,8 @@ export default function JournalPublication() {
                     },
                     { label: "Journal Quartile", value: data.journalQuartile || data.categoryOfJournal || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Scopus", value: data.isScopus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    { label: "Journal Type", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Type of Journal", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Journal Category", value: data.journalCategory || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "ISSN", value: data.issn || "-", icon: <Article sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "e-ISSN", value: data.eissn || "-", icon: <Article sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Volume", value: data.vol || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
@@ -2084,20 +2229,9 @@ export default function JournalPublication() {
               flexDirection: "column",
               gap: 3
             }}>
-              {/* Top Right Card: Scope, Eligibility, Claimant */}
+              {/* Top Right Card: Eligibility, Claimant */}
               <Paper elevation={0} sx={{ p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", flexShrink: 0 }}>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 2, borderBottom: "1px solid var(--border-color)" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                      <PublicIcon sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
-                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
-                        Publication Scope
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                      {data.publicationScope || data.incentiveApplied || "National"}
-                    </Typography>
-                  </Box>
 
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 2, borderBottom: "1px solid var(--border-color)" }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -2314,7 +2448,9 @@ export default function JournalPublication() {
                                 </Box>
                               </TableCell>
                               <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
-                              <TableCell sx={{ color: "var(--text-secondary)", textTransform: "capitalize" }}>{ca.CoAuthorType || "-"}</TableCell>
+                              <TableCell sx={{ color: "var(--text-secondary)", textTransform: "capitalize" }}>
+                                {ca.CoAuthorType === "student" && ca.studentQualification ? `Student (${ca.studentQualification})` : (ca.CoAuthorType || "-")}
+                              </TableCell>
                               <TableCell sx={{ color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
                             </TableRow>
                           );
