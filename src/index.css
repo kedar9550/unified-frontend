@@ -601,6 +601,7 @@ body.dark-mode .mobile-search-input-box .MuiInputBase-input {
   border: none !important;
   outline: none !important;
 }
+
 body.global-loading-active .MuiCircularProgress-root {
   display: none !important;
 }
@@ -628,7 +629,7 @@ body.global-loading-active .MuiCircularProgress-root {
   position: relative;
   flex: 1;
   transition: all 0.3s ease;
-  box-shadow: 4px 0 16px rgba(0,0,0,0.06);
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.06);
 }
 
 .count-band-segment:not(:first-child) {
@@ -639,17 +640,37 @@ body.global-loading-active .MuiCircularProgress-root {
 }
 
 /* Colors */
-.segment-blue { background-color: #F0F4FF; }
-.segment-blue .segment-title { color: #64748B; }
+.segment-blue {
+  background-color: #F0F4FF;
+}
 
-.segment-purple { background-color: #F4EFFF; }
-.segment-purple .segment-title { color: #64748B; }
+.segment-blue .segment-title {
+  color: #64748B;
+}
 
-.segment-green { background-color: #E6FBF0; }
-.segment-green .segment-title { color: #64748B; }
+.segment-purple {
+  background-color: #F4EFFF;
+}
 
-.segment-red { background-color: #FEEDED; }
-.segment-red .segment-title { color: #64748B; }
+.segment-purple .segment-title {
+  color: #64748B;
+}
+
+.segment-green {
+  background-color: #E6FBF0;
+}
+
+.segment-green .segment-title {
+  color: #64748B;
+}
+
+.segment-red {
+  background-color: #FEEDED;
+}
+
+.segment-red .segment-title {
+  color: #64748B;
+}
 
 .segment-icon-wrapper {
   width: 48px;
@@ -660,16 +681,24 @@ body.global-loading-active .MuiCircularProgress-root {
   justify-content: center;
   align-items: center;
   flex-shrink: 0;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
 }
 
 .segment-icon-wrapper svg {
   fill: url(#countband-primary-gradient);
 }
 
-.gradient-start-stop { stop-color: var(--gradient-start); }
-.gradient-mid-stop { stop-color: var(--gradient-mid); }
-.gradient-end-stop { stop-color: var(--gradient-end); }
+.gradient-start-stop {
+  stop-color: var(--gradient-start);
+}
+
+.gradient-mid-stop {
+  stop-color: var(--gradient-mid);
+}
+
+.gradient-end-stop {
+  stop-color: var(--gradient-end);
+}
 
 .segment-text-wrapper {
   display: flex;
@@ -741,14 +770,15 @@ body.global-loading-active .MuiCircularProgress-root {
     padding: 12px;
     gap: 8px;
   }
-  
-  .count-band-segment, .count-band-segment:not(:first-child) {
+
+  .count-band-segment,
+  .count-band-segment:not(:first-child) {
     width: 100%;
     margin-left: 0;
     padding: 12px 20px;
     border-radius: 100px;
   }
-  
+
   .count-band-total {
     width: 100%;
     margin-left: 0;
@@ -756,7 +786,7 @@ body.global-loading-active .MuiCircularProgress-root {
     border-radius: 100px;
     justify-content: center;
   }
-  
+
   .total-divider {
     display: none;
   }
@@ -772,17 +802,37 @@ body.dark-mode .count-band-total {
   background: var(--bg-panel, #1E293B);
 }
 
-body.dark-mode .segment-blue { background-color: #223657; }
-body.dark-mode .segment-blue .segment-title { color: #94A3B8; }
+body.dark-mode .segment-blue {
+  background-color: #223657;
+}
 
-body.dark-mode .segment-purple { background-color: #2E3157; }
-body.dark-mode .segment-purple .segment-title { color: #94A3B8; }
+body.dark-mode .segment-blue .segment-title {
+  color: #94A3B8;
+}
 
-body.dark-mode .segment-green { background-color: #1C3F46; }
-body.dark-mode .segment-green .segment-title { color: #94A3B8; }
+body.dark-mode .segment-purple {
+  background-color: #2E3157;
+}
 
-body.dark-mode .segment-red { background-color: #3D2D3C; }
-body.dark-mode .segment-red .segment-title { color: #94A3B8; }
+body.dark-mode .segment-purple .segment-title {
+  color: #94A3B8;
+}
+
+body.dark-mode .segment-green {
+  background-color: #1C3F46;
+}
+
+body.dark-mode .segment-green .segment-title {
+  color: #94A3B8;
+}
+
+body.dark-mode .segment-red {
+  background-color: #3D2D3C;
+}
+
+body.dark-mode .segment-red .segment-title {
+  color: #94A3B8;
+}
 
 body.dark-mode .segment-icon-wrapper {
   background: #334155;
@@ -803,6 +853,5 @@ body.dark-mode .total-divider {
 }
 
 body.dark-mode .count-band-segment {
-  box-shadow: 4px 0 16px rgba(0,0,0,0.25);
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.25);
 }
-
