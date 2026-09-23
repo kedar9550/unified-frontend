@@ -486,12 +486,11 @@ const Payments = () => {
                     px: 3,
                     py: 0.75,
                     fontWeight: 600,
-                    color: '#334155',
-                    borderColor: '#e2e8f0',
-                    bgcolor: '#fff',
+                    color: 'var(--text-primary)',
+                    borderColor: 'var(--border-color, divider)',
                     '&:hover': {
-                      bgcolor: '#f8fafc',
-                      borderColor: '#cbd5e1'
+                      bgcolor: 'action.hover',
+                      borderColor: 'var(--border-color, divider)'
                     }
                   }}
                 >
@@ -510,7 +509,7 @@ const Payments = () => {
                     onClick={() => { setActiveTab('SUCCESSFUL'); setFilterAnchorEl(null); }}
                     sx={{ py: 1.5, fontWeight: activeTab === 'SUCCESSFUL' ? 600 : 400 }}
                   >
-                    <CheckCircleIcon sx={{ fontSize: 18, mr: 1.5, color: activeTab === 'SUCCESSFUL' ? '#059669' : 'text.secondary' }} />
+                    <CheckCircleIcon sx={{ fontSize: 18, mr: 1.5, color: activeTab === 'SUCCESSFUL' ? '#059669' : '#94a3b8' }} />
                     Successful (Paid) ({payments.filter(p => (p.paymentStatus || (p.verified ? 'PAID' : 'PENDING')) === 'PAID').length})
                   </MenuItem>
                   <MenuItem
@@ -518,7 +517,7 @@ const Payments = () => {
                     onClick={() => { setActiveTab('ALL'); setFilterAnchorEl(null); }}
                     sx={{ py: 1.5, fontWeight: activeTab === 'ALL' ? 600 : 400 }}
                   >
-                    <Box sx={{ width: 18, mr: 1.5 }} />
+                    <ReceiptIcon sx={{ fontSize: 18, mr: 1.5, color: activeTab === 'ALL' ? '#3b82f6' : '#94a3b8' }} />
                     All Registrations ({payments.length})
                   </MenuItem>
                   <MenuItem
@@ -526,7 +525,7 @@ const Payments = () => {
                     onClick={() => { setActiveTab('PENDING'); setFilterAnchorEl(null); }}
                     sx={{ py: 1.5, fontWeight: activeTab === 'PENDING' ? 600 : 400 }}
                   >
-                    <HourglassEmptyIcon sx={{ fontSize: 18, mr: 1.5, color: activeTab === 'PENDING' ? '#d97706' : 'text.secondary' }} />
+                    <HourglassEmptyIcon sx={{ fontSize: 18, mr: 1.5, color: activeTab === 'PENDING' ? '#d97706' : '#94a3b8' }} />
                     Pending / Incomplete ({payments.filter(p => (p.paymentStatus || (p.verified ? 'PAID' : 'PENDING')) !== 'PAID').length})
                   </MenuItem>
                 </Menu>
@@ -545,29 +544,6 @@ const Payments = () => {
             >
               Bulk Payment Update
             </Button>
-            <Button
-              variant="outlined"
-              color="warning"
-              onClick={() => navigate('/Eventveda/manual-adding/pending')}
-              startIcon={<HourglassEmptyIcon />}
-              sx={{ borderRadius: '12px', textTransform: 'none', px: 2, py: 1, fontWeight: 700 }}
-            >
-              Pending
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={() => navigate('/Eventveda/participants')}
-              startIcon={<PeopleAltIcon />}
-              sx={{ borderRadius: '12px', textTransform: 'none', px: 2.5, py: 1 }}
-            >
-              Participants
-            </Button>
-            <ActionButton
-              onClick={fetchPayments}
-              startIcon={<RefreshIcon />}
-            >
-              Refresh
-            </ActionButton>
           </Box>
         </Box>
       </Card>

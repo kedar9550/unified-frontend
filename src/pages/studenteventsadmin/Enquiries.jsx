@@ -43,6 +43,7 @@ import API from '../../api/axios';
 import { toast } from 'sonner';
 import StatCard from '../../components/common/StatCard';
 import StatCardGrid from '../../components/common/StatCardGrid';
+import CountBand from '../../components/common/design-system/CountBand';
 
 const formatDate = (value) => {
   if (!value) return '-';
@@ -328,32 +329,37 @@ const Enquiries = () => {
         }
       />
 
-      <StatCardGrid columns={4} sx={{ mb: 3 }}>
-        <StatCard
-          title="Total Enquiries"
-          value={stats.total}
-          color="#3b82f6"
-          icon={<EmailIcon />}
+      <Box sx={{ mb: 3 }}>
+        <CountBand
+          items={[
+            {
+              id: 'pending',
+              title: 'Pending',
+              value: stats.pending,
+              color: 'warning',
+              icon: <PendingIcon />
+            },
+            {
+              id: 'replied',
+              title: 'Replied',
+              value: stats.replied,
+              color: 'success',
+              icon: <RepliedIcon />
+            },
+            {
+              id: 'closed',
+              title: 'Closed',
+              value: stats.closed,
+              color: 'danger',
+              icon: <ClosedIcon />
+            }
+          ]}
+          total={{
+            title: 'Total Enquiries',
+            value: stats.total
+          }}
         />
-        <StatCard
-          title="Pending"
-          value={stats.pending}
-          color="#f59e0b"
-          icon={<PendingIcon />}
-        />
-        <StatCard
-          title="Replied"
-          value={stats.replied}
-          color="#10b981"
-          icon={<RepliedIcon />}
-        />
-        <StatCard
-          title="Closed"
-          value={stats.closed}
-          color="#64748b"
-          icon={<ClosedIcon />}
-        />
-      </StatCardGrid>
+      </Box>
 
       {/* Filter Tabs */}
       <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>

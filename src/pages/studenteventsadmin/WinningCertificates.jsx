@@ -45,6 +45,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import StatCard from '../../components/common/StatCard';
 import StatCardGrid from '../../components/common/StatCardGrid';
+import CountBand from '../../components/common/design-system/CountBand';
 
 const formatDate = (value) => {
   if (!value) return '-';
@@ -457,38 +458,44 @@ const WinningCertificates = () => {
         }
       />
 
-      <StatCardGrid columns={5} sx={{ mb: 3 }}>
-        <StatCard
-          title="Total Teams"
-          value={stats.teamCount}
-          color="#3b82f6"
-          icon={<GroupIcon />}
+      <Box sx={{ mb: 3 }}>
+        <CountBand
+          items={[
+            {
+              id: 'winners',
+              title: 'Total Winners',
+              value: stats.winnersCount,
+              color: 'success',
+              icon: <CheckCircleIcon />
+            },
+            {
+              id: '1st',
+              title: '1st Prize',
+              value: stats.firstPrizeCount,
+              color: 'warning',
+              icon: <EmojiEventsIcon />
+            },
+            {
+              id: '2nd',
+              title: '2nd Prize',
+              value: stats.secondPrizeCount,
+              color: 'slate',
+              icon: <EmojiEventsIcon />
+            },
+            {
+              id: '3rd',
+              title: '3rd Prize',
+              value: stats.thirdPrizeCount,
+              color: 'danger',
+              icon: <EmojiEventsIcon />
+            }
+          ]}
+          total={{
+            title: 'Total Teams',
+            value: stats.teamCount
+          }}
         />
-        <StatCard
-          title="Total Winners"
-          value={stats.winnersCount}
-          color="#10b981"
-          icon={<CheckCircleIcon />}
-        />
-        <StatCard
-          title="1st Prize"
-          value={stats.firstPrizeCount}
-          color="#d97706"
-          icon={<EmojiEventsIcon />}
-        />
-        <StatCard
-          title="2nd Prize"
-          value={stats.secondPrizeCount}
-          color="#64748b"
-          icon={<EmojiEventsIcon />}
-        />
-        <StatCard
-          title="3rd Prize"
-          value={stats.thirdPrizeCount}
-          color="#b45309"
-          icon={<EmojiEventsIcon />}
-        />
-      </StatCardGrid>
+      </Box>
 
       {loading ? (
         <Box sx={{ display: 'grid', placeItems: 'center', py: 10 }}>
