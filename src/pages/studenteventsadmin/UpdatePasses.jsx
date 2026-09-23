@@ -40,6 +40,7 @@ import { PageContainer, EmptyState } from '../../components/common/design-system
 import ActionButton from '../../components/common/ActionButton';
 import StatCard from '../../components/common/StatCard';
 import StatCardGrid from '../../components/common/StatCardGrid';
+import CountBand from '../../components/common/design-system/CountBand';
 import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
@@ -385,32 +386,37 @@ const UpdatePasses = () => {
       />
 
       {/* Summary Cards */}
-      <StatCardGrid columns={4} sx={{ mt: 1, mb: 3 }}>
-        <StatCard
-          title="Total Participants"
-          value={allParticipants.length}
-          color="#d97706"
-          icon={<PeopleIcon />}
+      <Box sx={{ mt: 1, mb: 3 }}>
+        <CountBand
+          items={[
+            {
+              id: 'events',
+              title: 'Events',
+              value: uniqueEvents.length,
+              color: 'primary',
+              icon: <EventIcon />
+            },
+            {
+              id: 'present',
+              title: 'Present',
+              value: presentCount,
+              color: 'success',
+              icon: <CheckCircleIcon />
+            },
+            {
+              id: 'absent',
+              title: 'Absent',
+              value: absentCount,
+              color: 'danger',
+              icon: <CancelIcon />
+            }
+          ]}
+          total={{
+            title: 'Total Participants',
+            value: allParticipants.length
+          }}
         />
-        <StatCard
-          title="Events"
-          value={uniqueEvents.length}
-          color="#9333ea"
-          icon={<EventIcon />}
-        />
-        <StatCard
-          title="Present"
-          value={presentCount}
-          color="#16a34a"
-          icon={<CheckCircleIcon />}
-        />
-        <StatCard
-          title="Absent"
-          value={absentCount}
-          color="#dc2626"
-          icon={<CancelIcon />}
-        />
-      </StatCardGrid>
+      </Box>
 
       {/* Filter Controls Bar */}
       <Paper

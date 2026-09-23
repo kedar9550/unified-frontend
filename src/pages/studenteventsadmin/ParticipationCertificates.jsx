@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import StatCard from '../../components/common/StatCard';
 import StatCardGrid from '../../components/common/StatCardGrid';
+import CountBand from '../../components/common/design-system/CountBand';
 import { QRCodeSVG } from 'qrcode.react';
 
 // Ornate Victorian Corner Flourish (Matching Reference Certificate Design)
@@ -550,20 +551,26 @@ const ParticipationCertificates = () => {
         }
       />
 
-      <StatCardGrid columns={2} sx={{ mb: 3 }}>
-        <StatCard
-          title="Total Teams"
-          value={stats.teamCount}
-          color="#3b82f6"
-          icon={<GroupIcon />}
+      <Box sx={{ mb: 3 }}>
+        <CountBand
+          items={[
+            {
+              id: 'teams',
+              title: 'Total Teams',
+              value: stats.teamCount,
+              color: 'blue',
+              icon: <GroupIcon />
+            },
+            {
+              id: 'participants',
+              title: 'Total Participants',
+              value: stats.participantCount,
+              color: 'purple',
+              icon: <PeopleAltIcon />
+            }
+          ]}
         />
-        <StatCard
-          title="Total Participants"
-          value={stats.participantCount}
-          color="#8b5cf6"
-          icon={<PeopleAltIcon />}
-        />
-      </StatCardGrid>
+      </Box>
 
       {loading ? (
         <Box sx={{ display: 'grid', placeItems: 'center', py: 10 }}>

@@ -625,7 +625,7 @@ body.global-loading-active .MuiCircularProgress-root {
   display: flex;
   align-items: center;
   border-radius: 100px;
-  padding: 12px 24px 12px 12px;
+  padding: 12px 40px 12px 16px;
   position: relative;
   flex: 1;
   transition: all 0.3s ease;
@@ -635,8 +635,8 @@ body.global-loading-active .MuiCircularProgress-root {
 .count-band-segment:not(:first-child) {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
-  margin-left: -48px;
-  padding-left: 60px;
+  margin-left: -64px;
+  padding-left: 64px;
 }
 
 /* Colors */
@@ -669,6 +669,46 @@ body.global-loading-active .MuiCircularProgress-root {
 }
 
 .segment-red .segment-title {
+  color: #64748B;
+}
+
+.segment-primary {
+  background-color: #F0F4FF;
+}
+
+.segment-primary .segment-title {
+  color: #64748B;
+}
+
+.segment-success {
+  background-color: #E6FBF0;
+}
+
+.segment-success .segment-title {
+  color: #64748B;
+}
+
+.segment-warning {
+  background-color: #FFFBEB;
+}
+
+.segment-warning .segment-title {
+  color: #64748B;
+}
+
+.segment-danger {
+  background-color: #FEEDED;
+}
+
+.segment-danger .segment-title {
+  color: #64748B;
+}
+
+.segment-slate {
+  background-color: #F1F5F9;
+}
+
+.segment-slate .segment-title {
   color: #64748B;
 }
 
@@ -720,13 +760,21 @@ body.global-loading-active .MuiCircularProgress-root {
   line-height: 1;
 }
 
+.segment-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  color: #94A3B8;
+}
+
 /* Total Segment */
 .count-band-total {
   display: flex;
   align-items: center;
-  padding: 12px 24px 12px 12px;
-  margin-left: -48px;
-  padding-left: 68px;
+  padding: 12px 32px 12px 12px;
+  margin-left: -64px;
+  padding-left: 72px;
   position: relative;
   flex-shrink: 0;
   background: white;
@@ -831,6 +879,46 @@ body.dark-mode .segment-red {
 }
 
 body.dark-mode .segment-red .segment-title {
+  color: #94A3B8;
+}
+
+body.dark-mode .segment-primary {
+  background-color: #223657;
+}
+
+body.dark-mode .segment-primary .segment-title {
+  color: #94A3B8;
+}
+
+body.dark-mode .segment-success {
+  background-color: #1C3F46;
+}
+
+body.dark-mode .segment-success .segment-title {
+  color: #94A3B8;
+}
+
+body.dark-mode .segment-warning {
+  background-color: #362D1C;
+}
+
+body.dark-mode .segment-warning .segment-title {
+  color: #94A3B8;
+}
+
+body.dark-mode .segment-danger {
+  background-color: #3D2D3C;
+}
+
+body.dark-mode .segment-danger .segment-title {
+  color: #94A3B8;
+}
+
+body.dark-mode .segment-slate {
+  background-color: #263140;
+}
+
+body.dark-mode .segment-slate .segment-title {
   color: #94A3B8;
 }
 
