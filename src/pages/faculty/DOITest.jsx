@@ -420,7 +420,7 @@ export default function DOIFetcher() {
     { key: "doi", label: "DOI", span: 2 },
     { key: "title", label: "Title of the Article", span: 2 },
     { key: "journalName", label: "Name of the Journal", span: 2 },
-    { key: "journalType", label: "Type of Journal", span: 1 },
+    { key: "journalType", label: "Type of Journal (WoS)", span: 1 },
     { key: "quartile", label: "Journal Quartile", span: 1 },
     { key: "volume", label: "Volume", span: 1 },
     { key: "issue", label: "Issue", span: 1 },

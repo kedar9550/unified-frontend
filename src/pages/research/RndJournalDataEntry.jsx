@@ -83,7 +83,7 @@ const getMatchedSdgBadgeList = (sdgInput) => {
 };
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const JOURNAL_TYPES = ["SCI", "SCIE", "ESCI", "None"];
+const JOURNAL_TYPES = ["SCIE", "SCI", "ESCI", "SSCI", "AHCI", "None"];
 const JOURNAL_CATEGORIES = ["IEEE", "ASME", "ASCE", "ACM", "OTHERS"];
 const QUARTILE_OPTIONS = ["Q1", "Q2", "Q3", "Q4", "None"];
 const INCENTIVE_OPTIONS = ["National", "International"];
@@ -185,6 +185,7 @@ export default function RndJournalDataEntry() {
     completeJournalName: "",
     sdgs: "",
     isStudentsInvolved: "No",
+    correspondingAuthor: "No",
     issn: "",
     eissn: "",
     isScopus: "No",
@@ -759,6 +760,7 @@ export default function RndJournalDataEntry() {
         "doi", "paperTitle", "journalName", "journalType", "journalCategory",
         "vol", "issue", "agecReferencingNumbers", "applyIncentive",
         "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor", "isStudentsInvolved",
+        "correspondingAuthor",
         "issn", "eissn", "isScopus", "citations", "isInstitutionRecord", "appraisalEligible", "approvedAmount"
       ];
       fields.forEach(k => {
@@ -1075,7 +1077,7 @@ export default function RndJournalDataEntry() {
 
             {/* Journal Type */}
             <Box>
-              <Typography sx={labelStyle}>Type of Journal : *</Typography>
+              <Typography sx={labelStyle}>Type of Journal (WoS) : *</Typography>
               <Select size="small" fullWidth displayEmpty value={form.journalType || ""} onChange={set("journalType")}>
                 <MenuItem value="">Select or auto-fill</MenuItem>
                 {(form.journalType && !JOURNAL_TYPES.includes(form.journalType)
@@ -1192,6 +1194,13 @@ export default function RndJournalDataEntry() {
               <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
                 <Typography sx={{ ...labelStyle, mb: 0 }}>Are students involved in this work as co-authors? *</Typography>
                 <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={handleStudentsInvolvedChange}>
+                  <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+                  <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+                </RadioGroup>
+              </Box>
+              <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                <Typography sx={{ ...labelStyle, mb: 0 }}>Corresponding Author : *</Typography>
+                <RadioGroup row value={form.correspondingAuthor || "No"} onChange={set("correspondingAuthor")}>
                   <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
                   <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
                 </RadioGroup>

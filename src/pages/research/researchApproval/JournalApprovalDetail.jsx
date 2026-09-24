@@ -704,9 +704,10 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                         );
                                     })()
                                 ), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                { key: "correspondingAuthor", label: "Corresponding Author", value: data.correspondingAuthor || "No", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
                                 { key: "journalQuartile", label: "Journal Quartile", value: data.journalQuartile || data.categoryOfJournal || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Q1", "Q2", "Q3", "Q4", "None"] },
                                 { key: "isScopus", label: "Scopus", value: data.isScopus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
-                                { key: "journalType", label: "Type of Journal", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["SCI", "SCIE", "ESCI", "None"] },
+                                { key: "journalType", label: "Type of Journal (WoS)", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["SCIE", "SCI", "ESCI", "SSCI", "AHCI", "None"] },
                                 { key: "journalCategory", label: "Journal Category", value: data.journalCategory || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["IEEE", "ASME", "ASCE", "ACM", "FT-50", "Scopus Top 10%", "OTHERS"] },
                                 { key: "issn", label: "ISSN", value: data.issn || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
                                 { key: "eissn", label: "e-ISSN", value: data.eissn || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },

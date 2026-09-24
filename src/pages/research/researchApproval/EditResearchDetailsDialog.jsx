@@ -155,11 +155,13 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" } }}>
                             <FormControl fullWidth size="small">
-                                <InputLabel>Type of Journal</InputLabel>
-                                <Select label="Type of Journal" name="journalType" value={formData.journalType || ""} onChange={handleChange}>
-                                    <MenuItem value="SCI">SCI</MenuItem>
+                                <InputLabel>Type of Journal (WoS)</InputLabel>
+                                <Select label="Type of Journal (WoS)" name="journalType" value={formData.journalType || ""} onChange={handleChange}>
                                     <MenuItem value="SCIE">SCIE</MenuItem>
+                                    <MenuItem value="SCI">SCI</MenuItem>
                                     <MenuItem value="ESCI">ESCI</MenuItem>
+                                    <MenuItem value="SSCI">SSCI</MenuItem>
+                                    <MenuItem value="AHCI">AHCI</MenuItem>
                                     <MenuItem value="None">None</MenuItem>
                                 </Select>
                             </FormControl>
@@ -239,6 +241,15 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                             <FormControl fullWidth size="small">
                                 <InputLabel>Applying Seed Grant</InputLabel>
                                 <Select label="Applying Seed Grant" name="applyingSeedGrant" value={formData.applyingSeedGrant || ""} onChange={handleChange}>
+                                    <MenuItem value="Yes">Yes</MenuItem>
+                                    <MenuItem value="No">No</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Box>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Corresponding Author</InputLabel>
+                                <Select label="Corresponding Author" name="correspondingAuthor" value={formData.correspondingAuthor || "No"} onChange={handleChange}>
                                     <MenuItem value="Yes">Yes</MenuItem>
                                     <MenuItem value="No">No</MenuItem>
                                 </Select>

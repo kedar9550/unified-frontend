@@ -86,7 +86,7 @@ const getMatchedSdgBadgeList = (sdgInput) => {
 };
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const JOURNAL_TYPES = ["SCI", "SCIE", "ESCI", "None"];
+const JOURNAL_TYPES = ["SCIE", "SCI", "ESCI", "SSCI", "AHCI", "None"];
 const JOURNAL_CATEGORIES = ["IEEE", "ASME", "ASCE", "ACM", "OTHERS"];
 const QUARTILE_OPTIONS = ["Q1", "Q2", "Q3", "Q4", "None"];
 const INCENTIVE_OPTIONS = ["National", "International"];
@@ -284,7 +284,7 @@ export default function JournalPublication() {
           ],
           [
             "Journal Quartile: *", "[ ] Q1  [ ] Q2  [ ] Q3  [ ] Q4  [ ] None",
-            "Type of Journal: *", "[ ] SCI  [ ] SCIE  [ ] ESCI  [ ] None"
+            "Type of Journal (WoS) : *", "[ ] SCIE  [ ] SCI  [ ] ESCI  [ ] SSCI  [ ] AHCI  [ ] None"
           ],
           [
             "Indexed in Scopus? *", "[ ] YES    [ ] NO",
@@ -335,6 +335,10 @@ export default function JournalPublication() {
         body: [
           [
             { content: "Are students involved in this work as co-authors? *", fontStyle: "bold", colSpan: 2 },
+            { content: "[ ] YES    [ ] NO", colSpan: 2 }
+          ],
+          [
+            { content: "Corresponding Author? *", fontStyle: "bold", colSpan: 2 },
             { content: "[ ] YES    [ ] NO", colSpan: 2 }
           ],
           [
@@ -525,6 +529,7 @@ export default function JournalPublication() {
     completeJournalName: "",
     sdgs: "",
     isStudentsInvolved: "No",
+    correspondingAuthor: "No",
     issn: "",
     eissn: "",
     isScopus: "No",
@@ -1046,6 +1051,7 @@ export default function JournalPublication() {
         "doi", "paperTitle", "journalName", "journalType", "journalCategory",
         "vol", "issue", "agecReferencingNumbers", "applyIncentive",
         "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor", "isStudentsInvolved",
+        "correspondingAuthor",
         "issn", "eissn", "isScopus", "citations"
       ];
       fields.forEach(k => {
@@ -1121,6 +1127,7 @@ export default function JournalPublication() {
       completeJournalName: pub.completeJournalName || "",
       sdgs: pub.sdgs || "",
       isStudentsInvolved: pub.isStudentsInvolved || "No",
+      correspondingAuthor: pub.correspondingAuthor || "No",
       issn: pub.issn || "",
       eissn: pub.eissn || "",
       isScopus: pub.isScopus || "No",
@@ -1489,7 +1496,7 @@ export default function JournalPublication() {
 
         {/* Journal Type */}
         <Box>
-          <Typography sx={labelStyle}>Type of Journal : *</Typography>
+          <Typography sx={labelStyle}>Type of Journal (WoS) : *</Typography>
           <Select size="small" fullWidth displayEmpty value={form.journalType || ""} onChange={set("journalType")} disabled={true} sx={disabledField}>
             <MenuItem value="">Auto-filled from DOI</MenuItem>
             {(form.journalType && !JOURNAL_TYPES.includes(form.journalType)
@@ -1631,6 +1638,13 @@ export default function JournalPublication() {
           <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
             <Typography sx={{ ...labelStyle, mb: 0 }}>Are students involved in this work as co-authors? *</Typography>
             <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={handleStudentsInvolvedChange}>
+              <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+              <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+            </RadioGroup>
+          </Box>
+          <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+            <Typography sx={{ ...labelStyle, mb: 0 }}>Corresponding Author : *</Typography>
+            <RadioGroup row value={form.correspondingAuthor || "No"} onChange={set("correspondingAuthor")}>
               <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
               <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
             </RadioGroup>
@@ -2168,9 +2182,10 @@ export default function JournalPublication() {
                         })()
                       ), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />
                     },
+                    { label: "Corresponding Author", value: data.correspondingAuthor || "No", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Journal Quartile", value: data.journalQuartile || data.categoryOfJournal || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Scopus", value: data.isScopus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    { label: "Type of Journal", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Type of Journal (WoS)", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Journal Category", value: data.journalCategory || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "ISSN", value: data.issn || "-", icon: <Article sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "e-ISSN", value: data.eissn || "-", icon: <Article sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
