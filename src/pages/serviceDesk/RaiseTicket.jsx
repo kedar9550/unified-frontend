@@ -2,23 +2,25 @@ import React, { useState, useEffect } from 'react';
 import Loader from "../../components/common/Loader";
 import {
     Box, Typography, TextField, Button, MenuItem, Select, FormControl,
-    InputLabel, Paper, Chip, Grid
+    InputLabel, Paper, Chip, Grid, FormHelperText
 } from '@mui/material';
-import { UploadFile, Close as CloseIcon, Send as SendIcon } from '@mui/icons-material';
+import { UploadFile, Close as CloseIcon, Send as SendIcon, Apartment as ApartmentIcon } from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
 import { PageContainer } from '../../components/common/design-system';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 import RichTextEditor from '../../components/common/RichTextEditor';
 
-
 const RaiseTicket = () => {
     const [services, setServices] = useState([]);
+    const [blocks, setBlocks] = useState([]);
     const [loadingServices, setLoadingServices] = useState(true);
+    const [loadingBlocks, setLoadingBlocks] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
     const [formData, setFormData] = useState({
         service: '',
+        block: '',
         title: '',
         description: '',
         priority: 'MEDIUM',
@@ -26,20 +28,29 @@ const RaiseTicket = () => {
     const [attachments, setAttachments] = useState([]);
 
     useEffect(() => {
-        const fetchServices = async () => {
+        const fetchInitialData = async () => {
             try {
-                const res = await API.get('/api/service-desk/services');
-                if (res.data.success) {
-                    setServices(res.data.data);
+                const [svcRes, blkRes] = await Promise.all([
+                    API.get('/api/service-desk/services'),
+                    API.get('/api/service-desk/blocks?activeOnly=true')
+                ]);
+                if (svcRes.data.success) {
+                    setServices(svcRes.data.data);
+                }
+                if (blkRes.data.success) {
+                    setBlocks(blkRes.data.data);
                 }
             } catch (error) {
-                toast.error('Failed to load services');
+                toast.error('Failed to load initial form data');
             } finally {
                 setLoadingServices(false);
             }
         };
-        fetchServices();
+        fetchInitialData();
     }, []);
+
+    const selectedService = services.find(s => s._id === formData.service);
+    const requiresBlock = selectedService && selectedService.isGlobalService === false;
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -63,8 +74,16 @@ const RaiseTicket = () => {
             return;
         }
 
+        if (requiresBlock && !formData.block) {
+            toast.error('Please select the Block/Location for this service');
+            return;
+        }
+
         const data = new FormData();
         data.append('service', formData.service);
+        if (formData.block) {
+            data.append('block', formData.block);
+        }
         data.append('title', formData.title);
         data.append('description', formData.description);
         data.append('priority', formData.priority);
@@ -85,6 +104,7 @@ const RaiseTicket = () => {
                 // Reset form
                 setFormData({
                     service: '',
+                    block: '',
                     title: '',
                     description: '',
                     priority: 'MEDIUM',
@@ -106,7 +126,12 @@ const RaiseTicket = () => {
                 <Paper sx={{ p: { xs: 2.5, sm: 3, md: 4 }, mb: { xs: 2.5, md: 0 }, borderRadius: '16px', background: 'var(--bg-panel)', boxShadow: 'var(--shadow-premium)', border: '1px solid var(--border-color)' }}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2.5, sm: 3 } }}>
                             
-                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: { xs: 2.5, sm: 3 }, width: '100%' }}>
+                            <Box sx={{
+                                display: 'grid',
+                                gridTemplateColumns: requiresBlock ? { xs: '1fr', md: '1fr 1fr 1fr' } : { xs: '1fr', md: '1fr 1fr' },
+                                gap: { xs: 2.5, sm: 3 },
+                                width: '100%'
+                            }}>
                                 <FormControl fullWidth required>
                                     <InputLabel>Service Category</InputLabel>
                                     <Select
@@ -122,11 +147,37 @@ const RaiseTicket = () => {
                                             <MenuItem value="" disabled>No services available</MenuItem>
                                         ) : (
                                             services.map(s => (
-                                                <MenuItem key={s._id} value={s._id}>{s.name}</MenuItem>
+                                                <MenuItem key={s._id} value={s._id}>
+                                                    {s.name} {!s.isGlobalService ? '(Block Specific)' : ''}
+                                                </MenuItem>
                                             ))
                                         )}
                                     </Select>
                                 </FormControl>
+
+                                {/* Conditional Block Selection for Non-Global Services */}
+                                {requiresBlock && (
+                                    <FormControl fullWidth required>
+                                        <InputLabel>Block / Building</InputLabel>
+                                        <Select
+                                            name="block"
+                                            value={formData.block}
+                                            onChange={handleChange}
+                                            label="Block / Building"
+                                        >
+                                            {blocks.length === 0 ? (
+                                                <MenuItem value="" disabled>No active blocks found</MenuItem>
+                                            ) : (
+                                                blocks.map(b => (
+                                                    <MenuItem key={b._id} value={b._id}>
+                                                        {b.blockName} ({b.blockCode})
+                                                    </MenuItem>
+                                                ))
+                                            )}
+                                        </Select>
+                                        <FormHelperText>This service is block-managed. Select your building.</FormHelperText>
+                                    </FormControl>
+                                )}
 
                                 <FormControl fullWidth>
                                     <InputLabel>Priority (Optional)</InputLabel>

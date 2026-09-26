@@ -85,6 +85,7 @@ import RaiseTicket from "./pages/serviceDesk/RaiseTicket";
 import MyTickets from "./pages/serviceDesk/MyTickets";
 import TicketDetail from "./pages/serviceDesk/TicketDetail";
 import ManageServices from "./pages/serviceDesk/ManageServices";
+import ManageBlocks from "./pages/serviceDesk/ManageBlocks";
 import ManageTickets from "./pages/serviceDesk/ManageTickets";
 import ManageServiceMembers from "./pages/serviceDesk/ManageServiceMembers";
 import AssignedToMe from "./pages/serviceDesk/AssignedToMe";
@@ -326,6 +327,7 @@ function App() {
         <Route path="/service-desk/assigned-to-me" element={<ProtectedRoute element={<AssignedToMe />} />} />
         <Route path="/service-desk/ticket/:id" element={<ProtectedRoute element={<TicketDetail />} />} />
         <Route path="/service-desk/admin/manage-services" element={<ProtectedRoute element={<ManageServices />} />} />
+        <Route path="/service-desk/admin/manage-blocks" element={<ProtectedRoute element={<ManageBlocks />} />} />
         <Route path="/service-desk/admin/services" element={<ProtectedRoute element={<ManageTickets />} />} />
         <Route path="/service-desk/admin/team" element={<ProtectedRoute element={<ManageServiceMembers />} />} />
         <Route path="/service-desk/reports" element={<ProtectedRoute element={<Reports />} />} />

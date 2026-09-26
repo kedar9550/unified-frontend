@@ -87,6 +87,12 @@ const TicketDetail = () => {
     const [empActionNote, setEmpActionNote] = useState('');
     const [updatingEmpStatus, setUpdatingEmpStatus] = useState(false);
 
+    // Admin Direct Status Action state
+    const [adminDirectStatusModalOpen, setAdminDirectStatusModalOpen] = useState(false);
+    const [adminTargetStatus, setAdminTargetStatus] = useState('');
+    const [adminStatusNote, setAdminStatusNote] = useState('');
+    const [updatingAdminStatus, setUpdatingAdminStatus] = useState(false);
+
     useEffect(() => {
         fetchTicketData();
     }, [id]);
@@ -234,6 +240,27 @@ const TicketDetail = () => {
             toast.error(error.response?.data?.message || 'Failed to reject ticket');
         } finally {
             setRejecting(false);
+        }
+    };
+
+    const handleAdminDirectStatus = async () => {
+        if (!adminTargetStatus) return;
+        try {
+            setUpdatingAdminStatus(true);
+            const res = await API.put(`/api/service-desk/tickets/${id}/admin-status`, {
+                status: adminTargetStatus,
+                note: adminStatusNote
+            });
+            if (res.data.success) {
+                toast.success(`Ticket status updated to ${adminTargetStatus.replace('_', ' ')}`);
+                setAdminDirectStatusModalOpen(false);
+                setAdminStatusNote('');
+                fetchTicketData();
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to update ticket status');
+        } finally {
+            setUpdatingAdminStatus(false);
         }
     };
 
@@ -393,6 +420,14 @@ const TicketDetail = () => {
                                 {ticket.service?.name || 'N/A'}
                             </Typography>
                         </Grid>
+                        {ticket.block && (
+                            <Grid xs={6} sm={3}>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Location / Block</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e40af' }}>
+                                    {ticket.block.blockName} ({ticket.block.blockCode})
+                                </Typography>
+                            </Grid>
+                        )}
                     </Grid>
 
                     {isAdminView && ticket.assignedTo?.some(a => a.status === 'REJECTED') && (
@@ -736,16 +771,41 @@ const TicketDetail = () => {
                             <Paper sx={{ p: 3, borderRadius: '12px', background: 'var(--bg-panel)', boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.05)', border: '1px solid var(--border-color)' }}>
                                 <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Admin Actions</Typography>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                    <Button 
-                                        variant="contained" 
-                                        color="primary"
-                                        startIcon={<AssignmentIcon />}
-                                        onClick={openAssignModal}
-                                        fullWidth
-                                        sx={{ textTransform: 'none', borderRadius: '8px', py: 1 }}
-                                    >
-                                        Assign Employees
-                                    </Button>
+                                    {ticket.service?.directEmployeeInvolvement !== false ? (
+                                        <Button 
+                                            variant="contained" 
+                                            color="primary"
+                                            startIcon={<AssignmentIcon />}
+                                            onClick={openAssignModal}
+                                            fullWidth
+                                            sx={{ textTransform: 'none', borderRadius: '8px', py: 1 }}
+                                        >
+                                            Assign Employees
+                                        </Button>
+                                    ) : (
+                                        <>
+                                            {ticket.status === 'OPEN' && (
+                                                <Button 
+                                                    variant="contained" 
+                                                    color="info"
+                                                    onClick={() => handleAdminDirectStatus('IN_PROGRESS')}
+                                                    fullWidth
+                                                    sx={{ textTransform: 'none', borderRadius: '8px', py: 1 }}
+                                                >
+                                                    Start Work (In Progress)
+                                                </Button>
+                                            )}
+                                            <Button 
+                                                variant="contained" 
+                                                color="success"
+                                                onClick={() => { setAdminTargetStatus('RESOLVED'); setAdminDirectStatusModalOpen(true); }}
+                                                fullWidth
+                                                sx={{ textTransform: 'none', borderRadius: '8px', py: 1 }}
+                                            >
+                                                Mark as Resolved
+                                            </Button>
+                                        </>
+                                    )}
                                     <Button 
                                         variant="outlined" 
                                         color="error"
@@ -923,6 +983,42 @@ const TicketDetail = () => {
                     <Button onClick={() => setRejectModalOpen(false)}>Cancel</Button>
                     <Button variant="contained" color="error" onClick={handleReject} disabled={rejecting || !rejectReason.trim()}>
                         {rejecting ? 'Rejecting...' : 'Reject'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Admin Direct Status Update Modal */}
+            <Dialog open={adminDirectStatusModalOpen} onClose={() => setAdminDirectStatusModalOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+                <DialogTitle sx={{ fontWeight: 600 }}>
+                    {adminTargetStatus === 'RESOLVED' ? 'Mark Ticket as Resolved' : `Update Status to ${adminTargetStatus}`}
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                        {adminTargetStatus === 'RESOLVED'
+                            ? 'Please provide resolution notes or details of the action taken.'
+                            : 'Provide any optional notes regarding this work status change.'}
+                    </Typography>
+                    <TextField
+                        fullWidth
+                        multiline
+                        rows={3}
+                        label="Resolution Note / Comments"
+                        placeholder="Detail the work performed..."
+                        value={adminStatusNote}
+                        onChange={(e) => setAdminStatusNote(e.target.value)}
+                        size="small"
+                    />
+                </DialogContent>
+                <DialogActions sx={{ p: 2, px: 3 }}>
+                    <Button onClick={() => setAdminDirectStatusModalOpen(false)} color="inherit" sx={{ textTransform: 'none' }}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        color="success"
+                        onClick={handleAdminDirectStatus}
+                        disabled={updatingAdminStatus}
+                        sx={{ textTransform: 'none', borderRadius: 2, px: 3 }}
+                    >
+                        {updatingAdminStatus ? 'Saving...' : 'Confirm Resolution'}
                     </Button>
                 </DialogActions>
             </Dialog>

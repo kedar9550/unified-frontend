@@ -26,6 +26,7 @@ import {
   ListAlt,
   AssignmentInd,
   AccountTree,
+  Apartment,
   Assessment,
   Settings,
   CloudUpload,
@@ -193,6 +194,7 @@ export const ROLE_ROUTES = {
       icon: <SupportAgent />,
       nested: [
         { text: "Manage Services", path: "/service-desk/admin/manage-services", icon: <AccountTree /> },
+        { text: "Manage Blocks", path: "/service-desk/admin/manage-blocks", icon: <Apartment /> },
         { text: "Reports", path: "/service-desk/reports", icon: <Assessment /> },
         { text: "Feedback Analytics", path: "/service-desk/admin/feedback", icon: <Analytics /> }
       ]

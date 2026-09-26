@@ -3,9 +3,21 @@ import Loader from "../../components/common/Loader";
 import {
     Box, Button, Paper, IconButton, Dialog,
     DialogTitle, DialogContent, DialogActions, TextField, Chip,
-    Tooltip, Autocomplete, List, ListItem, ListItemText, ListItemSecondaryAction, Divider, Typography
+    Tooltip, Autocomplete, List, ListItem, ListItemText, ListItemSecondaryAction, Divider, Typography,
+    FormControlLabel, Switch, RadioGroup, Radio, FormControl, FormLabel, FormHelperText
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Security as SecurityIcon, PersonAdd as PersonAddIcon, Close as CloseIcon } from '@mui/icons-material';
+import {
+    Add as AddIcon,
+    Edit as EditIcon,
+    Delete as DeleteIcon,
+    Security as SecurityIcon,
+    PersonAdd as PersonAddIcon,
+    Close as CloseIcon,
+    Apartment as ApartmentIcon,
+    Public as PublicIcon,
+    Engineering as EngineeringIcon,
+    AdminPanelSettings as AdminIcon
+} from '@mui/icons-material';
 import PageHeader from '../../components/common/PageHeader';
 import { PageContainer } from '../../components/common/design-system';
 import DataTable from '../../components/data/DataTable';
@@ -19,7 +31,12 @@ const ManageServices = () => {
     const [openDialog, setOpenDialog] = useState(false);
     const [editMode, setEditMode] = useState(false);
     const [currentServiceId, setCurrentServiceId] = useState(null);
-    const [formData, setFormData] = useState({ name: '', description: '' });
+    const [formData, setFormData] = useState({
+        name: '',
+        description: '',
+        isGlobalService: true,
+        directEmployeeInvolvement: true
+    });
     const [saving, setSaving] = useState(false);
 
     // Admin Assignment State
@@ -31,7 +48,11 @@ const ManageServices = () => {
     const [employeeSearchResults, setEmployeeSearchResults] = useState([]);
     const [searchingEmployees, setSearchingEmployees] = useState(false);
     const [selectedEmployeeToAdd, setSelectedEmployeeToAdd] = useState(null);
+    const [selectedBlocksToAdd, setSelectedBlocksToAdd] = useState([]);
     const [addingAdmin, setAddingAdmin] = useState(false);
+
+    // Blocks list for mapping
+    const [availableBlocks, setAvailableBlocks] = useState([]);
 
     const fetchServices = async () => {
         try {
@@ -47,30 +68,61 @@ const ManageServices = () => {
         }
     };
 
+    const fetchBlocks = async () => {
+        try {
+            const res = await API.get('/api/service-desk/blocks?activeOnly=true');
+            if (res.data.success) {
+                setAvailableBlocks(res.data.data);
+            }
+        } catch (error) {
+            console.error('Failed to load blocks for service management');
+        }
+    };
+
     useEffect(() => {
         fetchServices();
+        fetchBlocks();
     }, []);
 
     const handleOpen = (service = null) => {
         if (service) {
             setEditMode(true);
             setCurrentServiceId(service._id);
-            setFormData({ name: service.name, description: service.description });
+            setFormData({
+                name: service.name,
+                description: service.description || '',
+                isGlobalService: service.isGlobalService !== undefined ? service.isGlobalService : true,
+                directEmployeeInvolvement: service.directEmployeeInvolvement !== undefined ? service.directEmployeeInvolvement : true
+            });
         } else {
             setEditMode(false);
             setCurrentServiceId(null);
-            setFormData({ name: '', description: '' });
+            setFormData({
+                name: '',
+                description: '',
+                isGlobalService: true,
+                directEmployeeInvolvement: true
+            });
         }
         setOpenDialog(true);
     };
 
     const handleClose = () => {
         setOpenDialog(false);
-        setFormData({ name: '', description: '' });
+        setFormData({
+            name: '',
+            description: '',
+            isGlobalService: true,
+            directEmployeeInvolvement: true
+        });
     };
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value, type, checked } = e.target;
+        setFormData({
+            ...formData,
+            [name]: type === 'checkbox' ? checked : value
+        });
     };
 
     const handleSubmit = async () => {
@@ -121,6 +173,7 @@ const ManageServices = () => {
 
     const handleOpenAdmins = async (service) => {
         setCurrentService(service);
+        setSelectedBlocksToAdd([]);
         setOpenAdminsDialog(true);
         fetchServiceAdmins(service._id);
     };
@@ -132,6 +185,7 @@ const ManageServices = () => {
         setEmployeeSearchQuery('');
         setEmployeeSearchResults([]);
         setSelectedEmployeeToAdd(null);
+        setSelectedBlocksToAdd([]);
     };
 
     const fetchServiceAdmins = async (serviceId) => {
@@ -154,7 +208,6 @@ const ManageServices = () => {
                 setSearchingEmployees(true);
                 try {
                     const res = await API.get(`/api/employees/search?query=${employeeSearchQuery}`);
-                    // Search endpoint returns array directly
                     if (Array.isArray(res.data)) {
                         setEmployeeSearchResults(res.data);
                     }
@@ -173,14 +226,21 @@ const ManageServices = () => {
 
     const handleAddAdmin = async () => {
         if (!selectedEmployeeToAdd) return;
+        if (!currentService.isGlobalService && selectedBlocksToAdd.length === 0) {
+            toast.error('Please map at least one block for this Block-Specific service admin');
+            return;
+        }
+
         try {
             setAddingAdmin(true);
             const res = await API.post(`/api/service-desk/services/${currentService._id}/admins`, {
-                employeeId: selectedEmployeeToAdd._id
+                employeeId: selectedEmployeeToAdd._id,
+                blocks: selectedBlocksToAdd.map(b => b._id)
             });
             if (res.data.success) {
                 toast.success('Admin added successfully');
                 setSelectedEmployeeToAdd(null);
+                setSelectedBlocksToAdd([]);
                 setEmployeeSearchQuery('');
                 setEmployeeSearchResults([]);
                 fetchServiceAdmins(currentService._id);
@@ -210,7 +270,7 @@ const ManageServices = () => {
         <PageContainer>
             <PageHeader
                 title="Manage Services"
-                subtitle="Create, organize, and manage service categories for the Service Desk. Assign administrators to each service and control their availability for ticket requests."
+                subtitle="Create, organize, and manage service categories for the Service Desk. Configure global/block scope, employee involvement, and assign administrators."
                 action={
                     <Button
                         variant="contained"
@@ -250,9 +310,9 @@ const ManageServices = () => {
                     </Box>
                 ) : (
                     <DataTable
-                        columns={["Service Name", "Description", "Status", "Actions"]}
-                        alignments={["left", "left", "center", "right"]}
-                        nonSortableColumns={[3]}
+                        columns={["Service Name", "Description", "Scope", "Employee Involvement", "Status", "Actions"]}
+                        alignments={["left", "left", "center", "center", "center", "right"]}
+                        nonSortableColumns={[5]}
                         rows={services.map(service => [
                             {
                                 value: service.name,
@@ -261,6 +321,35 @@ const ManageServices = () => {
                             {
                                 value: service.description || '',
                                 display: <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>{service.description || '--'}</Typography>
+                            },
+                            {
+                                value: service.isGlobalService ? 'Global' : 'Block Specific',
+                                display: (
+                                    <Chip
+                                        icon={service.isGlobalService ? <PublicIcon fontSize="small" /> : <ApartmentIcon fontSize="small" />}
+                                        label={service.isGlobalService ? 'Global (All Blocks)' : 'Block Specific'}
+                                        color={service.isGlobalService ? 'primary' : 'secondary'}
+                                        variant="outlined"
+                                        size="small"
+                                        sx={{ fontWeight: 600, borderRadius: '6px' }}
+                                    />
+                                )
+                            },
+                            {
+                                value: service.directEmployeeInvolvement ? 'Delegated' : 'Admin Direct',
+                                display: (
+                                    <Chip
+                                        icon={service.directEmployeeInvolvement ? <EngineeringIcon fontSize="small" /> : <AdminIcon fontSize="small" />}
+                                        label={service.directEmployeeInvolvement ? 'Field Employees' : 'Admin Direct Action'}
+                                        size="small"
+                                        sx={{
+                                            fontWeight: 600,
+                                            borderRadius: '6px',
+                                            backgroundColor: service.directEmployeeInvolvement ? 'rgba(59, 130, 246, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                                            color: service.directEmployeeInvolvement ? '#2563eb' : '#d97706'
+                                        }}
+                                    />
+                                )
                             },
                             {
                                 value: service.isActive ? 'Active' : 'Inactive',
@@ -305,10 +394,10 @@ const ManageServices = () => {
             </Box>
 
             {/* Create/Edit Dialog */}
-            <Dialog open={openDialog} onClose={handleClose} maxWidth="sm" fullWidth>
-                <DialogTitle>{editMode ? 'Edit Service' : 'Add New Service'}</DialogTitle>
+            <Dialog open={openDialog} onClose={handleClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+                <DialogTitle sx={{ fontWeight: 600 }}>{editMode ? 'Edit Service' : 'Add New Service'}</DialogTitle>
                 <DialogContent dividers>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pt: 1 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 1 }}>
                         <TextField
                             label="Service Name"
                             name="name"
@@ -316,6 +405,8 @@ const ManageServices = () => {
                             onChange={handleChange}
                             fullWidth
                             required
+                            size="small"
+                            placeholder="e.g. Hardware, Software, Electrical Maintenance"
                         />
                         <TextField
                             label="Description"
@@ -325,69 +416,164 @@ const ManageServices = () => {
                             fullWidth
                             multiline
                             rows={3}
+                            size="small"
+                            placeholder="Provide a clear description of the service scope..."
                         />
+
+                        {/* Global Service Option */}
+                        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                            <FormControl component="fieldset">
+                                <FormLabel component="legend" sx={{ fontWeight: 600, fontSize: '0.9rem', color: '#1e293b', mb: 0.5 }}>
+                                    Service Scope (Global vs Block-Specific)
+                                </FormLabel>
+                                <RadioGroup
+                                    row
+                                    name="isGlobalService"
+                                    value={formData.isGlobalService.toString()}
+                                    onChange={(e) => setFormData({ ...formData, isGlobalService: e.target.value === 'true' })}
+                                >
+                                    <FormControlLabel value="true" control={<Radio size="small" />} label="Global Service (Campus-wide)" />
+                                    <FormControlLabel value="false" control={<Radio size="small" />} label="Block-Specific Service" />
+                                </RadioGroup>
+                                <FormHelperText sx={{ mt: 0.5 }}>
+                                    {formData.isGlobalService
+                                        ? "Ticket applies university-wide across all blocks. No block selection required."
+                                        : "Ticket requires block selection by the user and routes directly to the assigned Block Admin."}
+                                </FormHelperText>
+                            </FormControl>
+                        </Paper>
+
+                        {/* Direct Employee Involvement Option */}
+                        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                            <FormControl component="fieldset">
+                                <FormLabel component="legend" sx={{ fontWeight: 600, fontSize: '0.9rem', color: '#1e293b', mb: 0.5 }}>
+                                    Direct Involvement of Employees
+                                </FormLabel>
+                                <RadioGroup
+                                    row
+                                    name="directEmployeeInvolvement"
+                                    value={formData.directEmployeeInvolvement.toString()}
+                                    onChange={(e) => setFormData({ ...formData, directEmployeeInvolvement: e.target.value === 'true' })}
+                                >
+                                    <FormControlLabel value="true" control={<Radio size="small" />} label="Yes (Field Employees / Technicians Assigned)" />
+                                    <FormControlLabel value="false" control={<Radio size="small" />} label="No (Service Admin updates work status directly)" />
+                                </RadioGroup>
+                                <FormHelperText sx={{ mt: 0.5 }}>
+                                    {formData.directEmployeeInvolvement
+                                        ? "Service Admin assigns tickets to service employees who work on the task and update status."
+                                        : "Service Admin directly takes action, marks progress, and resolves the ticket without intermediate technicians."}
+                                </FormHelperText>
+                            </FormControl>
+                        </Paper>
                     </Box>
                 </DialogContent>
                 <DialogActions sx={{ p: 2, px: 3 }}>
-                    <Button onClick={handleClose} disabled={saving}>Cancel</Button>
+                    <Button onClick={handleClose} disabled={saving} sx={{ textTransform: 'none' }}>Cancel</Button>
                     <Button
                         onClick={handleSubmit}
                         variant="contained"
                         disabled={saving}
-                        sx={{ background: 'var(--gradient-primary)' }}
+                        sx={{ background: 'var(--gradient-primary)', textTransform: 'none', borderRadius: 2, px: 3 }}
                     >
-                        {saving ? 'Saving...' : 'Save'}
+                        {saving ? 'Saving...' : 'Save Service'}
                     </Button>
                 </DialogActions>
             </Dialog>
 
             {/* Manage Admins Dialog */}
-            <Dialog open={openAdminsDialog} onClose={handleCloseAdmins} maxWidth="sm" fullWidth>
-                <DialogTitle>
-                    Manage Admins - {currentService?.name}
+            <Dialog open={openAdminsDialog} onClose={handleCloseAdmins} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            Manage Service Admins - {currentService?.name}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                            {currentService?.isGlobalService ? 'Scope: Global (Campus-wide)' : 'Scope: Block-Specific (Map admins to target blocks)'}
+                        </Typography>
+                    </Box>
+                    <IconButton onClick={handleCloseAdmins} size="small">
+                        <CloseIcon />
+                    </IconButton>
                 </DialogTitle>
                 <DialogContent dividers>
-                    <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-                        <Autocomplete
-                            fullWidth
-                            options={employeeSearchResults}
-                            getOptionLabel={(option) => `${option.name} (${option.institutionId})`}
-                            isOptionEqualToValue={(option, value) => option._id === value._id}
-                            value={selectedEmployeeToAdd}
-                            onChange={(e, newValue) => setSelectedEmployeeToAdd(newValue)}
-                            onInputChange={(e, newInputValue) => setEmployeeSearchQuery(newInputValue)}
-                            loading={searchingEmployees}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Search Employee to Add"
-                                    placeholder="Type name or ID..."
-                                    InputProps={{
-                                        ...(params.InputProps || {}),
-                                        endAdornment: (
-                                            <React.Fragment>
-                                                {searchingEmployees ? <Loader color="inherit" size={20} /> : null}
-                                                {params.InputProps?.endAdornment}
-                                            </React.Fragment>
-                                        ),
-                                    }}
-                                />
-                            )}
-                        />
-                        <Button
-                            variant="contained"
-                            disabled={!selectedEmployeeToAdd || addingAdmin}
-                            onClick={handleAddAdmin}
-                            sx={{ height: '56px', px: 3 }}
-                        >
-                            {addingAdmin ? <Loader size={24} color="inherit" /> : 'Add'}
-                        </Button>
+                    <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                            <Autocomplete
+                                fullWidth
+                                options={employeeSearchResults}
+                                getOptionLabel={(option) => `${option.name} (${option.institutionId}) - ${option.designation || ''}`}
+                                isOptionEqualToValue={(option, value) => option._id === value._id}
+                                value={selectedEmployeeToAdd}
+                                onChange={(e, newValue) => setSelectedEmployeeToAdd(newValue)}
+                                onInputChange={(e, newInputValue) => setEmployeeSearchQuery(newInputValue)}
+                                loading={searchingEmployees}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Search Employee to Add as Admin"
+                                        placeholder="Type name or ID..."
+                                        size="small"
+                                        InputProps={{
+                                            ...(params.InputProps || {}),
+                                            endAdornment: (
+                                                <React.Fragment>
+                                                    {searchingEmployees ? <Loader color="inherit" size={20} /> : null}
+                                                    {params.InputProps?.endAdornment}
+                                                </React.Fragment>
+                                            ),
+                                        }}
+                                    />
+                                )}
+                            />
+                        </Box>
+
+                        {/* If Block Specific service, show block multi-select */}
+                        {!currentService?.isGlobalService && (
+                            <Autocomplete
+                                multiple
+                                options={availableBlocks}
+                                getOptionLabel={(option) => `${option.blockName} (${option.blockCode})`}
+                                isOptionEqualToValue={(option, value) => option._id === value._id}
+                                value={selectedBlocksToAdd}
+                                onChange={(e, newValue) => setSelectedBlocksToAdd(newValue)}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Select Managed Blocks (Required for Block Admin)"
+                                        placeholder="Pick blocks..."
+                                        size="small"
+                                        helperText="Tickets raised in these blocks will be routed to this administrator."
+                                    />
+                                )}
+                                renderTags={(value, getTagProps) =>
+                                    value.map((option, index) => (
+                                        <Chip
+                                            label={`${option.blockName} (${option.blockCode})`}
+                                            size="small"
+                                            {...getTagProps({ index })}
+                                            key={option._id}
+                                        />
+                                    ))
+                                }
+                            />
+                        )}
+
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <Button
+                                variant="contained"
+                                disabled={!selectedEmployeeToAdd || addingAdmin}
+                                onClick={handleAddAdmin}
+                                sx={{ textTransform: 'none', px: 3, borderRadius: 2 }}
+                            >
+                                {addingAdmin ? 'Assigning...' : 'Assign Service Admin'}
+                            </Button>
+                        </Box>
                     </Box>
 
                     <Divider sx={{ mb: 2 }} />
 
-                    <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 2 }}>
-                        Current Admins ({serviceAdmins.length})
+                    <Typography variant="subtitle2" color="textSecondary" sx={{ mb: 2, fontWeight: 600 }}>
+                        Current Service Admins ({serviceAdmins.length})
                     </Typography>
 
                     {loadingAdmins ? (
@@ -401,23 +587,63 @@ const ManageServices = () => {
                     ) : (
                         <List>
                             {serviceAdmins.map((member) => (
-                                <ListItem key={member._id} sx={{ bgcolor: 'var(--bg-glass)', mb: 1, borderRadius: 1 }}>
-                                    <ListItemText
-                                        primary={member.employee?.name || 'Unknown User'}
-                                        secondary={member.employee?.institutionId || ''}
-                                    />
-                                    <ListItemSecondaryAction>
-                                        <IconButton edge="end" color="error" onClick={() => handleRemoveAdmin(member.employee?._id)}>
-                                            <CloseIcon />
+                                <ListItem
+                                    key={member._id}
+                                    sx={{
+                                        bgcolor: 'var(--bg-glass)',
+                                        mb: 1.5,
+                                        borderRadius: 2,
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        flexDirection: 'column',
+                                        alignItems: 'flex-start',
+                                        p: 2
+                                    }}
+                                >
+                                    <Box sx={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <Box>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                {member.employee?.name || 'Unknown User'}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                {member.employee?.institutionId} • {member.employee?.email || ''}
+                                            </Typography>
+                                        </Box>
+                                        <IconButton edge="end" color="error" size="small" onClick={() => handleRemoveAdmin(member.employee?._id)}>
+                                            <CloseIcon fontSize="small" />
                                         </IconButton>
-                                    </ListItemSecondaryAction>
+                                    </Box>
+
+                                    {!currentService?.isGlobalService && (
+                                        <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                            <Typography variant="caption" sx={{ fontWeight: 600, color: '#475569' }}>
+                                                Assigned Blocks:
+                                            </Typography>
+                                            {member.blocks && member.blocks.length > 0 ? (
+                                                member.blocks.map(b => (
+                                                    <Chip
+                                                        key={b._id}
+                                                        icon={<ApartmentIcon fontSize="small" />}
+                                                        label={`${b.blockName} (${b.blockCode})`}
+                                                        size="small"
+                                                        color="info"
+                                                        variant="outlined"
+                                                    />
+                                                ))
+                                            ) : (
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                                                    All blocks (Unrestricted)
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    )}
                                 </ListItem>
                             ))}
                         </List>
                     )}
                 </DialogContent>
                 <DialogActions sx={{ p: 2, px: 3 }}>
-                    <Button onClick={handleCloseAdmins} color="inherit">Close</Button>
+                    <Button onClick={handleCloseAdmins} color="inherit" sx={{ textTransform: 'none' }}>Close</Button>
                 </DialogActions>
             </Dialog>
 
