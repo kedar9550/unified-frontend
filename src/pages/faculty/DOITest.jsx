@@ -196,7 +196,8 @@ export default function DOIFetcher() {
       doi: cleanDoi,
       title: "Not Available",
       journalName: "Not Available",
-      journalType: "Not Available",
+      journalType: "None",
+      isWos: "No",
       quartile: "Not Available",
       volume: "Not Available",
       issue: "Not Available",
@@ -399,8 +400,11 @@ export default function DOIFetcher() {
         }
 
         if (clarivateSuccess) {
-          doneStep("success", `JCR Edition retrieved: ${R.journalType}`);
+          R.isWos = (R.journalType && R.journalType !== "None") ? "Yes" : "No";
+          doneStep("success", `JCR Edition retrieved: ${R.journalType} (WoS: ${R.isWos})`);
         } else {
+          R.journalType = "None";
+          R.isWos = "No";
           doneStep("success", "Not found in Clarivate index.");
         }
       } catch (e) {
@@ -420,6 +424,7 @@ export default function DOIFetcher() {
     { key: "doi", label: "DOI", span: 2 },
     { key: "title", label: "Title of the Article", span: 2 },
     { key: "journalName", label: "Name of the Journal", span: 2 },
+    { key: "isWos", label: "Indexed in WoS", span: 1 },
     { key: "journalType", label: "Type of Journal (WoS)", span: 1 },
     { key: "quartile", label: "Journal Quartile", span: 1 },
     { key: "volume", label: "Volume", span: 1 },

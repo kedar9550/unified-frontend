@@ -38,10 +38,13 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData(prev => {
+            const next = { ...prev, [name]: value };
+            if (name === 'journalType') {
+                next.isWos = (value && value !== 'None') ? 'Yes' : 'No';
+            }
+            return next;
+        });
     };
 
     const handleArrayChange = (field, index, key, value) => {

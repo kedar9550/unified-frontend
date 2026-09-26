@@ -436,7 +436,21 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                             </Typography>
                         </Box>
                     </Box>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0, flexWrap: "wrap" }}>
+                            {(data.isNoDoi === 'Yes' || (data.doi && String(data.doi).startsWith('NODOI'))) && (
+                                <Chip
+                                    label="Without DOI / Manual Entry"
+                                    sx={{
+                                        bgcolor: "rgba(234, 88, 12, 0.12)",
+                                        color: "#ea580c",
+                                        border: "1px solid rgba(234, 88, 12, 0.3)",
+                                        fontWeight: 800,
+                                        borderRadius: "20px",
+                                        px: 1,
+                                        py: 0.5
+                                    }}
+                                />
+                            )}
                             {data.isInstitutionRecord === 'Yes' && (
                                 <Chip
                                     label="Institution Record"
@@ -672,7 +686,19 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                     editable: false
                                 }] : []),
                                 ...((data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? [{ key: "entryType", label: "Entry Source", value: "R&D Direct Entry", icon: <PersonIcon sx={{ fontSize: 18, color: "var(--color-primary)" }} />, editable: false }] : []),
-                                { key: "doi", label: "DOI", value: data.doi || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                {
+                                    key: "doi",
+                                    label: "DOI",
+                                    chip: (data.isNoDoi === 'Yes' || (data.doi && String(data.doi).startsWith('NODOI'))) ? (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{data.doi}</Typography>
+                                            <Chip label="Without DOI / Manual Entry" size="small" sx={{ height: 20, fontSize: "0.65rem", fontWeight: 800, bgcolor: "rgba(234, 88, 12, 0.12)", color: "#ea580c", border: "1px solid rgba(234, 88, 12, 0.3)" }} />
+                                        </Box>
+                                    ) : null,
+                                    value: data.doi || "-",
+                                    icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />,
+                                    editable: false
+                                },
                                 { key: "authorPos", label: "Applicant Author Position", chip: (
                                     (() => {
                                         const pos = data.userAuthorPosition || (data.firstAuthor === "Yes" ? 1 : data.authorPosition) || 1;
@@ -707,6 +733,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                 { key: "correspondingAuthor", label: "Corresponding Author", value: data.correspondingAuthor || "No", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
                                 { key: "journalQuartile", label: "Journal Quartile", value: data.journalQuartile || data.categoryOfJournal || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Q1", "Q2", "Q3", "Q4", "None"] },
                                 { key: "isScopus", label: "Scopus", value: data.isScopus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
+                                { key: "isWos", label: "Web of Science (WoS)", value: data.isWos || (data.journalType && data.journalType !== "None" ? "Yes" : "No"), icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
                                 { key: "journalType", label: "Type of Journal (WoS)", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["SCIE", "SCI", "ESCI", "SSCI", "AHCI", "None"] },
                                 { key: "journalCategory", label: "Journal Category", value: data.journalCategory || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["IEEE", "ASME", "ASCE", "ACM", "FT-50", "Scopus Top 10%", "OTHERS"] },
                                 { key: "issn", label: "ISSN", value: data.issn || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
@@ -722,6 +749,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                 { key: "numberOfReferences", label: "Number of References Belonging to AGEC", value: data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-"), icon: <GroupsIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
                                 { key: "applyingSeedGrant", label: "Seed Grant Work", value: data.applyingSeedGrant || "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
                                 { key: "applyIncentive", label: "Apply For Incentive", value: data.applyIncentive || "No", icon: <CardGiftcardIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                { key: "estimatedIncentiveAmount", label: "Estimated Incentive Amount", value: data.estimatedIncentiveAmount ? `₹${Number(data.estimatedIncentiveAmount).toLocaleString('en-IN')}` : "₹0", icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
                                 { key: "approvedAmount", label: "Approved Incentive Amount", value: data.approvedAmount ? `₹${data.approvedAmount}` : "-", icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false }
                             ].map((item, idx, arr) => (
                                 <Box

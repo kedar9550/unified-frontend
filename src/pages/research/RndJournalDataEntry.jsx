@@ -166,7 +166,8 @@ export default function RndJournalDataEntry() {
     paperTitle: "",
     journalName: "",
     journalQuartile: "",
-    journalType: "",
+    journalType: "None",
+    isWos: "No",
     journalCategory: "",
     vol: "",
     issue: "",
@@ -243,6 +244,51 @@ export default function RndJournalDataEntry() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.totalAuthors, form.userAuthorPosition]);
 
+  const [estimatedIncentiveState, setEstimatedIncentiveState] = useState(null);
+  const [incentiveLoading, setIncentiveLoading] = useState(false);
+
+  // Live query backend incentive calculation API
+  useEffect(() => {
+    if (form.applyIncentive !== "Yes") {
+      setEstimatedIncentiveState(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        setIncentiveLoading(true);
+        const res = await API.post("/api/research/journal/calculate-incentive", {
+          ...form,
+          coAuthors: form.otherAuthors
+        });
+        setEstimatedIncentiveState(res.data);
+      } catch (err) {
+        setEstimatedIncentiveState({
+          success: false,
+          message: err.response?.data?.message || "Failed to calculate incentive"
+        });
+      } finally {
+        setIncentiveLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [
+    form.applyIncentive,
+    form.journalQuartile,
+    form.journalCategory,
+    form.userAuthorPosition,
+    form.correspondingAuthor,
+    form.numberOfReferencesBelongingToAGEC,
+    form.jcrImpactFactor,
+    form.hIndex,
+    form.isScopus,
+    form.isWos,
+    form.journalType,
+    form.isStudentsInvolved,
+    form.otherAuthors
+  ]);
+
   useEffect(() => {
     API.get("/api/academic-years")
       .then(res => {
@@ -290,7 +336,8 @@ export default function RndJournalDataEntry() {
         newForm.paperTitle = "";
         newForm.journalName = "";
         newForm.journalQuartile = "";
-        newForm.journalType = "";
+        newForm.journalType = "None";
+        newForm.isWos = "No";
         newForm.journalCategory = "";
         newForm.vol = "";
         newForm.issue = "";
@@ -307,6 +354,9 @@ export default function RndJournalDataEntry() {
         setDoiFetched(false);
         setDoiFetchedFields({});
         setScannedSdgResults(null);
+      }
+      if (k === "journalType") {
+        newForm.isWos = (val && val !== "None") ? "Yes" : "No";
       }
       if (k === "isStudentsInvolved") {
         if (val === "No") {
@@ -512,6 +562,9 @@ export default function RndJournalDataEntry() {
       const fetched = {};
       const patch = {};
 
+      const resolvedJournalType = (data.journalType && ["SCIE", "SCI", "ESCI", "SSCI", "AHCI"].includes(data.journalType)) ? data.journalType : "None";
+      const resolvedIsWos = data.isWos || (resolvedJournalType !== "None" ? "Yes" : "No");
+
       const map = {
         paperTitle: data.title,
         journalName: data.journalName,
@@ -521,7 +574,8 @@ export default function RndJournalDataEntry() {
         month: data.month,
         year: data.year,
         journalQuartile: data.journalQuartile,
-        journalType: data.journalType,
+        journalType: resolvedJournalType,
+        isWos: resolvedIsWos,
         issn: data.issn || "",
         eissn: data.eissn || "",
         isScopus: data.isScopus || "No",
@@ -707,6 +761,11 @@ export default function RndJournalDataEntry() {
     }
     if (!form.applyIncentive) {
       toast.error("Please select whether you want to apply for an incentive");
+      return;
+    }
+
+    if (form.applyIncentive === "Yes" && estimatedIncentiveState && !estimatedIncentiveState.success) {
+      toast.error(estimatedIncentiveState.message || "Please provide mandatory fields to calculate estimated incentive.");
       return;
     }
 
@@ -1078,12 +1137,9 @@ export default function RndJournalDataEntry() {
             {/* Journal Type */}
             <Box>
               <Typography sx={labelStyle}>Type of Journal (WoS) : *</Typography>
-              <Select size="small" fullWidth displayEmpty value={form.journalType || ""} onChange={set("journalType")}>
+              <Select size="small" fullWidth displayEmpty value={form.journalType || "None"} onChange={set("journalType")}>
                 <MenuItem value="">Select or auto-fill</MenuItem>
-                {(form.journalType && !JOURNAL_TYPES.includes(form.journalType)
-                  ? [...JOURNAL_TYPES, form.journalType]
-                  : JOURNAL_TYPES
-                ).map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                {JOURNAL_TYPES.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
               </Select>
             </Box>
 
@@ -1486,7 +1542,7 @@ export default function RndJournalDataEntry() {
 
             {form.applyIncentive === "Yes" && (
               <Box>
-                <Typography sx={labelStyle}>Incentive Amount :</Typography>
+                <Typography sx={labelStyle}>Approved Incentive Amount (Rs.) :</Typography>
                 <TextField
                   size="small"
                   fullWidth
@@ -1494,6 +1550,47 @@ export default function RndJournalDataEntry() {
                   onChange={handleNumericChange("approvedAmount", true)}
                   placeholder="e.g. 10000"
                 />
+              </Box>
+            )}
+
+            {/* Live Estimated Incentive Preview from Backend API */}
+            {form.applyIncentive === "Yes" && (
+              <Box sx={{
+                gridColumn: { sm: "1 / -1" },
+                p: 2.5,
+                borderRadius: "12px",
+                bgcolor: estimatedIncentiveState?.success && estimatedIncentiveState?.isEligible ? "rgba(16, 185, 129, 0.06)" : "rgba(239, 68, 68, 0.05)",
+                border: `1.5px dashed ${estimatedIncentiveState?.success && estimatedIncentiveState?.isEligible ? "rgba(16, 185, 129, 0.4)" : "rgba(239, 68, 68, 0.3)"}`,
+                mt: 1
+              }}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+                  <Box>
+                    <Typography sx={{ fontSize: "0.8rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: estimatedIncentiveState?.success && estimatedIncentiveState?.isEligible ? "#059669" : "#dc2626" }}>
+                      Estimated Research Incentive Amount {incentiveLoading && <Loader size={12} sx={{ display: 'inline-block', ml: 1 }} />}
+                    </Typography>
+                    {estimatedIncentiveState?.success && estimatedIncentiveState?.isEligible ? (
+                      <Typography sx={{ fontSize: "1.6rem", fontWeight: 800, color: "#047857", mt: 0.5 }}>
+                        ₹{estimatedIncentiveState.estimatedIncentiveAmount.toLocaleString('en-IN')}
+                      </Typography>
+                    ) : (
+                      <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, color: "#dc2626", mt: 0.5 }}>
+                        ⚠️ {estimatedIncentiveState?.message || estimatedIncentiveState?.breakdown || "Calculating..."}
+                      </Typography>
+                    )}
+                  </Box>
+                  {estimatedIncentiveState?.success && estimatedIncentiveState?.isEligible && (
+                    <Chip
+                      label={`Author Share: ${estimatedIncentiveState.authorPercentageLabel}`}
+                      sx={{ bgcolor: "rgba(16, 185, 129, 0.15)", color: "#065f46", fontWeight: 700, fontSize: "0.75rem" }}
+                    />
+                  )}
+                </Box>
+
+                {estimatedIncentiveState?.success && estimatedIncentiveState?.isEligible && (
+                  <Typography sx={{ fontSize: "0.8rem", color: "var(--text-secondary)", mt: 1, pt: 1, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+                    💡 <strong>Calculation Breakdown:</strong> {estimatedIncentiveState.breakdown}
+                  </Typography>
+                )}
               </Box>
             )}
           </Grid2>

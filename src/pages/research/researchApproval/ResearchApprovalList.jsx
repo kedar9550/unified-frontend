@@ -117,7 +117,28 @@ const ResearchApprovalList = ({ role }) => {
             index + 1,
             item.faculty?.name || "Unknown",
             item.faculty?.institutionId || "Unknown",
-            item.title.length > 30 ? item.title.substring(0, 30) + '...' : item.title,
+            {
+                value: item.title,
+                display: (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, flexWrap: "wrap" }}>
+                        <span>{item.title.length > 40 ? item.title.substring(0, 40) + '...' : item.title}</span>
+                        {(item.isNoDoi === 'Yes' || (item.doi && String(item.doi).startsWith('NODOI'))) && (
+                            <Chip
+                                label="No DOI"
+                                size="small"
+                                sx={{
+                                    height: 18,
+                                    fontSize: "0.62rem",
+                                    fontWeight: 800,
+                                    bgcolor: "rgba(234, 88, 12, 0.12)",
+                                    color: "#ea580c",
+                                    border: "1px solid rgba(234, 88, 12, 0.3)"
+                                }}
+                            />
+                        )}
+                    </Box>
+                )
+            },
             item.type,
             submitDate,
             {
