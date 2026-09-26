@@ -62,6 +62,7 @@ import {
   ListAlt,
   Group as GroupIcon,
   AssignmentTurnedIn,
+  Apartment,
   LibraryBooks
 } from "@mui/icons-material";
 
@@ -129,6 +130,7 @@ const ITEM_METADATA = {
   "Raise Ticket": { color: "rgba(244, 63, 94, 0.12)", iconColor: "#f43f5e", icon: <ConfirmationNumber /> },
   "My Tickets": { color: "rgba(16, 185, 129, 0.12)", iconColor: "#10b981", icon: <ListAlt /> },
   "Manage Services": { color: "rgba(245, 158, 11, 0.12)", iconColor: "#f59e0b", icon: <AccountTree /> },
+  "Manage Blocks": { color: "rgba(59, 130, 246, 0.12)", iconColor: "#3b82f6", icon: <Apartment /> },
   "Manage Tickets": { color: "rgba(99, 102, 241, 0.12)", iconColor: "#6366f1", icon: <AssignmentTurnedIn /> },
   "Service Team": { color: "rgba(20, 184, 166, 0.12)", iconColor: "#14b8a6", icon: <GroupIcon /> },
   "Feedback Analytics": { color: "rgba(217, 70, 239, 0.12)", iconColor: "#d946ef", icon: <Analytics /> },
