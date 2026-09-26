@@ -41,9 +41,12 @@ import {
   AccountBalance,
   Visibility,
   VisibilityOff,
-  Close
+  Close,
+  LinkedIn,
+  MenuBook,
+  WorkspacePremium
 } from "@mui/icons-material";
-import { MenuItem, Select, TextField } from "@mui/material";
+import { MenuItem, Select, TextField, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
 import API from "../../api/axios";
 import { toast } from "sonner";
 
@@ -126,7 +129,9 @@ const QUALIFICATION_MAP = {
 
 const Profile = () => {
   const { user, activeRole, updateUser } = useAuth();
-  const [isEditing, setIsEditing] = React.useState(false);
+  const [isEditingPersonalInfo, setIsEditingPersonalInfo] = React.useState(false);
+  const [isEditingQualifications, setIsEditingQualifications] = React.useState(false);
+  const [isEditingCourses, setIsEditingCourses] = React.useState(false);
   const [profileData, setProfileData] = React.useState(null);
   const [form, setForm] = React.useState({
     email: "",
@@ -135,9 +140,13 @@ const Profile = () => {
     wosId: "",
     orcidId: "",
     googleScholarId: "",
+    linkedInId: "",
+    publonsId: "",
+    vidwanId: "",
     panNumber: "",
     college: "",
-    qualifications: []
+    qualifications: [],
+    coursesTaught: []
   });
   const [loading, setLoading] = React.useState(false);
   const [errors, setErrors] = React.useState({});
@@ -163,9 +172,13 @@ const Profile = () => {
           wosId: res.data.user.wosId || "",
           orcidId: res.data.user.orcidId || "",
           googleScholarId: res.data.user.googleScholarId || "",
+          linkedInId: res.data.user.linkedInId || "",
+          publonsId: res.data.user.publonsId || "",
+          vidwanId: res.data.user.vidwanId || "",
           panNumber: res.data.user.panNumber || "",
           college: res.data.user.college || "",
-          qualifications: res.data.user.qualifications || []
+          qualifications: res.data.user.qualifications || [],
+          coursesTaught: res.data.user.coursesTaught || []
         });
         if (updateUser) updateUser(res.data.user);
         toast.success("Profile details synced  successfully!");
@@ -218,9 +231,13 @@ const Profile = () => {
           wosId: fresh.wosId || "",
           orcidId: fresh.orcidId || "",
           googleScholarId: fresh.googleScholarId || "",
+          linkedInId: fresh.linkedInId || "",
+          publonsId: fresh.publonsId || "",
+          vidwanId: fresh.vidwanId || "",
           panNumber: fresh.panNumber || "",
           college: fresh.college || "",
-          qualifications: fresh.qualifications || []
+          qualifications: fresh.qualifications || [],
+          coursesTaught: fresh.coursesTaught || []
         });
 
         // Fetch DOJ from DB
@@ -244,9 +261,13 @@ const Profile = () => {
           wosId: user?.wosId || "",
           orcidId: user?.orcidId || "",
           googleScholarId: user?.googleScholarId || "",
+          linkedInId: user?.linkedInId || "",
+          publonsId: user?.publonsId || "",
+          vidwanId: user?.vidwanId || "",
           panNumber: user?.panNumber || "",
           college: user?.college || "",
-          qualifications: user?.qualifications || []
+          qualifications: user?.qualifications || [],
+          coursesTaught: user?.coursesTaught || []
         });
       }
     };
@@ -282,6 +303,28 @@ const Profile = () => {
     });
   };
 
+  const handleAddCourse = () => {
+    setForm(prev => ({
+      ...prev,
+      coursesTaught: [...prev.coursesTaught, { courseName: "" }]
+    }));
+  };
+
+  const handleRemoveCourse = (index) => {
+    setForm(prev => ({
+      ...prev,
+      coursesTaught: prev.coursesTaught.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleCourseChange = (index, field, value) => {
+    setForm(prev => {
+      const newCourses = [...prev.coursesTaught];
+      newCourses[index] = { ...newCourses[index], [field]: value };
+      return { ...prev, coursesTaught: newCourses };
+    });
+  };
+
   const handleSave = async () => {
     setLoading(true);
     // Validate all fields before saving
@@ -303,7 +346,9 @@ const Profile = () => {
       setProfileData(res.data.user);
       if (updateUser) updateUser(res.data.user);
       toast.success("Profile updated successfully!");
-      setIsEditing(false);
+      setIsEditingPersonalInfo(false);
+      setIsEditingQualifications(false);
+      setIsEditingCourses(false);
     } catch (err) {
       console.error("Update failed", err);
       toast.error("Failed to update profile");
@@ -347,12 +392,18 @@ const Profile = () => {
       wosId: profile?.wosId || "",
       orcidId: profile?.orcidId || "",
       googleScholarId: profile?.googleScholarId || "",
+      linkedInId: profile?.linkedInId || "",
+      publonsId: profile?.publonsId || "",
+      vidwanId: profile?.vidwanId || "",
       panNumber: profile?.panNumber || "",
       college: profile?.college || "",
-      qualifications: profile?.qualifications || []
+      qualifications: profile?.qualifications || [],
+      coursesTaught: profile?.coursesTaught || []
     });
     setErrors({});
-    setIsEditing(false);
+    setIsEditingPersonalInfo(false);
+    setIsEditingQualifications(false);
+    setIsEditingCourses(false);
   };
 
   const [imageSrc, setImageSrc] = React.useState(null);
@@ -616,19 +667,19 @@ const Profile = () => {
               <InfoCard icon={VerifiedUser} label="Parent Department" value={profile?.coreDepartment} />
               <EditableField
                 icon={ContactMail} label="Email Address" fieldKey="email" value={profile?.email}
-                isEditing={isEditing} fieldValue={form.email} fieldError={errors.email}
+                isEditing={isEditingPersonalInfo} fieldValue={form.email} fieldError={errors.email}
                 onFieldChange={handleChange("email")}
               />
 
               <EditableField
                 icon={LocalPhone} label="Phone Number" fieldKey="phone" value={profile?.phone}
-                isEditing={isEditing} fieldValue={form.phone} fieldError={errors.phone}
+                isEditing={isEditingPersonalInfo} fieldValue={form.phone} fieldError={errors.phone}
                 onFieldChange={handleChange("phone")}
               />
               {!isStudent && (
                 <>
-                  <EditableField icon={AccountBalance} label="College Name" fieldKey="college" value={profile?.college} isEditing={isEditing}>
-                    {isEditing ? (
+                  <EditableField icon={AccountBalance} label="College Name" fieldKey="college" value={profile?.college} isEditing={isEditingPersonalInfo}>
+                    {isEditingPersonalInfo ? (
                       <Select
                         size="small"
                         fullWidth
@@ -647,117 +698,52 @@ const Profile = () => {
                   </EditableField>
                   <EditableField
                     icon={CreditCard} label="PAN Number" fieldKey="panNumber" value={profile?.panNumber}
-                    isEditing={isEditing} fieldValue={form.panNumber} fieldError={errors.panNumber}
+                    isEditing={isEditingPersonalInfo} fieldValue={form.panNumber} fieldError={errors.panNumber}
                     onFieldChange={handleChange("panNumber")} maxLength={validationRules.panNumber.maxLength}
                   />
 
                   <EditableField
                     icon={Science} label="Scopus ID" fieldKey="scopusId" value={profile?.scopusId}
-                    isEditing={isEditing} fieldValue={form.scopusId} fieldError={errors.scopusId}
+                    isEditing={isEditingPersonalInfo} fieldValue={form.scopusId} fieldError={errors.scopusId}
                     onFieldChange={handleChange("scopusId")} maxLength={validationRules.scopusId.maxLength}
                   />
                   <EditableField
                     icon={Public} label="Web of Science ID" fieldKey="wosId" value={profile?.wosId}
-                    isEditing={isEditing} fieldValue={form.wosId} fieldError={errors.wosId}
+                    isEditing={isEditingPersonalInfo} fieldValue={form.wosId} fieldError={errors.wosId}
                     onFieldChange={handleChange("wosId")} maxLength={validationRules.wosId.maxLength}
                   />
                   <EditableField
                     icon={Fingerprint} label="ORC ID" fieldKey="orcidId" value={profile?.orcidId}
-                    isEditing={isEditing} fieldValue={form.orcidId} fieldError={errors.orcidId}
+                    isEditing={isEditingPersonalInfo} fieldValue={form.orcidId} fieldError={errors.orcidId}
                     onFieldChange={handleOrcidChange} maxLength={validationRules.orcidId.maxLength}
                   />
 
                   <EditableField
                     icon={School} label="Google Scholar ID" fieldKey="googleScholarId" value={profile?.googleScholarId}
-                    isEditing={isEditing} fieldValue={form.googleScholarId} fieldError={errors.googleScholarId}
-                    onFieldChange={handleChange("googleScholarId")} maxLength={validationRules.googleScholarId.maxLength}
+                    isEditing={isEditingPersonalInfo} fieldValue={form.googleScholarId} fieldError={errors.googleScholarId}
+                    onFieldChange={handleChange("googleScholarId")} maxLength={validationRules.googleScholarId?.maxLength}
                   />
-
-                  <Box sx={{ gridColumn: "1 / -1", mt: 2 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
-                      <AutoStories sx={{ color: "var(--color-primary)" }} />
-                      <Typography sx={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                        Qualifications
-                      </Typography>
-                    </Box>
-                    {isEditing ? (
-                      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                        {form.qualifications.map((qual, index) => (
-                          <Box key={index} sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap", p: 2, background: "var(--bg-accent-1)", borderRadius: "8px" }}>
-                            <Select
-                              size="small"
-                              value={qual.level}
-                              onChange={(e) => handleQualificationChange(index, "level", e.target.value)}
-                              displayEmpty
-                              sx={{ minWidth: 120, borderRadius: "8px", height: "35px", fontSize: "0.85rem", background: "var(--bg-paper)" }}
-                            >
-                              <MenuItem value="" disabled>Select Level</MenuItem>
-                              {Object.keys(QUALIFICATION_MAP).map(level => (
-                                <MenuItem key={level} value={level}>{level}</MenuItem>
-                              ))}
-                            </Select>
-                            <Select
-                              size="small"
-                              value={qual.qualification}
-                              onChange={(e) => handleQualificationChange(index, "qualification", e.target.value)}
-                              disabled={!qual.level}
-                              displayEmpty
-                              sx={{ minWidth: 160, borderRadius: "8px", height: "35px", fontSize: "0.85rem", background: "var(--bg-paper)" }}
-                            >
-                              <MenuItem value="" disabled>Select Qualification</MenuItem>
-                              {(QUALIFICATION_MAP[qual.level] || []).map(q => (
-                                <MenuItem key={q} value={q}>{q}</MenuItem>
-                              ))}
-                            </Select>
-                            <Select
-                              size="small"
-                              value={qual.completedMonth}
-                              onChange={(e) => handleQualificationChange(index, "completedMonth", e.target.value)}
-                              displayEmpty
-                              sx={{ minWidth: 140, borderRadius: "8px", height: "35px", fontSize: "0.85rem", background: "var(--bg-paper)" }}
-                            >
-                              <MenuItem value="" disabled>Select Month</MenuItem>
-                              {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => (
-                                <MenuItem key={m} value={m}>{m}</MenuItem>
-                              ))}
-                            </Select>
-                            <TextField
-                              size="small"
-                              type="number"
-                              placeholder="Year"
-                              value={qual.completedYear || ""}
-                              onChange={(e) => handleQualificationChange(index, "completedYear", e.target.value)}
-                              sx={{ minWidth: 100, width: 100, background: "var(--bg-paper)", borderRadius: "8px", "& .MuiInputBase-root": { height: "35px", fontSize: "0.85rem" } }}
-                            />
-                            <IconButton onClick={() => handleRemoveQualification(index)} color="error" size="small">
-                              <Close fontSize="small" />
-                            </IconButton>
-                          </Box>
-                        ))}
-                        <Button variant="outlined" size="small" onClick={handleAddQualification} sx={{ alignSelf: "flex-start" }}>
-                          + Add Qualification
-                        </Button>
-                      </Box>
-                    ) : (
-                      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                        {(profile?.qualifications && profile.qualifications.length > 0) ? (
-                          profile.qualifications.map((q, i) => (
-                            <Typography key={i} sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                              {q.level} - {q.qualification} ({q.completedMonth} {q.completedYear})
-                            </Typography>
-                          ))
-                        ) : (
-                          <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-secondary)" }}>N/A</Typography>
-                        )}
-                      </Box>
-                    )}
-                  </Box>
+                  <EditableField
+                    icon={LinkedIn} label="LinkedIn ID" fieldKey="linkedInId" value={profile?.linkedInId}
+                    isEditing={isEditingPersonalInfo} fieldValue={form.linkedInId} fieldError={errors.linkedInId}
+                    onFieldChange={handleChange("linkedInId")}
+                  />
+                  <EditableField
+                    icon={MenuBook} label="Publons ID" fieldKey="publonsId" value={profile?.publonsId}
+                    isEditing={isEditingPersonalInfo} fieldValue={form.publonsId} fieldError={errors.publonsId}
+                    onFieldChange={handleChange("publonsId")}
+                  />
+                  <EditableField
+                    icon={WorkspacePremium} label="Vidwan ID" fieldKey="vidwanId" value={profile?.vidwanId}
+                    isEditing={isEditingPersonalInfo} fieldValue={form.vidwanId} fieldError={errors.vidwanId}
+                    onFieldChange={handleChange("vidwanId")}
+                  />
                 </>
               )}
             </Box>
 
             <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
-              {isEditing && (
+              {isEditingPersonalInfo && (
                 <Button
                   startIcon={<Close />}
                   variant="outlined"
@@ -780,10 +766,10 @@ const Profile = () => {
                 </Button>
               )}
               <Button
-                startIcon={isEditing ? <Save /> : <Edit />}
+                startIcon={isEditingPersonalInfo ? <Save /> : <Edit />}
                 variant="outlined"
                 size="small"
-                onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+                onClick={() => isEditingPersonalInfo ? handleSave() : setIsEditingPersonalInfo(true)}
                 disabled={loading}
                 sx={{
                   textTransform: "none",
@@ -797,12 +783,308 @@ const Profile = () => {
                   "&:hover": { borderColor: "var(--color-primary)", background: "rgba(2, 132, 199, 0.05)", transform: "translateY(-1px)" }
                 }}
               >
-                {loading ? "Saving..." : isEditing ? "Save Changes" : "Edit Info"}
+                {loading ? "Saving..." : isEditingPersonalInfo ? "Save Changes" : "Edit Info"}
               </Button>
             </Box>
           </Paper>
+
         </Box>
       </Box>
+
+      {/* Qualifications Card */}
+      {!isStudent && (
+        <Paper sx={{
+          position: "relative",
+          p: 3,
+          borderRadius: "24px",
+          background: "var(--bg-paper)",
+          border: "1px solid var(--border-color)",
+          boxShadow: "var(--shadow-lg)",
+          mt: 3,
+          width: "100%",
+          overflow: "hidden",
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: "140px",
+            height: "140px",
+            background: "radial-gradient(circle at top right, var(--color-primary-alpha), transparent 70%)",
+            zIndex: 0,
+            pointerEvents: "none"
+          }
+        }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
+            <AutoStories sx={{ color: "var(--color-primary)" }} />
+            <Typography sx={{ fontSize: "1rem", fontWeight: 800, color: "var(--text-primary)" }}>
+              Qualifications
+            </Typography>
+          </Box>
+
+          {isEditingQualifications ? (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {form.qualifications.map((qual, index) => (
+                <Box key={index} sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap", p: 2, background: "var(--bg-accent-1)", borderRadius: "8px" }}>
+                  <Select
+                    size="small"
+                    value={qual.level}
+                    onChange={(e) => handleQualificationChange(index, "level", e.target.value)}
+                    displayEmpty
+                    sx={{ flex: 1, minWidth: 120, borderRadius: "8px", height: "35px", fontSize: "0.85rem", background: "var(--bg-paper)" }}
+                  >
+                    <MenuItem value="" disabled>Select Level</MenuItem>
+                    {Object.keys(QUALIFICATION_MAP).map(level => (
+                      <MenuItem key={level} value={level}>{level}</MenuItem>
+                    ))}
+                  </Select>
+                  <Select
+                    size="small"
+                    value={qual.qualification}
+                    onChange={(e) => handleQualificationChange(index, "qualification", e.target.value)}
+                    disabled={!qual.level}
+                    displayEmpty
+                    sx={{ flex: 1, minWidth: 160, borderRadius: "8px", height: "35px", fontSize: "0.85rem", background: "var(--bg-paper)" }}
+                  >
+                    <MenuItem value="" disabled>Select Qualification</MenuItem>
+                    {(QUALIFICATION_MAP[qual.level] || []).map(q => (
+                      <MenuItem key={q} value={q}>{q}</MenuItem>
+                    ))}
+                  </Select>
+                  <Select
+                    size="small"
+                    value={qual.completedMonth}
+                    onChange={(e) => handleQualificationChange(index, "completedMonth", e.target.value)}
+                    displayEmpty
+                    sx={{ flex: 1, minWidth: 140, borderRadius: "8px", height: "35px", fontSize: "0.85rem", background: "var(--bg-paper)" }}
+                  >
+                    <MenuItem value="" disabled>Select Month</MenuItem>
+                    {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => (
+                      <MenuItem key={m} value={m}>{m}</MenuItem>
+                    ))}
+                  </Select>
+                  <TextField
+                    size="small"
+                    type="number"
+                    placeholder="Year"
+                    value={qual.completedYear || ""}
+                    onChange={(e) => handleQualificationChange(index, "completedYear", e.target.value)}
+                    sx={{ flex: 1, minWidth: 100, background: "var(--bg-paper)", borderRadius: "8px", "& .MuiInputBase-root": { height: "35px", fontSize: "0.85rem" } }}
+                  />
+                  <IconButton onClick={() => handleRemoveQualification(index)} color="error" size="small">
+                    <Close fontSize="small" />
+                  </IconButton>
+                </Box>
+              ))}
+              <Button variant="outlined" size="small" onClick={handleAddQualification} sx={{ alignSelf: "flex-start" }}>
+                + Add Qualification
+              </Button>
+            </Box>
+          ) : (
+            <Box>
+              {(profile?.qualifications && profile.qualifications.length > 0) ? (
+                <TableContainer sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", overflow: "hidden" }}>
+                  <Table size="small">
+                    <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 800, color: "#fff", fontSize: "0.8rem", py: 1.5 }}>Level</TableCell>
+                        <TableCell sx={{ fontWeight: 800, color: "#fff", fontSize: "0.8rem", py: 1.5 }}>Qualification</TableCell>
+                        <TableCell sx={{ fontWeight: 800, color: "#fff", fontSize: "0.8rem", py: 1.5 }}>Month</TableCell>
+                        <TableCell sx={{ fontWeight: 800, color: "#fff", fontSize: "0.8rem", py: 1.5 }}>Year</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {profile.qualifications.map((q, i) => (
+                        <TableRow key={i} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                          <TableCell sx={{ fontSize: "0.8rem", color: "var(--text-primary)", fontWeight: 300, py: 1.5 }}>{q.level || "-"}</TableCell>
+                          <TableCell sx={{ fontSize: "0.8rem", color: "var(--text-primary)", fontWeight: 300, py: 1.5 }}>{q.qualification || "-"}</TableCell>
+                          <TableCell sx={{ fontSize: "0.8rem", color: "var(--text-primary)", fontWeight: 300, py: 1.5 }}>{q.completedMonth || "-"}</TableCell>
+                          <TableCell sx={{ fontSize: "0.8rem", color: "var(--text-primary)", fontWeight: 300, py: 1.5 }}>{q.completedYear || "-"}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              ) : (
+                <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-secondary)" }}>N/A</Typography>
+              )}
+            </Box>
+          )}
+
+          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
+            {isEditingQualifications && (
+              <Button
+                startIcon={<Close />}
+                variant="outlined"
+                color="error"
+                size="small"
+                onClick={handleDiscard}
+                disabled={loading}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderColor: "var(--border-color)",
+                  borderRadius: "50px",
+                  px: 2.5,
+                  py: 0.8,
+                  transition: "all 0.3s ease",
+                  "&:hover": { borderColor: "var(--color-error-dark, #dc2626)", background: "rgba(220, 38, 38, 0.05)", transform: "translateY(-1px)" }
+                }}
+              >
+                Discard Changes
+              </Button>
+            )}
+            <Button
+              startIcon={isEditingQualifications ? <Save /> : <Edit />}
+              variant="outlined"
+              size="small"
+              onClick={() => isEditingQualifications ? handleSave() : setIsEditingQualifications(true)}
+              disabled={loading}
+              sx={{
+                textTransform: "none",
+                fontWeight: 700,
+                borderColor: "var(--border-color)",
+                color: "var(--color-primary)",
+                borderRadius: "50px",
+                px: 2.5,
+                py: 0.8,
+                transition: "all 0.3s ease",
+                "&:hover": { borderColor: "var(--color-primary)", background: "rgba(2, 132, 199, 0.05)", transform: "translateY(-1px)" }
+              }}
+            >
+              {loading ? "Saving..." : isEditingQualifications ? "Save Changes" : "Edit Info"}
+            </Button>
+          </Box>
+        </Paper>
+      )}
+
+      {/* Courses Taught Card */}
+      {!isStudent && (
+        <Paper sx={{
+          position: "relative",
+          p: 3,
+          borderRadius: "24px",
+          background: "var(--bg-paper)",
+          border: "1px solid var(--border-color)",
+          boxShadow: "var(--shadow-lg)",
+          mt: 3,
+          width: "100%",
+          overflow: "hidden"
+        }}>
+          {/* Decorative background element */}
+          <Box sx={{
+            position: "absolute",
+            top: "-20%",
+            right: "-10%",
+            width: "300px",
+            height: "300px",
+            background: "radial-gradient(circle, var(--color-primary-alpha) 0%, transparent 70%)",
+            opacity: 0.5,
+            zIndex: 0,
+            pointerEvents: "none"
+          }} />
+
+          {/* Header */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3, position: "relative", zIndex: 1 }}>
+            <MenuBook sx={{ color: "var(--color-primary)" }} />
+            <Typography sx={{ fontSize: "1rem", fontWeight: 800, color: "var(--text-primary)" }}>
+              Courses Taught
+            </Typography>
+          </Box>
+
+          <Box sx={{ position: "relative", zIndex: 1 }}>
+            {isEditingCourses ? (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {form.coursesTaught.map((course, index) => (
+                  <Box key={index} sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap", p: 2, background: "var(--bg-accent-1)", borderRadius: "8px" }}>
+                    <TextField
+                      size="small"
+                      placeholder="Course Name"
+                      value={course.courseName || ""}
+                      onChange={(e) => handleCourseChange(index, "courseName", e.target.value)}
+                      sx={{ flex: 1, minWidth: 200, background: "var(--bg-paper)", borderRadius: "8px", "& .MuiInputBase-root": { height: "35px", fontSize: "0.85rem" } }}
+                    />
+                    <IconButton onClick={() => handleRemoveCourse(index)} color="error" size="small">
+                      <Close fontSize="small" />
+                    </IconButton>
+                  </Box>
+                ))}
+                <Button variant="outlined" size="small" onClick={handleAddCourse} sx={{ alignSelf: "flex-start" }}>
+                  + Add Course
+                </Button>
+              </Box>
+            ) : (
+              <Box>
+                {(profile?.coursesTaught && profile.coursesTaught.length > 0) ? (
+                  <TableContainer sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", overflow: "hidden" }}>
+                    <Table size="small">
+                      <TableHead sx={{ background: "var(--gradient-primary)" }}>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 800, color: "#fff", fontSize: "0.8rem", py: 1.5 }}>Course Name</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {profile.coursesTaught.map((course, i) => (
+                          <TableRow key={i} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                            <TableCell sx={{ fontSize: "0.8rem", color: "var(--text-primary)", fontWeight: 300, py: 1.5 }}>{course.courseName || "-"}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                ) : (
+                  <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-secondary)" }}>N/A</Typography>
+                )}
+              </Box>
+            )}
+
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
+              {isEditingCourses && (
+                <Button
+                  startIcon={<Close />}
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  onClick={handleDiscard}
+                  disabled={loading}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 700,
+                    borderColor: "var(--border-color)",
+                    borderRadius: "50px",
+                    px: 2.5,
+                    py: 0.8,
+                    transition: "all 0.3s ease",
+                    "&:hover": { borderColor: "var(--color-error-dark, #dc2626)", background: "rgba(220, 38, 38, 0.05)", transform: "translateY(-1px)" }
+                  }}
+                >
+                  Discard Changes
+                </Button>
+              )}
+              <Button
+                startIcon={isEditingCourses ? <Save /> : <Edit />}
+                variant="outlined"
+                size="small"
+                onClick={() => isEditingCourses ? handleSave() : setIsEditingCourses(true)}
+                disabled={loading}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderColor: "var(--border-color)",
+                  color: "var(--color-primary)",
+                  borderRadius: "50px",
+                  px: 2.5,
+                  py: 0.8,
+                  transition: "all 0.3s ease",
+                  "&:hover": { borderColor: "var(--color-primary)", background: "rgba(2, 132, 199, 0.05)", transform: "translateY(-1px)" }
+                }}
+              >
+                {loading ? "Saving..." : isEditingCourses ? "Save Changes" : "Edit Info"}
+              </Button>
+            </Box>
+          </Box>
+        </Paper>
+      )}
 
       {/* Account & Security — full width below both columns */}
       <Paper sx={{
