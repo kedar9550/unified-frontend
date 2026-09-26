@@ -22,10 +22,14 @@ const ResearchApprovalDetailWrapper = ({ role }) => {
     const isCoordinator = role === 'RESEARCH_COORDINATOR';
 
     const goBack = () => {
-        const backPath = isHOD ? '/hod/research-approvals' : 
-                        isDean ? '/research-dean/approvals' : 
-                        '/research-coordinator/approvals';
-        navigate(backPath);
+        if (window.history.length > 2) {
+            navigate(-1);
+        } else {
+            const backPath = isHOD ? '/hod/research-approvals' : 
+                            isDean ? '/research-dean/approvals' : 
+                            '/research-coordinator/approvals';
+            navigate(backPath);
+        }
     };
 
     const renderDetailComponent = () => {

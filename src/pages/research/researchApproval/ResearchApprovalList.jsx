@@ -38,12 +38,21 @@ const ResearchApprovalList = ({ role }) => {
     const isResearchAdmin = isDean || isCoordinator;
 
     // Filters State
-    const [typeFilter, setTypeFilter] = useState("All");
-    const [statusFilter, setStatusFilter] = useState("Pending");
-    const [durationFilter, setDurationFilter] = useState("All");
-    const [fromDate, setFromDate] = useState("");
-    const [toDate, setToDate] = useState("");
-    const [searchQuery, setSearchQuery] = useState("");
+    const [typeFilter, setTypeFilter] = useState(() => sessionStorage.getItem("researchTypeFilter") || "All");
+    const [statusFilter, setStatusFilter] = useState(() => sessionStorage.getItem("researchStatusFilter") || "Pending");
+    const [durationFilter, setDurationFilter] = useState(() => sessionStorage.getItem("researchDurationFilter") || "All");
+    const [fromDate, setFromDate] = useState(() => sessionStorage.getItem("researchFromDate") || "");
+    const [toDate, setToDate] = useState(() => sessionStorage.getItem("researchToDate") || "");
+    const [searchQuery, setSearchQuery] = useState(() => sessionStorage.getItem("researchSearchQuery") || "");
+
+    useEffect(() => {
+        sessionStorage.setItem("researchTypeFilter", typeFilter);
+        sessionStorage.setItem("researchStatusFilter", statusFilter);
+        sessionStorage.setItem("researchDurationFilter", durationFilter);
+        sessionStorage.setItem("researchFromDate", fromDate);
+        sessionStorage.setItem("researchToDate", toDate);
+        sessionStorage.setItem("researchSearchQuery", searchQuery);
+    }, [typeFilter, statusFilter, durationFilter, fromDate, toDate, searchQuery]);
 
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
