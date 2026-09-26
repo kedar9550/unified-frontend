@@ -651,7 +651,18 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                                     issue: data.issue || "",
                                                     hIndex: data.hIndex || "",
                                                     jcrImpactFactor: data.jcrImpactFactor || data.impactFactor || "",
-                                                    citations: data.citations || ""
+                                                    citations: data.citations || "",
+                                                    correspondingAuthor: data.correspondingAuthor || "No",
+                                                    isWos: data.isWos || (data.journalType && data.journalType !== "None" ? "Yes" : "No"),
+                                                    issn: data.issn || "",
+                                                    eissn: data.eissn || "",
+                                                    publishedYear: data.publishedYear || data.year || "",
+                                                    publishedMonth: data.publishedMonth || data.month || "",
+                                                    agecReferencingNumbers: data.agecReferencingNumbers || data.referencingNos || "",
+                                                    numberOfReferencesBelongingToAGEC: data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : ""),
+                                                    applyingSeedGrant: data.applyingSeedGrant || "No",
+                                                    applyIncentive: data.applyIncentive || "No",
+                                                    approvedAmount: data.approvedAmount || ""
                                                 });
                                                 setIsEditingDetails(true);
                                             }}
@@ -733,24 +744,24 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                 { key: "correspondingAuthor", label: "Corresponding Author", value: data.correspondingAuthor || "No", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
                                 { key: "journalQuartile", label: "Journal Quartile", value: data.journalQuartile || data.categoryOfJournal || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Q1", "Q2", "Q3", "Q4", "None"] },
                                 { key: "isScopus", label: "Scopus", value: data.isScopus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
-                                { key: "isWos", label: "Web of Science (WoS)", value: data.isWos || (data.journalType && data.journalType !== "None" ? "Yes" : "No"), icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                { key: "isWos", label: "Web of Science (WoS)", value: data.isWos || (data.journalType && data.journalType !== "None" ? "Yes" : "No"), icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
                                 { key: "journalType", label: "Type of Journal (WoS)", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["SCIE", "SCI", "ESCI", "SSCI", "AHCI", "None"] },
                                 { key: "journalCategory", label: "Journal Category", value: data.journalCategory || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["IEEE", "ASME", "ASCE", "ACM", "FT-50", "Scopus Top 10%", "OTHERS"] },
                                 { key: "issn", label: "ISSN", value: data.issn || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
                                 { key: "eissn", label: "e-ISSN", value: data.eissn || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
                                 { key: "vol", label: "Volume", value: data.vol || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
                                 { key: "issue", label: "Issue", value: data.issue || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
-                                { key: "publishedYear", label: "Published Year", value: data.publishedYear || data.year || "-", icon: <CalendarTodayIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
-                                { key: "publishedMonth", label: "Published Month", value: data.publishedMonth || data.month || "-", icon: <CalendarMonthIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                { key: "publishedYear", label: "Published Year", value: data.publishedYear || data.year || "-", icon: <CalendarTodayIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "number" },
+                                { key: "publishedMonth", label: "Published Month", value: data.publishedMonth || data.month || "-", icon: <CalendarMonthIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] },
                                 { key: "hIndex", label: "H-Index", value: data.hIndex || "-", icon: <TrendingUpIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "number" },
                                 { key: "jcrImpactFactor", label: "Impact Factor", value: data.jcrImpactFactor || data.impactFactor || "-", icon: <BarChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "number" },
                                 { key: "citations", label: "Citations", value: data.citations || "-", icon: <FormatQuoteIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "number" },
-                                { key: "agecReferencingNumbers", label: "AGEC Referencing Numbers", value: data.agecReferencingNumbers || data.referencingNos || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
-                                { key: "numberOfReferences", label: "Number of References Belonging to AGEC", value: data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-"), icon: <GroupsIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
-                                { key: "applyingSeedGrant", label: "Seed Grant Work", value: data.applyingSeedGrant || "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                { key: "agecReferencingNumbers", label: "AGEC Referencing Numbers", value: data.agecReferencingNumbers || data.referencingNos || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
+                                { key: "numberOfReferencesBelongingToAGEC", label: "Number of References Belonging to AGEC", value: data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-"), icon: <GroupsIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                { key: "applyingSeedGrant", label: "Seed Grant Work", value: data.applyingSeedGrant || "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
                                 { key: "applyIncentive", label: "Apply For Incentive", value: data.applyIncentive || "No", icon: <CardGiftcardIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
                                 { key: "estimatedIncentiveAmount", label: "Estimated Incentive Amount", value: data.estimatedIncentiveAmount ? `₹${Number(data.estimatedIncentiveAmount).toLocaleString('en-IN')}` : "₹0", icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
-                                { key: "approvedAmount", label: "Approved Incentive Amount", value: data.approvedAmount ? `₹${data.approvedAmount}` : "-", icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false }
+                                { key: "approvedAmount", label: "Approved Incentive Amount", value: data.approvedAmount || "-", icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "number" }
                             ].map((item, idx, arr) => (
                                 <Box
                                     key={idx}
@@ -851,7 +862,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                                     institutionId: ca.employeeId?.institutionId || ca.employeeId || ""
                                                 })))
                                         ];
-                                        const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
+                                        const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id && t._id.toString() === v._id.toString()) === i);
 
                                         if (uniqueClaimants.length <= 1) {
                                             return (
