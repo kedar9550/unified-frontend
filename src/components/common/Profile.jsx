@@ -114,7 +114,7 @@ const EditableField = ({
             slotProps={{ htmlInput: { maxLength } }}
             sx={{ background: "var(--bg-accent-1)", borderRadius: "8px" }}
           />
-          : <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary)" }}>{value || "N/A"}</Typography>
+          : <Typography sx={{ fontSize: "clamp(0.65rem, 1.5vw, 0.85rem)", fontWeight: 400, color: "var(--text-primary)", wordBreak: "break-all" }}>{value || "N/A"}</Typography>
       )}
     </Box>
   </Box>
@@ -127,11 +127,21 @@ const QUALIFICATION_MAP = {
   "Doctoral": ["Pharm.D.", "Ph.D."]
 };
 
+const getResearchInterestsString = (data) => {
+  if (!data) return "";
+  if (Array.isArray(data)) {
+    return data.map(item => (typeof item === "object" ? item.interest : item)).filter(Boolean).join(", ");
+  }
+  return String(data);
+};
+
 const Profile = () => {
   const { user, activeRole, updateUser } = useAuth();
   const [isEditingPersonalInfo, setIsEditingPersonalInfo] = React.useState(false);
   const [isEditingQualifications, setIsEditingQualifications] = React.useState(false);
+  const [isEditingHonorsAndAwards, setIsEditingHonorsAndAwards] = React.useState(false);
   const [isEditingCourses, setIsEditingCourses] = React.useState(false);
+  const [isEditingResearchInterests, setIsEditingResearchInterests] = React.useState(false);
   const [profileData, setProfileData] = React.useState(null);
   const [form, setForm] = React.useState({
     email: "",
@@ -146,7 +156,9 @@ const Profile = () => {
     panNumber: "",
     college: "",
     qualifications: [],
-    coursesTaught: []
+    coursesTaught: [],
+    researchInterests: "",
+    honorsAndAwards: []
   });
   const [loading, setLoading] = React.useState(false);
   const [errors, setErrors] = React.useState({});
@@ -178,7 +190,9 @@ const Profile = () => {
           panNumber: res.data.user.panNumber || "",
           college: res.data.user.college || "",
           qualifications: res.data.user.qualifications || [],
-          coursesTaught: res.data.user.coursesTaught || []
+          coursesTaught: res.data.user.coursesTaught || [],
+          researchInterests: getResearchInterestsString(res.data.user.researchInterests),
+          honorsAndAwards: Array.isArray(res.data.user.honorsAndAwards) ? res.data.user.honorsAndAwards : (typeof res.data.user.honorsAndAwards === 'string' && res.data.user.honorsAndAwards ? [{ title: res.data.user.honorsAndAwards }] : [])
         });
         if (updateUser) updateUser(res.data.user);
         toast.success("Profile details synced  successfully!");
@@ -237,7 +251,9 @@ const Profile = () => {
           panNumber: fresh.panNumber || "",
           college: fresh.college || "",
           qualifications: fresh.qualifications || [],
-          coursesTaught: fresh.coursesTaught || []
+          coursesTaught: fresh.coursesTaught || [],
+          researchInterests: getResearchInterestsString(fresh.researchInterests),
+          honorsAndAwards: Array.isArray(fresh.honorsAndAwards) ? fresh.honorsAndAwards : (typeof fresh.honorsAndAwards === 'string' && fresh.honorsAndAwards ? [{ title: fresh.honorsAndAwards }] : [])
         });
 
         // Fetch DOJ from DB
@@ -267,7 +283,9 @@ const Profile = () => {
           panNumber: user?.panNumber || "",
           college: user?.college || "",
           qualifications: user?.qualifications || [],
-          coursesTaught: user?.coursesTaught || []
+          coursesTaught: user?.coursesTaught || [],
+          researchInterests: getResearchInterestsString(user?.researchInterests),
+          honorsAndAwards: Array.isArray(user?.honorsAndAwards) ? user.honorsAndAwards : (typeof user?.honorsAndAwards === 'string' && user.honorsAndAwards ? [{ title: user.honorsAndAwards }] : [])
         });
       }
     };
@@ -325,6 +343,28 @@ const Profile = () => {
     });
   };
 
+  const handleAddAward = () => {
+    setForm(prev => ({
+      ...prev,
+      honorsAndAwards: [...(prev.honorsAndAwards || []), { title: "" }]
+    }));
+  };
+
+  const handleRemoveAward = (index) => {
+    setForm(prev => ({
+      ...prev,
+      honorsAndAwards: (prev.honorsAndAwards || []).filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleAwardChange = (index, field, value) => {
+    setForm(prev => {
+      const newAwards = [...(prev.honorsAndAwards || [])];
+      newAwards[index] = { ...newAwards[index], [field]: value };
+      return { ...prev, honorsAndAwards: newAwards };
+    });
+  };
+
   const handleSave = async () => {
     setLoading(true);
     // Validate all fields before saving
@@ -349,6 +389,8 @@ const Profile = () => {
       setIsEditingPersonalInfo(false);
       setIsEditingQualifications(false);
       setIsEditingCourses(false);
+      setIsEditingResearchInterests(false);
+      setIsEditingHonorsAndAwards(false);
     } catch (err) {
       console.error("Update failed", err);
       toast.error("Failed to update profile");
@@ -398,12 +440,16 @@ const Profile = () => {
       panNumber: profile?.panNumber || "",
       college: profile?.college || "",
       qualifications: profile?.qualifications || [],
-      coursesTaught: profile?.coursesTaught || []
+      coursesTaught: profile?.coursesTaught || [],
+      researchInterests: getResearchInterestsString(profile?.researchInterests),
+      honorsAndAwards: Array.isArray(profile?.honorsAndAwards) ? profile.honorsAndAwards : (typeof profile?.honorsAndAwards === 'string' && profile.honorsAndAwards ? [{ title: profile.honorsAndAwards }] : [])
     });
     setErrors({});
     setIsEditingPersonalInfo(false);
     setIsEditingQualifications(false);
     setIsEditingCourses(false);
+    setIsEditingResearchInterests(false);
+    setIsEditingHonorsAndAwards(false);
   };
 
   const [imageSrc, setImageSrc] = React.useState(null);
@@ -657,7 +703,7 @@ const Profile = () => {
             {/* All fields in a single responsive 3-column grid */}
             <Box sx={{
               display: "grid",
-              gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" },
+              gridTemplateColumns: { xs: "minmax(0, 1fr)", sm: "repeat(2, minmax(0, 1fr))", md: "repeat(3, minmax(0, 1fr))" },
               gap: 3
             }}>
               {/* Read-only */}
@@ -883,7 +929,7 @@ const Profile = () => {
           ) : (
             <Box>
               {(profile?.qualifications && profile.qualifications.length > 0) ? (
-                <TableContainer sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", overflow: "hidden" }}>
+                <TableContainer sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", overflowX: "auto" }}>
                   <Table size="small">
                     <TableHead sx={{ background: "var(--gradient-primary)" }}>
                       <TableRow>
@@ -1016,7 +1062,7 @@ const Profile = () => {
             ) : (
               <Box>
                 {(profile?.coursesTaught && profile.coursesTaught.length > 0) ? (
-                  <TableContainer sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", overflow: "hidden" }}>
+                  <TableContainer sx={{ border: "1px solid var(--border-color)", borderRadius: "8px", overflowX: "auto" }}>
                     <Table size="small">
                       <TableHead sx={{ background: "var(--gradient-primary)" }}>
                         <TableRow>
@@ -1080,6 +1126,216 @@ const Profile = () => {
                 }}
               >
                 {loading ? "Saving..." : isEditingCourses ? "Save Changes" : "Edit Info"}
+              </Button>
+            </Box>
+          </Box>
+        </Paper>
+      )}
+
+      {/* Research Interests Card */}
+      {!isStudent && (
+        <Paper sx={{
+          position: "relative",
+          p: 3,
+          borderRadius: "24px",
+          background: "var(--bg-paper)",
+          border: "1px solid var(--border-color)",
+          boxShadow: "var(--shadow-lg)",
+          mt: 3,
+          width: "100%",
+          overflow: "hidden"
+        }}>
+          {/* Decorative background element */}
+          <Box sx={{
+            position: "absolute",
+            top: "-20%",
+            right: "-10%",
+            width: "300px",
+            height: "300px",
+            background: "radial-gradient(circle, var(--color-primary-alpha) 0%, transparent 70%)",
+            opacity: 0.5,
+            zIndex: 0,
+            pointerEvents: "none"
+          }} />
+
+          {/* Header */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3, position: "relative", zIndex: 1 }}>
+            <Science sx={{ color: "var(--color-primary)" }} />
+            <Typography sx={{ fontSize: "1rem", fontWeight: 800, color: "var(--text-primary)" }}>
+              Research Interests
+            </Typography>
+          </Box>
+
+          <Box sx={{ position: "relative", zIndex: 1 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 3 }}>
+              <EditableField
+                icon={Science} label="Broad Area of Research" fieldKey="researchInterests" value={getResearchInterestsString(profile?.researchInterests)}
+                isEditing={isEditingResearchInterests} fieldValue={form.researchInterests} fieldError={errors.researchInterests}
+                onFieldChange={handleChange("researchInterests")}
+              />
+            </Box>
+
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
+              {isEditingResearchInterests && (
+                <Button
+                  startIcon={<Close />}
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  onClick={handleDiscard}
+                  disabled={loading}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 700,
+                    borderColor: "var(--border-color)",
+                    borderRadius: "50px",
+                    px: 2.5,
+                    py: 0.8,
+                    transition: "all 0.3s ease",
+                    "&:hover": { borderColor: "var(--color-error-dark, #dc2626)", background: "rgba(220, 38, 38, 0.05)", transform: "translateY(-1px)" }
+                  }}
+                >
+                  Discard Changes
+                </Button>
+              )}
+              <Button
+                startIcon={isEditingResearchInterests ? <Save /> : <Edit />}
+                variant="outlined"
+                size="small"
+                onClick={() => isEditingResearchInterests ? handleSave() : setIsEditingResearchInterests(true)}
+                disabled={loading}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderColor: "var(--border-color)",
+                  color: "var(--color-primary)",
+                  borderRadius: "50px",
+                  px: 2.5,
+                  py: 0.8,
+                  transition: "all 0.3s ease",
+                  "&:hover": { borderColor: "var(--color-primary)", background: "rgba(2, 132, 199, 0.05)", transform: "translateY(-1px)" }
+                }}
+              >
+                {loading ? "Saving..." : isEditingResearchInterests ? "Save Changes" : "Edit Info"}
+              </Button>
+            </Box>
+          </Box>
+        </Paper>
+      )}
+
+      {/* Honors and Awards Card */}
+      {!isStudent && (
+        <Paper sx={{
+          position: "relative",
+          p: 3,
+          borderRadius: "24px",
+          background: "var(--bg-paper)",
+          border: "1px solid var(--border-color)",
+          boxShadow: "var(--shadow-lg)",
+          mt: 3,
+          width: "100%",
+          overflow: "hidden"
+        }}>
+          {/* Decorative background element */}
+          <Box sx={{
+            position: "absolute",
+            top: "-20%",
+            right: "-10%",
+            width: "300px",
+            height: "300px",
+            background: "radial-gradient(circle, var(--color-primary-alpha) 0%, transparent 70%)",
+            opacity: 0.5,
+            zIndex: 0,
+            pointerEvents: "none"
+          }} />
+
+          {/* Header */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3, position: "relative", zIndex: 1 }}>
+            <WorkspacePremium sx={{ color: "var(--color-primary)" }} />
+            <Typography sx={{ fontSize: "1rem", fontWeight: 800, color: "var(--text-primary)" }}>
+              Honors and Awards
+            </Typography>
+          </Box>
+
+          <Box sx={{ position: "relative", zIndex: 1 }}>
+            {isEditingHonorsAndAwards ? (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {(form.honorsAndAwards || []).map((item, index) => (
+                  <Box key={index} sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                    <TextField
+                      size="small"
+                      placeholder="Award / Honor Title"
+                      value={item.title || ""}
+                      onChange={(e) => handleAwardChange(index, "title", e.target.value)}
+                      sx={{ flex: 1, background: "var(--bg-paper)", borderRadius: "8px" }}
+                    />
+                    <IconButton onClick={() => handleRemoveAward(index)} color="error" size="small">
+                      <Close fontSize="small" />
+                    </IconButton>
+                  </Box>
+                ))}
+                <Button variant="outlined" size="small" onClick={handleAddAward} sx={{ alignSelf: "flex-start", mt: 1 }}>
+                  + Add Award
+                </Button>
+              </Box>
+            ) : (
+              <Box>
+                {(Array.isArray(profile?.honorsAndAwards) && profile.honorsAndAwards.length > 0) ? (
+                  <Box component="ul" sx={{ m: 0, pl: 3, color: "var(--text-primary)" }}>
+                    {profile.honorsAndAwards.map((item, i) => (
+                      <Typography component="li" key={i} sx={{ fontSize: "0.9rem", fontWeight: 600, mb: 1 }}>
+                        {item.title || "-"}
+                      </Typography>
+                    ))}
+                  </Box>
+                ) : (
+                  <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-secondary)" }}>N/A</Typography>
+                )}
+              </Box>
+            )}
+
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
+              {isEditingHonorsAndAwards && (
+                <Button
+                  startIcon={<Close />}
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  onClick={handleDiscard}
+                  disabled={loading}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 700,
+                    borderColor: "var(--border-color)",
+                    borderRadius: "50px",
+                    px: 2.5,
+                    py: 0.8,
+                    transition: "all 0.3s ease",
+                    "&:hover": { borderColor: "var(--color-error-dark, #dc2626)", background: "rgba(220, 38, 38, 0.05)", transform: "translateY(-1px)" }
+                  }}
+                >
+                  Discard Changes
+                </Button>
+              )}
+              <Button
+                startIcon={isEditingHonorsAndAwards ? <Save /> : <Edit />}
+                variant="outlined"
+                size="small"
+                onClick={() => isEditingHonorsAndAwards ? handleSave() : setIsEditingHonorsAndAwards(true)}
+                disabled={loading}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderColor: "var(--border-color)",
+                  color: "var(--color-primary)",
+                  borderRadius: "50px",
+                  px: 2.5,
+                  py: 0.8,
+                  transition: "all 0.3s ease",
+                  "&:hover": { borderColor: "var(--color-primary)", background: "rgba(2, 132, 199, 0.05)", transform: "translateY(-1px)" }
+                }}
+              >
+                {loading ? "Saving..." : isEditingHonorsAndAwards ? "Save Changes" : "Edit Info"}
               </Button>
             </Box>
           </Box>
