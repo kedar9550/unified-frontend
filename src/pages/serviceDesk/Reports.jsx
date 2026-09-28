@@ -27,11 +27,14 @@ const getStatusColor = (status) => {
     }
 };
 
+import { PriorityBadge, DueCountdownBadge } from '../../utils/serviceDeskSla';
+
 const getPriorityColor = (priority) => {
     switch (priority?.toUpperCase()) {
-        case 'HIGH': return 'error.main';
-        case 'MEDIUM': return 'warning.main';
-        case 'LOW': return 'info.main';
+        case 'CRITICAL': return '#dc2626';
+        case 'HIGH': return '#ea580c';
+        case 'MEDIUM': return '#2563eb';
+        case 'LOW': return '#64748b';
         default: return 'text.secondary';
     }
 };
@@ -182,17 +185,11 @@ const Reports = () => {
         { value: t.title, display: t.title },
         { value: t.assignedTo || '--', display: t.assignedTo || '--' },
         { value: t.status, display: <Chip label={t.status} color={getStatusColor(t.status)} size="small" sx={{ fontWeight: 600, borderRadius: '6px' }} /> },
-        { value: t.priority, display: <Typography fontSize="0.875rem" fontWeight={500} color={getPriorityColor(t.priority)}>{t.priority}</Typography> },
+        { value: t.priority, display: <PriorityBadge priority={t.priority} /> },
         { value: t.createdAt, display: new Date(t.createdAt).toLocaleDateString('en-GB').replace(/\//g, "-") },
         { 
-            value: t.dueDate, 
-            display: (() => {
-                if (!t.dueDate) return '--';
-                const isOverdue = new Date(t.dueDate) < new Date() && t.status !== 'RESOLVED' && t.status !== 'CLOSED';
-                return <Typography fontSize="0.875rem" fontWeight={isOverdue ? 700 : 500} color={isOverdue ? 'error.main' : 'primary.main'}>
-                    {new Date(t.dueDate).toLocaleDateString('en-GB').replace(/\//g, "-")}
-                </Typography>;
-            })()
+            value: t.dueDate || '', 
+            display: <DueCountdownBadge dueDate={t.dueDate} status={t.status} />
         }
     ]) || [];
 

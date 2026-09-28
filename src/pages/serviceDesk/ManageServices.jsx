@@ -14,6 +14,7 @@ import {
     PersonAdd as PersonAddIcon,
     Close as CloseIcon,
     Apartment as ApartmentIcon,
+    Hotel as HotelIcon,
     Public as PublicIcon,
     Engineering as EngineeringIcon,
     AdminPanelSettings as AdminIcon
@@ -35,8 +36,10 @@ const ManageServices = () => {
         name: '',
         description: '',
         isGlobalService: true,
-        directEmployeeInvolvement: true
+        directEmployeeInvolvement: true,
+        subcategories: []
     });
+    const [subcatInput, setSubcatInput] = useState('');
     const [saving, setSaving] = useState(false);
 
     // Admin Assignment State
@@ -85,6 +88,7 @@ const ManageServices = () => {
     }, []);
 
     const handleOpen = (service = null) => {
+        setSubcatInput('');
         if (service) {
             setEditMode(true);
             setCurrentServiceId(service._id);
@@ -92,7 +96,9 @@ const ManageServices = () => {
                 name: service.name,
                 description: service.description || '',
                 isGlobalService: service.isGlobalService !== undefined ? service.isGlobalService : true,
-                directEmployeeInvolvement: service.directEmployeeInvolvement !== undefined ? service.directEmployeeInvolvement : true
+                applicableBlockType: service.applicableBlockType || 'ALL',
+                directEmployeeInvolvement: service.directEmployeeInvolvement !== undefined ? service.directEmployeeInvolvement : true,
+                subcategories: Array.isArray(service.subcategories) ? service.subcategories : []
             });
         } else {
             setEditMode(false);
@@ -101,7 +107,9 @@ const ManageServices = () => {
                 name: '',
                 description: '',
                 isGlobalService: true,
-                directEmployeeInvolvement: true
+                applicableBlockType: 'ALL',
+                directEmployeeInvolvement: true,
+                subcategories: []
             });
         }
         setOpenDialog(true);
@@ -109,12 +117,36 @@ const ManageServices = () => {
 
     const handleClose = () => {
         setOpenDialog(false);
+        setSubcatInput('');
         setFormData({
             name: '',
             description: '',
             isGlobalService: true,
-            directEmployeeInvolvement: true
+            applicableBlockType: 'ALL',
+            directEmployeeInvolvement: true,
+            subcategories: []
         });
+    };
+
+    const handleAddSubcat = () => {
+        const val = subcatInput.trim();
+        if (!val) return;
+        if ((formData.subcategories || []).some(s => s.toLowerCase() === val.toLowerCase())) {
+            toast.error('Subcategory already added');
+            return;
+        }
+        setFormData(prev => ({
+            ...prev,
+            subcategories: [...(prev.subcategories || []), val]
+        }));
+        setSubcatInput('');
+    };
+
+    const handleRemoveSubcat = (indexToRemove) => {
+        setFormData(prev => ({
+            ...prev,
+            subcategories: prev.subcategories.filter((_, idx) => idx !== indexToRemove)
+        }));
     };
 
     const handleChange = (e) => {
@@ -224,6 +256,20 @@ const ManageServices = () => {
         return () => clearTimeout(delayDebounceFn);
     }, [employeeSearchQuery]);
 
+    const handleSelectEmployeeToAdd = (emp) => {
+        setSelectedEmployeeToAdd(emp);
+        if (!emp) {
+            setSelectedBlocksToAdd([]);
+            return;
+        }
+        const existing = serviceAdmins.find(a => (a.employee?._id || a.employee) === emp._id);
+        if (existing && existing.blocks) {
+            setSelectedBlocksToAdd(existing.blocks);
+        } else {
+            setSelectedBlocksToAdd([]);
+        }
+    };
+
     const handleAddAdmin = async () => {
         if (!selectedEmployeeToAdd) return;
         if (!currentService.isGlobalService && selectedBlocksToAdd.length === 0) {
@@ -235,10 +281,10 @@ const ManageServices = () => {
             setAddingAdmin(true);
             const res = await API.post(`/api/service-desk/services/${currentService._id}/admins`, {
                 employeeId: selectedEmployeeToAdd._id,
-                blocks: selectedBlocksToAdd.map(b => b._id)
+                blocks: selectedBlocksToAdd.map(b => b._id || b)
             });
             if (res.data.success) {
-                toast.success('Admin added successfully');
+                toast.success(res.data.message || 'Admin block assignments saved successfully');
                 setSelectedEmployeeToAdd(null);
                 setSelectedBlocksToAdd([]);
                 setEmployeeSearchQuery('');
@@ -246,14 +292,38 @@ const ManageServices = () => {
                 fetchServiceAdmins(currentService._id);
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to add admin');
+            toast.error(error.response?.data?.message || 'Failed to assign admin');
         } finally {
             setAddingAdmin(false);
         }
     };
 
+    const handleRemoveBlockFromAdmin = async (employeeId, blockIdToRemove) => {
+        const admin = serviceAdmins.find(a => (a.employee?._id || a.employee) === employeeId);
+        if (!admin) return;
+
+        const remainingBlocks = (admin.blocks || []).filter(b => (b._id || b) !== blockIdToRemove).map(b => b._id || b);
+        
+        try {
+            const res = await API.put(`/api/service-desk/services/${currentService._id}/admins/${employeeId}/blocks`, {
+                blocks: remainingBlocks
+            });
+            if (res.data.success) {
+                toast.success('Block unassigned from admin');
+                fetchServiceAdmins(currentService._id);
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to update admin blocks');
+        }
+    };
+
+    const handleEditAdmin = (admin) => {
+        setSelectedEmployeeToAdd(admin.employee);
+        setSelectedBlocksToAdd(admin.blocks || []);
+    };
+
     const handleRemoveAdmin = async (employeeId) => {
-        if (window.confirm('Remove this admin?')) {
+        if (window.confirm('Remove this admin from this service?')) {
             try {
                 const res = await API.delete(`/api/service-desk/services/${currentService._id}/admins/${employeeId}`);
                 if (res.data.success) {
@@ -323,12 +393,38 @@ const ManageServices = () => {
                                 display: <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>{service.description || '--'}</Typography>
                             },
                             {
-                                value: service.isGlobalService ? 'Global' : 'Block Specific',
+                                value: service.isGlobalService
+                                    ? 'Global'
+                                    : service.applicableBlockType === 'HOSTEL'
+                                        ? 'Hostel Blocks'
+                                        : service.applicableBlockType === 'ACADEMIC'
+                                            ? 'Academic Buildings'
+                                            : 'All Blocks',
                                 display: (
                                     <Chip
-                                        icon={service.isGlobalService ? <PublicIcon fontSize="small" /> : <ApartmentIcon fontSize="small" />}
-                                        label={service.isGlobalService ? 'Global (All Blocks)' : 'Block Specific'}
-                                        color={service.isGlobalService ? 'primary' : 'secondary'}
+                                        icon={
+                                            service.isGlobalService
+                                                ? <PublicIcon fontSize="small" />
+                                                : service.applicableBlockType === 'HOSTEL'
+                                                    ? <HotelIcon fontSize="small" sx={{ color: '#db2777 !important' }} />
+                                                    : <ApartmentIcon fontSize="small" />
+                                        }
+                                        label={
+                                            service.isGlobalService
+                                                ? 'Global (All Blocks)'
+                                                : service.applicableBlockType === 'HOSTEL'
+                                                    ? 'Hostel Blocks'
+                                                    : service.applicableBlockType === 'ACADEMIC'
+                                                        ? 'Academic Buildings'
+                                                        : 'All Blocks'
+                                        }
+                                        color={
+                                            service.isGlobalService
+                                                ? 'primary'
+                                                : service.applicableBlockType === 'HOSTEL'
+                                                    ? 'secondary'
+                                                    : 'info'
+                                        }
                                         variant="outlined"
                                         size="small"
                                         sx={{ fontWeight: 600, borderRadius: '6px' }}
@@ -415,10 +511,63 @@ const ManageServices = () => {
                             onChange={handleChange}
                             fullWidth
                             multiline
-                            rows={3}
+                            rows={2}
                             size="small"
                             placeholder="Provide a clear description of the service scope..."
                         />
+
+                        {/* Subcategories Configuration */}
+                        <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: '#1e293b', mb: 0.5 }}>
+                                Subcategories (Issue Types)
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1.5 }}>
+                                Configure specific problem types for this service (e.g. Fans, Lights, Switches). "Others" is always provided automatically for users.
+                            </Typography>
+
+                            <Box sx={{ display: 'flex', gap: 1, mb: 1.5 }}>
+                                <TextField
+                                    size="small"
+                                    fullWidth
+                                    placeholder="Type subcategory (e.g. Fans, MCB, Power Supply)..."
+                                    value={subcatInput}
+                                    onChange={(e) => setSubcatInput(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleAddSubcat();
+                                        }
+                                    }}
+                                />
+                                <Button
+                                    variant="outlined"
+                                    onClick={handleAddSubcat}
+                                    disabled={!subcatInput.trim()}
+                                    sx={{ textTransform: 'none', whiteSpace: 'nowrap' }}
+                                >
+                                    Add
+                                </Button>
+                            </Box>
+
+                            <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap', minHeight: 32, p: 1, bgcolor: 'var(--bg-glass)', borderRadius: 1.5 }}>
+                                {(formData.subcategories && formData.subcategories.length > 0) ? (
+                                    formData.subcategories.map((subcat, idx) => (
+                                        <Chip
+                                            key={idx}
+                                            label={subcat}
+                                            size="small"
+                                            color="primary"
+                                            variant="outlined"
+                                            onDelete={() => handleRemoveSubcat(idx)}
+                                        />
+                                    ))
+                                ) : (
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic', m: 'auto 0' }}>
+                                        No subcategories added yet. Users will be able to select "Others" and describe their issue.
+                                    </Typography>
+                                )}
+                            </Box>
+                        </Paper>
 
                         {/* Global Service Option */}
                         <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
@@ -441,6 +590,46 @@ const ManageServices = () => {
                                         : "Ticket requires block selection by the user and routes directly to the assigned Block Admin."}
                                 </FormHelperText>
                             </FormControl>
+
+                            {/* If Block-Specific, configure applicable block types */}
+                            {!formData.isGlobalService && (
+                                <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed var(--border-color)' }}>
+                                    <FormControl component="fieldset">
+                                        <FormLabel component="legend" sx={{ fontWeight: 600, fontSize: '0.85rem', color: '#1e293b', mb: 0.5 }}>
+                                            Target Block Category
+                                        </FormLabel>
+                                        <RadioGroup
+                                            row
+                                            name="applicableBlockType"
+                                            value={formData.applicableBlockType || 'ALL'}
+                                            onChange={(e) => setFormData({ ...formData, applicableBlockType: e.target.value })}
+                                        >
+                                            <FormControlLabel
+                                                value="ACADEMIC"
+                                                control={<Radio size="small" />}
+                                                label={<Typography variant="body2" sx={{ fontWeight: 500 }}>Academic Buildings Only</Typography>}
+                                            />
+                                            <FormControlLabel
+                                                value="HOSTEL"
+                                                control={<Radio size="small" sx={{ color: '#db2777', '&.Mui-checked': { color: '#db2777' } }} />}
+                                                label={<Typography variant="body2" sx={{ fontWeight: 600, color: '#db2777' }}>Hostel Blocks Only</Typography>}
+                                            />
+                                            <FormControlLabel
+                                                value="ALL"
+                                                control={<Radio size="small" />}
+                                                label={<Typography variant="body2" sx={{ fontWeight: 500 }}>All Blocks (Both)</Typography>}
+                                            />
+                                        </RadioGroup>
+                                        <FormHelperText sx={{ mt: 0.5 }}>
+                                            {formData.applicableBlockType === 'HOSTEL'
+                                                ? "Only Hostel blocks (Boys & Girls) will appear for this service."
+                                                : formData.applicableBlockType === 'ACADEMIC'
+                                                    ? "Only Academic buildings will appear for this service."
+                                                    : "Both Academic and Hostel blocks will be available."}
+                                        </FormHelperText>
+                                    </FormControl>
+                                </Box>
+                            )}
                         </Paper>
 
                         {/* Direct Employee Involvement Option */}
@@ -488,7 +677,9 @@ const ManageServices = () => {
                             Manage Service Admins - {currentService?.name}
                         </Typography>
                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                            {currentService?.isGlobalService ? 'Scope: Global (Campus-wide)' : 'Scope: Block-Specific (Map admins to target blocks)'}
+                            {currentService?.isGlobalService
+                                ? 'Scope: Global (Campus-wide)'
+                                : `Scope: Block-Specific (${currentService?.applicableBlockType === 'HOSTEL' ? 'Hostel Blocks Only' : currentService?.applicableBlockType === 'ACADEMIC' ? 'Academic Buildings Only' : 'Academic & Hostel Blocks'})`}
                         </Typography>
                     </Box>
                     <IconButton onClick={handleCloseAdmins} size="small">
@@ -504,13 +695,13 @@ const ManageServices = () => {
                                 getOptionLabel={(option) => `${option.name} (${option.institutionId}) - ${option.designation || ''}`}
                                 isOptionEqualToValue={(option, value) => option._id === value._id}
                                 value={selectedEmployeeToAdd}
-                                onChange={(e, newValue) => setSelectedEmployeeToAdd(newValue)}
+                                onChange={(e, newValue) => handleSelectEmployeeToAdd(newValue)}
                                 onInputChange={(e, newInputValue) => setEmployeeSearchQuery(newInputValue)}
                                 loading={searchingEmployees}
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        label="Search Employee to Add as Admin"
+                                        label="Search Employee to Add / Manage Admin Blocks"
                                         placeholder="Type name or ID..."
                                         size="small"
                                         InputProps={{
@@ -531,9 +722,89 @@ const ManageServices = () => {
                         {!currentService?.isGlobalService && (
                             <Autocomplete
                                 multiple
-                                options={availableBlocks}
-                                getOptionLabel={(option) => `${option.blockName} (${option.blockCode})`}
-                                isOptionEqualToValue={(option, value) => option._id === value._id}
+                                options={availableBlocks.filter(b => {
+                                    if (!currentService) return true;
+                                    if (currentService.applicableBlockType === 'HOSTEL') return b.blockType === 'HOSTEL';
+                                    if (currentService.applicableBlockType === 'ACADEMIC') return (b.blockType || 'ACADEMIC') === 'ACADEMIC';
+                                    return true;
+                                })}
+                                getOptionLabel={(option) => {
+                                    const b = typeof option === 'string' ? availableBlocks.find(x => x._id === option) : option;
+                                    if (!b) return '';
+                                    const tag = b.blockType === 'HOSTEL'
+                                        ? ` (${b.genderTag === 'GIRLS' ? 'Girls Hostel' : 'Boys Hostel'})`
+                                        : '';
+                                    return `${b.blockName}${tag} (${b.blockCode || ''})`;
+                                }}
+                                isOptionEqualToValue={(option, value) => {
+                                    const optId = option?._id || option;
+                                    const valId = value?._id || value;
+                                    return optId?.toString() === valId?.toString();
+                                }}
+                                getOptionDisabled={(option) => {
+                                    const otherAdmin = serviceAdmins.find(admin => {
+                                        const adminEmpId = (admin.employee?._id || admin.employee)?.toString();
+                                        const currentEmpId = (selectedEmployeeToAdd?._id || selectedEmployeeToAdd)?.toString();
+                                        if (adminEmpId === currentEmpId) return false;
+                                        return (admin.blocks || []).some(b => (b._id || b)?.toString() === (option._id || option)?.toString());
+                                    });
+                                    return Boolean(otherAdmin);
+                                }}
+                                renderOption={(props, option) => {
+                                    const otherAdmin = serviceAdmins.find(admin => {
+                                        const adminEmpId = (admin.employee?._id || admin.employee)?.toString();
+                                        const currentEmpId = (selectedEmployeeToAdd?._id || selectedEmployeeToAdd)?.toString();
+                                        if (adminEmpId === currentEmpId) return false;
+                                        return (admin.blocks || []).some(b => (b._id || b)?.toString() === (option._id || option)?.toString());
+                                    });
+                                    const isHostel = option.blockType === 'HOSTEL';
+                                    const isGirls = option.genderTag === 'GIRLS';
+                                    return (
+                                        <li {...props} key={option._id}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', py: 0.5 }}>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    {isHostel ? (
+                                                        <HotelIcon fontSize="small" sx={{ color: isGirls ? '#db2777' : '#0284c7' }} />
+                                                    ) : (
+                                                        <ApartmentIcon fontSize="small" sx={{ color: '#2563eb' }} />
+                                                    )}
+                                                    <Typography variant="body2" sx={{ fontWeight: otherAdmin ? 400 : 500 }}>
+                                                        {option.blockName} ({option.blockCode})
+                                                    </Typography>
+                                                    {isHostel ? (
+                                                        <Chip
+                                                            size="small"
+                                                            label={isGirls ? 'Girls Hostel' : 'Boys Hostel'}
+                                                            sx={{
+                                                                fontSize: '0.68rem',
+                                                                height: 20,
+                                                                fontWeight: 600,
+                                                                bgcolor: isGirls ? 'rgba(219, 39, 119, 0.1)' : 'rgba(2, 132, 199, 0.1)',
+                                                                color: isGirls ? '#db2777' : '#0284c7',
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <Chip
+                                                            size="small"
+                                                            label="Academic"
+                                                            variant="outlined"
+                                                            sx={{ fontSize: '0.68rem', height: 20, fontWeight: 600 }}
+                                                        />
+                                                    )}
+                                                </Box>
+                                                {otherAdmin && (
+                                                    <Chip
+                                                        size="small"
+                                                        label={`Admin: ${otherAdmin.employee?.name || 'Assigned'}`}
+                                                        color="error"
+                                                        variant="outlined"
+                                                        sx={{ fontSize: '0.7rem', height: 22, ml: 1 }}
+                                                    />
+                                                )}
+                                            </Box>
+                                        </li>
+                                    );
+                                }}
                                 value={selectedBlocksToAdd}
                                 onChange={(e, newValue) => setSelectedBlocksToAdd(newValue)}
                                 renderInput={(params) => (
@@ -542,18 +813,29 @@ const ManageServices = () => {
                                         label="Select Managed Blocks (Required for Block Admin)"
                                         placeholder="Pick blocks..."
                                         size="small"
-                                        helperText="Tickets raised in these blocks will be routed to this administrator."
+                                        helperText="Each block can only have ONE Service Admin. Tickets raised in these blocks will route to this administrator."
                                     />
                                 )}
                                 renderTags={(value, getTagProps) =>
-                                    value.map((option, index) => (
-                                        <Chip
-                                            label={`${option.blockName} (${option.blockCode})`}
-                                            size="small"
-                                            {...getTagProps({ index })}
-                                            key={option._id}
-                                        />
-                                    ))
+                                    value.map((option, index) => {
+                                        const bObj = typeof option === 'string' ? availableBlocks.find(b => b._id === option) || { blockName: option, blockCode: '' } : option;
+                                        const isHostel = bObj.blockType === 'HOSTEL';
+                                        const isGirls = bObj.genderTag === 'GIRLS';
+                                        const tag = isHostel ? ` [${isGirls ? 'Girls' : 'Boys'}]` : '';
+                                        return (
+                                            <Chip
+                                                icon={isHostel ? <HotelIcon sx={{ fontSize: '0.9rem !important', color: isGirls ? '#db2777' : '#0284c7' }} /> : <ApartmentIcon sx={{ fontSize: '0.9rem !important' }} />}
+                                                label={`${bObj.blockName}${tag}${bObj.blockCode ? ` (${bObj.blockCode})` : ''}`}
+                                                size="small"
+                                                {...getTagProps({ index })}
+                                                key={bObj._id || index}
+                                                sx={{
+                                                    bgcolor: isHostel ? (isGirls ? 'rgba(219, 39, 119, 0.08)' : 'rgba(2, 132, 199, 0.08)') : undefined,
+                                                    border: isHostel ? `1px solid ${isGirls ? 'rgba(219, 39, 119, 0.3)' : 'rgba(2, 132, 199, 0.3)'}` : undefined
+                                                }}
+                                            />
+                                        );
+                                    })
                                 }
                             />
                         )}
@@ -565,7 +847,11 @@ const ManageServices = () => {
                                 onClick={handleAddAdmin}
                                 sx={{ textTransform: 'none', px: 3, borderRadius: 2 }}
                             >
-                                {addingAdmin ? 'Assigning...' : 'Assign Service Admin'}
+                                {addingAdmin
+                                    ? 'Saving...'
+                                    : (selectedEmployeeToAdd && serviceAdmins.some(a => (a.employee?._id || a.employee) === selectedEmployeeToAdd._id))
+                                        ? 'Update Admin Blocks'
+                                        : 'Assign Service Admin'}
                             </Button>
                         </Box>
                     </Box>
@@ -609,9 +895,20 @@ const ManageServices = () => {
                                                 {member.employee?.institutionId} • {member.employee?.email || ''}
                                             </Typography>
                                         </Box>
-                                        <IconButton edge="end" color="error" size="small" onClick={() => handleRemoveAdmin(member.employee?._id)}>
-                                            <CloseIcon fontSize="small" />
-                                        </IconButton>
+                                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                            {!currentService?.isGlobalService && (
+                                                <Tooltip title="Edit / Add more blocks">
+                                                    <IconButton size="small" color="primary" onClick={() => handleEditAdmin(member)}>
+                                                        <EditIcon fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            )}
+                                            <Tooltip title="Remove Admin">
+                                                <IconButton edge="end" color="error" size="small" onClick={() => handleRemoveAdmin(member.employee?._id)}>
+                                                    <CloseIcon fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Box>
                                     </Box>
 
                                     {!currentService?.isGlobalService && (
@@ -620,16 +917,26 @@ const ManageServices = () => {
                                                 Assigned Blocks:
                                             </Typography>
                                             {member.blocks && member.blocks.length > 0 ? (
-                                                member.blocks.map(b => (
-                                                    <Chip
-                                                        key={b._id}
-                                                        icon={<ApartmentIcon fontSize="small" />}
-                                                        label={`${b.blockName} (${b.blockCode})`}
-                                                        size="small"
-                                                        color="info"
-                                                        variant="outlined"
-                                                    />
-                                                ))
+                                                member.blocks.map(b => {
+                                                    const isHostel = b.blockType === 'HOSTEL';
+                                                    const isGirls = b.genderTag === 'GIRLS';
+                                                    const tag = isHostel ? ` [${isGirls ? 'Girls' : 'Boys'}]` : '';
+                                                    return (
+                                                        <Chip
+                                                            key={b._id}
+                                                            icon={isHostel ? <HotelIcon fontSize="small" sx={{ color: isGirls ? '#db2777' : '#0284c7' }} /> : <ApartmentIcon fontSize="small" />}
+                                                            label={`${b.blockName}${tag} (${b.blockCode})`}
+                                                            size="small"
+                                                            color={isHostel ? (isGirls ? "secondary" : "info") : "primary"}
+                                                            variant="outlined"
+                                                            onDelete={() => handleRemoveBlockFromAdmin(member.employee?._id, b._id)}
+                                                            sx={{
+                                                                borderColor: isHostel ? (isGirls ? '#db2777' : '#0284c7') : undefined,
+                                                                color: isHostel ? (isGirls ? '#db2777' : '#0284c7') : undefined
+                                                            }}
+                                                        />
+                                                    );
+                                                })
                                             ) : (
                                                 <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
                                                     All blocks (Unrestricted)

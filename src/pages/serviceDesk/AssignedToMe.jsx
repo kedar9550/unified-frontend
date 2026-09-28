@@ -11,6 +11,7 @@ import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
+import { PriorityBadge, DueCountdownBadge } from '../../utils/serviceDeskSla';
 
 const getStatusColor = (status) => {
     switch (status) {
@@ -100,20 +101,32 @@ const AssignedToMe = () => {
                     </Box>
                 ) : (
                     <DataTable 
-                        columns={["Ticket #", "Service", "Title", "Priority", "Due Date", "Status", "Action"]}
-                        alignments={["left", "left", "left", "center", "left", "center", "center"]}
+                        columns={["Ticket #", "Service", "Title", "Priority", "Due Date / SLA", "Status", "Action"]}
+                        alignments={["left", "left", "left", "center", "center", "center", "center"]}
                         nonSortableColumns={[6]}
                         rows={tickets.map((t) => [
                             { value: t.ticketNumber, display: <Typography fontWeight={600} color="primary">#{t.ticketNumber}</Typography> },
                             { value: t.service?.name || 'Unknown', display: t.service?.name || 'Unknown' },
-                            { value: t.title, display: t.title },
-                            { 
-                                value: t.priority, 
-                                display: <Typography fontSize="0.875rem" fontWeight={500} color={t.priority === 'HIGH' ? 'error.main' : t.priority === 'MEDIUM' ? 'warning.main' : 'text.secondary'}>{t.priority}</Typography> 
+                            {
+                                value: t.title,
+                                display: (
+                                    <Box>
+                                        <Typography sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t.title}</Typography>
+                                        {t.subcategory && t.subcategory !== t.title && (
+                                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                                {t.subcategory}
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                )
                             },
                             { 
-                                value: t.dueDate, 
-                                display: t.dueDate ? new Date(t.dueDate).toLocaleDateString() : 'N/A' 
+                                value: t.priority, 
+                                display: <PriorityBadge priority={t.priority} />
+                            },
+                            { 
+                                value: t.dueDate || '', 
+                                display: <DueCountdownBadge dueDate={t.dueDate} status={t.status} /> 
                             },
                             { 
                                 value: (() => {
