@@ -16,7 +16,8 @@ import {
     CheckCircle as CheckCircleIcon,
     RadioButtonUnchecked as RadioButtonUncheckedIcon,
     WatchLater as WatchLaterIcon,
-    Person as PersonIcon
+    Person as PersonIcon,
+    EditCalendar as EditCalendarIcon
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
@@ -25,6 +26,13 @@ import API from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import { toast } from 'sonner';
+import {
+    PriorityBadge,
+    DueCountdownBadge,
+    calculateSlaDueDate,
+    formatForDateTimeInput,
+    formatExactDateTime
+} from '../../utils/serviceDeskSla';
 
 const getStatusColor = (status) => {
     switch (status) {
@@ -65,13 +73,19 @@ const TicketDetail = () => {
     // Modals
     const [assignModalOpen, setAssignModalOpen] = useState(false);
     const [rejectModalOpen, setRejectModalOpen] = useState(false);
+    const [slaModalOpen, setSlaModalOpen] = useState(false);
     
     // Assign state
     const [serviceEmps, setServiceEmps] = useState([]);
     const [selectedEmps, setSelectedEmps] = useState([]);
-    const [assignPriority, setAssignPriority] = useState('');
+    const [assignPriority, setAssignPriority] = useState('MEDIUM');
     const [assignDueDate, setAssignDueDate] = useState('');
     const [assigning, setAssigning] = useState(false);
+
+    // SLA state
+    const [slaPriority, setSlaPriority] = useState('MEDIUM');
+    const [slaDueDate, setSlaDueDate] = useState('');
+    const [updatingSla, setUpdatingSla] = useState(false);
     
     // Reject state
     const [rejectReason, setRejectReason] = useState('');
@@ -179,9 +193,10 @@ const TicketDetail = () => {
     // --- Admin Actions ---
     const openAssignModal = async () => {
         try {
-            setAssignPriority(ticket.priority || 'MEDIUM');
-            setAssignDueDate(ticket.dueDate ? ticket.dueDate.split('T')[0] : '');
-            const existingIds = ticket.assignedTo.filter(a => a.status !== 'REJECTED').map(a => a.employee._id);
+            const p = ticket.priority || 'MEDIUM';
+            setAssignPriority(p);
+            setAssignDueDate(formatForDateTimeInput(ticket.dueDate || calculateSlaDueDate(p, ticket.createdAt)));
+            const existingIds = (ticket.assignedTo || []).filter(a => a.status !== 'REJECTED').map(a => a.employee?._id || a.employee);
             setSelectedEmps([]);
             
             const res = await API.get(`/api/service-desk/services/${ticket.service._id}/emps`);
@@ -195,6 +210,14 @@ const TicketDetail = () => {
             toast.error('Failed to fetch service employees');
         }
     };
+
+    const handleAssignPriorityChange = (newPriority) => {
+        setAssignPriority(newPriority);
+        if (ticket) {
+            const newDue = calculateSlaDueDate(newPriority, ticket.createdAt || new Date());
+            setAssignDueDate(formatForDateTimeInput(newDue));
+        }
+    };
     
     const handleAssign = async () => {
         if (selectedEmps.length === 0) {
@@ -206,7 +229,7 @@ const TicketDetail = () => {
             const res = await API.post(`/api/service-desk/tickets/${id}/assign`, {
                 employeeIds: selectedEmps.map(e => e._id),
                 priority: assignPriority,
-                dueDate: assignDueDate || null
+                dueDate: assignDueDate ? new Date(assignDueDate) : null
             });
             if (res.data.success) {
                 toast.success('Ticket assigned successfully');
@@ -218,6 +241,41 @@ const TicketDetail = () => {
             toast.error(error.response?.data?.message || 'Failed to assign ticket');
         } finally {
             setAssigning(false);
+        }
+    };
+
+    // --- SLA / Due Date Adjustment Actions ---
+    const openSlaModal = () => {
+        const p = ticket.priority || 'MEDIUM';
+        setSlaPriority(p);
+        setSlaDueDate(formatForDateTimeInput(ticket.dueDate || calculateSlaDueDate(p, ticket.createdAt)));
+        setSlaModalOpen(true);
+    };
+
+    const handleSlaPriorityChange = (newPriority) => {
+        setSlaPriority(newPriority);
+        if (ticket) {
+            const newDue = calculateSlaDueDate(newPriority, ticket.createdAt || new Date());
+            setSlaDueDate(formatForDateTimeInput(newDue));
+        }
+    };
+
+    const handleSlaUpdate = async () => {
+        try {
+            setUpdatingSla(true);
+            const res = await API.put(`/api/service-desk/tickets/${id}/sla`, {
+                priority: slaPriority,
+                dueDate: slaDueDate ? new Date(slaDueDate) : null
+            });
+            if (res.data.success) {
+                toast.success('Priority and Due Date updated successfully');
+                setSlaModalOpen(false);
+                fetchTicketData();
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to update SLA');
+        } finally {
+            setUpdatingSla(false);
         }
     };
     
@@ -381,12 +439,24 @@ const TicketDetail = () => {
                             <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: 0.5 }}>
                                 {ticket.ticketNumber}
                             </Typography>
-                            <Typography variant="h5" sx={{ fontWeight: 700, mt: 0.5, color: 'var(--text-primary)' }}>
-                                {ticket.title}
-                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 0.5, flexWrap: 'wrap' }}>
+                                <Typography variant="h5" sx={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                                    {ticket.title}
+                                </Typography>
+                                {ticket.subcategory && (
+                                    <Chip 
+                                        label={`Subcategory: ${ticket.subcategory}`} 
+                                        size="small" 
+                                        variant="outlined" 
+                                        color="primary" 
+                                        sx={{ fontWeight: 600, borderRadius: '6px' }} 
+                                    />
+                                )}
+                            </Box>
                         </Box>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                            <Chip label={ticket.priority} size="small" color="error" sx={{ fontWeight: 700, borderRadius: '4px' }} />
+                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <PriorityBadge priority={ticket.priority} size="medium" />
+                            <DueCountdownBadge dueDate={ticket.dueDate} status={ticket.status} size="medium" />
                             <Chip label={ticket.status} size="small" color={getStatusColor(ticket.status)} sx={{ fontWeight: 700, borderRadius: '4px' }} />
                         </Box>
                     </Box>
@@ -411,7 +481,13 @@ const TicketDetail = () => {
                         <Grid xs={6} sm={3}>
                             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Created</Typography>
                             <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                {new Date(ticket.createdAt).toLocaleDateString()}
+                                {ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                            </Typography>
+                        </Grid>
+                        <Grid xs={6} sm={3}>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Target Due Date</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                                {formatExactDateTime(ticket.dueDate)}
                             </Typography>
                         </Grid>
                         <Grid xs={6} sm={3}>
@@ -424,7 +500,8 @@ const TicketDetail = () => {
                             <Grid xs={6} sm={3}>
                                 <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Location / Block</Typography>
                                 <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e40af' }}>
-                                    {ticket.block.blockName} ({ticket.block.blockCode})
+                                    {ticket.block.blockName}
+                                    {ticket.block.blockType === 'HOSTEL' ? ` (${ticket.block.genderTag === 'GIRLS' ? 'Girls Hostel' : 'Boys Hostel'})` : ''} ({ticket.block.blockCode})
                                 </Typography>
                             </Grid>
                         )}
@@ -808,6 +885,17 @@ const TicketDetail = () => {
                                     )}
                                     <Button 
                                         variant="outlined" 
+                                        color="warning"
+                                        startIcon={<EditCalendarIcon />}
+                                        onClick={openSlaModal}
+                                        fullWidth
+                                        sx={{ textTransform: 'none', borderRadius: '8px', py: 1 }}
+                                    >
+                                        Update SLA / Due Date
+                                    </Button>
+
+                                    <Button 
+                                        variant="outlined" 
                                         color="error"
                                         startIcon={<CancelIcon />}
                                         onClick={() => setRejectModalOpen(true)}
@@ -909,35 +997,36 @@ const TicketDetail = () => {
             <Dialog open={assignModalOpen} onClose={() => setAssignModalOpen(false)} maxWidth="sm" fullWidth>
                 <DialogTitle>Assign Ticket #{ticket?.ticketNumber}</DialogTitle>
                 <DialogContent dividers sx={{ minHeight: '300px' }}>
-                    <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
+                    <Box sx={{ mb: 3, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
                         <FormControl fullWidth size="small">
                             <InputLabel>Priority</InputLabel>
                             <Select
                                 value={assignPriority}
                                 label="Priority"
-                                onChange={(e) => setAssignPriority(e.target.value)}
+                                onChange={(e) => handleAssignPriorityChange(e.target.value)}
                             >
-                                <MenuItem value="LOW">Low</MenuItem>
-                                <MenuItem value="MEDIUM">Medium</MenuItem>
-                                <MenuItem value="HIGH">High</MenuItem>
+                                <MenuItem value="CRITICAL">Critical (2 Hours)</MenuItem>
+                                <MenuItem value="HIGH">High (4 Hours)</MenuItem>
+                                <MenuItem value="MEDIUM">Medium (24 Hours)</MenuItem>
+                                <MenuItem value="LOW">Low (72 Hours)</MenuItem>
                             </Select>
                         </FormControl>
 
                         <TextField
                             fullWidth
                             size="small"
-                            type="date"
-                            label="Due Date"
+                            type="datetime-local"
+                            label="Due Date & Time"
                             slotProps={{ 
-                                inputLabel: { shrink: true },
-                                htmlInput: { min: new Date().toISOString().split('T')[0] }
+                                inputLabel: { shrink: true }
                             }}
                             value={assignDueDate}
                             onChange={(e) => setAssignDueDate(e.target.value)}
+                            helperText="Target resolution deadline"
                         />
                     </Box>
 
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>Assign To</Typography>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Assign To Service Employees *</Typography>
                     <Autocomplete
                         multiple
                         fullWidth
@@ -960,6 +1049,50 @@ const TicketDetail = () => {
                     <Button onClick={() => setAssignModalOpen(false)} disabled={assigning}>Cancel</Button>
                     <Button variant="contained" onClick={handleAssign} disabled={assigning || selectedEmps.length === 0}>
                         {assigning ? 'Assigning...' : 'Assign'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* SLA / Due Date Adjustment Modal */}
+            <Dialog open={slaModalOpen} onClose={() => setSlaModalOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Update Priority & Due Date - #{ticket?.ticketNumber}</DialogTitle>
+                <DialogContent dividers>
+                    <Typography variant="body2" sx={{ mb: 2.5, color: 'text.secondary' }}>
+                        Modify ticket severity / priority and expected target deadline.
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Priority</InputLabel>
+                            <Select
+                                value={slaPriority}
+                                label="Priority"
+                                onChange={(e) => handleSlaPriorityChange(e.target.value)}
+                            >
+                                <MenuItem value="CRITICAL">Critical (2 Hours SLA)</MenuItem>
+                                <MenuItem value="HIGH">High (4 Hours SLA)</MenuItem>
+                                <MenuItem value="MEDIUM">Medium (24 Hours SLA)</MenuItem>
+                                <MenuItem value="LOW">Low (72 Hours SLA)</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        <TextField
+                            fullWidth
+                            size="small"
+                            type="datetime-local"
+                            label="Target Due Date & Time"
+                            slotProps={{ 
+                                inputLabel: { shrink: true }
+                            }}
+                            value={slaDueDate}
+                            onChange={(e) => setSlaDueDate(e.target.value)}
+                            helperText="Calculated from priority SLA, or customize as needed"
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, px: 3 }}>
+                    <Button onClick={() => setSlaModalOpen(false)} disabled={updatingSla}>Cancel</Button>
+                    <Button variant="contained" onClick={handleSlaUpdate} disabled={updatingSla}>
+                        {updatingSla ? 'Updating...' : 'Save Changes'}
                     </Button>
                 </DialogActions>
             </Dialog>
