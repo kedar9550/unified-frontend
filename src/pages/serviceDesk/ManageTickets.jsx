@@ -286,7 +286,23 @@ const ManageTickets = () => {
                         nonSortableColumns={[7]}
                         rows={tickets.map(t => [
                             { value: t.ticketNumber, display: <Typography fontWeight={600} color="primary">#{t.ticketNumber}</Typography> },
-                            { value: t.createdBy?.name, display: t.createdBy?.name || 'Unknown' },
+                            { 
+                                value: t.creatorType === 'STUDENT' ? t.studentDetails?.studentname : t.createdBy?.name, 
+                                display: t.creatorType === 'STUDENT' ? (
+                                    <Box>
+                                        <Typography sx={{ fontWeight: 600, color: '#1d4ed8', fontSize: '0.875rem' }}>
+                                            🎓 {t.studentDetails?.studentname || 'Student'}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                            {t.studentDetails?.rollno} ({t.studentDetails?.branch || 'Student'})
+                                        </Typography>
+                                    </Box>
+                                ) : (
+                                    <Typography sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
+                                        {t.createdBy?.name || 'Staff Member'}
+                                    </Typography>
+                                )
+                            },
                             {
                                 value: t.title,
                                 display: (
