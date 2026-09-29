@@ -466,9 +466,20 @@ const TicketDetail = () => {
                     <Grid container spacing={3}>
                         <Grid xs={6} sm={3}>
                             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Created By</Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                {ticket.createdBy?.name || 'Unknown'}
-                            </Typography>
+                            {ticket.creatorType === 'STUDENT' ? (
+                                <Box>
+                                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#1d4ed8' }}>
+                                        🎓 {ticket.studentDetails?.studentname || 'Student'} ({ticket.studentDetails?.rollno})
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                        {ticket.studentDetails?.branch || ''} {ticket.studentDetails?.mobilenumber ? `• 📞 ${ticket.studentDetails.mobilenumber}` : ''}
+                                    </Typography>
+                                </Box>
+                            ) : (
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                    {ticket.createdBy?.name || 'Staff Member'}
+                                </Typography>
+                            )}
                         </Grid>
                         <Grid xs={6} sm={3}>
                             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Assigned To</Typography>
