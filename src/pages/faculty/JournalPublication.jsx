@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { Search, Close, Download, Description, Groups, Article, Person, AttachFile, Visibility, Edit, CurrencyRupee, CardGiftcard } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
+import { Alert, AlertTitle } from "@mui/material";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn
@@ -631,7 +632,8 @@ export default function JournalPublication() {
     form.isWos,
     form.journalType,
     form.isStudentsInvolved,
-    form.otherAuthors
+    form.otherAuthors,
+    form.applyingSeedGrant
   ]);
 
   useEffect(() => {
@@ -672,6 +674,11 @@ export default function JournalPublication() {
         setScannedSdgResults(null);
       }
       if (k === "isStudentsInvolved") {
+        if (val === "Yes") {
+          if (parseInt(newForm.totalAuthors) < 2 || isNaN(parseInt(newForm.totalAuthors))) {
+            newForm.totalAuthors = 2;
+          }
+        }
         if (val === "No") {
           newForm.otherAuthors = (newForm.otherAuthors || []).map(a => ({
             ...a,
@@ -982,6 +989,19 @@ export default function JournalPublication() {
     const val = e.target.value;
     setForm((prev) => {
       let newForm = { ...prev, isStudentsInvolved: val };
+      
+      // If previous value was "No" and new is "Yes", increment by 1
+      if (prev.isStudentsInvolved === "No" && val === "Yes") {
+        if (parseInt(newForm.totalAuthors) == 1) {
+          newForm.totalAuthors = parseInt(newForm.totalAuthors) + 1;
+        }
+      } 
+      // If previous value was "Yes" and new is "No", decrement by 1
+      else if (prev.isStudentsInvolved === "Yes" && val === "No") {
+        if (parseInt(newForm.totalAuthors) == 2) {
+          newForm.totalAuthors = parseInt(newForm.totalAuthors) - 1;
+        }
+      }
 
       if (val === "No") {
         if (newForm.otherAuthors) {
@@ -1135,6 +1155,7 @@ export default function JournalPublication() {
         let val = form[k] ?? "";
         if (k === "hIndex" && (val === "" || val === undefined || val === null)) val = "0";
         if (k === "jcrImpactFactor" && (val === "" || val === undefined || val === null)) val = "0";
+        if (k === "applyIncentive" && parseInt(form.userAuthorPosition) > 5) val = "No";
         fd.append(k, val);
       });
 
@@ -2091,6 +2112,8 @@ export default function JournalPublication() {
         <Box>
           {(() => {
             const hasPgStudent = form.isStudentsInvolved === "Yes" && (form.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+            const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
+            const disableIncentive = hasPgStudent || isPositionGreaterThan5;
             return (
               <>
                 <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
@@ -2098,18 +2121,23 @@ export default function JournalPublication() {
                   size="small"
                   fullWidth
                   displayEmpty
-                  value={hasPgStudent ? "No" : form.applyIncentive}
+                  value={disableIncentive ? "No" : form.applyIncentive}
                   onChange={set("applyIncentive")}
-                  disabled={hasPgStudent}
-                  sx={hasPgStudent ? disabledField : {}}
+                  disabled={disableIncentive}
+                  sx={disableIncentive ? disabledField : {}}
                 >
                   <MenuItem value="">Select</MenuItem>
                   <MenuItem value="Yes">Yes</MenuItem>
                   <MenuItem value="No">No</MenuItem>
                 </Select>
-                {hasPgStudent && (
+                {hasPgStudent && !isPositionGreaterThan5 && (
                   <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
                     * Incentive is not applicable for publications with PG student co-authors.
+                  </Typography>
+                )}
+                {isPositionGreaterThan5 && (
+                  <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                    * Application for incentive is only for the first 5 author positions.
                   </Typography>
                 )}
               </>
@@ -2782,7 +2810,7 @@ export default function JournalPublication() {
           </Box>
 
           {/* Remarks/Comments if available */}
-          {(data.hodComment || data.rndComment) && (
+          {(data.hodComment || data.rndComment || data.approvedAmount) && (
             <Box sx={{ mt: 4, display: "flex", flexDirection: "column", gap: 2 }}>
               {data.hodComment && (
                 <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
@@ -2790,10 +2818,19 @@ export default function JournalPublication() {
                   <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.hodComment}"</Typography>
                 </Box>
               )}
-              {data.rndComment && (
+              {(data.rndComment || data.approvedAmount) && (
                 <Box sx={{ p: 2, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "10px", border: "1px solid rgba(76, 175, 80, 0.2)" }}>
-                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
-                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
+                  {data.rndComment && (
+                    <>
+                      <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
+                      <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
+                    </>
+                  )}
+                  {data.approvedAmount && (
+                    <Typography variant="h6" sx={{ mt: data.rndComment ? 2 : 0, fontWeight: 900, color: "#10b981" }}>
+                      Approved Amount: ₹{data.approvedAmount}
+                    </Typography>
+                  )}
                 </Box>
               )}
             </Box>
@@ -2813,6 +2850,17 @@ export default function JournalPublication() {
         subtitle="Manage and submit your journal publications"
         onBack={viewMode !== "list" ? () => setViewMode("list") : undefined}
       />
+      {(!user?.panNumber || !user?.college) && (
+        <Box sx={{ px: 3, mb: 4 }}>
+          <Alert severity="warning" variant="filled" sx={{ borderRadius: "16px" }}>
+            <AlertTitle sx={{ fontWeight: 700 }}>Profile Details Incomplete</AlertTitle>
+            <Typography variant="body2">
+              You must complete the following fields in your profile before you submit:
+              <strong> PAN Number, College</strong>. Please navigate to the Profile settings to update them.
+            </Typography>
+          </Alert>
+        </Box>
+      )}
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}

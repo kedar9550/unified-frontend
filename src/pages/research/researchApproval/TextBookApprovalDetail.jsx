@@ -22,6 +22,11 @@ import EditResearchDetailsDialog from "./EditResearchDetailsDialog";
 
 const TextBookApprovalDetail = ({ id, onBack, role }) => {
     const [data, setData] = useState(null);
+    const r = typeof role !== 'undefined' ? role : (typeof effectiveRole !== 'undefined' ? effectiveRole : '');
+    const isDean = r === 'RESEARCH_DEAN';
+    const isCoordinator = r === 'RESEARCH_COORDINATOR';
+    const isResearchAdmin = isDean || isCoordinator;
+    const isHOD = !isResearchAdmin;
     const [loading, setLoading] = useState(true);
     const [remarks, setRemarks] = useState("");
     const [approvedAmount, setApprovedAmount] = useState("");
@@ -32,19 +37,17 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
     const [approveDialogOpen, setApproveDialogOpen] = useState(false);
     const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
 
-    const isHOD = !role || role === 'HOD';
-    const isDean = role === 'RESEARCH_DEAN';
-    const isCoordinator = role === 'RESEARCH_COORDINATOR';
-    const isResearchAdmin = isDean || isCoordinator;
-
     useEffect(() => {
         const fetchDetails = async () => {
             try {
                 const res = await API.get(`/api/research/textbook/${id}`);
                 if (res.data?.success) {
                     setData(res.data.data);
-                    if (res.data.data.rndComment) setRemarks(res.data.data.rndComment);
-                    else if (res.data.data.hodComment) setRemarks(res.data.data.hodComment);
+                    if (isResearchAdmin) {
+                        if (res.data.data.rndComment) setRemarks(res.data.data.rndComment);
+                    } else {
+                        if (res.data.data.hodComment) setRemarks(res.data.data.hodComment);
+                    }
                     if (res.data.data.approvedAmount) setApprovedAmount(res.data.data.approvedAmount);
                     if (res.data.data.appraisalEligible) setAppraisalEligible(res.data.data.appraisalEligible);
                 }
@@ -85,7 +88,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                 appraisalEligible: isResearchAdmin && action === 'Approve' ? (appraisalEligible || undefined) : undefined
             });
             if (res.data?.success) {
-                toast.success(`Request ${action === 'Approve' ? 'Approved' : 'Rejected'} successfully`);
+                toast.success(`Request ${action === 'Approve' ? (isHOD ? 'Forwarded to R&D' : 'Approved') : 'Rejected'} successfully`);
                 onBack(); // Go back to list on success
             }
         } catch (error) {
@@ -551,7 +554,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
 
                 {/* Actions Section */}
                 <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 0" } }}>
-                    {((isResearchAdmin && data.status === 'Pending at R&D') || (isHOD && data.status === 'Pending at HOD')) ? (
+                    {((isResearchAdmin && data.status === 'Pending at R&D') || (isHOD && data.status === 'Pending')) ? (
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", p: 4, mb: 0, height: "100%" }}>
                             <SectionHeader icon={<GavelIcon />} title="Review Decision" />
 

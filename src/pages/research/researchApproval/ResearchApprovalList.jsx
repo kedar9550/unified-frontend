@@ -30,16 +30,18 @@ import {
 
 const ResearchApprovalList = ({ role }) => {
     const navigate = useNavigate();
+    const r = typeof role !== 'undefined' ? role : (typeof effectiveRole !== 'undefined' ? effectiveRole : '');
+    const isDean = r === 'RESEARCH_DEAN';
+    const isCoordinator = r === 'RESEARCH_COORDINATOR';
+    const isResearchAdmin = isDean || isCoordinator;
+    const isHOD = !isResearchAdmin;
+
 
     // Determine context
-    const isHOD = !role || role === 'HOD';
-    const isDean = role === 'RESEARCH_DEAN';
-    const isCoordinator = role === 'RESEARCH_COORDINATOR';
-    const isResearchAdmin = isDean || isCoordinator;
 
     // Filters State
     const [typeFilter, setTypeFilter] = useState(() => sessionStorage.getItem("researchTypeFilter") || "All");
-    const [statusFilter, setStatusFilter] = useState(() => sessionStorage.getItem("researchStatusFilter") || "Pending");
+    const [statusFilter, setStatusFilter] = useState("Pending");
     const [durationFilter, setDurationFilter] = useState(() => sessionStorage.getItem("researchDurationFilter") || "All");
     const [fromDate, setFromDate] = useState(() => sessionStorage.getItem("researchFromDate") || "");
     const [toDate, setToDate] = useState(() => sessionStorage.getItem("researchToDate") || "");
@@ -47,12 +49,11 @@ const ResearchApprovalList = ({ role }) => {
 
     useEffect(() => {
         sessionStorage.setItem("researchTypeFilter", typeFilter);
-        sessionStorage.setItem("researchStatusFilter", statusFilter);
         sessionStorage.setItem("researchDurationFilter", durationFilter);
         sessionStorage.setItem("researchFromDate", fromDate);
         sessionStorage.setItem("researchToDate", toDate);
         sessionStorage.setItem("researchSearchQuery", searchQuery);
-    }, [typeFilter, statusFilter, durationFilter, fromDate, toDate, searchQuery]);
+    }, [typeFilter, durationFilter, fromDate, toDate, searchQuery]);
 
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -151,10 +152,10 @@ const ResearchApprovalList = ({ role }) => {
             item.type,
             submitDate,
             {
-                value: item.status === "Pending at HOD" ? "Pending at HOD / Dean" : item.status,
+                value: item.status === "Pending" ? "Pending at HOD / Dean" : item.status,
                 display: (
                     <Chip
-                        label={item.status === "Pending at HOD" ? "Pending at HOD / Dean" : item.status}
+                        label={item.status === "Pending" ? "Pending at HOD / Dean" : item.status}
                         size="small"
                         sx={{
                             bgcolor: statusStyle.bg,
@@ -243,7 +244,7 @@ const ResearchApprovalList = ({ role }) => {
                                 MenuProps={{ disableAriaHidden: true }}
                             >
                                 <MenuItem value="All">All Status</MenuItem>
-                                <MenuItem value="Pending">Pending at R&D</MenuItem>
+                                <MenuItem value="Pending">Pending</MenuItem>
                                 <MenuItem value="Approved">Approved</MenuItem>
                                 <MenuItem value="Rejected">Rejected</MenuItem>
                             </Select>

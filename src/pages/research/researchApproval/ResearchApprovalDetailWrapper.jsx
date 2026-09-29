@@ -15,11 +15,13 @@ import NovelProductApprovalDetail from './NovelProductApprovalDetail';
 
 const ResearchApprovalDetailWrapper = ({ role }) => {
     const { type, id } = useParams();
+    const r = typeof role !== 'undefined' ? role : (typeof effectiveRole !== 'undefined' ? effectiveRole : '');
+    const isDean = r === 'RESEARCH_DEAN';
+    const isCoordinator = r === 'RESEARCH_COORDINATOR';
+    const isResearchAdmin = isDean || isCoordinator;
+    const isHOD = !isResearchAdmin;
     const navigate = useNavigate();
 
-    const isHOD = !role || role === 'HOD';
-    const isDean = role === 'RESEARCH_DEAN';
-    const isCoordinator = role === 'RESEARCH_COORDINATOR';
 
     const goBack = () => {
         if (window.history.length > 2) {

@@ -21,6 +21,11 @@ import EditResearchDetailsDialog from "./EditResearchDetailsDialog";
 
 const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
     const [data, setData] = useState(null);
+    const r = typeof role !== 'undefined' ? role : (typeof effectiveRole !== 'undefined' ? effectiveRole : '');
+    const isDean = r === 'RESEARCH_DEAN';
+    const isCoordinator = r === 'RESEARCH_COORDINATOR';
+    const isResearchAdmin = isDean || isCoordinator;
+    const isHOD = !isResearchAdmin;
     const [loading, setLoading] = useState(true);
     const [remarks, setRemarks] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
@@ -29,19 +34,17 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
     const [approveDialogOpen, setApproveDialogOpen] = useState(false);
     const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
 
-    const isHOD = !role || role === 'HOD';
-    const isDean = role === 'RESEARCH_DEAN';
-    const isCoordinator = role === 'RESEARCH_COORDINATOR';
-    const isResearchAdmin = isDean || isCoordinator;
-
     useEffect(() => {
         const fetchDetails = async () => {
             try {
                 const res = await API.get(`/api/research/phd-scholar/${id}`);
                 if (res.data?.success) {
                     setData(res.data.data);
-                    if (res.data.data.rndComment) setRemarks(res.data.data.rndComment);
-                    else if (res.data.data.hodComment) setRemarks(res.data.data.hodComment);
+                    if (isResearchAdmin) {
+                        if (res.data.data.rndComment) setRemarks(res.data.data.rndComment);
+                    } else {
+                        if (res.data.data.hodComment) setRemarks(res.data.data.hodComment);
+                    }
                 }
             } catch (error) {
                 console.error("Failed to fetch Ph.D. details", error);
@@ -323,7 +326,7 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
                 {data.hodComment && <Box sx={{ flex: 1, minWidth: 300 }}><Card sx={{ ...cardStyle, borderLeft: "4px solid #ffc107", height: "100%", mb: 0 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><HistoryIcon sx={{ color: "#ffc107" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>HOD Review</Typography></Box><Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}><Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.hodComment}"</Typography></Box></Card></Box>}
                 
                 <Box sx={{ flex: 1, minWidth: 350 }}>
-                    {((isResearchAdmin && data.status === 'Pending at R&D') || (isHOD && data.status === 'Pending at HOD')) ? (
+                    {((isResearchAdmin && data.status === 'Pending at R&D') || (isHOD && data.status === 'Pending')) ? (
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
                                 <GavelIcon sx={{ color: "var(--color-primary)" }} />

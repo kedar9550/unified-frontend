@@ -86,6 +86,11 @@ const getMatchedSdgBadgeList = (sdgInput) => {
 const JournalApprovalDetail = ({ id, onBack, role }) => {
     const { user } = useAuth();
     const [data, setData] = useState(null);
+    const r = typeof role !== 'undefined' ? role : (typeof effectiveRole !== 'undefined' ? effectiveRole : '');
+    const isDean = r === 'RESEARCH_DEAN';
+    const isCoordinator = r === 'RESEARCH_COORDINATOR';
+    const isResearchAdmin = isDean || isCoordinator;
+    const isHOD = !isResearchAdmin;
     const [loading, setLoading] = useState(true);
     const [remarks, setRemarks] = useState("");
     const [approvedAmount, setApprovedAmount] = useState("");
@@ -204,10 +209,6 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
         };
     }, [data?.facultyId]);
 
-    const isHOD = !role || role === 'HOD';
-    const isDean = role === 'RESEARCH_DEAN';
-    const isCoordinator = role === 'RESEARCH_COORDINATOR';
-    const isResearchAdmin = isDean || isCoordinator;
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -224,8 +225,11 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 if (res.data?.success) {
                     const journal = res.data.data;
                     setData(journal);
-                    if (journal.rndComment) setRemarks(journal.rndComment);
-                    else if (journal.hodComment) setRemarks(journal.hodComment);
+                    if (isResearchAdmin) {
+                        if (journal.rndComment) setRemarks(journal.rndComment);
+                    } else {
+                        if (journal.hodComment) setRemarks(journal.hodComment);
+                    }
                     if (journal.approvedAmount) setApprovedAmount(journal.approvedAmount);
                     if (journal.hIndex) setHIndex(journal.hIndex);
                     if (journal.citations) setCitations(journal.citations);
@@ -300,7 +304,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
 
             const res = await API.put(endpoint, payload);
             if (res.data?.success) {
-                toast.success(`Request ${action === 'Approve' ? 'Approved' : 'Rejected'} successfully`);
+                toast.success(`Request ${action === 'Approve' ? (isHOD ? 'Forwarded to R&D' : 'Approved') : 'Rejected'} successfully`);
                 onBack();
             }
         } catch (error) {
@@ -1113,7 +1117,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 {data.hodComment && <Box sx={{ flex: 1, minWidth: 300 }}><Card sx={{ ...cardStyle, borderLeft: "4px solid #ffc107", height: "100%", mb: 0 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><HistoryIcon sx={{ color: "#ffc107" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>HOD Review</Typography></Box><Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}><Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.hodComment}"</Typography></Box></Card></Box>}
 
                 <Box sx={{ flex: 1, minWidth: 350 }}>
-                    {(isResearchAdmin && data.status === 'Pending at R&D') ? (
+                    {((isResearchAdmin && data.status === 'Pending at R&D') || (isHOD && data.status === 'Pending')) ? (
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
 
@@ -1169,7 +1173,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                             onClick={() => handleAction(decisionMode)} 
                                             sx={{ px: 4 }}
                                         >
-                                            {decisionMode === 'Reject' ? "Confirm Reject" : "Save Record"}
+                                            {decisionMode === 'Reject' ? "Confirm Reject" : "Approve"}
                                         </Button>
                                     </Box>
                                 </Box>
