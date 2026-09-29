@@ -88,7 +88,7 @@ export default function Transactions({ initialStatusFilter = 'All', activeTab = 
         setHasFetched(true);
 
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000);
+        const timeoutId = setTimeout(() => controller.abort(), 120000);
 
         try {
             const res = await API.get(`/api/payments/razorpay?fromDate=${start}&toDate=${end}`, {
@@ -136,7 +136,11 @@ export default function Transactions({ initialStatusFilter = 'All', activeTab = 
     // Quick Date Presets
     const handlePresetChange = (preset) => {
         setActivePreset(preset);
-        if (preset === 'custom') return;
+        if (preset === 'custom') {
+            setFromDate('');
+            setToDate('');
+            return;
+        }
         if (preset === '') {
             setFromDate('');
             setToDate('');
