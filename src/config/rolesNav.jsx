@@ -80,6 +80,7 @@ export const ROLE_ROUTES = {
       text: "Value addition",
       icon: <AccountBalance />,
       nested: [
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/value-addition/contribution", icon: <WorkspacePremium /> },
       ],
@@ -177,7 +178,8 @@ export const ROLE_ROUTES = {
     //   text: "Special Data Entry",
     //   icon: <Description />,
     //   nested: [
-    //     { text: "Resource Utilization", path: "/uniprime/special-data-entry/resource-utilization" },
+    //     { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
+        { text: "Resource Utilization", path: "/uniprime/special-data-entry/resource-utilization" },
     //   ]
     // },
     {
@@ -293,6 +295,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -306,6 +309,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -319,6 +323,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -332,6 +337,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -345,6 +351,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -358,6 +365,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -371,6 +379,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -384,6 +393,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -397,6 +407,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -410,6 +421,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -457,11 +469,11 @@ export const ROLE_ROUTES = {
   "RESEARCH_DEAN": [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     {
-      text: "Approvals",
-      icon: <Verified />,
+      text: "Research",
+      icon: <LibraryBooks />,
       nested: [
         {
-          text: "Research",
+          text: "Approvals",
           path: "/research-dean/approvals"
         },
         // {

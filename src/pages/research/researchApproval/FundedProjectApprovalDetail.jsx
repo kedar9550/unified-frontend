@@ -23,6 +23,11 @@ import EditResearchDetailsDialog from "./EditResearchDetailsDialog";
 
 const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
     const { user, activeRole } = useAuth();
+    const r = typeof role !== 'undefined' ? role : (typeof effectiveRole !== 'undefined' ? effectiveRole : '');
+    const isDean = r === 'RESEARCH_DEAN';
+    const isCoordinator = r === 'RESEARCH_COORDINATOR';
+    const isResearchAdmin = isDean || isCoordinator;
+    const isHOD = !isResearchAdmin;
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [remarks, setRemarks] = useState("");
@@ -34,10 +39,6 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
     const [editOpen, setEditOpen] = useState(false);
 
     const effectiveRole = role || activeRole || user?.selectedRole || user?.role || '';
-    const isHOD = effectiveRole === 'HOD';
-    const isDean = effectiveRole === 'RESEARCH_DEAN';
-    const isCoordinator = effectiveRole === 'RESEARCH_COORDINATOR';
-    const isResearchAdmin = isDean || isCoordinator || effectiveRole.includes('RESEARCH') || (!isHOD && effectiveRole !== '');
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -45,8 +46,11 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
                 const res = await API.get(`/api/research/funded-project/${id}`);
                 if (res.data?.success) {
                     setData(res.data.data);
-                    if (res.data.data.rndComment) setRemarks(res.data.data.rndComment);
-                    else if (res.data.data.hodComment) setRemarks(res.data.data.hodComment);
+                    if (isResearchAdmin) {
+                        if (res.data.data.rndComment) setRemarks(res.data.data.rndComment);
+                    } else {
+                        if (res.data.data.hodComment) setRemarks(res.data.data.hodComment);
+                    }
                     if (res.data.data.approvedAmount) setApprovedAmount(res.data.data.approvedAmount);
                     if (res.data.data.appraisalEligible) setAppraisalEligible(res.data.data.appraisalEligible);
                 }
@@ -87,7 +91,7 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
 
             const res = await API.put(endpoint, payload);
             if (res.data?.success) {
-                toast.success(`Request ${action === 'Approve' ? 'Approved' : 'Rejected'} successfully`);
+                toast.success(`Request ${action === 'Approve' ? (isHOD ? 'Forwarded to R&D' : 'Approved') : 'Rejected'} successfully`);
                 onBack();
             }
         } catch (error) {
@@ -375,7 +379,7 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
                     </Box>
                 )}
                             <Box sx={{ flex: 1, minWidth: 350 }}>
-                    {(isResearchAdmin && /pending/i.test(data.status)) ? (
+                    {((isResearchAdmin && /pending/i.test(data.status)) || (isHOD && data.status === 'Pending')) ? (
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
 
@@ -419,7 +423,7 @@ const FundedProjectApprovalDetail = ({ id, onBack, role }) => {
                                             onClick={() => handleAction(decisionMode)} 
                                             sx={{ px: 4 }}
                                         >
-                                            {decisionMode === 'Reject' ? (actionLoading ? "Rejecting..." : "Confirm Reject") : (actionLoading ? "Saving..." : "Save Record")}
+                                            {decisionMode === 'Reject' ? (actionLoading ? "Rejecting..." : "Confirm Reject") : (actionLoading ? "Saving..." : "Approve")}
                                         </Button>
                                     </Box>
                                 </Box>

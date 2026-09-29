@@ -22,11 +22,6 @@ const PhdScholarFacultyDetail = ({ facultyId, onBack, role }) => {
     const [editOpen, setEditOpen] = useState(false);
     const [selectedScholar, setSelectedScholar] = useState(null);
 
-    const isHOD = !role || role === 'HOD';
-    const isDean = role === 'RESEARCH_DEAN';
-    const isCoordinator = role === 'RESEARCH_COORDINATOR';
-    const isResearchAdmin = isDean || isCoordinator;
-
     const fetchDetails = async () => {
         try {
             const res = await API.get(`/api/research/phd-scholar/by-faculty/${facultyId}`);
