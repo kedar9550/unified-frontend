@@ -18,7 +18,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import DownloadIcon from "@mui/icons-material/Download";
-import PrintIcon from "@mui/icons-material/Print";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import PageHeader from "../../components/common/PageHeader";
 import { PageContainer } from "../../components/common/design-system";
 import DataTable from "../../components/data/DataTable";
@@ -68,8 +68,9 @@ const Payslips = () => {
     const email = user?.email || "-";
 
     const [fromMonth, setFromMonth] = useState("");
+    const [fromYear, setFromYear] = useState("");
     const [toMonth, setToMonth] = useState("");
-    const [year, setYear] = useState("");
+    const [toYear, setToYear] = useState("");
     const [availableYears, setAvailableYears] = useState([]);
     const [sendingEmail, setSendingEmail] = useState(false);
     const [downloading, setDownloading] = useState(false);
@@ -128,37 +129,97 @@ const Payslips = () => {
     }, [empId]);
 
     const validateInputs = () => {
-        if (!fromMonth) {
-            toast.error("Please select From Month");
+        if (!fromMonth || !fromYear) {
+            toast.error("Please select From Month and Year");
             return false;
         }
-        if (!toMonth) {
-            toast.error("Please select To Month");
+        if (!toMonth || !toYear) {
+            toast.error("Please select To Month and Year");
             return false;
         }
-        if (!year) {
-            toast.error("Please select Year");
+        
+        const fromIdx = monthsList.findIndex(m => m.toLowerCase() === fromMonth.toLowerCase());
+        const toIdx = monthsList.findIndex(m => m.toLowerCase() === toMonth.toLowerCase());
+        
+        const fromVal = Number(fromYear) * 12 + fromIdx;
+        const toVal = Number(toYear) * 12 + toIdx;
+        
+        if (fromVal > toVal) {
+            toast.error("'From' date cannot be after 'To' date");
             return false;
         }
+
         return true;
     };
 
     const handleSendEmail = async () => {
         if (!validateInputs()) return;
+
+        // Ensure user has an email in their profile
+        if (!user?.email || user.email.trim() === "" || user.email === "-") {
+            toast.error("Email not found. Please add your email address in the Profile section to receive payslips.");
+            return;
+        }
+
         setSendingEmail(true);
         try {
+            const fromIdx = monthsList.findIndex(m => m.toLowerCase() === String(fromMonth).trim().toLowerCase());
+            const toIdx = monthsList.findIndex(m => m.toLowerCase() === String(toMonth).trim().toLowerCase());
+            const fromVal = Number(fromYear) * 12 + fromIdx;
+            const toVal = Number(toYear) * 12 + toIdx;
+
+            let recordsToDownload = payslipsData.filter(p => {
+                const pMonthIdx = monthsList.findIndex(m => m.toLowerCase() === String(p.month).trim().toLowerCase());
+                const pYear = Number(p.year);
+                if (isNaN(pYear) || pMonthIdx === -1) return false;
+                const pVal = pYear * 12 + pMonthIdx;
+                return pVal >= fromVal && pVal <= toVal;
+            });
+
+            // Sort them chronologically
+            recordsToDownload.sort((a, b) => {
+                const aMonthIdx = monthsList.findIndex(m => m.toLowerCase() === String(a.month).trim().toLowerCase());
+                const bMonthIdx = monthsList.findIndex(m => m.toLowerCase() === String(b.month).trim().toLowerCase());
+                const aVal = Number(a.year) * 12 + aMonthIdx;
+                const bVal = Number(b.year) * 12 + bMonthIdx;
+                return aVal - bVal;
+            });
+
+            // Fallback fetch if not found
+            if (recordsToDownload.length === 0) {
+                const res = await axios.get("/api/payslips", { params: { empId } });
+                if (res.data && res.data.data) {
+                    recordsToDownload = res.data.data.filter(p => {
+                        const pMonthIdx = monthsList.findIndex(m => m.toLowerCase() === String(p.month).trim().toLowerCase());
+                        const pYear = Number(p.year);
+                        if (isNaN(pYear) || pMonthIdx === -1) return false;
+                        const pVal = pYear * 12 + pMonthIdx;
+                        return pVal >= fromVal && pVal <= toVal;
+                    });
+                }
+            }
+
+            let pdfBase64 = null;
+            if (recordsToDownload.length > 0) {
+                pdfBase64 = await generateCombinedPayslipsBase64(recordsToDownload);
+            }
+
             const res = await axios.post("/api/payslips/send-email", {
                 fromMonth,
                 toMonth,
-                year,
-                empId
+                year: fromYear, // sending fromYear for legacy PHP fallback if needed
+                fromYear,
+                toYear,
+                empId,
+                pdfBase64,
+                targetEmail: user.email
             }).catch(async () => {
-                return await axios.post("http://localhost:8000/send_email.php", { fromMonth, toMonth, year, empId });
+                return await axios.post("http://localhost:8000/send_email.php", { fromMonth, toMonth, year: fromYear, empId, targetEmail: user.email });
             });
-            toast.success(res?.data?.message || `Payslip request for ${fromMonth} - ${toMonth} ${year} sent to your email!`);
+            toast.success(res?.data?.message || `Payslip request for ${fromMonth} ${fromYear} - ${toMonth} ${toYear} sent to your email!`);
             fetchPayslips();
         } catch (err) {
-            toast.success(`Payslip request for ${fromMonth} - ${toMonth} ${year} sent to your email!`);
+            toast.error(err.response?.data?.message || "Failed to send email. Please try again later.");
         } finally {
             setSendingEmail(false);
         }
@@ -303,6 +364,37 @@ const Payslips = () => {
         `;
     };
 
+    const generateCombinedPayslipsBase64 = async (records) => {
+        if (!records || records.length === 0) return null;
+
+        const container = document.createElement("div");
+        container.style.width = "720px";
+        container.style.margin = "0 auto";
+
+        records.forEach((row, idx) => {
+            const wrapper = document.createElement("div");
+            if (idx < records.length - 1) {
+                wrapper.style.pageBreakAfter = "always";
+                wrapper.style.breakAfter = "page";
+            }
+            wrapper.innerHTML = generateSinglePayslipHtml(row);
+            container.appendChild(wrapper);
+        });
+
+        const opt = {
+            margin: 8,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['css', 'legacy'] }
+        };
+
+        const html2pdfModule = (await import('html2pdf.js')).default;
+        const pdfDataUri = await html2pdfModule().set(opt).from(container).outputPdf('datauristring');
+        // Return just the base64 part, stripping the data:application/pdf;base64, prefix
+        return pdfDataUri.split(',')[1];
+    };
+
     const generateCombinedPayslipsPdf = async (records, fileName) => {
         if (!records || records.length === 0) return;
 
@@ -347,42 +439,48 @@ const Payslips = () => {
         try {
             const fromIdx = monthsList.findIndex(m => m.toLowerCase() === String(fromMonth).trim().toLowerCase());
             const toIdx = monthsList.findIndex(m => m.toLowerCase() === String(toMonth).trim().toLowerCase());
+            const fromVal = Number(fromYear) * 12 + fromIdx;
+            const toVal = Number(toYear) * 12 + toIdx;
 
-            // Filter payslips within selected month range & year
+            // Filter payslips within selected range
             let recordsToDownload = payslipsData.filter(p => {
-                const isYearMatch = !year || String(p.year).trim() === String(year).trim();
-                const pMonth = p.month ? String(p.month).trim() : '';
-                const mIdx = monthsList.findIndex(m => m.toLowerCase() === pMonth.toLowerCase());
-                const isMonthInRange = (fromIdx !== -1 && toIdx !== -1)
-                    ? (mIdx >= fromIdx && mIdx <= toIdx)
-                    : true;
-                return isYearMatch && isMonthInRange;
+                const pMonthIdx = monthsList.findIndex(m => m.toLowerCase() === String(p.month).trim().toLowerCase());
+                const pYear = Number(p.year);
+                if (isNaN(pYear) || pMonthIdx === -1) return false;
+                const pVal = pYear * 12 + pMonthIdx;
+                return pVal >= fromVal && pVal <= toVal;
             });
 
-            // Sort chronologically from fromMonth to toMonth
+            // Sort chronologically
             recordsToDownload.sort((a, b) => {
-                const pMonthA = a.month ? String(a.month).trim() : '';
-                const pMonthB = b.month ? String(b.month).trim() : '';
-                return monthsList.findIndex(m => m.toLowerCase() === pMonthA.toLowerCase()) - monthsList.findIndex(m => m.toLowerCase() === pMonthB.toLowerCase());
+                const aMonthIdx = monthsList.findIndex(m => m.toLowerCase() === String(a.month).trim().toLowerCase());
+                const bMonthIdx = monthsList.findIndex(m => m.toLowerCase() === String(b.month).trim().toLowerCase());
+                const aVal = Number(a.year) * 12 + aMonthIdx;
+                const bVal = Number(b.year) * 12 + bMonthIdx;
+                return aVal - bVal;
             });
 
             // Fallback: If state doesn't have it yet, query backend directly
             if (recordsToDownload.length === 0) {
-                const res = await axios.get("/api/payslips", {
-                    params: { empId, fromMonth, toMonth, year }
-                });
+                const res = await axios.get("/api/payslips", { params: { empId } });
                 if (res.data && Array.isArray(res.data.data)) {
-                    recordsToDownload = res.data.data;
+                    recordsToDownload = res.data.data.filter(p => {
+                        const pMonthIdx = monthsList.findIndex(m => m.toLowerCase() === String(p.month).trim().toLowerCase());
+                        const pYear = Number(p.year);
+                        if (isNaN(pYear) || pMonthIdx === -1) return false;
+                        const pVal = pYear * 12 + pMonthIdx;
+                        return pVal >= fromVal && pVal <= toVal;
+                    });
                 }
             }
 
             if (recordsToDownload.length > 0) {
-                toast.info(`Generating combined PDF for ${fromMonth} - ${toMonth} ${year} (${recordsToDownload.length} month(s))...`);
-                const fileName = `Payslips_${empId}_${fromMonth}_to_${toMonth}_${year}.pdf`;
+                toast.info(`Generating combined PDF for ${fromMonth} ${fromYear} - ${toMonth} ${toYear} (${recordsToDownload.length} month(s))...`);
+                const fileName = `Payslips_${empId}_${fromMonth}_${fromYear}_to_${toMonth}_${toYear}.pdf`;
                 await generateCombinedPayslipsPdf(recordsToDownload, fileName);
                 toast.success(`Downloaded combined PDF containing ${recordsToDownload.length} month(s) payslips!`);
             } else {
-                toast.error(`No payslip data found for ${fromMonth} - ${toMonth} ${year}`);
+                toast.error(`No payslip data found for ${fromMonth} ${fromYear} - ${toMonth} ${toYear}`);
             }
         } catch (err) {
             console.error("Download PDF error:", err);
@@ -412,74 +510,70 @@ const Payslips = () => {
     // Columns config for DataTable matching user screenshot
     const columns = [
         "S.No",
-        "Employee ID",
-        "Name",
-        "Department",
-        "College",
         "Month",
         "Year",
-        "View",
-        "Download"
+        "Actions"
     ];
 
-    const alignments = ["center", "center", "left", "center", "center", "center", "center", "center", "center"];
-    const nonSortable = [0, 7, 8];
+    const alignments = ["center", "center", "center", "center"];
+    const nonSortable = [0, 3];
 
     // Format rows for DataTable component
     const tableRows = payslipsData.map((item, index) => [
         { value: index + 1, display: index + 1 },
-        { value: item.empId || empId || "-", display: item.empId || empId || "-" },
-        { value: item.name || empName, display: item.name || empName },
-        { value: item.department || dept, display: item.department || dept },
-        { value: item.college || college, display: item.college || college },
         { value: item.month, display: item.month },
         { value: item.year, display: item.year },
         {
-            value: "view",
+            value: "actions",
             display: (
-                <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => handleSingleView(item)}
-                    sx={{
-                        bgcolor: "#001e4d",
-                        "&:hover": { bgcolor: "#00102b" },
-                        color: "#ffffff",
-                        textTransform: "none",
-                        fontWeight: 600,
-                        px: 2.5,
-                        py: 0.5,
-                        borderRadius: "6px",
-                        fontSize: "0.85rem",
-                        boxShadow: "none",
-                    }}
-                >
-                    view
-                </Button>
-            )
-        },
-        {
-            value: "download",
-            display: (
-                <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => handleSingleDownload(item)}
-                    sx={{
-                        bgcolor: "#001e4d",
-                        "&:hover": { bgcolor: "#00102b" },
-                        color: "#ffffff",
-                        textTransform: "none",
-                        fontWeight: 600,
-                        px: 2.5,
-                        py: 0.5,
-                        borderRadius: "6px",
-                        fontSize: "0.85rem",
-                        boxShadow: "none",
-                    }}
-                >
-                    Download
-                </Button>
+                <Box sx={{ display: 'flex', gap: { xs: 1, sm: 1.5 }, justifyContent: 'center' }}>
+                    <Button
+                        variant="contained"
+                        size="small"
+                        onClick={() => handleSingleView(item)}
+                        sx={{
+                            bgcolor: "#001e4d",
+                            "&:hover": { bgcolor: "#00102b" },
+                            color: "#ffffff",
+                            textTransform: "none",
+                            fontWeight: 600,
+                            px: { xs: 1, sm: 2.5 },
+                            py: 0.5,
+                            minWidth: { xs: 'auto', sm: '64px' },
+                            borderRadius: "6px",
+                            fontSize: "0.85rem",
+                            boxShadow: "none",
+                        }}
+                    >
+                        <VisibilityIcon sx={{ fontSize: '1.1rem', mr: { xs: 0, sm: 0.5 } }} />
+                        <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                            View
+                        </Box>
+                    </Button>
+                    <Button
+                        variant="contained"
+                        size="small"
+                        onClick={() => handleSingleDownload(item)}
+                        sx={{
+                            bgcolor: "#001e4d",
+                            "&:hover": { bgcolor: "#00102b" },
+                            color: "#ffffff",
+                            textTransform: "none",
+                            fontWeight: 600,
+                            px: { xs: 1, sm: 2.5 },
+                            py: 0.5,
+                            minWidth: { xs: 'auto', sm: '64px' },
+                            borderRadius: "6px",
+                            fontSize: "0.85rem",
+                            boxShadow: "none",
+                        }}
+                    >
+                        <DownloadIcon sx={{ fontSize: '1.1rem', mr: { xs: 0, sm: 0.5 } }} />
+                        <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                            Download
+                        </Box>
+                    </Button>
+                </Box>
             )
         }
     ]);
@@ -488,7 +582,7 @@ const Payslips = () => {
         <PageContainer sx={{ width: "100%", maxWidth: "100%" }}>
             <PageHeader
                 title="Payslips"
-                subtitle="View and download your monthly salary slips and payment statements"
+                subtitle="View and download your monthly salary Payslips"
             />
 
             {/* Main Form Box Container */}
@@ -510,135 +604,122 @@ const Payslips = () => {
                     sx={{
                         display: "flex",
                         flexDirection: { xs: "column", md: "row" },
-                        alignItems: { xs: "stretch", md: "flex-start" },
-                        gap: { xs: 2.5, md: 3 },
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: { xs: 2.5, md: 4 },
                         width: "100%",
+                        maxWidth: { md: "700px" },
+                        mx: "auto",
                     }}
                 >
-                    {/* From Month Box */}
+                    {/* From Section (Month & Year) */}
                     <Box sx={{ flex: 1, width: "100%" }}>
                         <Typography
                             variant="body2"
                             sx={{ color: "var(--text-secondary, #475569)", fontWeight: 600, mb: 1 }}
                         >
-                            From Month
+                            From
                         </Typography>
-                        <FormControl fullWidth size="small">
-                            <Select
-                                value={fromMonth}
-                                onChange={(e) => setFromMonth(e.target.value)}
-                                displayEmpty
-                                sx={{
-                                    width: "100%",
-                                    borderRadius: "10px",
-                                    bgcolor: "var(--bg-paper, #ffffff)",
-                                    color: "var(--text-primary, #1e293b)",
-                                    fontSize: "0.95rem",
-                                    "& .MuiOutlinedInput-notchedOutline": {
-                                        borderColor: "var(--border-color, #cbd5e1)",
-                                    },
-                                    "&:hover .MuiOutlinedInput-notchedOutline": {
-                                        borderColor: "var(--color-primary, #3b82f6)",
-                                    },
-                                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                                        borderColor: "var(--color-primary, #3b82f6)",
-                                    },
-                                }}
-                            >
-                                <MenuItem value="" disabled>
-                                    <span style={{ opacity: 0.6, fontStyle: "italic" }}>Select Month...</span>
-                                </MenuItem>
-                                {monthsList.map((m) => (
-                                    <MenuItem key={m} value={m}>
-                                        {m}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
+                        <Box sx={{ display: "flex", gap: 1.5 }}>
+                            <FormControl sx={{ flex: 2 }} size="small">
+                                <Select
+                                    value={fromMonth}
+                                    onChange={(e) => setFromMonth(e.target.value)}
+                                    displayEmpty
+                                    sx={{
+                                        width: "100%",
+                                        borderRadius: "10px",
+                                        bgcolor: "var(--bg-paper, #ffffff)",
+                                        color: "var(--text-primary, #1e293b)",
+                                        fontSize: "0.95rem",
+                                        "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color, #cbd5e1)" },
+                                        "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-primary, #3b82f6)" },
+                                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-primary, #3b82f6)" },
+                                    }}
+                                >
+                                    <MenuItem value="" disabled><span style={{ opacity: 0.6, fontStyle: "italic" }}>Month</span></MenuItem>
+                                    {monthsList.map((m) => (<MenuItem key={m} value={m}>{m}</MenuItem>))}
+                                </Select>
+                            </FormControl>
+                            <FormControl sx={{ flex: 1.2 }} size="small">
+                                <Select
+                                    value={fromYear}
+                                    onChange={(e) => setFromYear(e.target.value)}
+                                    displayEmpty
+                                    sx={{
+                                        width: "100%",
+                                        borderRadius: "10px",
+                                        bgcolor: "var(--bg-paper, #ffffff)",
+                                        color: "var(--text-primary, #1e293b)",
+                                        fontSize: "0.95rem",
+                                        "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color, #cbd5e1)" },
+                                        "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-primary, #3b82f6)" },
+                                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-primary, #3b82f6)" },
+                                    }}
+                                >
+                                    <MenuItem value="" disabled><span style={{ opacity: 0.6, fontStyle: "italic" }}>Year</span></MenuItem>
+                                    {availableYears.map((y) => (<MenuItem key={y} value={String(y)}>{y}</MenuItem>))}
+                                </Select>
+                            </FormControl>
+                        </Box>
                     </Box>
 
-                    {/* To Month Box */}
-                    <Box sx={{ flex: 1, width: "100%" }}>
-                        <Typography
-                            variant="body2"
-                            sx={{ color: "var(--text-secondary, #475569)", fontWeight: 600, mb: 1 }}
-                        >
-                            To Month
-                        </Typography>
-                        <FormControl fullWidth size="small">
-                            <Select
-                                value={toMonth}
-                                onChange={(e) => setToMonth(e.target.value)}
-                                displayEmpty
-                                sx={{
-                                    width: "100%",
-                                    borderRadius: "10px",
-                                    bgcolor: "var(--bg-paper, #ffffff)",
-                                    color: "var(--text-primary, #1e293b)",
-                                    fontSize: "0.95rem",
-                                    "& .MuiOutlinedInput-notchedOutline": {
-                                        borderColor: "var(--border-color, #cbd5e1)",
-                                    },
-                                    "&:hover .MuiOutlinedInput-notchedOutline": {
-                                        borderColor: "var(--color-primary, #3b82f6)",
-                                    },
-                                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                                        borderColor: "var(--color-primary, #3b82f6)",
-                                    },
-                                }}
-                            >
-                                <MenuItem value="" disabled>
-                                    <span style={{ opacity: 0.6, fontStyle: "italic" }}>Select Month...</span>
-                                </MenuItem>
-                                {monthsList.map((m) => (
-                                    <MenuItem key={m} value={m}>
-                                        {m}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    </Box>
+                    {/* Divider for Desktop */}
+                    <Box sx={{ display: { xs: "none", md: "block" }, width: "2px", height: "45px", bgcolor: "var(--border-color, #e2e8f0)", mt: 3, borderRadius: '2px' }} />
 
-                    {/* Year Box */}
+                    {/* Divider for Mobile */}
+                    <Box sx={{ display: { xs: "block", md: "none" }, height: "1px", width: "100%", bgcolor: "var(--border-color, #e2e8f0)" }} />
+
+                    {/* To Section (Month & Year) */}
                     <Box sx={{ flex: 1, width: "100%" }}>
                         <Typography
                             variant="body2"
                             sx={{ color: "var(--text-secondary, #475569)", fontWeight: 600, mb: 1 }}
                         >
-                            Year
+                            To
                         </Typography>
-                        <FormControl fullWidth size="small">
-                            <Select
-                                value={year}
-                                onChange={(e) => setYear(e.target.value)}
-                                displayEmpty
-                                sx={{
-                                    width: "100%",
-                                    borderRadius: "10px",
-                                    bgcolor: "var(--bg-paper, #ffffff)",
-                                    color: "var(--text-primary, #1e293b)",
-                                    fontSize: "0.95rem",
-                                    "& .MuiOutlinedInput-notchedOutline": {
-                                        borderColor: "var(--border-color, #cbd5e1)",
-                                    },
-                                    "&:hover .MuiOutlinedInput-notchedOutline": {
-                                        borderColor: "var(--color-primary, #3b82f6)",
-                                    },
-                                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                                        borderColor: "var(--color-primary, #3b82f6)",
-                                    },
-                                }}
-                            >
-                                <MenuItem value="" disabled>
-                                    <span style={{ opacity: 0.6, fontStyle: "italic" }}>Select</span>
-                                </MenuItem>
-                                {availableYears.map((y) => (
-                                    <MenuItem key={y} value={String(y)}>
-                                        {y}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
+                        <Box sx={{ display: "flex", gap: 1.5 }}>
+                            <FormControl sx={{ flex: 2 }} size="small">
+                                <Select
+                                    value={toMonth}
+                                    onChange={(e) => setToMonth(e.target.value)}
+                                    displayEmpty
+                                    sx={{
+                                        width: "100%",
+                                        borderRadius: "10px",
+                                        bgcolor: "var(--bg-paper, #ffffff)",
+                                        color: "var(--text-primary, #1e293b)",
+                                        fontSize: "0.95rem",
+                                        "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color, #cbd5e1)" },
+                                        "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-primary, #3b82f6)" },
+                                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-primary, #3b82f6)" },
+                                    }}
+                                >
+                                    <MenuItem value="" disabled><span style={{ opacity: 0.6, fontStyle: "italic" }}>Month</span></MenuItem>
+                                    {monthsList.map((m) => (<MenuItem key={m} value={m}>{m}</MenuItem>))}
+                                </Select>
+                            </FormControl>
+                            <FormControl sx={{ flex: 1.2 }} size="small">
+                                <Select
+                                    value={toYear}
+                                    onChange={(e) => setToYear(e.target.value)}
+                                    displayEmpty
+                                    sx={{
+                                        width: "100%",
+                                        borderRadius: "10px",
+                                        bgcolor: "var(--bg-paper, #ffffff)",
+                                        color: "var(--text-primary, #1e293b)",
+                                        fontSize: "0.95rem",
+                                        "& .MuiOutlinedInput-notchedOutline": { borderColor: "var(--border-color, #cbd5e1)" },
+                                        "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-primary, #3b82f6)" },
+                                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-primary, #3b82f6)" },
+                                    }}
+                                >
+                                    <MenuItem value="" disabled><span style={{ opacity: 0.6, fontStyle: "italic" }}>Year</span></MenuItem>
+                                    {availableYears.map((y) => (<MenuItem key={y} value={String(y)}>{y}</MenuItem>))}
+                                </Select>
+                            </FormControl>
+                        </Box>
                     </Box>
                 </Box>
 
@@ -734,8 +815,8 @@ const Payslips = () => {
                     }
                 }}
             >
-                <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 1 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                <DialogTitle component="div" sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pb: 1 }}>
+                    <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
                         Payslip Preview - {previewPayslip?.month} {previewPayslip?.year}
                     </Typography>
                     <IconButton onClick={() => setOpenPreview(false)}>
@@ -747,7 +828,7 @@ const Payslips = () => {
                         <Box
                             id="printable-payslip"
                             sx={{
-                                p: { xs: 1.5, sm: 3 },
+                                p: { xs: 1, sm: 3 },
                                 bgcolor: "#ffffff",
                                 color: "#000000 !important",
                                 fontFamily: "'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
@@ -755,6 +836,22 @@ const Payslips = () => {
                                 margin: "0 auto",
                                 "& *": {
                                     color: "#000000 !important"
+                                },
+                                "& table": {
+                                    width: "100%",
+                                    tableLayout: { xs: "fixed", sm: "auto" },
+                                    wordWrap: "break-word",
+                                    fontSize: { xs: "0.65rem", sm: "0.85rem" }
+                                },
+                                "& th, & td": {
+                                    padding: { xs: "4px !important", sm: "6px 10px !important" },
+                                    wordBreak: "break-word"
+                                },
+                                "& h4": {
+                                    fontSize: { xs: "0.85rem", sm: "1rem" }
+                                },
+                                "& p": {
+                                    fontSize: { xs: "0.7rem", sm: "0.85rem" }
                                 }
                             }}
                         >
