@@ -127,6 +127,7 @@ import ParticipationCertificates from "./pages/studenteventsadmin/ParticipationC
 import Enquiries from "./pages/studenteventsadmin/Enquiries";
 import SendMail from "./pages/studenteventsadmin/SendMail";
 import VerifyCertificate from "./pages/public/VerifyCertificate";
+import Transaction from "./pages/RazorpayTransactions/Transaction";
 
 
 // Infrastructure
@@ -251,6 +252,7 @@ function App() {
         <Route path="/uniprime/discrepancies" element={<ProtectedRoute element={<UniprimeDiscrepancies />} />} />
         <Route path="/uniprime/research-uploads" element={<ProtectedRoute element={<ResearchUploads />} />} />
         <Route path="/uniprime/hierarchy-mapping" element={<ProtectedRoute element={<HierarchyMapping />} />} />
+        <Route path="/transactions" element={<ProtectedRoute element={<Transaction />} />} />
 
         {/* Value Addition Modules */}
         <Route path="/value-addition/resource-utilization" element={<ProtectedRoute element={<ResourceUtilization />} />} />

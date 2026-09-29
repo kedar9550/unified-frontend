@@ -198,7 +198,8 @@ export const ROLE_ROUTES = {
         { text: "Reports", path: "/service-desk/reports", icon: <Assessment /> },
         { text: "Feedback Analytics", path: "/service-desk/admin/feedback", icon: <Analytics /> }
       ]
-    }
+    },
+    { text: "Transactions", path: "/transactions", icon: <Payment /> }
   ],
 
   // Example for a future "Department HOD" role
