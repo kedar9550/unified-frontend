@@ -251,7 +251,7 @@ export default function Transactions({ initialStatusFilter = 'All', activeTab = 
                         {tx.orderId !== 'N/A' && <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>{tx.orderId}</Typography>}
                     </Box>
                 ),
-                value: tx.paymentId
+                value: `${tx.paymentId || ''} ${tx.orderId !== 'N/A' ? tx.orderId : ''}`
             },
             {
                 display: (
@@ -261,7 +261,7 @@ export default function Transactions({ initialStatusFilter = 'All', activeTab = 
                         {tx.customerEmail === 'N/A' && tx.customerPhone === 'N/A' && <Typography variant="caption" color="text.secondary">N/A</Typography>}
                     </Box>
                 ),
-                value: tx.customerEmail
+                value: `${tx.customerEmail !== 'N/A' ? tx.customerEmail : ''} ${tx.customerPhone !== 'N/A' ? tx.customerPhone : ''}`
             },
             {
                 display: (
@@ -290,7 +290,7 @@ export default function Transactions({ initialStatusFilter = 'All', activeTab = 
                         {tx.rrn && <Typography variant="caption" display="block" color="text.secondary">RRN: {tx.rrn}</Typography>}
                     </Box>
                 ),
-                value: tx.method
+                value: `${tx.method || ''} ${tx.methodDetail || ''} ${tx.rrn || ''}`
             },
             {
                 display: (
