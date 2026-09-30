@@ -260,15 +260,15 @@ export default function CampusServiceRequest() {
   // Theme state
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return document.body.classList.contains("dark-mode") ||
-           document.documentElement.classList.contains("dark-mode") ||
-           localStorage.getItem("theme") === "dark";
+      document.documentElement.classList.contains("dark-mode") ||
+      localStorage.getItem("theme") === "dark";
   });
 
   useEffect(() => {
     const updateTheme = () => {
       const dark = document.body.classList.contains("dark-mode") ||
-                   document.documentElement.classList.contains("dark-mode") ||
-                   localStorage.getItem("theme") === "dark";
+        document.documentElement.classList.contains("dark-mode") ||
+        localStorage.getItem("theme") === "dark";
       setIsDarkMode(dark);
     };
 
@@ -324,6 +324,7 @@ export default function CampusServiceRequest() {
   const [otpInput, setOtpInput] = useState("");
   const [otpSending, setOtpSending] = useState(false);
   const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpStatus, setOtpStatus] = useState("idle");
   const [maskedMobile, setMaskedMobile] = useState("");
   const [studentNamePreview, setStudentNamePreview] = useState("");
   const [resendTimer, setResendTimer] = useState(0);
@@ -562,31 +563,41 @@ export default function CampusServiceRequest() {
     const cleanRoll = rollNoInput.trim().toUpperCase();
     const cleanOtp = otpInput.trim();
 
-    if (!cleanOtp || cleanOtp.length < 4) {
+    if (!cleanOtp || cleanOtp.length < 6) {
       toast.error("Please enter the complete 6-digit OTP");
       return;
     }
 
     try {
       setOtpVerifying(true);
+      setOtpStatus("idle");
       const res = await axios.post(`${BACKEND_URL}/api/campus-service-request/auth/verify-otp`, {
         rollno: cleanRoll,
         otp: cleanOtp
       });
 
       if (res.data.success && res.data.token) {
+        setOtpStatus("success");
         const receivedToken = res.data.token;
         const receivedStudent = res.data.student;
 
-        // Isolate & Store student session (7-day validity)
-        localStorage.setItem("campus_student_token", receivedToken);
-        localStorage.setItem("campus_student_profile", JSON.stringify(receivedStudent));
+        // Briefly show success state before proceeding
+        setTimeout(() => {
+          localStorage.setItem("campus_student_token", receivedToken);
+          localStorage.setItem("campus_student_profile", JSON.stringify(receivedStudent));
 
-        setToken(receivedToken);
-        setStudent(receivedStudent);
-        toast.success(`Welcome, ${receivedStudent.studentname}!`);
+          setToken(receivedToken);
+          setStudent(receivedStudent);
+          toast.success(`Welcome, ${receivedStudent.studentname}!`);
+        }, 800);
       }
     } catch (err) {
+      setOtpStatus("error");
+      setTimeout(() => {
+        setOtpInput("");
+        setOtpStatus("idle");
+        document.getElementById(`otp-input-0`)?.focus();
+      }, 500);
       const msg = err.response?.data?.message || "Invalid or expired OTP. Please try again.";
       toast.error(msg);
     } finally {
@@ -780,16 +791,10 @@ export default function CampusServiceRequest() {
         sx={{
           minHeight: "100vh",
           display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          background: isDarkMode
-            ? "radial-gradient(ellipse at 50% 20%, #1e293b 0%, #0f172a 100%)"
-            : "radial-gradient(ellipse at 50% 20%, #e0e7ff 0%, #f1f5f9 100%)",
-          bgcolor: "var(--bg-main, #0f172a)",
-          p: { xs: 2, sm: 4 },
-          color: "var(--text-primary, #1e293b)",
-          position: "relative"
+          flexDirection: { xs: "column", md: "row" },
+          bgcolor: isDarkMode ? "#0f172a" : "#e6f3ffff",
+          position: "relative",
+          overflow: "hidden"
         }}
       >
         {/* Top Right Theme Toggle */}
@@ -797,165 +802,274 @@ export default function CampusServiceRequest() {
           <ThemeToggle />
         </Box>
 
-        {/* Header Branding */}
-        <Box sx={{ textAlign: "center", mb: 4 }}>
-          <Box
+        {/* Left Side: 70% */}
+        <Box
+          sx={{
+            flex: { xs: "1", md: "0 0 70%" },
+            width: { xs: "100%", md: "70%" },
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            p: { xs: 2, sm: 4 },
+            color: "var(--text-primary, #1e293b)",
+            position: "relative",
+            zIndex: 2
+          }}
+        >
+          {/* Header Branding */}
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", mb: 4 }}>
+            <Box
+              component="img"
+              src="/site-logo.svg"
+              alt="Aditya University Logo"
+              sx={{ height: 64, mb: .8 }}
+            />
+            {/* <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: "-0.5px", color: isDarkMode ? "#f8fafc" : "#0f172a" }}>
+              Aditya University
+            </Typography> */}
+            <Typography variant="subtitle1" sx={{ color: isDarkMode ? "#94a3b8" : "#64748b", fontWeight: 400, textAlign: "center" }}>
+              Campus Service Request & Student Helpdesk
+            </Typography>
+          </Box>
+
+          {/* Auth Card */}
+          <Card
             sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 64,
-              height: 64,
-              borderRadius: "18px",
-              bgcolor: "rgba(59, 130, 246, 0.15)",
-              border: "1px solid rgba(59, 130, 246, 0.3)",
-              mb: 2,
-              backdropFilter: "blur(10px)"
+              width: "100%",
+              maxWidth: 440,
+              borderRadius: "20px",
+              bgcolor: "var(--bg-paper, #ffffff)",
+              color: "var(--text-primary, #1e293b)",
+              border: "1px solid var(--border-color, #e2e8f0)",
+              boxShadow: isDarkMode ? "0 25px 50px -12px rgba(0, 0, 0, 0.7)" : "0 25px 50px -12px rgba(0, 0, 0, 0.12)",
+              overflow: "hidden"
             }}
           >
-            <SchoolIcon sx={{ fontSize: 36, color: "#60a5fa" }} />
-          </Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: "-0.5px", color: isDarkMode ? "#f8fafc" : "#0f172a" }}>
-            Aditya University
-          </Typography>
-          <Typography variant="subtitle1" sx={{ color: isDarkMode ? "#94a3b8" : "#64748b", mt: 0.5, fontWeight: 500 }}>
-            Campus Service Request & Student Helpdesk
+            <Box sx={{ p: 3, bgcolor: "var(--bg-panel, #f8fafc)", borderBottom: "1px solid var(--border-color, #e2e8f0)" }}>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primary, #1e293b)" }}>
+                {step === 1 ? "Student Verification" : "Enter Verification Code"}
+              </Typography>
+              <Typography variant="body2" sx={{ color: "var(--text-secondary, #64748b)", mt: 0.5 }}>
+                {step === 1
+                  ? "Enter your University Roll Number to receive OTP."
+                  : `6-digit OTP sent to ${maskedMobile}`}
+              </Typography>
+            </Box>
+
+            <CardContent sx={{ p: 3 }}>
+              {step === 1 ? (
+                <Box component="form" onSubmit={handleSendOtp} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                  <TextField
+                    fullWidth
+                    label="Student Roll Number"
+                    placeholder="e.g. 19A91A0341"
+                    value={rollNoInput}
+                    onChange={(e) => setRollNoInput(e.target.value.toUpperCase())}
+                    autoFocus
+                    required
+                    slotProps={{
+                      input: {
+                        startAdornment: <PersonIcon sx={{ color: "#94a3b8", mr: 1 }} />
+                      }
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "50px",
+                      },
+                      "& .MuiInputLabel-root": {
+                        ml: 2
+                      },
+                      "& .MuiOutlinedInput-root legend": {
+                        ml: 2
+                      }
+                    }}
+                    helperText="Only active regular students can raise campus service requests."
+                  />
+
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    size="large"
+                    disabled={otpSending || !rollNoInput.trim()}
+                    sx={{
+                      py: 1.5,
+                      px: 6,
+                      alignSelf: "center",
+                      borderRadius: "50px",
+                      fontWeight: 400,
+                      bgcolor: "var(--gradient-primary)",
+                      "&:hover": { bgcolor: "var(--gradient-primary-hover)" }
+                    }}
+                  >
+                    {otpSending ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Send OTP"}
+                  </Button>
+                </Box>
+              ) : (
+                <Box component="form" onSubmit={handleVerifyOtp} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                  <Box sx={{ p: 2, bgcolor: isDarkMode ? "rgba(59, 130, 246, 0.15)" : "#eff6ff", borderRadius: "10px", border: isDarkMode ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid #bfdbfe" }}>
+                    <Typography variant="body2" sx={{ color: isDarkMode ? "#93c5fd" : "#1e40af", fontWeight: 600 }}>
+                      Student: {studentNamePreview}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: isDarkMode ? "#60a5fa" : "#3b82f6" }}>
+                      Roll No: {rollNoInput}
+                    </Typography>
+                  </Box>
+
+                  <style>
+                    {`
+                      @keyframes shake {
+                        10%, 90% { transform: translate3d(-1px, 0, 0); }
+                        20%, 80% { transform: translate3d(2px, 0, 0); }
+                        30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+                        40%, 60% { transform: translate3d(4px, 0, 0); }
+                      }
+                    `}
+                  </style>
+                  <Box sx={{ display: "flex", gap: { xs: 1, sm: 1.5 }, justifyContent: "center", mb: 2 }}>
+                    {[...Array(6)].map((_, index) => (
+                      <TextField
+                        key={index}
+                        id={`otp-input-${index}`}
+                        autoFocus={index === 0}
+                        value={otpInput[index] || ""}
+                        inputProps={{
+                          maxLength: 1,
+                        }}
+                        sx={{
+                          width: { xs: 45, sm: 55 },
+                          animation: otpStatus === "error" ? "shake 0.5s cubic-bezier(.36,.07,.19,.97) both" : "none",
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: "12px",
+                            bgcolor: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "#fff",
+                            "& fieldset": {
+                              borderColor: otpStatus === "success" ? "#16a34a !important" : otpStatus === "error" ? "#dc2626 !important" : undefined,
+                              borderWidth: otpStatus !== "idle" ? "2px" : undefined
+                            }
+                          },
+                          "& .MuiInputBase-input": {
+                            textAlign: "center",
+                            fontSize: "1.5rem",
+                            fontWeight: 700,
+                            p: 1.5,
+                            color: otpStatus === "success" ? "#16a34a" : otpStatus === "error" ? "#dc2626" : "inherit"
+                          }
+                        }}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "");
+                          if (val) {
+                            const newOtp = otpInput.split("");
+                            newOtp[index] = val;
+                            setOtpInput(newOtp.join("").slice(0, 6));
+                            if (index < 5) {
+                              document.getElementById(`otp-input-${index + 1}`).focus();
+                            }
+                          } else {
+                            const newOtp = otpInput.split("");
+                            newOtp[index] = "";
+                            setOtpInput(newOtp.join(""));
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Backspace" && !otpInput[index] && index > 0) {
+                            document.getElementById(`otp-input-${index - 1}`).focus();
+                          }
+                        }}
+                        onPaste={(e) => {
+                          e.preventDefault();
+                          const pastedData = e.clipboardData.getData("text/plain").replace(/\D/g, "").slice(0, 6);
+                          if (pastedData) {
+                            setOtpInput(pastedData);
+                            const nextIndex = Math.min(pastedData.length, 5);
+                            document.getElementById(`otp-input-${nextIndex}`)?.focus();
+                          }
+                        }}
+                      />
+                    ))}
+                  </Box>
+
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    size="large"
+                    disabled={otpVerifying || otpInput.length < 6}
+                    sx={{
+                      py: 1.5,
+                      px: 6,
+                      alignSelf: "center",
+                      borderRadius: "50px",
+                      fontWeight: 700,
+                      bgcolor: "#16a34a",
+                      "&:hover": { bgcolor: "#15803d" }
+                    }}
+                  >
+                    {otpVerifying ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Verify"}
+                  </Button>
+
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 1 }}>
+                    <Button
+                      variant="text"
+                      size="small"
+                      onClick={() => {
+                        setStep(1);
+                        setOtpInput("");
+                      }}
+                      sx={{ color: "var(--text-secondary, #64748b)", textTransform: "none" }}
+                    >
+                      Change Roll Number
+                    </Button>
+
+                    <Button
+                      variant="text"
+                      size="small"
+                      disabled={resendTimer > 0 || otpSending}
+                      onClick={handleSendOtp}
+                      sx={{ color: resendTimer > 0 ? "var(--text-secondary, #94a3b8)" : "#2563eb", fontWeight: 600, textTransform: "none" }}
+                    >
+                      {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend OTP"}
+                    </Button>
+                  </Box>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Footer Note */}
+          <Typography variant="caption" sx={{ color: isDarkMode ? "#94a3b8" : "#64748b", mt: 4, textAlign: "center" }}>
+            Campus Service Request System &bull; Aditya University
           </Typography>
         </Box>
 
-        {/* Auth Card */}
-        <Card
+        {/* Right Side: 30% */}
+        <Box
           sx={{
-            width: "100%",
-            maxWidth: 440,
-            borderRadius: "20px",
-            bgcolor: "var(--bg-paper, #ffffff)",
-            color: "var(--text-primary, #1e293b)",
-            border: "1px solid var(--border-color, #e2e8f0)",
-            boxShadow: isDarkMode ? "0 25px 50px -12px rgba(0, 0, 0, 0.7)" : "0 25px 50px -12px rgba(0, 0, 0, 0.12)",
-            overflow: "hidden"
+            flex: { xs: "none", md: "0 0 30%" },
+            width: { xs: "100%", md: "30%" },
+            display: { xs: "none", md: "flex" },
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative"
           }}
         >
-          <Box sx={{ p: 3, bgcolor: "var(--bg-panel, #f8fafc)", borderBottom: "1px solid var(--border-color, #e2e8f0)" }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primary, #1e293b)" }}>
-              {step === 1 ? "Student Verification" : "Enter Verification Code"}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "var(--text-secondary, #64748b)", mt: 0.5 }}>
-              {step === 1
-                ? "Enter your University Roll Number to receive OTP."
-                : `6-digit OTP sent to ${maskedMobile}`}
-            </Typography>
-          </Box>
-
-          <CardContent sx={{ p: 3 }}>
-            {step === 1 ? (
-              <Box component="form" onSubmit={handleSendOtp} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-                <TextField
-                  fullWidth
-                  label="Student Roll Number"
-                  placeholder="e.g. 19A91A0341"
-                  value={rollNoInput}
-                  onChange={(e) => setRollNoInput(e.target.value.toUpperCase())}
-                  autoFocus
-                  required
-                  slotProps={{
-                    input: {
-                      startAdornment: <PersonIcon sx={{ color: "#94a3b8", mr: 1 }} />
-                    }
-                  }}
-                  helperText="Only active regular students can raise campus service requests."
-                />
-
-                <Button
-                  type="submit"
-                  variant="contained"
-                  size="large"
-                  disabled={otpSending || !rollNoInput.trim()}
-                  sx={{
-                    py: 1.5,
-                    borderRadius: "10px",
-                    fontWeight: 700,
-                    bgcolor: "#2563eb",
-                    "&:hover": { bgcolor: "#1d4ed8" }
-                  }}
-                >
-                  {otpSending ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Send Verification OTP"}
-                </Button>
-              </Box>
-            ) : (
-              <Box component="form" onSubmit={handleVerifyOtp} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-                <Box sx={{ p: 2, bgcolor: isDarkMode ? "rgba(59, 130, 246, 0.15)" : "#eff6ff", borderRadius: "10px", border: isDarkMode ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid #bfdbfe" }}>
-                  <Typography variant="body2" sx={{ color: isDarkMode ? "#93c5fd" : "#1e40af", fontWeight: 600 }}>
-                    Student: {studentNamePreview}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: isDarkMode ? "#60a5fa" : "#3b82f6" }}>
-                    Roll No: {rollNoInput}
-                  </Typography>
-                </Box>
-
-                <TextField
-                  fullWidth
-                  label="6-Digit OTP"
-                  placeholder="Enter 6-digit code"
-                  value={otpInput}
-                  onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  autoFocus
-                  required
-                  slotProps={{
-                    input: {
-                      startAdornment: <PhoneIcon sx={{ color: "#94a3b8", mr: 1 }} />
-                    }
-                  }}
-                />
-
-                <Button
-                  type="submit"
-                  variant="contained"
-                  size="large"
-                  disabled={otpVerifying || otpInput.length < 4}
-                  sx={{
-                    py: 1.5,
-                    borderRadius: "10px",
-                    fontWeight: 700,
-                    bgcolor: "#16a34a",
-                    "&:hover": { bgcolor: "#15803d" }
-                  }}
-                >
-                  {otpVerifying ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Verify & Access Desk"}
-                </Button>
-
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 1 }}>
-                  <Button
-                    variant="text"
-                    size="small"
-                    onClick={() => {
-                      setStep(1);
-                      setOtpInput("");
-                    }}
-                    sx={{ color: "var(--text-secondary, #64748b)", textTransform: "none" }}
-                  >
-                    Change Roll Number
-                  </Button>
-
-                  <Button
-                    variant="text"
-                    size="small"
-                    disabled={resendTimer > 0 || otpSending}
-                    onClick={handleSendOtp}
-                    sx={{ color: resendTimer > 0 ? "var(--text-secondary, #94a3b8)" : "#2563eb", fontWeight: 600, textTransform: "none" }}
-                  >
-                    {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend OTP"}
-                  </Button>
-                </Box>
-              </Box>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Footer Note */}
-        <Typography variant="caption" sx={{ color: isDarkMode ? "#94a3b8" : "#64748b", mt: 4, textAlign: "center" }}>
-          Campus Service Request System &bull; Aditya University
-        </Typography>
+          <Box
+            component="img"
+            src={isDarkMode ? "/Circle_Gold.svg" : "/Circle_Orange.svg"}
+            alt="University Graphic"
+            sx={{
+              position: "absolute",
+              right: 0,
+              top: "50%",
+              width: { xs: "400px", md: "800px", lg: "1250px" },
+              height: "auto",
+              filter: isDarkMode ? "drop-shadow(0 0 40px rgba(190,147,55,0.2))" : "drop-shadow(0 0 40px rgba(249,115,22,0.2))",
+              animation: "spinAndStay 60s linear infinite",
+              "@keyframes spinAndStay": {
+                "0%": { transform: "translate(51%, -50%) rotate(0deg)" },
+                "100%": { transform: "translate(51%, -50%) rotate(360deg)" }
+              }
+            }}
+          />
+        </Box>
       </Box>
     );
   }
