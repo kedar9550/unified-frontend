@@ -388,6 +388,34 @@ export default function CampusServiceRequest() {
     return () => clearInterval(timer);
   }, [resendTimer]);
 
+  // Ensure staff/employee sessions and cookies are cleared on mount so the student portal runs in full isolation
+  useEffect(() => {
+    const clearStaffSessionOnMount = async () => {
+      // 1. Remove employee localStorage artifacts if present
+      const hadEmployeeUser = localStorage.getItem("user");
+      const hadAuthToken = localStorage.getItem("authToken");
+      if (hadEmployeeUser || hadAuthToken) {
+        localStorage.removeItem("user");
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("activeRole");
+        localStorage.removeItem("fcmToken");
+      }
+
+      // 2. Clear backend HTTP-only staff session cookie
+      try {
+        await axios.post(
+          `${BACKEND_URL}/api/campus-service-request/auth/clear-staff-session`,
+          {},
+          { withCredentials: true }
+        );
+      } catch (err) {
+        // Silently continue
+      }
+    };
+
+    clearStaffSessionOnMount();
+  }, []);
+
   // Check saved student session on mount
   useEffect(() => {
     const initAuth = async () => {
@@ -583,6 +611,11 @@ export default function CampusServiceRequest() {
 
         // Briefly show success state before proceeding
         setTimeout(() => {
+          localStorage.removeItem("user");
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("activeRole");
+          localStorage.removeItem("fcmToken");
+
           localStorage.setItem("campus_student_token", receivedToken);
           localStorage.setItem("campus_student_profile", JSON.stringify(receivedStudent));
 

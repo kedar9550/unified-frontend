@@ -39,6 +39,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("activeRole");
     localStorage.removeItem("fcmToken");
     localStorage.removeItem("authToken");
+    localStorage.removeItem("campus_student_token");
+    localStorage.removeItem("campus_student_profile");
     delete API.defaults.headers.common["Authorization"];
   };
 
@@ -112,6 +114,10 @@ export const AuthProvider = ({ children }) => {
         API.defaults.headers.common.Authorization = `Bearer ${token}`;
         localStorage.setItem('authToken', token);
       }
+
+      // Clear any student session so employee session runs clean without conflicts
+      localStorage.removeItem("campus_student_token");
+      localStorage.removeItem("campus_student_profile");
 
       let userData = res.data.user;
       userData = normalizeRoles(userData);
