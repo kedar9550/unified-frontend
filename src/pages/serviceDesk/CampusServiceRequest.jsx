@@ -63,7 +63,6 @@ import {
   CalendarTodayOutlined as CalendarIcon,
   PersonOutlineOutlined as AssignedUserIcon,
   GridViewOutlined as CategoryGridIcon,
-  SettingsOutlined as SubcategoryGearIcon,
   Check as StepCheckIcon,
   Send as SendIcon,
   Chat as ChatIcon,
@@ -1878,16 +1877,16 @@ export default function CampusServiceRequest() {
                 {selectedTicketDetail.description}
               </Typography>
 
-              {/* 4-Column Metadata Grid */}
+              {/* 3-Column Metadata Grid */}
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" },
+                  gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
                   p: { xs: 2, sm: 2.2 },
                   bgcolor: "var(--bg-panel, #f8fafc)",
                   border: "1px solid var(--border-color, #e2e8f0)",
                   borderRadius: "14px",
-                  gap: { xs: 2, md: 2 },
+                  gap: { xs: 2, md: 3 },
                   mb: 3,
                   alignItems: "center"
                 }}
@@ -1946,21 +1945,6 @@ export default function CampusServiceRequest() {
                     </Typography>
                     <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary, #1e293b)", fontSize: "0.85rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {selectedTicketDetail.service?.name || "Software"}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                {/* 4. Subcategory */}
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <SubcategoryGearIcon sx={{ fontSize: 26, color: "var(--text-secondary, #64748b)" }} />
-                  </Box>
-                  <Box sx={{ minWidth: 0 }}>
-                    <Typography variant="caption" sx={{ color: "var(--text-secondary, #64748b)", fontSize: "0.75rem", display: "block", mb: 0.2 }}>
-                      Subcategory
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary, #1e293b)", fontSize: "0.85rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {selectedTicketDetail.subcategory || "OS Issue"}
                     </Typography>
                   </Box>
                 </Box>
