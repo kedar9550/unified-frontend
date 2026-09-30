@@ -34,7 +34,6 @@ const capitalizeRole = (role) => {
 const Header = ({ isSidebarCollapsed }) => {
   const { user, activeRole, switchRole, logout } = useAuth();
   const activeRoleObj = user?.roles?.find(r => r.role === activeRole);
-  const hasManyRoles = user?.roles?.length >= 4;
   const [imgError, setImgError] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const notifRef = React.useRef(null);
@@ -349,137 +348,23 @@ const Header = ({ isSidebarCollapsed }) => {
               sx: {
                 zIndex: 1302,
                 mt: { xs: 2.5, md: 3 },
-                width: { xs: "calc(100vw - 24px)", md: hasManyRoles ? 800 : 280 }, // Dynamic width based on roles count
+                width: 280,
                 maxHeight: { xs: "calc(100dvh - 95px)", md: "calc(100vh - 115px)" },
-                borderRadius: "20px", // Smoother corners
+                borderRadius: "20px",
                 overflowY: "auto",
                 overscrollBehavior: "contain",
                 boxShadow: "0 15px 50px rgba(0, 0, 0, 0.3)",
                 border: "1px solid var(--border-color)",
-                px: { xs: 0.5, md: hasManyRoles ? 2 : 0.5 }, // Dynamic padding
-                pt: { xs: 0.5, md: hasManyRoles ? 2 : 0.5 },
-                pb: { xs: 1.5, md: hasManyRoles ? 2 : 1.5 },
+                px: 0.5,
+                pt: 0.5,
+                pb: 1.5,
               }
             }
           }}
         >
-          {/* Header section (Responsive) */}
-          <Box
-            sx={{
-              display: { xs: "none", md: hasManyRoles ? "flex" : "none" },
-              justifyContent: "space-between",
-              alignItems: "center",
-              px: 2,
-              pt: 1.5,
-              pb: 1.5,
-            }}
-          >
-            <Box>
-              <Typography
-                sx={{
-                  fontSize: "0.75rem",
-                  fontWeight: 800,
-                  color: "#94a3b8",
-                  textTransform: "uppercase",
-                  letterSpacing: "1.2px",
-                }}
-              >
-                Switch Role
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: "0.75rem",
-                  fontWeight: 500,
-                  color: "var(--text-secondary)",
-                  mt: 0.5,
-                }}
-              >
-                You can switch between the roles you have access to.
-              </Typography>
-            </Box>
-
-            {/* Logout Button (Desktop Top Right) */}
-            <MenuItem
-              onClick={handleLogout}
-              sx={{
-                borderRadius: "50px",
-                fontSize: "0.85rem",
-                fontWeight: 700,
-                color: "#ffffff",
-                py: 1.2,
-                px: 3.5,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 4px 12px rgba(0, 78, 146, 0.2)",
-                transition: "all 0.4s ease",
-                position: "relative",
-                background: "transparent",
-                overflow: "hidden",
-                zIndex: 1,
-
-                // Base Blue State Layer
-                "& .blue-bg": {
-                  position: "absolute",
-                  inset: 0,
-                  background: "var(--gradient-primary)",
-                  borderRadius: "50px",
-                  zIndex: -3,
-                  transition: "opacity 0.4s ease",
-                  opacity: 1,
-                },
-
-                // Inner Background for Hover
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  inset: 0,
-                  borderRadius: "50px",
-                  background: "var(--bg-accent-1)",
-                  zIndex: -2,
-                  transition: "opacity 0.4s ease",
-                  opacity: 0,
-                },
-
-                // Sharp Masked Gradient Border for Hover
-                "&::after": {
-                  content: '""',
-                  position: "absolute",
-                  inset: 0,
-                  borderRadius: "50px",
-                  padding: "2px",
-                  background: "linear-gradient(90deg, #cb2d3e, #ef473a)",
-                  WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-                  WebkitMaskComposite: "xor",
-                  maskComposite: "exclude",
-                  zIndex: -1,
-                  transition: "opacity 0.4s ease",
-                  opacity: 0,
-                },
-
-                "&:hover": {
-                  color: "#cb2d3e",
-                  boxShadow: "0 8px 20px rgba(203, 45, 62, 0.15)",
-                  transform: "translateY(-1px)",
-                  "& .blue-bg": { opacity: 0 },
-                  "&::before": { opacity: 1 },
-                  "&::after": { opacity: 1 },
-                  "& .MuiListItemIcon-root .MuiSvgIcon-root": { color: "#cb2d3e" }
-                }
-              }}
-            >
-              <Box className="blue-bg" />
-              <ListItemIcon sx={{ minWidth: 28, zIndex: 2 }}>
-                <Logout sx={{ fontSize: 16, color: "#ffffff", transition: "color 0.4s ease" }} />
-              </ListItemIcon>
-              <Box component="span" sx={{ zIndex: 2, position: "relative" }}>
-                Logout
-              </Box>
-            </MenuItem>
-          </Box>
 
           {/* Mobile/Simple Header */}
-          <Box sx={{ display: { xs: "block", md: hasManyRoles ? "none" : "block" }, px: 2, pt: 1, pb: 1 }}>
+          <Box sx={{ display: "block", px: 2, pt: 1, pb: 1 }}>
             <Typography sx={{ fontSize: "0.65rem", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "1.2px" }}>
               Switch Role
             </Typography>
@@ -490,19 +375,19 @@ const Header = ({ isSidebarCollapsed }) => {
             sx={{
               mx: 1.5,
               mb: 1.5,
-              p: { xs: 0.8, md: hasManyRoles ? 2 : 0.8 },
-              maxHeight: { xs: "200px", sm: "260px", md: hasManyRoles ? "265px" : "280px" },
+              p: 0.8,
+              maxHeight: "190px", // Fits 3 roles, scrolls for more
               overflowY: "auto",
               overscrollBehavior: "contain",
               borderRadius: "16px",
               border: "1px solid var(--border-color)",
               background: "var(--bg-paper)",
               boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
-              display: { xs: "block", md: hasManyRoles ? "grid" : "block" },
-              gridTemplateColumns: { xs: "1fr", md: hasManyRoles ? "repeat(3, 1fr)" : "1fr" },
-              gap: { xs: 0.5, md: hasManyRoles ? 1.5 : 0 },
-              "&::-webkit-scrollbar": { width: 6 },
-              "&::-webkit-scrollbar-thumb": { background: "var(--border-color)", borderRadius: 4 }
+              display: "flex",
+              flexDirection: "column",
+              gap: 0.5,
+              "&::-webkit-scrollbar": { width: 3 },
+              "&::-webkit-scrollbar-thumb": { background: "transparent", borderRadius: 4 }
             }}
           >
             {user?.roles?.map((r) => {
@@ -520,18 +405,17 @@ const Header = ({ isSidebarCollapsed }) => {
                     fontWeight: 700,
                     color: isActive ? "var(--color-primary)" : "var(--text-secondary)",
                     background: isActive ? "var(--bg-accent-4) !important" : "transparent",
-                    border: { xs: "none", md: hasManyRoles ? (isActive ? "1px solid transparent" : "1px solid var(--border-color)") : "none" },
-                    py: { xs: 1.2, md: hasManyRoles ? 1.8 : 1.2 },
-                    px: { xs: 1.5, md: hasManyRoles ? 2 : 1.5 },
-                    mb: { xs: 0.5, md: hasManyRoles ? 0 : 0.5 },
+                    border: "none",
+                    py: 1.2,
+                    px: 1.5,
+                    mb: 0.5,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
                     transition: "all 0.2s ease",
                     minWidth: 0, // Prevent grid track overflow
                     "&:hover": {
-                      background: isActive ? "var(--bg-accent-4) !important" : "var(--bg-panel)",
-                      borderColor: { xs: "transparent", md: (hasManyRoles && !isActive) ? "var(--color-primary)" : "transparent" }
+                      background: isActive ? "var(--bg-accent-4) !important" : "var(--bg-panel)"
                     },
                     "&:last-child": { mb: 0 }
                   }}
@@ -540,8 +424,8 @@ const Header = ({ isSidebarCollapsed }) => {
                     {/* Circular Icon Badge */}
                     <Box
                       sx={{
-                        width: { xs: 34, md: hasManyRoles ? 40 : 34 },
-                        height: { xs: 34, md: hasManyRoles ? 40 : 34 },
+                        width: 34,
+                        height: 34,
                         borderRadius: "50%",
                         display: "flex",
                         alignItems: "center",
@@ -557,7 +441,7 @@ const Header = ({ isSidebarCollapsed }) => {
                       noWrap
                       sx={{
                         fontWeight: 800,
-                        fontSize: { xs: "0.85rem", md: hasManyRoles ? "0.8rem" : "0.85rem" },
+                        fontSize: "0.85rem",
                         letterSpacing: "0.3px",
                         textOverflow: "ellipsis",
                         overflow: "hidden"
@@ -601,32 +485,31 @@ const Header = ({ isSidebarCollapsed }) => {
             <Box
               sx={{
                 mx: 1.5,
-                borderRadius: { xs: "0px", md: hasManyRoles ? "16px" : "0px" },
-                border: { xs: "none", md: hasManyRoles ? "1px solid var(--border-color)" : "none" },
-                background: { xs: "transparent", md: hasManyRoles ? "var(--bg-paper)" : "transparent" },
+                borderRadius: "0px",
+                border: "none",
+                background: "transparent",
                 overflow: "hidden", // ensures rounded corners clip children
-                boxShadow: { xs: "none", md: hasManyRoles ? "0 2px 8px rgba(0,0,0,0.02)" : "none" },
-                display: { xs: "block", md: hasManyRoles ? "grid" : "block" },
-                gridTemplateColumns: { xs: "1fr", md: hasManyRoles ? "1fr 1fr" : "1fr" }
+                boxShadow: "none",
+                display: "block"
               }}
             >
               {/* My Profile */}
               <MenuItem
                 onClick={() => { handleClose(); navigate("/profile"); }}
                 sx={{
-                  borderRadius: { xs: "10px", md: hasManyRoles ? "0px" : "10px" },
+                  borderRadius: "10px",
                   fontSize: "0.85rem",
                   fontWeight: 600,
                   color: "var(--text-secondary)",
                   py: 1.2,
                   px: 2,
-                  mb: { xs: 0.5, md: hasManyRoles ? 0 : 0.5 },
-                  mx: { xs: 0, md: 0 },
+                  mb: 0.5,
+                  mx: 0,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
                   transition: "all 0.2s ease",
-                  borderRight: { xs: "none", md: hasManyRoles ? "1px solid var(--border-color)" : "none" },
+                  borderRight: "none",
                   "&:hover": {
                     background: "var(--bg-panel)",
                     color: "var(--color-primary)",
@@ -646,14 +529,14 @@ const Header = ({ isSidebarCollapsed }) => {
               <MenuItem
                 disableRipple
                 sx={{
-                  borderRadius: { xs: "10px", md: hasManyRoles ? "0px" : "10px" },
+                  borderRadius: "10px",
                   fontSize: "0.85rem",
                   fontWeight: 600,
                   color: "var(--text-secondary)",
                   py: 1.2,
                   px: 2,
-                  mb: { xs: 0.5, md: hasManyRoles ? 0 : 0.5 },
-                  mx: { xs: 0, md: 0 },
+                  mb: 0.5,
+                  mx: 0,
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
@@ -668,19 +551,20 @@ const Header = ({ isSidebarCollapsed }) => {
               </MenuItem>
             </Box>
 
-            <Box sx={{ display: { xs: "block", md: hasManyRoles ? "none" : "block" }, my: 2, mx: 2, height: "1px", background: "var(--border-color)" }} />
+            <Box sx={{ display: "block", my: 2, mx: 2, height: "1px", background: "var(--border-color)" }} />
 
             {/* Logout Button */}
             <MenuItem
               onClick={handleLogout}
               sx={{
-                display: { xs: "flex", md: hasManyRoles ? "none" : "flex" },
+                display: "flex",
                 borderRadius: "50px",
                 fontSize: "0.85rem",
                 fontWeight: 700,
                 color: "#ffffff",
                 py: 1.4,
                 mx: 1.5,
+                mb: 1.5,
                 justifyContent: "center",
                 boxShadow: "0 4px 12px rgba(0, 78, 146, 0.2)",
                 transition: "all 0.4s ease",
@@ -695,47 +579,26 @@ const Header = ({ isSidebarCollapsed }) => {
                   inset: 0,
                   background: "var(--gradient-primary)",
                   borderRadius: "50px",
-                  zIndex: -3,
-                  transition: "opacity 0.4s ease",
-                  opacity: 1,
+                  zIndex: -2,
                 },
 
-                // Inner Background for Hover (Adapted for dark mode)
+                // Red Hover Fill Layer
                 "&::before": {
                   content: '""',
                   position: "absolute",
                   inset: 0,
                   borderRadius: "50px",
-                  background: "var(--bg-accent-1)",
-                  zIndex: -2,
-                  transition: "opacity 0.4s ease",
-                  opacity: 0,
-                },
-
-                // Sharp Masked Gradient Border for Hover
-                "&::after": {
-                  content: '""',
-                  position: "absolute",
-                  inset: 0,
-                  borderRadius: "50px",
-                  padding: "2px",
-                  background: "linear-gradient(90deg, #cb2d3e, #ef473a)",
-                  WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-                  WebkitMaskComposite: "xor",
-                  maskComposite: "exclude",
+                  background: "linear-gradient(90deg, #bd0214ff, #bd0214ff)",
                   zIndex: -1,
-                  transition: "opacity 0.4s ease",
-                  opacity: 0,
+                  transform: "scaleX(0)",
+                  transformOrigin: "left",
+                  transition: "transform 0.6s ease-in-out",
                 },
 
                 "&:hover": {
-                  color: "#cb2d3e",
-                  boxShadow: "0 8px 20px rgba(203, 45, 62, 0.15)",
-                  transform: "translateY(-1px)",
-                  "& .blue-bg": { opacity: 0 },
-                  "&::before": { opacity: 1 },
-                  "&::after": { opacity: 1 },
-                  "& .MuiListItemIcon-root .MuiSvgIcon-root": { color: "#cb2d3e" }
+                  "&::before": {
+                    transform: "scaleX(1)",
+                  }
                 }
               }}
             >
