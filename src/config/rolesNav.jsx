@@ -180,7 +180,7 @@ export const ROLE_ROUTES = {
     //   icon: <Description />,
     //   nested: [
     //     { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
-        { text: "Resource Utilization", path: "/uniprime/special-data-entry/resource-utilization" },
+    { text: "Resource Utilization", path: "/uniprime/special-data-entry/resource-utilization", icon: <Assignment /> },
     //   ]
     // },
     {
