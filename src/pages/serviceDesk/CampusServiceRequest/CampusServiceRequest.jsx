@@ -1625,14 +1625,17 @@ export default function CampusServiceRequest() {
               </Typography>
 
               {/* 3-Column Metadata Grid */}
+              {/* 3-Column Metadata Grid */}
               <Box
                 sx={{
                   display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
                   gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
                   p: { xs: 2, sm: 2.2 },
                   bgcolor: "var(--bg-panel, #f8fafc)",
                   border: "1px solid var(--border-color, #e2e8f0)",
                   borderRadius: "14px",
+                  gap: { xs: 2, md: 3 },
                   gap: { xs: 2, md: 3 },
                   mb: 3,
                   alignItems: "center"
