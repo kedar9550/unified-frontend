@@ -907,11 +907,13 @@ export default function CampusServiceRequest() {
                     fontWeight: 800,
                     fontSize: "0.85rem"
                   }}
-                  imgProps={{
-                    onError: (e) => {
-                      if (!e.target.dataset.triedFallback) {
-                        e.target.dataset.triedFallback = "true";
-                        e.target.src = `https://info.aec.edu.in/aus/studentphotos/${student?.rollno}.jpg`;
+                  slotProps={{
+                    img: {
+                      onError: (e) => {
+                        if (!e.target.dataset.triedFallback) {
+                          e.target.dataset.triedFallback = "true";
+                          e.target.src = `https://info.aec.edu.in/aus/studentphotos/${student?.rollno}.jpg`;
+                        }
                       }
                     }
                   }}
@@ -1199,10 +1201,18 @@ export default function CampusServiceRequest() {
                       value={priority}
                       onChange={(e) => setPriority(e.target.value)}
                     >
-                      <MenuItem value="CRITICAL">🔴 Critical - Urgent emergency (Resolution &lt; 2 Hours)</MenuItem>
-                      <MenuItem value="HIGH">🟠 High - Immediate attention needed (Resolution &lt; 4 Hours)</MenuItem>
-                      <MenuItem value="MEDIUM">🔵 Medium - Standard Request (Resolution &lt; 24 Hours)</MenuItem>
-                      <MenuItem value="LOW">🟢 Low - Minor issue (Resolution &lt; 72 Hours)</MenuItem>
+                      <MenuItem value="CRITICAL">
+                        🔴 Critical <span style={{ fontSize: '0.75em', opacity: 0.7, marginLeft: '6px', fontWeight: 500 }}> - Urgent emergency (Resolution &lt; 2 Hours)</span>
+                      </MenuItem>
+                      <MenuItem value="HIGH">
+                        🟠 High <span style={{ fontSize: '0.75em', opacity: 0.7, marginLeft: '6px', fontWeight: 500 }}> - Immediate attention needed (Resolution &lt; 4 Hours)</span>
+                      </MenuItem>
+                      <MenuItem value="MEDIUM">
+                        🔵 Medium <span style={{ fontSize: '0.75em', opacity: 0.7, marginLeft: '6px', fontWeight: 500 }}> - Standard Request (Resolution &lt; 24 Hours)</span>
+                      </MenuItem>
+                      <MenuItem value="LOW">
+                        🟢 Low <span style={{ fontSize: '0.75em', opacity: 0.7, marginLeft: '6px', fontWeight: 500 }}> - Minor issue (Resolution &lt; 72 Hours)</span>
+                      </MenuItem>
                     </Select>
                   </FormControl>
 
