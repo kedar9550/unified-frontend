@@ -23,6 +23,7 @@ import ArticleIcon from '@mui/icons-material/Article';
 import { toast } from "sonner";
 import API from "../../../api/axios";
 import EditResearchDetailsDialog from "./EditResearchDetailsDialog";
+import EditAuthorsDialog from "./EditAuthorsDialog";
 import { useAuth } from "../../../context/AuthContext";
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import SchoolIcon from '@mui/icons-material/School';
@@ -113,6 +114,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
     const [isEditingDetails, setIsEditingDetails] = useState(false);
     const [editableData, setEditableData] = useState({});
     const [detailsSaving, setDetailsSaving] = useState(false);
+    const [isAuthorModalOpen, setIsAuthorModalOpen] = useState(false);
 
     const [leftCardHeight, setLeftCardHeight] = useState(null);
     const observerRef = React.useRef(null);
@@ -626,7 +628,12 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                                     try {
                                                         const res = await API.put(`/api/hod/research-requests/journal/${data._id}`, editableData);
                                                         if (res.data?.success) {
-                                                            setData(res.data.data);
+                                                            const freshRes = await API.get(`/api/research/journal/${data._id}`);
+                                                            if (freshRes.data?.success) {
+                                                                setData(freshRes.data.data);
+                                                            } else {
+                                                                setData(res.data.data);
+                                                            }
                                                             setIsEditingDetails(false);
                                                             toast.success("Publication details updated successfully");
                                                         }
@@ -664,6 +671,10 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                                     publishedMonth: data.publishedMonth || data.month || "",
                                                     agecReferencingNumbers: data.agecReferencingNumbers || data.referencingNos || "",
                                                     numberOfReferencesBelongingToAGEC: data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : ""),
+                                                    userAuthorPosition: data.userAuthorPosition || (data.firstAuthor === "Yes" ? 1 : data.authorPosition) || 1,
+                                                    coAuthors: data.coAuthors || [],
+                                                    totalAuthors: data.totalAuthors || 1,
+                                                    isStudentsInvolved: data.isStudentsInvolved || "No",
                                                     applyingSeedGrant: data.applyingSeedGrant || "No",
                                                     applyIncentive: data.applyIncentive || "No",
                                                     approvedAmount: data.approvedAmount || ""
@@ -714,7 +725,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                     icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />,
                                     editable: false
                                 },
-                                { key: "authorPos", label: "Applicant Author Position", chip: (
+                                { key: "userAuthorPosition", label: "Applicant Author Position", chip: (
                                     (() => {
                                         const pos = data.userAuthorPosition || (data.firstAuthor === "Yes" ? 1 : data.authorPosition) || 1;
                                         const total = data.totalAuthors || 1;
@@ -744,7 +755,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                             </Box>
                                         );
                                     })()
-                                ), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                ), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "number" },
                                 { key: "correspondingAuthor", label: "Corresponding Author", value: data.correspondingAuthor || "No", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
                                 { key: "journalQuartile", label: "Journal Quartile", value: data.journalQuartile || data.categoryOfJournal || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Q1", "Q2", "Q3", "Q4", "None"] },
                                 { key: "isScopus", label: "Scopus", value: data.isScopus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
@@ -763,7 +774,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                 { key: "agecReferencingNumbers", label: "AGEC Referencing Numbers", value: data.agecReferencingNumbers || data.referencingNos || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
                                 { key: "numberOfReferencesBelongingToAGEC", label: "Number of References Belonging to AGEC", value: data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-"), icon: <GroupsIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
                                 { key: "applyingSeedGrant", label: "Seed Grant Work", value: data.applyingSeedGrant || "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
-                                { key: "applyIncentive", label: "Apply For Incentive", value: data.applyIncentive || "No", icon: <CardGiftcardIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                { key: "applyIncentive", label: "Apply For Incentive", value: data.applyIncentive || "No", icon: <CardGiftcardIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
                                 { key: "estimatedIncentiveAmount", label: "Estimated Incentive Amount", value: data.estimatedIncentiveAmount ? `₹${Number(data.estimatedIncentiveAmount).toLocaleString('en-IN')}` : "₹0", icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
                                 { key: "approvedAmount", label: "Approved Incentive Amount", value: data.approvedAmount || "-", icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "number" }
                             ].map((item, idx, arr) => (
@@ -798,14 +809,21 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                                 {item.options.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
                                             </Select>
                                         ) : (
-                                            <TextField
-                                                size="small"
-                                                type={item.type === "number" ? "number" : "text"}
-                                                value={editableData[item.key] || ""}
-                                                onChange={(e) => setEditableData({ ...editableData, [item.key]: e.target.value })}
-                                                sx={{ width: 120, "& .MuiInputBase-root": { height: 32, fontSize: "0.875rem" } }}
-                                                inputProps={item.type === "number" ? { step: "any" } : {}}
-                                            />
+                                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                                <TextField
+                                                    size="small"
+                                                    type={item.type === "number" ? "number" : "text"}
+                                                    value={editableData[item.key] || ""}
+                                                    onChange={(e) => setEditableData({ ...editableData, [item.key]: e.target.value })}
+                                                    sx={{ width: 120, "& .MuiInputBase-root": { height: 32, fontSize: "0.875rem" } }}
+                                                    inputProps={item.type === "number" ? { step: "any" } : {}}
+                                                />
+                                                {item.key === "userAuthorPosition" && (
+                                                    <Button variant="outlined" size="small" onClick={() => setIsAuthorModalOpen(true)} sx={{ height: 32, textTransform: 'none', borderRadius: '8px' }}>
+                                                        Edit Authors Details
+                                                    </Button>
+                                                )}
+                                            </Box>
                                         )
                                     ) : item.chip ? (
                                         item.chip
@@ -1197,8 +1215,9 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 </Box>
             </Box>
             {isResearchAdmin && (
-                <EditResearchDetailsDialog
-                    open={editOpen}
+                <>
+                    <EditResearchDetailsDialog
+                        open={editOpen}
                     onClose={() => setEditOpen(false)}
                     type="Journal"
                     currentData={data}
@@ -1215,6 +1234,26 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         if (updated.approvedAmount) setApprovedAmount(updated.approvedAmount);
                     }}
                 />
+                <EditAuthorsDialog
+                    open={isAuthorModalOpen}
+                    onClose={() => setIsAuthorModalOpen(false)}
+                    coAuthors={editableData.coAuthors || []}
+                    totalAuthors={editableData.totalAuthors || 1}
+                    userAuthorPosition={editableData.userAuthorPosition || 1}
+                    correspondingAuthor={editableData.correspondingAuthor || "No"}
+                    isStudentsInvolved={editableData.isStudentsInvolved || "No"}
+                    onSave={(authorsData) => {
+                        setEditableData(prev => ({
+                            ...prev,
+                            coAuthors: authorsData.coAuthors,
+                            totalAuthors: authorsData.totalAuthors,
+                            userAuthorPosition: authorsData.userAuthorPosition,
+                            correspondingAuthor: authorsData.correspondingAuthor,
+                            isStudentsInvolved: authorsData.isStudentsInvolved
+                        }));
+                    }}
+                />
+                </>
             )}
         </Box >
     );
