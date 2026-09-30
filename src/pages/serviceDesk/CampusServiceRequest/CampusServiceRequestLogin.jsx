@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Box, Typography, Button, TextField, Card, CardContent, CircularProgress } from "@mui/material";
+import { Box, Typography, Button, TextField, Card, CardContent } from "@mui/material";
 import axios from "axios";
 import { toast } from "sonner";
 import ThemeToggle from "../../../components/common/Themetoggle";
+import { useLoading } from "../../../context/LoadingContext";
 
 export default function CampusServiceRequestLogin({ isDarkMode, onLoginSuccess, backendUrl }) {
+  const { startLoading, stopLoading } = useLoading();
   // Login flow states
   const [step, setStep] = useState(1); // 1 = Enter Roll No, 2 = Enter OTP
   const [rollNoInput, setRollNoInput] = useState("");
@@ -15,6 +17,20 @@ export default function CampusServiceRequestLogin({ isDarkMode, onLoginSuccess, 
   const [maskedMobile, setMaskedMobile] = useState("");
   const [studentNamePreview, setStudentNamePreview] = useState("");
   const [resendTimer, setResendTimer] = useState(0);
+
+  // Sync loader states
+  useEffect(() => {
+    if (otpSending || otpVerifying) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+    return () => {
+      if (otpSending || otpVerifying) {
+        stopLoading();
+      }
+    };
+  }, [otpSending, otpVerifying, startLoading, stopLoading]);
 
   // Countdown timer for OTP resend
   useEffect(() => {
@@ -101,7 +117,6 @@ export default function CampusServiceRequestLogin({ isDarkMode, onLoginSuccess, 
         document.getElementById(`otp-input-0`)?.focus();
       }, 500);
       toast.error(err.response?.data?.message || "Invalid OTP");
-    } finally {
       setOtpVerifying(false);
     }
   };
@@ -226,7 +241,7 @@ export default function CampusServiceRequestLogin({ isDarkMode, onLoginSuccess, 
                       "&:hover": { bgcolor: "var(--gradient-primary-hover)" }
                     }}
                   >
-                    {otpSending ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Send OTP"}
+                    {otpSending ? "Sending..." : "Send OTP"}
                   </Button>
                 </Box>
               ) : (
@@ -318,7 +333,7 @@ export default function CampusServiceRequestLogin({ isDarkMode, onLoginSuccess, 
                       "&:hover": { bgcolor: "#15803d" }
                     }}
                   >
-                    {otpVerifying ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Verify"}
+                    {otpVerifying ? "Verifying..." : "Verify"}
                   </Button>
 
                   <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 1 }}>

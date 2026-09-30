@@ -80,6 +80,8 @@ import axios from "axios";
 import { toast } from "sonner";
 import ThemeToggle from "../../../components/common/Themetoggle";
 import CustomTabs from "../../../components/common/CustomTabs";
+import Loader from "../../../components/common/Loader";
+import { useLoading } from "../../../context/LoadingContext";
 import universityLogoGold from "../../../assets/Aditya University Gold Logo.png";
 import circleLogoWhite from "../../../assets/Circle_logo_white.png";
 import smallLogoWhite from "../../../assets/Small_logo_white.png";
@@ -258,6 +260,7 @@ const formatRaisedOnDate = (dateStr) => {
 };
 
 export default function CampusServiceRequest() {
+  const { startLoading, stopLoading } = useLoading();
   // Theme state
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return document.body.classList.contains("dark-mode") ||
@@ -366,6 +369,20 @@ export default function CampusServiceRequest() {
     setDetailOpen(false);
     setSelectedTicketDetail(null);
   };
+
+  // Sync loader states
+  useEffect(() => {
+    if (authChecking || metaLoading || loadingTickets) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+    return () => {
+      if (authChecking || metaLoading || loadingTickets) {
+        stopLoading();
+      }
+    };
+  }, [authChecking, metaLoading, loadingTickets, startLoading, stopLoading]);
 
   // Check saved student session on mount
   useEffect(() => {
@@ -668,11 +685,7 @@ export default function CampusServiceRequest() {
   const paginatedTickets = filteredTickets.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   if (authChecking) {
-    return (
-      <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "#f8fafc" }}>
-        <CircularProgress size={40} sx={{ color: "#2563eb" }} />
-      </Box>
-    );
+    return null; // The global loader handles this now
   }
 
   // =============================================================
@@ -1228,14 +1241,32 @@ export default function CampusServiceRequest() {
                         textTransform: "none",
                         borderRadius: "10px",
                         borderStyle: "dashed",
-                        borderColor: isDarkMode ? "rgba(255,255,255,0.2)" : "#cbd5e1",
+                        borderColor: "var(--color-primary)",
                         py: 1.5,
                         px: 3,
-                        color: isDarkMode ? "#94a3b8" : "#475569",
+                        color: "var(--color-primary)",
+                        position: "relative",
+                        overflow: "hidden",
+                        transition: "color 0.4s ease, border-color 0.4s ease",
+                        zIndex: 1,
+                        "&::before": {
+                          content: '""',
+                          position: "absolute",
+                          top: "50%",
+                          left: "50%",
+                          width: 0,
+                          height: "100%",
+                          background: "var(--gradient-primary)",
+                          transform: "translate(-50%, -50%)",
+                          transition: "width 0.8s ease-in-out",
+                          zIndex: -1,
+                        },
                         "&:hover": {
-                          borderColor: isDarkMode ? "#3b82f6" : "#2563eb",
-                          bgcolor: isDarkMode ? "rgba(59, 130, 246, 0.1)" : "#f8fafc",
-                          color: isDarkMode ? "#60a5fa" : "#1d4ed8"
+                          borderColor: "transparent",
+                          color: "#ffffff",
+                          "&::before": {
+                            width: "100%",
+                          }
                         }
                       }}
                     >
@@ -1251,7 +1282,7 @@ export default function CampusServiceRequest() {
                             label={`${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`}
                             onDelete={() => removeAttachment(idx)}
                             deleteIcon={<DeleteIcon />}
-                            sx={{ bgcolor: "#eff6ff", color: "#1d4ed8", fontWeight: 600 }}
+                            sx={{ bgcolor: isDarkMode ? "rgba(190, 147, 55, 0.1)" : "#eff6ff", color: "var(--color-primary)", fontWeight: 600 }}
                           />
                         ))}
                       </Box>
@@ -1360,7 +1391,7 @@ export default function CampusServiceRequest() {
             {/* Content: Loading / Empty / Table */}
             {loadingTickets ? (
               <Box sx={{ py: 8, textAlign: "center" }}>
-                <CircularProgress size={36} sx={{ color: "#2563eb" }} />
+                <CircularProgress size={36} sx={{ color: "var(--primary-gradient)" }} />
                 <Typography variant="body2" sx={{ color: "#64748b", mt: 2 }}>
                   Fetching your tickets...
                 </Typography>
@@ -1375,7 +1406,7 @@ export default function CampusServiceRequest() {
                   {tableSearchQuery ? "No tickets matched your search query." : "You haven't raised any requests in this category yet."}
                 </Typography>
                 <Button variant="contained" onClick={() => setActiveTab(0)} sx={{ borderRadius: "10px", fontWeight: 700 }}>
-                  Raise a Request Now
+                  Raise a Request
                 </Button>
               </Card>
             ) : (
