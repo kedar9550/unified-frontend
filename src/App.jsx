@@ -91,7 +91,7 @@ import ManageServiceMembers from "./pages/serviceDesk/ManageServiceMembers";
 import AssignedToMe from "./pages/serviceDesk/AssignedToMe";
 import Reports from "./pages/serviceDesk/Reports";
 import FeedbackOverview from "./pages/serviceDesk/FeedbackOverview";
-import CampusServiceRequest from "./pages/serviceDesk/CampusServiceRequest";
+import CampusServiceRequest from "./pages/serviceDesk/CampusServiceRequest/CampusServiceRequest";
 
 //Student Event Admin
 import EventCreation from "./pages/studenteventsadmin/evencreation";

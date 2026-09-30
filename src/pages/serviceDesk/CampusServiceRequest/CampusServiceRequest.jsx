@@ -78,12 +78,13 @@ import StepConnector, { stepConnectorClasses } from "@mui/material/StepConnector
 import { styled } from "@mui/material/styles";
 import axios from "axios";
 import { toast } from "sonner";
-import ThemeToggle from "../../components/common/Themetoggle";
-import CustomTabs from "../../components/common/CustomTabs";
-import universityLogoGold from "../../assets/Aditya University Gold Logo.png";
-import circleLogoWhite from "../../assets/Circle_logo_white.png";
-import smallLogoWhite from "../../assets/Small_logo_white.png";
-import logoDarkTheme from "../../assets/Logo_Dark_theme.svg";
+import ThemeToggle from "../../../components/common/Themetoggle";
+import CustomTabs from "../../../components/common/CustomTabs";
+import universityLogoGold from "../../../assets/Aditya University Gold Logo.png";
+import circleLogoWhite from "../../../assets/Circle_logo_white.png";
+import smallLogoWhite from "../../../assets/Small_logo_white.png";
+import logoDarkTheme from "../../../assets/Logo_Dark_theme.svg";
+import CampusServiceRequestLogin from "./CampusServiceRequestLogin";
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:9022";
 
@@ -318,17 +319,6 @@ export default function CampusServiceRequest() {
     }
   };
 
-  // Login flow states
-  const [step, setStep] = useState(1); // 1 = Enter Roll No, 2 = Enter OTP
-  const [rollNoInput, setRollNoInput] = useState("");
-  const [otpInput, setOtpInput] = useState("");
-  const [otpSending, setOtpSending] = useState(false);
-  const [otpVerifying, setOtpVerifying] = useState(false);
-  const [otpStatus, setOtpStatus] = useState("idle");
-  const [maskedMobile, setMaskedMobile] = useState("");
-  const [studentNamePreview, setStudentNamePreview] = useState("");
-  const [resendTimer, setResendTimer] = useState(0);
-
   // Dashboard states
   const [activeTab, setActiveTab] = useState(0); // 0 = Raise Ticket, 1 = My Requests
   const [services, setServices] = useState([]);
@@ -376,45 +366,6 @@ export default function CampusServiceRequest() {
     setDetailOpen(false);
     setSelectedTicketDetail(null);
   };
-
-  // Countdown timer for OTP resend
-  useEffect(() => {
-    let timer;
-    if (resendTimer > 0) {
-      timer = setInterval(() => {
-        setResendTimer((prev) => prev - 1);
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [resendTimer]);
-
-  // Ensure staff/employee sessions and cookies are cleared on mount so the student portal runs in full isolation
-  useEffect(() => {
-    const clearStaffSessionOnMount = async () => {
-      // 1. Remove employee localStorage artifacts if present
-      const hadEmployeeUser = localStorage.getItem("user");
-      const hadAuthToken = localStorage.getItem("authToken");
-      if (hadEmployeeUser || hadAuthToken) {
-        localStorage.removeItem("user");
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("activeRole");
-        localStorage.removeItem("fcmToken");
-      }
-
-      // 2. Clear backend HTTP-only staff session cookie
-      try {
-        await axios.post(
-          `${BACKEND_URL}/api/campus-service-request/auth/clear-staff-session`,
-          {},
-          { withCredentials: true }
-        );
-      } catch (err) {
-        // Silently continue
-      }
-    };
-
-    clearStaffSessionOnMount();
-  }, []);
 
   // Check saved student session on mount
   useEffect(() => {
@@ -548,96 +499,6 @@ export default function CampusServiceRequest() {
     }
   };
 
-  // -------------------------------------------------------------
-  // Authentication Handlers (OTP Send & Verify)
-  // -------------------------------------------------------------
-  const handleSendOtp = async (e) => {
-    if (e) e.preventDefault();
-    const cleanRoll = rollNoInput.trim().toUpperCase();
-
-    if (!cleanRoll) {
-      toast.error("Please enter your Student Roll Number");
-      return;
-    }
-
-    try {
-      setOtpSending(true);
-      const res = await axios.post(`${BACKEND_URL}/api/campus-service-request/auth/send-otp`, {
-        rollno: cleanRoll
-      });
-
-      if (res.data.success) {
-        setMaskedMobile(res.data.data.maskedMobile);
-        setStudentNamePreview(res.data.data.studentname);
-        setStep(2);
-        setResendTimer(60);
-        if (res.data.data.devOtp) {
-          setOtpInput(res.data.data.devOtp);
-          toast.success(`OTP sent to ${res.data.data.maskedMobile}! (Dev Code: ${res.data.data.devOtp})`, { duration: 6000 });
-        } else {
-          toast.success(res.data.message || "OTP sent successfully");
-        }
-      }
-    } catch (err) {
-      const msg = err.response?.data?.message || "Failed to verify roll number. Please check university records.";
-      toast.error(msg, { duration: 6000 });
-    } finally {
-      setOtpSending(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e) => {
-    if (e) e.preventDefault();
-    const cleanRoll = rollNoInput.trim().toUpperCase();
-    const cleanOtp = otpInput.trim();
-
-    if (!cleanOtp || cleanOtp.length < 6) {
-      toast.error("Please enter the complete 6-digit OTP");
-      return;
-    }
-
-    try {
-      setOtpVerifying(true);
-      setOtpStatus("idle");
-      const res = await axios.post(`${BACKEND_URL}/api/campus-service-request/auth/verify-otp`, {
-        rollno: cleanRoll,
-        otp: cleanOtp
-      });
-
-      if (res.data.success && res.data.token) {
-        setOtpStatus("success");
-        const receivedToken = res.data.token;
-        const receivedStudent = res.data.student;
-
-        // Briefly show success state before proceeding
-        setTimeout(() => {
-          localStorage.removeItem("user");
-          localStorage.removeItem("authToken");
-          localStorage.removeItem("activeRole");
-          localStorage.removeItem("fcmToken");
-
-          localStorage.setItem("campus_student_token", receivedToken);
-          localStorage.setItem("campus_student_profile", JSON.stringify(receivedStudent));
-
-          setToken(receivedToken);
-          setStudent(receivedStudent);
-          toast.success(`Welcome, ${receivedStudent.studentname}!`);
-        }, 800);
-      }
-    } catch (err) {
-      setOtpStatus("error");
-      setTimeout(() => {
-        setOtpInput("");
-        setOtpStatus("idle");
-        document.getElementById(`otp-input-0`)?.focus();
-      }, 500);
-      const msg = err.response?.data?.message || "Invalid or expired OTP. Please try again.";
-      toast.error(msg);
-    } finally {
-      setOtpVerifying(false);
-    }
-  };
-
   const handleLogout = () => {
     localStorage.removeItem("campus_student_token");
     localStorage.removeItem("campus_student_profile");
@@ -647,7 +508,6 @@ export default function CampusServiceRequest() {
     setRollNoInput("");
     setOtpInput("");
     setMyTickets([]);
-    toast.info("Logged out from Campus Service Desk");
   };
 
   // -------------------------------------------------------------
@@ -820,290 +680,14 @@ export default function CampusServiceRequest() {
   // =============================================================
   if (!student || !token) {
     return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: { xs: "column", md: "row" },
-          bgcolor: isDarkMode ? "#0f172a" : "#e6f3ffff",
-          position: "relative",
-          overflow: "hidden"
+      <CampusServiceRequestLogin
+        isDarkMode={isDarkMode}
+        backendUrl={BACKEND_URL}
+        onLoginSuccess={(studentData, tokenData) => {
+          setStudent(studentData);
+          setToken(tokenData);
         }}
-      >
-        {/* Top Right Theme Toggle */}
-        <Box sx={{ position: "absolute", top: { xs: 16, sm: 24 }, right: { xs: 16, sm: 24 }, zIndex: 10 }}>
-          <ThemeToggle />
-        </Box>
-
-        {/* Left Side: 70% */}
-        <Box
-          sx={{
-            flex: { xs: "1", md: "0 0 70%" },
-            width: { xs: "100%", md: "70%" },
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            p: { xs: 2, sm: 4 },
-            color: "var(--text-primary, #1e293b)",
-            position: "relative",
-            zIndex: 2
-          }}
-        >
-          {/* Header Branding */}
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", mb: 4 }}>
-            <Box
-              component="img"
-              src="/site-logo.svg"
-              alt="Aditya University Logo"
-              sx={{ height: 64, mb: .8 }}
-            />
-            {/* <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: "-0.5px", color: isDarkMode ? "#f8fafc" : "#0f172a" }}>
-              Aditya University
-            </Typography> */}
-            <Typography variant="subtitle1" sx={{ color: isDarkMode ? "#94a3b8" : "#64748b", fontWeight: 400, textAlign: "center" }}>
-              Campus Service Request & Student Helpdesk
-            </Typography>
-          </Box>
-
-          {/* Auth Card */}
-          <Card
-            sx={{
-              width: "100%",
-              maxWidth: 440,
-              borderRadius: "20px",
-              bgcolor: "var(--bg-paper, #ffffff)",
-              color: "var(--text-primary, #1e293b)",
-              border: "1px solid var(--border-color, #e2e8f0)",
-              boxShadow: isDarkMode ? "0 25px 50px -12px rgba(0, 0, 0, 0.7)" : "0 25px 50px -12px rgba(0, 0, 0, 0.12)",
-              overflow: "hidden"
-            }}
-          >
-            <Box sx={{ p: 3, bgcolor: "var(--bg-panel, #f8fafc)", borderBottom: "1px solid var(--border-color, #e2e8f0)" }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primary, #1e293b)" }}>
-                {step === 1 ? "Student Verification" : "Enter Verification Code"}
-              </Typography>
-              <Typography variant="body2" sx={{ color: "var(--text-secondary, #64748b)", mt: 0.5 }}>
-                {step === 1
-                  ? "Enter your University Roll Number to receive OTP."
-                  : `6-digit OTP sent to ${maskedMobile}`}
-              </Typography>
-            </Box>
-
-            <CardContent sx={{ p: 3 }}>
-              {step === 1 ? (
-                <Box component="form" onSubmit={handleSendOtp} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-                  <TextField
-                    fullWidth
-                    label="Student Roll Number"
-                    placeholder="e.g. 19A91A0341"
-                    value={rollNoInput}
-                    onChange={(e) => setRollNoInput(e.target.value.toUpperCase())}
-                    autoFocus
-                    required
-                    slotProps={{
-                      input: {
-                        startAdornment: <PersonIcon sx={{ color: "#94a3b8", mr: 1 }} />
-                      }
-                    }}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "50px",
-                      },
-                      "& .MuiInputLabel-root": {
-                        ml: 2
-                      },
-                      "& .MuiOutlinedInput-root legend": {
-                        ml: 2
-                      }
-                    }}
-                    helperText="Only active regular students can raise campus service requests."
-                  />
-
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    size="large"
-                    disabled={otpSending || !rollNoInput.trim()}
-                    sx={{
-                      py: 1.5,
-                      px: 6,
-                      alignSelf: "center",
-                      borderRadius: "50px",
-                      fontWeight: 400,
-                      bgcolor: "var(--gradient-primary)",
-                      "&:hover": { bgcolor: "var(--gradient-primary-hover)" }
-                    }}
-                  >
-                    {otpSending ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Send OTP"}
-                  </Button>
-                </Box>
-              ) : (
-                <Box component="form" onSubmit={handleVerifyOtp} sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-                  <Box sx={{ p: 2, bgcolor: isDarkMode ? "rgba(59, 130, 246, 0.15)" : "#eff6ff", borderRadius: "10px", border: isDarkMode ? "1px solid rgba(59, 130, 246, 0.3)" : "1px solid #bfdbfe" }}>
-                    <Typography variant="body2" sx={{ color: isDarkMode ? "#93c5fd" : "#1e40af", fontWeight: 600 }}>
-                      Student: {studentNamePreview}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: isDarkMode ? "#60a5fa" : "#3b82f6" }}>
-                      Roll No: {rollNoInput}
-                    </Typography>
-                  </Box>
-
-                  <style>
-                    {`
-                      @keyframes shake {
-                        10%, 90% { transform: translate3d(-1px, 0, 0); }
-                        20%, 80% { transform: translate3d(2px, 0, 0); }
-                        30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-                        40%, 60% { transform: translate3d(4px, 0, 0); }
-                      }
-                    `}
-                  </style>
-                  <Box sx={{ display: "flex", gap: { xs: 1, sm: 1.5 }, justifyContent: "center", mb: 2 }}>
-                    {[...Array(6)].map((_, index) => (
-                      <TextField
-                        key={index}
-                        id={`otp-input-${index}`}
-                        autoFocus={index === 0}
-                        value={otpInput[index] || ""}
-                        inputProps={{
-                          maxLength: 1,
-                        }}
-                        sx={{
-                          width: { xs: 45, sm: 55 },
-                          animation: otpStatus === "error" ? "shake 0.5s cubic-bezier(.36,.07,.19,.97) both" : "none",
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: "12px",
-                            bgcolor: isDarkMode ? "rgba(255, 255, 255, 0.05)" : "#fff",
-                            "& fieldset": {
-                              borderColor: otpStatus === "success" ? "#16a34a !important" : otpStatus === "error" ? "#dc2626 !important" : undefined,
-                              borderWidth: otpStatus !== "idle" ? "2px" : undefined
-                            }
-                          },
-                          "& .MuiInputBase-input": {
-                            textAlign: "center",
-                            fontSize: "1.5rem",
-                            fontWeight: 700,
-                            p: 1.5,
-                            color: otpStatus === "success" ? "#16a34a" : otpStatus === "error" ? "#dc2626" : "inherit"
-                          }
-                        }}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/\D/g, "");
-                          if (val) {
-                            const newOtp = otpInput.split("");
-                            newOtp[index] = val;
-                            setOtpInput(newOtp.join("").slice(0, 6));
-                            if (index < 5) {
-                              document.getElementById(`otp-input-${index + 1}`).focus();
-                            }
-                          } else {
-                            const newOtp = otpInput.split("");
-                            newOtp[index] = "";
-                            setOtpInput(newOtp.join(""));
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Backspace" && !otpInput[index] && index > 0) {
-                            document.getElementById(`otp-input-${index - 1}`).focus();
-                          }
-                        }}
-                        onPaste={(e) => {
-                          e.preventDefault();
-                          const pastedData = e.clipboardData.getData("text/plain").replace(/\D/g, "").slice(0, 6);
-                          if (pastedData) {
-                            setOtpInput(pastedData);
-                            const nextIndex = Math.min(pastedData.length, 5);
-                            document.getElementById(`otp-input-${nextIndex}`)?.focus();
-                          }
-                        }}
-                      />
-                    ))}
-                  </Box>
-
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    size="large"
-                    disabled={otpVerifying || otpInput.length < 6}
-                    sx={{
-                      py: 1.5,
-                      px: 6,
-                      alignSelf: "center",
-                      borderRadius: "50px",
-                      fontWeight: 700,
-                      bgcolor: "#16a34a",
-                      "&:hover": { bgcolor: "#15803d" }
-                    }}
-                  >
-                    {otpVerifying ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Verify"}
-                  </Button>
-
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 1 }}>
-                    <Button
-                      variant="text"
-                      size="small"
-                      onClick={() => {
-                        setStep(1);
-                        setOtpInput("");
-                      }}
-                      sx={{ color: "var(--text-secondary, #64748b)", textTransform: "none" }}
-                    >
-                      Change Roll Number
-                    </Button>
-
-                    <Button
-                      variant="text"
-                      size="small"
-                      disabled={resendTimer > 0 || otpSending}
-                      onClick={handleSendOtp}
-                      sx={{ color: resendTimer > 0 ? "var(--text-secondary, #94a3b8)" : "#2563eb", fontWeight: 600, textTransform: "none" }}
-                    >
-                      {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend OTP"}
-                    </Button>
-                  </Box>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Footer Note */}
-          <Typography variant="caption" sx={{ color: isDarkMode ? "#94a3b8" : "#64748b", mt: 4, textAlign: "center" }}>
-            Campus Service Request System &bull; Aditya University
-          </Typography>
-        </Box>
-
-        {/* Right Side: 30% */}
-        <Box
-          sx={{
-            flex: { xs: "none", md: "0 0 30%" },
-            width: { xs: "100%", md: "30%" },
-            display: { xs: "none", md: "flex" },
-            alignItems: "center",
-            justifyContent: "center",
-            position: "relative"
-          }}
-        >
-          <Box
-            component="img"
-            src={isDarkMode ? "/Circle_Gold.svg" : "/Circle_Orange.svg"}
-            alt="University Graphic"
-            sx={{
-              position: "absolute",
-              right: 0,
-              top: "50%",
-              width: { xs: "400px", md: "800px", lg: "1250px" },
-              height: "auto",
-              filter: isDarkMode ? "drop-shadow(0 0 40px rgba(190,147,55,0.2))" : "drop-shadow(0 0 40px rgba(249,115,22,0.2))",
-              animation: "spinAndStay 60s linear infinite",
-              "@keyframes spinAndStay": {
-                "0%": { transform: "translate(51%, -50%) rotate(0deg)" },
-                "100%": { transform: "translate(51%, -50%) rotate(360deg)" }
-              }
-            }}
-          />
-        </Box>
-      </Box>
+      />
     );
   }
 
@@ -1111,10 +695,16 @@ export default function CampusServiceRequest() {
   // SCREEN 2: AUTHENTICATED STUDENT SERVICE DESK
   // =============================================================
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "var(--bg-main, #f8fafc)", color: "var(--text-primary, #1e293b)", pb: 8 }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: "var(--bg-main, #f8fafc)", color: "var(--text-primary, #1e293b)", pb: 2 }}>
       {/* Top Banner & Header */}
       <Box
         sx={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          width: "100%",
+          zIndex: 1100,
           background: "var(--gradient-primary, linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%))",
           color: "#ffffff",
           py: 1.5,
@@ -1476,7 +1066,7 @@ export default function CampusServiceRequest() {
       </Box>
 
       {/* Main Container */}
-      <Box sx={{ maxWidth: 1200, mx: "auto", px: { xs: 2, sm: 4 }, mt: 4 }}>
+      <Box sx={{ maxWidth: 1200, mx: "auto", px: { xs: 2, sm: 4 }, pt: "100px" }}>
         {/* Navigation Tabs */}
         <CustomTabs
           value={activeTab}
@@ -1638,11 +1228,15 @@ export default function CampusServiceRequest() {
                         textTransform: "none",
                         borderRadius: "10px",
                         borderStyle: "dashed",
-                        borderColor: "#cbd5e1",
+                        borderColor: isDarkMode ? "rgba(255,255,255,0.2)" : "#cbd5e1",
                         py: 1.5,
                         px: 3,
-                        color: "#475569",
-                        "&:hover": { borderColor: "#2563eb", bgcolor: "#f8fafc" }
+                        color: isDarkMode ? "#94a3b8" : "#475569",
+                        "&:hover": {
+                          borderColor: isDarkMode ? "#3b82f6" : "#2563eb",
+                          bgcolor: isDarkMode ? "rgba(59, 130, 246, 0.1)" : "#f8fafc",
+                          color: isDarkMode ? "#60a5fa" : "#1d4ed8"
+                        }
                       }}
                     >
                       Click to Upload Files
@@ -1680,7 +1274,7 @@ export default function CampusServiceRequest() {
                       "&:hover": { bgcolor: "#1d4ed8" }
                     }}
                   >
-                    {submitting ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "🚀 Submit Service Request"}
+                    {submitting ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Submit Service Request"}
                   </Button>
                 </Box>
               </CardContent>
@@ -1694,68 +1288,74 @@ export default function CampusServiceRequest() {
         {activeTab === 1 && (
           <Box>
             {/* Filter, Search, and Refresh Bar */}
-            <Box
+            <Card
+              elevation={0}
               sx={{
-                display: "flex",
-                flexWrap: "wrap",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 2,
-                mb: 3
+                borderRadius: "16px",
+                border: "1px solid var(--border-color, #e2e8f0)",
+                bgcolor: "var(--bg-paper, #ffffff)",
+                mb: 3,
+                boxShadow: "0 4px 20px rgba(0,0,0,0.02)"
               }}
             >
-              {/* Status Filter Chips */}
-              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                {[
-                  { key: "ALL", label: "All Requests" },
-                  { key: "ACTIVE", label: "Active / In Progress" },
-                  { key: "RESOLVED", label: "Resolved" },
-                  { key: "CLOSED", label: "Closed" }
-                ].map((f) => (
-                  <Chip
-                    key={f.key}
-                    label={f.label}
-                    onClick={() => {
-                      setTicketFilter(f.key);
+              <CardContent
+                sx={{
+                  p: 2,
+                  "&:last-child": { pb: 2 },
+                  display: "flex",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 2
+                }}
+              >
+                {/* Status Filter Dropdown */}
+                <Box sx={{ minWidth: { xs: "100%", sm: 220 } }}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel id="status-filter-label" sx={{ fontWeight: 600 }}>Filter Status</InputLabel>
+                    <Select
+                      labelId="status-filter-label"
+                      value={ticketFilter}
+                      label="Filter Status"
+                      onChange={(e) => {
+                        setTicketFilter(e.target.value);
+                        setPage(0);
+                      }}
+                      sx={{
+                        borderRadius: "10px",
+                        fontWeight: 600,
+                        bgcolor: "var(--bg-paper, #ffffff)"
+                      }}
+                    >
+                      <MenuItem value="ALL" sx={{ fontWeight: 600 }}>All Requests</MenuItem>
+                      <MenuItem value="ACTIVE" sx={{ fontWeight: 600 }}>Active / In Progress</MenuItem>
+                      <MenuItem value="RESOLVED" sx={{ fontWeight: 600 }}>Resolved</MenuItem>
+                      <MenuItem value="CLOSED" sx={{ fontWeight: 600 }}>Closed</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+
+                {/* Search */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+                  <TextField
+                    size="small"
+                    placeholder="Search Ticket #, Title, Category..."
+                    value={tableSearchQuery}
+                    onChange={(e) => {
+                      setTableSearchQuery(e.target.value);
                       setPage(0);
                     }}
-                    variant={ticketFilter === f.key ? "filled" : "outlined"}
-                    color={ticketFilter === f.key ? "primary" : "default"}
-                    sx={{ fontWeight: 700, cursor: "pointer" }}
+                    sx={{
+                      width: { xs: "100%", sm: 260 },
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "10px",
+                        bgcolor: "var(--bg-paper, #ffffff)"
+                      }
+                    }}
                   />
-                ))}
-              </Box>
-
-              {/* Search & Refresh */}
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
-                <TextField
-                  size="small"
-                  placeholder="Search Ticket #, Title, Category..."
-                  value={tableSearchQuery}
-                  onChange={(e) => {
-                    setTableSearchQuery(e.target.value);
-                    setPage(0);
-                  }}
-                  sx={{
-                    width: { xs: "100%", sm: 260 },
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: "10px",
-                      bgcolor: "var(--bg-paper, #ffffff)"
-                    }
-                  }}
-                />
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<RefreshIcon />}
-                  onClick={fetchMyTickets}
-                  disabled={loadingTickets}
-                  sx={{ textTransform: "none", borderRadius: "10px", py: 0.9 }}
-                >
-                  Refresh Status
-                </Button>
-              </Box>
-            </Box>
+                </Box>
+              </CardContent>
+            </Card>
 
             {/* Content: Loading / Empty / Table */}
             {loadingTickets ? (
@@ -2025,14 +1625,17 @@ export default function CampusServiceRequest() {
               </Typography>
 
               {/* 3-Column Metadata Grid */}
+              {/* 3-Column Metadata Grid */}
               <Box
                 sx={{
                   display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
                   gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
                   p: { xs: 2, sm: 2.2 },
                   bgcolor: "var(--bg-panel, #f8fafc)",
                   border: "1px solid var(--border-color, #e2e8f0)",
                   borderRadius: "14px",
+                  gap: { xs: 2, md: 3 },
                   gap: { xs: 2, md: 3 },
                   mb: 3,
                   alignItems: "center"
@@ -2566,6 +2169,15 @@ export default function CampusServiceRequest() {
           </Button>
         </DialogActions>
       </Dialog>
+      {/* Footer Note */}
+      <Box sx={{ mt: 4, textAlign: "center", width: "100%" }}>
+        <Typography variant="caption" sx={{ color: isDarkMode ? "#94a3b8" : "#64748b", display: "block" }}>
+          Campus Service Request System &bull; <Box component="span" sx={{ background: "var(--gradient-primary)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 700 }}>Aditya University</Box>
+        </Typography>
+        <Typography variant="caption" sx={{ color: isDarkMode ? "#64748b" : "#94a3b8", mt: 0.5, display: "block" }}>
+          Designed and Developed by <Box component="span" sx={{ background: "var(--gradient-primary)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 700 }}>IT Application</Box>
+        </Typography>
+      </Box>
     </Box>
   );
 }
