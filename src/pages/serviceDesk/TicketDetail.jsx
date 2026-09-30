@@ -175,17 +175,17 @@ const TicketDetail = () => {
     };
     
     const handleSendMessage = async (e) => {
-        e.preventDefault();
-        if (!newMessage.trim() || !ticket?.isChatActive) return;
+        if (e) e.preventDefault();
+        const text = newMessage.trim();
+        if (!text || !ticket?.isChatActive) return;
         
+        setNewMessage('');
         try {
-            const res = await API.post(`/api/service-desk/tickets/${id}/comments`, {
-                message: newMessage
+            await API.post(`/api/service-desk/tickets/${id}/comments`, {
+                message: text
             });
-            if (res.data.success) {
-                setNewMessage('');
-            }
         } catch (error) {
+            setNewMessage(text);
             toast.error(error.response?.data?.message || 'Failed to send message');
         }
     };
