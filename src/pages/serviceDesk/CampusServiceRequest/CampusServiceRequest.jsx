@@ -23,6 +23,9 @@ import {
   Tabs,
   Tab,
   IconButton,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
   Divider,
   Stepper,
   Step,
@@ -72,7 +75,9 @@ import {
   Forum as ForumIcon,
   VisibilityOutlined as ViewIcon,
   Visibility,
-  Info as InfoIcon
+  Info as InfoIcon,
+  Hotel as HotelIcon,
+  Apartment as ApartmentIcon
 } from "@mui/icons-material";
 import StepConnector, { stepConnectorClasses } from "@mui/material/StepConnector";
 import { styled } from "@mui/material/styles";
@@ -347,10 +352,13 @@ export default function CampusServiceRequest() {
   // Feedback Dialog
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [selectedFeedbackTicket, setSelectedFeedbackTicket] = useState(null);
-  const [rating, setRating] = useState(5);
-  const [satisfaction, setSatisfaction] = useState("Very Satisfied");
+  const [rating, setRating] = useState(0);
+  const [satisfaction, setSatisfaction] = useState("");
   const [feedbackComments, setFeedbackComments] = useState("");
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [pendingFeedbackTickets, setPendingFeedbackTickets] = useState([]);
+  const [pendingFeedbackIndex, setPendingFeedbackIndex] = useState(0);
+  const [autoFeedbackPromptShown, setAutoFeedbackPromptShown] = useState(false);
 
   // Ticket Detail View Dialog & Table Pagination
   const [detailOpen, setDetailOpen] = useState(false);
@@ -448,7 +456,23 @@ export default function CampusServiceRequest() {
       const api = createStudentAPI();
       const res = await api.get("/api/campus-service-request/my-tickets");
       if (res.data.success) {
-        setMyTickets(res.data.data || []);
+        const tickets = res.data.data || [];
+        setMyTickets(tickets);
+
+        // Auto-popup feedback modal upon login/page load if any ticket is resolved and pending feedback
+        if (!autoFeedbackPromptShown) {
+          const pending = tickets.filter((t) => t.status === "RESOLVED" && !t.feedback);
+          if (pending.length > 0) {
+            setPendingFeedbackTickets(pending);
+            setPendingFeedbackIndex(0);
+            setSelectedFeedbackTicket(pending[0]);
+            setRating(0);
+            setSatisfaction("");
+            setFeedbackComments("");
+            setFeedbackOpen(true);
+            setAutoFeedbackPromptShown(true);
+          }
+        }
       }
     } catch (err) {
       console.error("Error fetching tickets:", err);
@@ -516,9 +540,21 @@ export default function CampusServiceRequest() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      const fcmToken = localStorage.getItem("fcmToken");
+      const savedToken = localStorage.getItem("campus_student_token") || token;
+      if (fcmToken || savedToken) {
+        await axios.post(`${BACKEND_URL}/api/campus-service-request/auth/logout`, { fcmToken }, {
+          headers: savedToken ? { Authorization: `Bearer ${savedToken}` } : {}
+        }).catch(() => {});
+      }
+    } catch (err) {
+      console.warn("[Campus Desk] Logout warning:", err);
+    }
     localStorage.removeItem("campus_student_token");
     localStorage.removeItem("campus_student_profile");
+    localStorage.removeItem("fcmToken");
     setStudent(null);
     setToken("");
     setStep(1);
@@ -623,17 +659,21 @@ export default function CampusServiceRequest() {
 
   // -------------------------------------------------------------
   // Feedback Submission
-  // -------------------------------------------------------------
   const openFeedbackDialog = (ticket) => {
     setSelectedFeedbackTicket(ticket);
-    setRating(5);
-    setSatisfaction("Very Satisfied");
+    setRating(0);
+    setSatisfaction("");
     setFeedbackComments("");
     setFeedbackOpen(true);
   };
 
   const handleSubmitFeedback = async () => {
     if (!selectedFeedbackTicket) return;
+
+    if (!rating || !satisfaction) {
+      toast.error("Please provide a rating and satisfaction level");
+      return;
+    }
 
     try {
       setSubmittingFeedback(true);
@@ -645,8 +685,22 @@ export default function CampusServiceRequest() {
       });
 
       if (res.data.success) {
-        toast.success("Thank you! Your feedback has been submitted.");
-        setFeedbackOpen(false);
+        toast.success("Feedback submitted successfully!");
+
+        // Move to next pending feedback ticket if available in queue
+        if (pendingFeedbackTickets.length > 0 && pendingFeedbackIndex < pendingFeedbackTickets.length - 1) {
+          const nextIndex = pendingFeedbackIndex + 1;
+          setPendingFeedbackIndex(nextIndex);
+          const nextTicket = pendingFeedbackTickets[nextIndex];
+          setSelectedFeedbackTicket(nextTicket);
+          setRating(0);
+          setSatisfaction("");
+          setFeedbackComments("");
+        } else {
+          setFeedbackOpen(false);
+          setPendingFeedbackTickets([]);
+          setSelectedFeedbackTicket(null);
+        }
         fetchMyTickets();
       }
     } catch (err) {
@@ -1176,18 +1230,66 @@ export default function CampusServiceRequest() {
                         label="Campus Block / Hostel / Location"
                         value={selectedBlock}
                         onChange={(e) => setSelectedBlock(e.target.value)}
+                        renderValue={(val) => {
+                          const b = blocks.find((item) => item._id === val);
+                          if (!b) return "";
+                          if (b.blockType === "HOSTEL") {
+                            const tag = b.genderTag === "GIRLS" ? "Girls Hostel" : b.genderTag === "BOYS" ? "Boys Hostel" : "Hostel";
+                            return `${b.blockName} (${tag}) (${b.blockCode})`;
+                          }
+                          return `${b.blockName} (${b.blockCode})`;
+                        }}
                       >
-                        {blocks
-                          .filter((b) => {
+                        {(() => {
+                          const filteredBlocks = blocks.filter((b) => {
+                            if (!selectedServiceObj) return true;
                             if (selectedServiceObj.applicableBlockType === "HOSTEL") return b.blockType === "HOSTEL";
-                            if (selectedServiceObj.applicableBlockType === "ACADEMIC") return b.blockType === "ACADEMIC";
+                            if (selectedServiceObj.applicableBlockType === "ACADEMIC") return (b.blockType || "ACADEMIC") === "ACADEMIC";
                             return true;
-                          })
-                          .map((b) => (
-                            <MenuItem key={b._id} value={b._id}>
-                              {b.blockName} {b.blockType === "HOSTEL" ? `(${b.genderTag === "GIRLS" ? "Girls Hostel" : "Boys Hostel"})` : ""} ({b.blockCode})
+                          });
+
+                          if (filteredBlocks.length === 0) {
+                            return (
+                              <MenuItem value="" disabled>
+                                No active {selectedServiceObj?.applicableBlockType === "HOSTEL" ? "hostel" : "academic"} blocks found
+                              </MenuItem>
+                            );
+                          }
+
+                          return filteredBlocks.map((b) => (
+                            <MenuItem
+                              key={b._id}
+                              value={b._id}
+                              sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 1 }}
+                            >
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                {b.blockType === "HOSTEL" ? (
+                                  <HotelIcon fontSize="small" sx={{ color: b.genderTag === "GIRLS" ? "#db2777" : "#0284c7" }} />
+                                ) : (
+                                  <ApartmentIcon fontSize="small" sx={{ color: "#2563eb" }} />
+                                )}
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                  {b.blockName} ({b.blockCode})
+                                </Typography>
+                              </Box>
+                              {b.blockType === "HOSTEL" && (
+                                <Chip
+                                  label={b.genderTag === "GIRLS" ? "Girls Hostel" : "Boys Hostel"}
+                                  size="small"
+                                  sx={{
+                                    height: 20,
+                                    fontSize: "0.7rem",
+                                    bgcolor: b.genderTag === "GIRLS" ? "#fdf2f8" : "#f0f9ff",
+                                    color: b.genderTag === "GIRLS" ? "#db2777" : "#0284c7",
+                                    border: `1px solid ${b.genderTag === "GIRLS" ? "#fbcfe8" : "#bae6fd"}`,
+                                    fontWeight: 600,
+                                    ml: 1
+                                  }}
+                                />
+                              )}
                             </MenuItem>
-                          ))}
+                          ));
+                        })()}
                       </Select>
                     </FormControl>
                   )}
@@ -1462,8 +1564,12 @@ export default function CampusServiceRequest() {
                     </TableHead>
                     <TableBody>
                       {paginatedTickets.map((t) => {
-                        const assignedName = t.assignedTo && t.assignedTo.filter((a) => a.status !== "REJECTED").length > 0
-                          ? t.assignedTo.filter((a) => a.status !== "REJECTED").map((a) => a.employee?.name).join(", ")
+                        const activeAssignedTo = (t.assignedTo || []).filter((a) => a.status !== "REJECTED");
+                        const activeWorkers = t.assignedWorkers || [];
+                        const assignedName = activeAssignedTo.length > 0
+                          ? activeAssignedTo.map((a) => a.employee?.name).join(", ")
+                          : activeWorkers.length > 0
+                          ? activeWorkers.map((w) => w.worker?.name || "Technician").join(", ")
                           : (t.status === "OPEN" ? "Pending Assignment" : "Unassigned");
 
                         return (
@@ -1505,7 +1611,7 @@ export default function CampusServiceRequest() {
                                 sx={{
                                   fontWeight: 600,
                                   fontSize: "0.82rem",
-                                  color: t.assignedTo?.filter((a) => a.status !== "REJECTED").length > 0 ? "#2563eb" : "var(--text-secondary, #64748b)",
+                                  color: (t.assignedTo?.filter((a) => a.status !== "REJECTED").length > 0 || (t.assignedWorkers?.length > 0)) ? "#2563eb" : "var(--text-secondary, #64748b)",
                                   maxWidth: 160,
                                   overflow: "hidden",
                                   textOverflow: "ellipsis",
@@ -1718,9 +1824,13 @@ export default function CampusServiceRequest() {
                         textOverflow: "ellipsis"
                       }}
                     >
-                      {selectedTicketDetail.assignedTo && selectedTicketDetail.assignedTo.filter((a) => a.status !== "REJECTED").length > 0
-                        ? selectedTicketDetail.assignedTo.filter((a) => a.status !== "REJECTED").map((a) => a.employee?.name).join(", ")
-                        : (selectedTicketDetail.status === "OPEN" ? "Pending Assignment" : "Unassigned")}
+                      {(() => {
+                        const activeAssigned = (selectedTicketDetail.assignedTo || []).filter((a) => a.status !== "REJECTED");
+                        const activeWorkers = selectedTicketDetail.assignedWorkers || [];
+                        if (activeAssigned.length > 0) return activeAssigned.map((a) => a.employee?.name).join(", ");
+                        if (activeWorkers.length > 0) return activeWorkers.map((w) => w.worker?.name || "Technician").join(", ");
+                        return selectedTicketDetail.status === "OPEN" ? "Pending Assignment" : "Unassigned";
+                      })()}
                     </Typography>
                   </Box>
                 </Box>
@@ -1836,7 +1946,10 @@ export default function CampusServiceRequest() {
               </Box>
 
               {/* Live Comments / Discussion in Modal */}
-              <Box
+              {(!["RESOLVED", "REJECTED", "CLOSED"].includes(selectedTicketDetail.status) ||
+                (ticketComments[selectedTicketDetail._id] && ticketComments[selectedTicketDetail._id].length > 0) ||
+                ticketCommentsLoading[selectedTicketDetail._id]) && (
+                <Box
                 sx={{
                   mt: 2,
                   border: "1px solid var(--border-color, #e2e8f0)",
@@ -1863,8 +1976,8 @@ export default function CampusServiceRequest() {
                         width: 32,
                         height: 32,
                         borderRadius: "8px",
-                        bgcolor: selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" ? "rgba(37, 99, 235, 0.1)" : "rgba(100, 116, 139, 0.1)",
-                        color: selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" ? "#2563eb" : "#64748b",
+                        bgcolor: selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" && selectedTicketDetail.status !== "RESOLVED" ? "rgba(37, 99, 235, 0.1)" : "rgba(100, 116, 139, 0.1)",
+                        color: selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" && selectedTicketDetail.status !== "RESOLVED" ? "#2563eb" : "#64748b",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center"
@@ -1875,7 +1988,7 @@ export default function CampusServiceRequest() {
                     <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--text-primary, #0f172a)" }}>
                       Comments & Live Discussion
                     </Typography>
-                    {selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" ? (
+                    {selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" && selectedTicketDetail.status !== "RESOLVED" ? (
                       <Chip
                         icon={<DotIcon sx={{ fontSize: "10px !important", color: "#16a34a !important" }} />}
                         label="Chat Active"
@@ -2035,7 +2148,7 @@ export default function CampusServiceRequest() {
                       </Box>
 
                       {/* Comment Input */}
-                      {selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" ? (
+                      {selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" && selectedTicketDetail.status !== "RESOLVED" ? (
                         <Box
                           component="form"
                           onSubmit={(e) => handleSendTicketComment(selectedTicketDetail._id, e)}
@@ -2085,15 +2198,12 @@ export default function CampusServiceRequest() {
                             {sendingComment[selectedTicketDetail._id] ? <CircularProgress size={18} color="inherit" /> : <SendIcon sx={{ fontSize: 18 }} />}
                           </Button>
                         </Box>
-                      ) : (
-                        <Alert severity="info" sx={{ borderRadius: "10px", py: 0.5, fontSize: "0.82rem" }}>
-                          🔒 This ticket is closed. Comments are in read-only archive mode.
-                        </Alert>
-                      )}
+                      ) : null}
                     </>
                   )}
                 </Box>
               </Box>
+            )}
 
               {/* Feedback Section when RESOLVED */}
               {selectedTicketDetail.status === "RESOLVED" && !selectedTicketDetail.feedback && (
@@ -2144,69 +2254,130 @@ export default function CampusServiceRequest() {
       </Dialog>
 
       {/* ----------------------------------------------------------- */}
-      {/* FEEDBACK & RATING MODAL                                     */}
+      {/* FEEDBACK & RATING MODAL (Share Your Feedback)               */}
       {/* ----------------------------------------------------------- */}
-      <Dialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ fontWeight: 800, color: "#0f172a", pb: 1 }}>
-          ⭐ Service Feedback & Rating
+      <Dialog 
+        open={feedbackOpen} 
+        onClose={() => setFeedbackOpen(false)} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "16px",
+            p: 1
+          }
+        }}
+      >
+        <DialogTitle sx={{ pb: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: "var(--color-primary, #0f172a)", mb: 1 }}>
+              Share Your Feedback
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.5 }}>
+              Ticket: <strong>{selectedFeedbackTicket?.ticketNumber}</strong> - {selectedFeedbackTicket?.title}
+            </Typography>
+          </Box>
+          <IconButton onClick={() => setFeedbackOpen(false)} size="small" sx={{ color: "text.secondary" }}>
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
-        <DialogContent dividers sx={{ p: 3 }}>
-          <Typography variant="body2" sx={{ color: "#64748b", mb: 3 }}>
-            Ticket <strong>#{selectedFeedbackTicket?.ticketNumber}</strong> — {selectedFeedbackTicket?.title}
-          </Typography>
-
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            <Box sx={{ textAlign: "center", py: 1 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
-                How satisfied are you with the resolution?
+        
+        <DialogContent>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 1 }}>
+            
+            {/* Rating Section */}
+            <Box>
+              <Typography sx={{ fontWeight: 600, mb: 1, color: "var(--text-primary, #0f172a)" }}>
+                1. How would you rate your overall experience?
               </Typography>
-              <Rating
-                value={rating}
-                onChange={(e, val) => setRating(val || 1)}
+              <Rating 
+                name="feedback-rating" 
+                value={rating} 
+                onChange={(e, newValue) => setRating(newValue || 0)}
                 size="large"
-                sx={{ fontSize: "2.5rem" }}
               />
+              <Typography variant="caption" sx={{ display: "block", color: "text.secondary", mt: 0.5 }}>
+                Click on a star to rate
+              </Typography>
             </Box>
 
-            <FormControl fullWidth>
-              <InputLabel id="satisfaction-label">Satisfaction Level</InputLabel>
-              <Select
-                labelId="satisfaction-label"
-                label="Satisfaction Level"
+            {/* Satisfaction Section */}
+            <Box>
+              <Typography sx={{ fontWeight: 600, mb: 2, color: "var(--text-primary, #0f172a)" }}>
+                2. How satisfied are you with our service?
+              </Typography>
+              <RadioGroup 
                 value={satisfaction}
                 onChange={(e) => setSatisfaction(e.target.value)}
+                sx={{ gap: 1.5 }}
               >
-                <MenuItem value="Very Satisfied">😄 Very Satisfied</MenuItem>
-                <MenuItem value="Satisfied">🙂 Satisfied</MenuItem>
-                <MenuItem value="Neutral">😐 Neutral</MenuItem>
-                <MenuItem value="Dissatisfied">🙁 Dissatisfied</MenuItem>
-                <MenuItem value="Very Dissatisfied">😡 Very Dissatisfied</MenuItem>
-              </Select>
-            </FormControl>
+                {["Very Satisfied", "Satisfied", "Neutral", "Dissatisfied", "Very Dissatisfied"].map((level) => (
+                  <Box 
+                    key={level}
+                    sx={{
+                      border: "1px solid",
+                      borderColor: satisfaction === level ? "primary.main" : "divider",
+                      borderRadius: "8px",
+                      px: 2,
+                      py: 0.5,
+                      transition: "all 0.2s ease",
+                      bgcolor: satisfaction === level ? "rgba(37, 99, 235, 0.05)" : "transparent",
+                      "&:hover": {
+                        borderColor: "primary.main",
+                        bgcolor: "var(--bg-dashboard, #f8fafc)"
+                      }
+                    }}
+                  >
+                    <FormControlLabel 
+                      value={level} 
+                      control={<Radio size="small" />} 
+                      label={level}
+                      sx={{ width: "100%", m: 0 }}
+                    />
+                  </Box>
+                ))}
+              </RadioGroup>
+            </Box>
 
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              label="Additional Remarks / Comments (Optional)"
-              placeholder="Tell us what went well or how we can improve..."
-              value={feedbackComments}
-              onChange={(e) => setFeedbackComments(e.target.value)}
-            />
+            {/* Comments Section */}
+            <Box>
+              <Typography sx={{ fontWeight: 600, mb: 1, color: "var(--text-primary, #0f172a)" }}>
+                3. Additional Comments
+              </Typography>
+              <TextField 
+                fullWidth
+                multiline
+                rows={4}
+                placeholder="Write your comments here..."
+                value={feedbackComments}
+                onChange={(e) => setFeedbackComments(e.target.value)}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "12px"
+                  }
+                }}
+              />
+            </Box>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={() => setFeedbackOpen(false)} sx={{ textTransform: "none" }}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            color="success"
-            disabled={submittingFeedback}
+        
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button 
+            variant="contained" 
+            fullWidth
             onClick={handleSubmitFeedback}
-            sx={{ fontWeight: 700, borderRadius: "8px", textTransform: "none", px: 3 }}
+            disabled={submittingFeedback}
+            sx={{ 
+              py: 1.5, 
+              borderRadius: "12px",
+              textTransform: "none",
+              fontSize: "1rem",
+              fontWeight: 600,
+              bgcolor: "#002147",
+              "&:hover": { bgcolor: "#001530" }
+            }}
           >
-            {submittingFeedback ? <CircularProgress size={20} sx={{ color: "#fff" }} /> : "Submit Feedback & Close"}
+            {submittingFeedback ? <CircularProgress size={20} color="inherit" /> : "Submit Feedback"}
           </Button>
         </DialogActions>
       </Dialog>

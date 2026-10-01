@@ -4,7 +4,16 @@ import {
     Box, Typography, Button, Tooltip, IconButton, Chip, Select, MenuItem, FormControl, InputLabel,
     Dialog, DialogTitle, DialogContent, DialogActions, TextField, Autocomplete, Tabs, Tab
 } from '@mui/material';
-import { Visibility, AssignmentInd as AssignIcon, Block as RejectIcon, EditCalendar as EditCalendarIcon, Close as CloseIcon } from '@mui/icons-material';
+import { 
+    Visibility, 
+    AssignmentInd as AssignIcon, 
+    Block as RejectIcon, 
+    EditCalendar as EditCalendarIcon, 
+    Close as CloseIcon,
+    Build as BuildIcon,
+    Engineering as EngineeringIcon,
+    AdminPanelSettings as AdminIcon
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import { PageContainer } from '../../components/common/design-system';
@@ -49,10 +58,13 @@ const ManageTickets = () => {
     const [openAssignDialog, setOpenAssignDialog] = useState(false);
     const [assignTicketTarget, setAssignTicketTarget] = useState(null);
     const [selectedAssignees, setSelectedAssignees] = useState([]);
+    const [selectedWorkers, setSelectedWorkers] = useState([]);
+    const [assignWorkerNote, setAssignWorkerNote] = useState('');
     const [assignPriority, setAssignPriority] = useState('MEDIUM');
     const [assignDueDate, setAssignDueDate] = useState('');
     const [assigning, setAssigning] = useState(false);
     const [availableEmpsForAssign, setAvailableEmpsForAssign] = useState([]);
+    const [availableWorkersForAssign, setAvailableWorkersForAssign] = useState([]);
 
     // Dialog: Update SLA / Due Date directly
     const [openSlaDialog, setOpenSlaDialog] = useState(false);
@@ -60,6 +72,9 @@ const ManageTickets = () => {
     const [slaPriority, setSlaPriority] = useState('MEDIUM');
     const [slaDueDate, setSlaDueDate] = useState('');
     const [updatingSla, setUpdatingSla] = useState(false);
+
+    const currentService = adminServices.find(s => s._id === selectedServiceId);
+    const isDirectEmployeeService = currentService?.directEmployeeInvolvement !== false;
 
     useEffect(() => {
         const fetchMemberships = async () => {
@@ -132,19 +147,37 @@ const ManageTickets = () => {
         const p = ticket.priority || 'MEDIUM';
         setAssignPriority(p);
         setAssignDueDate(formatForDateTimeInput(ticket.dueDate || calculateSlaDueDate(p, ticket.createdAt)));
-        const existingIds = (ticket.assignedTo || []).filter(a => a.status !== 'REJECTED').map(a => a.employee?._id || a.employee);
-        setSelectedAssignees([]); 
+        setAssignWorkerNote('');
+        setSelectedAssignees([]);
+        setSelectedWorkers([]);
         setOpenAssignDialog(true);
         
-        try {
-            const res = await API.get(`/api/service-desk/services/${selectedServiceId}/emps`);
-            if (res.data.success) {
-                const emps = res.data.data.map(m => m.employee).filter(Boolean);
-                setAvailableEmpsForAssign(emps);
-                setSelectedAssignees(emps.filter(e => existingIds.includes(e._id)));
+        if (!isDirectEmployeeService) {
+            // Fetch active manual field workers
+            try {
+                const res = await API.get(`/api/service-desk/services/${selectedServiceId}/workers?status=ACTIVE`);
+                if (res.data.success) {
+                    const workers = res.data.data || [];
+                    setAvailableWorkersForAssign(workers);
+                    const existingWorkerIds = (ticket.assignedWorkers || []).map(w => w.worker?._id || w.worker);
+                    setSelectedWorkers(workers.filter(w => existingWorkerIds.includes(w._id)));
+                }
+            } catch (error) {
+                toast.error('Failed to load active field workers for assignment');
             }
-        } catch (error) {
-            toast.error('Failed to load service employees for assignment');
+        } else {
+            // Fetch direct portal employees
+            try {
+                const res = await API.get(`/api/service-desk/services/${selectedServiceId}/emps`);
+                if (res.data.success) {
+                    const emps = res.data.data.map(m => m.employee).filter(Boolean);
+                    setAvailableEmpsForAssign(emps);
+                    const existingIds = (ticket.assignedTo || []).filter(a => a.status !== 'REJECTED').map(a => a.employee?._id || a.employee);
+                    setSelectedAssignees(emps.filter(e => existingIds.includes(e._id)));
+                }
+            } catch (error) {
+                toast.error('Failed to load service employees for assignment');
+            }
         }
     };
 
@@ -157,26 +190,51 @@ const ManageTickets = () => {
     };
 
     const submitAssign = async () => {
-        if (selectedAssignees.length === 0) {
-            toast.error('Select at least one employee');
-            return;
-        }
-        try {
-            setAssigning(true);
-            const res = await API.post(`/api/service-desk/tickets/${assignTicketTarget._id}/assign`, {
-                employeeIds: selectedAssignees.map(e => e._id),
-                priority: assignPriority,
-                dueDate: assignDueDate ? new Date(assignDueDate) : null
-            });
-            if (res.data.success) {
-                toast.success('Ticket assigned successfully');
-                setOpenAssignDialog(false);
-                fetchTickets(selectedServiceId, currentTab);
+        if (!isDirectEmployeeService) {
+            if (selectedWorkers.length === 0) {
+                toast.error('Select at least one technician / field worker');
+                return;
             }
-        } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to assign ticket');
-        } finally {
-            setAssigning(false);
+            try {
+                setAssigning(true);
+                const res = await API.post(`/api/service-desk/tickets/${assignTicketTarget._id}/assign-workers`, {
+                    workerIds: selectedWorkers.map(w => w._id),
+                    priority: assignPriority,
+                    dueDate: assignDueDate ? new Date(assignDueDate) : null,
+                    note: assignWorkerNote
+                });
+                if (res.data.success) {
+                    toast.success('Field technicians assigned successfully');
+                    setOpenAssignDialog(false);
+                    fetchTickets(selectedServiceId, currentTab);
+                }
+            } catch (error) {
+                toast.error(error.response?.data?.message || 'Failed to assign technicians');
+            } finally {
+                setAssigning(false);
+            }
+        } else {
+            if (selectedAssignees.length === 0) {
+                toast.error('Select at least one employee');
+                return;
+            }
+            try {
+                setAssigning(true);
+                const res = await API.post(`/api/service-desk/tickets/${assignTicketTarget._id}/assign`, {
+                    employeeIds: selectedAssignees.map(e => e._id),
+                    priority: assignPriority,
+                    dueDate: assignDueDate ? new Date(assignDueDate) : null
+                });
+                if (res.data.success) {
+                    toast.success('Ticket assigned successfully');
+                    setOpenAssignDialog(false);
+                    fetchTickets(selectedServiceId, currentTab);
+                }
+            } catch (error) {
+                toast.error(error.response?.data?.message || 'Failed to assign ticket');
+            } finally {
+                setAssigning(false);
+            }
         }
     };
 
@@ -281,7 +339,7 @@ const ManageTickets = () => {
                     </Box>
                 ) : (
                     <DataTable 
-                        columns={["Ticket #", "Requester", "Title", "Priority", "Status", "Due Date / SLA", "Created", "Actions"]}
+                        columns={["Ticket #", "Requester", "Title / Work Assignment", "Priority", "Status", "Due Date / SLA", "Created", "Actions"]}
                         alignments={["left", "left", "left", "center", "center", "center", "center", "center"]}
                         nonSortableColumns={[7]}
                         rows={tickets.map(t => [
@@ -312,6 +370,46 @@ const ManageTickets = () => {
                                             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
                                                 {t.subcategory}
                                             </Typography>
+                                        )}
+                                        {/* Assigned Field Workers Badge */}
+                                        {t.assignedWorkers && t.assignedWorkers.length > 0 && (
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                                                {t.assignedWorkers.map((aw, idx) => (
+                                                    <Chip
+                                                        key={idx}
+                                                        size="small"
+                                                        icon={<BuildIcon sx={{ fontSize: '11px !important' }} />}
+                                                        label={aw.worker?.name || 'Technician'}
+                                                        sx={{ 
+                                                            height: '20px', 
+                                                            fontSize: '0.68rem', 
+                                                            bgcolor: '#fef3c7', 
+                                                            color: '#92400e',
+                                                            fontWeight: 600
+                                                        }}
+                                                    />
+                                                ))}
+                                            </Box>
+                                        )}
+                                        {/* Assigned Direct Portal Employees Badge */}
+                                        {isDirectEmployeeService && t.assignedTo && t.assignedTo.length > 0 && (
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                                                {t.assignedTo.filter(a => a.status !== 'REJECTED').map((at, idx) => (
+                                                    <Chip
+                                                        key={idx}
+                                                        size="small"
+                                                        icon={<EngineeringIcon sx={{ fontSize: '11px !important' }} />}
+                                                        label={at.employee?.name || 'Assigned Staff'}
+                                                        sx={{ 
+                                                            height: '20px', 
+                                                            fontSize: '0.68rem', 
+                                                            bgcolor: '#e0f2fe', 
+                                                            color: '#0369a1',
+                                                            fontWeight: 600
+                                                        }}
+                                                    />
+                                                ))}
+                                            </Box>
                                         )}
                                     </Box>
                                 )
@@ -352,9 +450,14 @@ const ManageTickets = () => {
                                 display: (
                                     <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
                                         {['OPEN', 'ASSIGNED', 'IN_PROGRESS'].includes(t.status) && (
-                                            <Tooltip title="Assign Employees">
-                                                <IconButton color="secondary" onClick={() => handleOpenAssign(t)} size="small" sx={{ background: 'var(--bg-glass)' }}>
-                                                    <AssignIcon fontSize="small" />
+                                            <Tooltip title={isDirectEmployeeService ? "Assign Employees" : "Assign Field Workers"}>
+                                                <IconButton 
+                                                    color={isDirectEmployeeService ? "secondary" : "warning"} 
+                                                    onClick={() => handleOpenAssign(t)} 
+                                                    size="small" 
+                                                    sx={{ background: 'var(--bg-glass)' }}
+                                                >
+                                                    {isDirectEmployeeService ? <AssignIcon fontSize="small" /> : <BuildIcon fontSize="small" />}
                                                 </IconButton>
                                             </Tooltip>
                                         )}
@@ -411,7 +514,10 @@ const ManageTickets = () => {
 
             {/* Assign Dialog */}
             <Dialog open={openAssignDialog} onClose={() => setOpenAssignDialog(false)} maxWidth="sm" fullWidth>
-                <DialogTitle>Assign Ticket #{assignTicketTarget?.ticketNumber}</DialogTitle>
+                <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {isDirectEmployeeService ? <AssignIcon color="primary" /> : <BuildIcon sx={{ color: '#d97706' }} />}
+                    <span>{isDirectEmployeeService ? `Assign Ticket #${assignTicketTarget?.ticketNumber}` : `Assign Field Technicians - #${assignTicketTarget?.ticketNumber}`}</span>
+                </DialogTitle>
                 <DialogContent dividers sx={{ minHeight: '300px' }}>
                     <Box sx={{ mb: 3, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
                         <FormControl fullWidth size="small">
@@ -442,29 +548,77 @@ const ManageTickets = () => {
                         />
                     </Box>
 
-                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Assign To Service Employees *</Typography>
-                    <Autocomplete
-                        multiple
-                        fullWidth
-                        options={availableEmpsForAssign}
-                        getOptionLabel={(option) => `${option.name} (${option.institutionId})`}
-                        isOptionEqualToValue={(option, value) => option._id === value._id}
-                        value={selectedAssignees}
-                        onChange={(e, newValue) => setSelectedAssignees(newValue)}
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                variant="outlined"
-                                placeholder="Select Employees"
+                    {isDirectEmployeeService ? (
+                        <>
+                            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Assign To Service Employees *</Typography>
+                            <Autocomplete
+                                multiple
+                                fullWidth
+                                options={availableEmpsForAssign}
+                                getOptionLabel={(option) => `${option.name} (${option.institutionId})`}
+                                isOptionEqualToValue={(option, value) => option._id === value._id}
+                                value={selectedAssignees}
+                                onChange={(e, newValue) => setSelectedAssignees(newValue)}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        variant="outlined"
+                                        placeholder="Select Employees"
+                                    />
+                                )}
+                                noOptionsText="No employees available for this service."
                             />
-                        )}
-                        noOptionsText="No employees available for this service."
-                    />
+                        </>
+                    ) : (
+                        <>
+                            <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600, color: '#92400e' }}>
+                                Assign Active Field Technicians / Workers *
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1.5 }}>
+                                Only active workers can be assigned. No login credentials are generated for these workers.
+                            </Typography>
+                            <Autocomplete
+                                multiple
+                                fullWidth
+                                options={availableWorkersForAssign}
+                                getOptionLabel={(option) => `${option.name} (${option.designation || 'Technician'})${option.phone ? ` - ${option.phone}` : ''}`}
+                                isOptionEqualToValue={(option, value) => option._id === value._id}
+                                value={selectedWorkers}
+                                onChange={(e, newValue) => setSelectedWorkers(newValue)}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        variant="outlined"
+                                        placeholder="Select active workers (e.g. Plumber, Electrician)..."
+                                    />
+                                )}
+                                noOptionsText="No active field workers available. Please add or activate workers in Service Members."
+                            />
+
+                            <TextField
+                                fullWidth
+                                multiline
+                                rows={2}
+                                size="small"
+                                label="Assignment Note / Specific Instructions (Optional)"
+                                placeholder="e.g. Check 3rd floor hostel room switchboard..."
+                                value={assignWorkerNote}
+                                onChange={(e) => setAssignWorkerNote(e.target.value)}
+                                sx={{ mt: 2 }}
+                            />
+                        </>
+                    )}
                 </DialogContent>
                 <DialogActions sx={{ p: 2, px: 3 }}>
                     <Button onClick={() => setOpenAssignDialog(false)} disabled={assigning}>Cancel</Button>
-                    <Button color="primary" variant="contained" onClick={submitAssign} disabled={assigning}>
-                        {assigning ? 'Assigning...' : 'Assign'}
+                    <Button 
+                        color={isDirectEmployeeService ? "primary" : "warning"} 
+                        variant="contained" 
+                        onClick={submitAssign} 
+                        disabled={assigning}
+                        sx={{ fontWeight: 600 }}
+                    >
+                        {assigning ? 'Assigning...' : (isDirectEmployeeService ? 'Assign' : 'Assign Technicians')}
                     </Button>
                 </DialogActions>
             </Dialog>

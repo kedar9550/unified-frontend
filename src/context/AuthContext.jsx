@@ -29,7 +29,8 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       const fcmToken = localStorage.getItem("fcmToken");
-      await API.post("/api/employees/logout", { fcmToken });
+      await API.post("/api/employees/logout", { fcmToken }).catch(() => {});
+      await API.post("/api/campus-service-request/auth/logout", { fcmToken }).catch(() => {});
     } catch (e) {
       console.error("Logout err", e);
     }
@@ -105,6 +106,18 @@ export const AuthProvider = ({ children }) => {
         console.error("Failed to get FCM token during login", tokenErr);
       }
 
+      // Disassociate student session and FCM token so employee session runs clean without conflicts
+      const prevStudentToken = localStorage.getItem("campus_student_token");
+      if (prevStudentToken || fcmToken) {
+        try {
+          await API.post("/api/campus-service-request/auth/logout", { fcmToken }).catch(() => {});
+        } catch (e) {
+          // Ignore
+        }
+      }
+      localStorage.removeItem("campus_student_token");
+      localStorage.removeItem("campus_student_profile");
+
       // Append app context to login details as required by backend
       const payload = { ...formData, app: "UNIFIED_SYSTEM", fcmToken };
       const res = await API.post("/api/employees/login", payload); 
@@ -114,10 +127,6 @@ export const AuthProvider = ({ children }) => {
         API.defaults.headers.common.Authorization = `Bearer ${token}`;
         localStorage.setItem('authToken', token);
       }
-
-      // Clear any student session so employee session runs clean without conflicts
-      localStorage.removeItem("campus_student_token");
-      localStorage.removeItem("campus_student_profile");
 
       let userData = res.data.user;
       userData = normalizeRoles(userData);

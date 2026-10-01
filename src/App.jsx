@@ -336,6 +336,7 @@ function App() {
         <Route path="/service-desk/admin/manage-blocks" element={<ProtectedRoute element={<ManageBlocks />} />} />
         <Route path="/service-desk/admin/services" element={<ProtectedRoute element={<ManageTickets />} />} />
         <Route path="/service-desk/admin/team" element={<ProtectedRoute element={<ManageServiceMembers />} />} />
+        <Route path="/service-desk/admin/workers" element={<ProtectedRoute element={<ManageServiceMembers />} />} />
         <Route path="/service-desk/reports" element={<ProtectedRoute element={<Reports />} />} />
         <Route path="/service-desk/admin/feedback" element={<ProtectedRoute element={<FeedbackOverview />} />} />
 

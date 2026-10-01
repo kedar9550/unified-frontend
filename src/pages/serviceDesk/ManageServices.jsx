@@ -205,6 +205,9 @@ const ManageServices = () => {
 
     const handleOpenAdmins = async (service) => {
         setCurrentService(service);
+        setEmployeeSearchQuery('');
+        setEmployeeSearchResults([]);
+        setSelectedEmployeeToAdd(null);
         setSelectedBlocksToAdd([]);
         setOpenAdminsDialog(true);
         fetchServiceAdmins(service._id);
@@ -234,67 +237,86 @@ const ManageServices = () => {
         }
     };
 
+    // Debounced employee search autocomplete
     useEffect(() => {
-        const delayDebounceFn = setTimeout(async () => {
-            if (employeeSearchQuery.trim().length >= 2) {
-                setSearchingEmployees(true);
+        const queryTrimmed = employeeSearchQuery.trim();
+        if (queryTrimmed.length >= 2) {
+            setSearchingEmployees(true);
+            const delayDebounceFn = setTimeout(async () => {
                 try {
-                    const res = await API.get(`/api/employees/search?query=${employeeSearchQuery}`);
+                    const res = await API.get(`/api/employees/search?query=${encodeURIComponent(queryTrimmed)}`);
                     if (Array.isArray(res.data)) {
                         setEmployeeSearchResults(res.data);
                     }
                 } catch (error) {
-                    console.error('Error searching employees', error);
+                    console.error('Employee search error:', error);
                 } finally {
                     setSearchingEmployees(false);
                 }
-            } else {
-                setEmployeeSearchResults([]);
-            }
-        }, 500);
-
-        return () => clearTimeout(delayDebounceFn);
+            }, 250);
+            return () => clearTimeout(delayDebounceFn);
+        } else {
+            setEmployeeSearchResults([]);
+            setSearchingEmployees(false);
+        }
     }, [employeeSearchQuery]);
 
-    const handleSelectEmployeeToAdd = (emp) => {
-        setSelectedEmployeeToAdd(emp);
-        if (!emp) {
-            setSelectedBlocksToAdd([]);
-            return;
-        }
-        const existing = serviceAdmins.find(a => (a.employee?._id || a.employee) === emp._id);
-        if (existing && existing.blocks) {
-            setSelectedBlocksToAdd(existing.blocks);
+    const handleSelectEmployeeToAdd = (employee) => {
+        setSelectedEmployeeToAdd(employee);
+        if (employee) {
+            // Check if employee is already an admin and prefill their blocks
+            const existing = serviceAdmins.find(
+                a => (a.employee?._id || a.employee)?.toString() === (employee._id || employee)?.toString()
+                    || a.employee?.institutionId === employee.institutionId
+            );
+            setSelectedBlocksToAdd(existing?.blocks || []);
         } else {
             setSelectedBlocksToAdd([]);
         }
     };
 
     const handleAddAdmin = async () => {
-        if (!selectedEmployeeToAdd) return;
+        let emp = selectedEmployeeToAdd;
+        if (!emp && employeeSearchResults.length === 1) {
+            emp = employeeSearchResults[0];
+            setSelectedEmployeeToAdd(emp);
+        }
+        if (!emp) {
+            toast.error('Please select an employee first');
+            return;
+        }
         if (!currentService.isGlobalService && selectedBlocksToAdd.length === 0) {
             toast.error('Please map at least one block for this Block-Specific service admin');
             return;
         }
-
+        const empIdentifier = emp._id || emp.institutionId;
         try {
             setAddingAdmin(true);
             const res = await API.post(`/api/service-desk/services/${currentService._id}/admins`, {
-                employeeId: selectedEmployeeToAdd._id,
+                employeeId: empIdentifier,
                 blocks: selectedBlocksToAdd.map(b => b._id || b)
             });
             if (res.data.success) {
-                toast.success(res.data.message || 'Admin block assignments saved successfully');
-                setSelectedEmployeeToAdd(null);
-                setSelectedBlocksToAdd([]);
+                toast.success(res.data.message || 'Admin assigned successfully');
                 setEmployeeSearchQuery('');
                 setEmployeeSearchResults([]);
+                setSelectedEmployeeToAdd(null);
+                setSelectedBlocksToAdd([]);
                 fetchServiceAdmins(currentService._id);
             }
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to assign admin');
         } finally {
             setAddingAdmin(false);
+        }
+    };
+
+    const handleEditAdmin = (admin) => {
+        setSelectedEmployeeToAdd(admin.employee);
+        setSelectedBlocksToAdd(admin.blocks || []);
+        // Sync controlled inputValue
+        if (admin.employee) {
+            setEmployeeSearchQuery(`${admin.employee.name || ''} (${admin.employee.institutionId || ''})${admin.employee.designation ? ` - ${admin.employee.designation}` : ''}`);
         }
     };
 
@@ -315,11 +337,6 @@ const ManageServices = () => {
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to update admin blocks');
         }
-    };
-
-    const handleEditAdmin = (admin) => {
-        setSelectedEmployeeToAdd(admin.employee);
-        setSelectedBlocksToAdd(admin.blocks || []);
     };
 
     const handleRemoveAdmin = async (employeeId) => {
@@ -691,30 +708,96 @@ const ManageServices = () => {
                         <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
                             <Autocomplete
                                 fullWidth
+                                autoHighlight
+                                filterOptions={(x) => x}
                                 options={employeeSearchResults}
-                                getOptionLabel={(option) => `${option.name} (${option.institutionId}) - ${option.designation || ''}`}
-                                isOptionEqualToValue={(option, value) => option._id === value._id}
+                                getOptionLabel={(option) => {
+                                    if (!option) return '';
+                                    if (typeof option === 'string') return option;
+                                    return `${option.name || ''} (${option.institutionId || ''})${option.designation ? ` - ${option.designation}` : ''}`;
+                                }}
+                                isOptionEqualToValue={(option, value) => {
+                                    if (!option || !value) return false;
+                                    return (option._id || option) === (value._id || value);
+                                }}
                                 value={selectedEmployeeToAdd}
+                                inputValue={employeeSearchQuery}
                                 onChange={(e, newValue) => handleSelectEmployeeToAdd(newValue)}
-                                onInputChange={(e, newInputValue) => setEmployeeSearchQuery(newInputValue)}
+                                onInputChange={(e, newInputValue, reason) => {
+                                    if (reason === 'input') {
+                                        setEmployeeSearchQuery(newInputValue);
+                                        // Clear selection when user starts typing again
+                                        if (selectedEmployeeToAdd) setSelectedEmployeeToAdd(null);
+                                    } else if (reason === 'clear') {
+                                        setEmployeeSearchQuery('');
+                                        setEmployeeSearchResults([]);
+                                        setSelectedEmployeeToAdd(null);
+                                    } else if (reason === 'reset' && selectedEmployeeToAdd) {
+                                        // Keep query in sync when MUI resets to selected value label
+                                        setEmployeeSearchQuery(`${selectedEmployeeToAdd.name || ''} (${selectedEmployeeToAdd.institutionId || ''})`);
+                                    }
+                                }}
+                                noOptionsText={searchingEmployees ? "Searching..." : (employeeSearchQuery.trim().length >= 2 ? "No matching employees found" : "Type employee name or ID (e.g. 1275)...")}
                                 loading={searchingEmployees}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        label="Search Employee to Add / Manage Admin Blocks"
-                                        placeholder="Type name or ID..."
-                                        size="small"
-                                        InputProps={{
-                                            ...(params.InputProps || {}),
-                                            endAdornment: (
-                                                <React.Fragment>
-                                                    {searchingEmployees ? <Loader color="inherit" size={20} /> : null}
-                                                    {params.InputProps?.endAdornment}
-                                                </React.Fragment>
-                                            ),
-                                        }}
-                                    />
-                                )}
+                                renderOption={(props, option) => {
+                                    const { key, ...optionProps } = props;
+                                    const deptName = typeof option.department === 'object'
+                                        ? option.department?.name
+                                        : (typeof option.department === 'string' && !/^[0-9a-fA-F]{24}$/.test(option.department.trim()) ? option.department : '');
+                                    return (
+                                        <Box component="li" key={key || option._id} {...optionProps} sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1 }}>
+                                            <Box sx={{ 
+                                                width: 34, 
+                                                height: 34, 
+                                                borderRadius: '50%', 
+                                                bgcolor: '#e0f2fe', 
+                                                color: '#0369a1', 
+                                                display: 'flex', 
+                                                alignItems: 'center', 
+                                                justifyContent: 'center',
+                                                fontWeight: 700,
+                                                fontSize: '0.85rem'
+                                            }}>
+                                                {(option.name || '').charAt(0).toUpperCase()}
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="body2" sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                                                    {option.name} <span style={{ color: '#2563eb', fontWeight: 600 }}>({option.institutionId})</span>
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                                    {option.designation || 'Staff / Faculty'}{deptName ? ` • ${deptName}` : ''}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    );
+                                }}
+                                renderInput={(params) => {
+                                    const inputProps = params.InputProps || {};
+                                    return (
+                                        <TextField
+                                            {...params}
+                                            label="Search Employee to Add / Manage Admin Blocks"
+                                            placeholder="Type name or ID (e.g. 1275)..."
+                                            size="small"
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    handleAddAdmin();
+                                                }
+                                            }}
+                                            helperText={selectedEmployeeToAdd ? `Selected: ${selectedEmployeeToAdd.name} (${selectedEmployeeToAdd.institutionId})` : "Type name or ID and click on the employee in the dropdown list to select"}
+                                            InputProps={{
+                                                ...inputProps,
+                                                endAdornment: (
+                                                    <React.Fragment>
+                                                        {searchingEmployees ? <Loader color="inherit" size={20} /> : null}
+                                                        {inputProps.endAdornment}
+                                                    </React.Fragment>
+                                                ),
+                                            }}
+                                        />
+                                    );
+                                }}
                             />
                         </Box>
 
@@ -751,6 +834,7 @@ const ManageServices = () => {
                                     return Boolean(otherAdmin);
                                 }}
                                 renderOption={(props, option) => {
+                                    const { key, ...optionProps } = props;
                                     const otherAdmin = serviceAdmins.find(admin => {
                                         const adminEmpId = (admin.employee?._id || admin.employee)?.toString();
                                         const currentEmpId = (selectedEmployeeToAdd?._id || selectedEmployeeToAdd)?.toString();
@@ -760,7 +844,7 @@ const ManageServices = () => {
                                     const isHostel = option.blockType === 'HOSTEL';
                                     const isGirls = option.genderTag === 'GIRLS';
                                     return (
-                                        <li {...props} key={option._id}>
+                                        <li key={key || option._id} {...optionProps}>
                                             <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', py: 0.5 }}>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                     {isHostel ? (
@@ -843,9 +927,9 @@ const ManageServices = () => {
                         <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                             <Button
                                 variant="contained"
-                                disabled={!selectedEmployeeToAdd || addingAdmin}
+                                disabled={(!selectedEmployeeToAdd && !employeeSearchQuery.trim() && employeeSearchResults.length === 0) || addingAdmin}
                                 onClick={handleAddAdmin}
-                                sx={{ textTransform: 'none', px: 3, borderRadius: 2 }}
+                                sx={{ textTransform: 'none', px: 3, borderRadius: 2, fontWeight: 600 }}
                             >
                                 {addingAdmin
                                     ? 'Saving...'
