@@ -40,6 +40,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { ROLE_ROUTES } from "../../config/rolesNav";
 import { useNavigate, useLocation } from "react-router-dom";
+import API from "../../api/axios";
 import universityLogoGold from "../../assets/Aditya University Gold Logo.png";
 import universityShortLogoGold from "../../assets/Logo_Dark_theme.svg"
 import {
@@ -133,6 +134,8 @@ const ITEM_METADATA = {
   "Manage Blocks": { color: "rgba(59, 130, 246, 0.12)", iconColor: "#3b82f6", icon: <Apartment /> },
   "Manage Tickets": { color: "rgba(99, 102, 241, 0.12)", iconColor: "#6366f1", icon: <AssignmentTurnedIn /> },
   "Service Team": { color: "rgba(20, 184, 166, 0.12)", iconColor: "#14b8a6", icon: <GroupIcon /> },
+  "Service Workers": { color: "rgba(245, 158, 11, 0.12)", iconColor: "#f59e0b", icon: <Build /> },
+  "Field Workers": { color: "rgba(245, 158, 11, 0.12)", iconColor: "#f59e0b", icon: <Build /> },
   "Feedback Analytics": { color: "rgba(217, 70, 239, 0.12)", iconColor: "#d946ef", icon: <Analytics /> },
   "Assigned to Me": { color: "rgba(59, 130, 246, 0.12)", iconColor: "#3b82f6", icon: <AssignmentInd /> },
   "Author Citations": { color: "rgba(239, 68, 68, 0.12)", iconColor: "#ef4444", icon: <Assignment /> },
@@ -201,6 +204,24 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
   });
   const [weatherExpanded, setWeatherExpanded] = useState(false);
   const [coords, setCoords] = useState({ lat: 17.089845, lon: 82.067751 }); // Default: Aditya University Coords
+  const [adminServiceTypes, setAdminServiceTypes] = useState(null);
+
+  const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
+
+  useEffect(() => {
+    if (effectiveRole === "SERVICE_ADMIN") {
+      API.get('/api/service-desk/services/my-memberships')
+        .then(res => {
+          if (res.data.success) {
+            const adminServices = res.data.data.adminOf || [];
+            const hasDirect = adminServices.some(s => s.directEmployeeInvolvement !== false);
+            const hasManual = adminServices.some(s => s.directEmployeeInvolvement === false);
+            setAdminServiceTypes({ hasDirect, hasManual, count: adminServices.length });
+          }
+        })
+        .catch(() => {});
+    }
+  }, [effectiveRole, user]);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -311,8 +332,26 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
     }));
   };
 
-  const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
   let menuItems = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
+
+  if (effectiveRole === "SERVICE_ADMIN" && adminServiceTypes) {
+    menuItems = menuItems.flatMap(item => {
+      if (item.text === "Service Team" || item.text === "Service Workers") {
+        const replacementItems = [];
+        if (adminServiceTypes.hasDirect) {
+          replacementItems.push({ text: "Service Team", path: "/service-desk/admin/team", icon: <GroupIcon /> });
+        }
+        if (adminServiceTypes.hasManual) {
+          replacementItems.push({ text: "Service Workers", path: "/service-desk/admin/workers", icon: <Build /> });
+        }
+        if (replacementItems.length === 0) {
+          replacementItems.push({ text: "Service Workers", path: "/service-desk/admin/workers", icon: <Build /> });
+        }
+        return replacementItems;
+      }
+      return [item];
+    });
+  }
 
   if (effectiveRole === "SCHOOL_DEAN" && user?.roles) {
     const deanRoleObj = user.roles.find(r => r.role === "SCHOOL_DEAN" || r.role === "SCHOOL DEAN" || r.key === "SCHOOL_DEAN");

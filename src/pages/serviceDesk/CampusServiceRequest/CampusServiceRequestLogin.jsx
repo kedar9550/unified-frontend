@@ -4,9 +4,12 @@ import axios from "axios";
 import { toast } from "sonner";
 import ThemeToggle from "../../../components/common/Themetoggle";
 import { useLoading } from "../../../context/LoadingContext";
+import { useAuth } from "../../../context/AuthContext";
+import { requestForToken } from "../../../firebase";
 
 export default function CampusServiceRequestLogin({ isDarkMode, onLoginSuccess, backendUrl }) {
   const { startLoading, stopLoading } = useLoading();
+  const { logout: authLogout } = useAuth();
   // Login flow states
   const [step, setStep] = useState(1); // 1 = Enter Roll No, 2 = Enter OTP
   const [rollNoInput, setRollNoInput] = useState("");
@@ -91,15 +94,66 @@ export default function CampusServiceRequestLogin({ isDarkMode, onLoginSuccess, 
     try {
       setOtpVerifying(true);
       setOtpStatus("idle");
+
+      // 1. If normal employee was logged in, log them out and disassociate their FCM token
+      const currentFcmToken = localStorage.getItem("fcmToken");
+      const employeeAuthToken = localStorage.getItem("authToken");
+
+      if (employeeAuthToken || localStorage.getItem("user")) {
+        try {
+          if (authLogout) {
+            await authLogout();
+          } else {
+            await axios.post(
+              `${backendUrl}/api/employees/logout`,
+              { fcmToken: currentFcmToken },
+              {
+                headers: employeeAuthToken ? { Authorization: `Bearer ${employeeAuthToken}` } : {},
+                withCredentials: true
+              }
+            ).catch(() => {});
+            localStorage.removeItem("user");
+            localStorage.removeItem("activeRole");
+            localStorage.removeItem("authToken");
+            localStorage.removeItem("fcmToken");
+            delete axios.defaults.headers.common["Authorization"];
+          }
+        } catch (logoutErr) {
+          console.warn("[CSR Login] Error logging out employee:", logoutErr);
+        }
+      }
+
+      // 2. Obtain fresh FCM token for student notifications
+      let studentFcm = currentFcmToken;
+      try {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("FCM token request timed out")), 2500)
+        );
+        const tokenResult = await Promise.race([requestForToken(), timeoutPromise]);
+        if (tokenResult) {
+          studentFcm = tokenResult;
+        }
+      } catch (err) {
+        console.warn("[CSR Login] Optional FCM token request bypassed:", err?.message || err);
+      }
+
+      // 3. Verify OTP & disassociate device token from any employee
       const res = await axios.post(`${backendUrl}/api/campus-service-request/auth/verify-otp`, {
         rollno: cleanRoll,
-        otp: cleanOtp
+        otp: cleanOtp,
+        fcmToken: studentFcm
       });
 
       if (res.data.success && res.data.token) {
         setOtpStatus("success");
         const receivedToken = res.data.token;
         const receivedStudent = res.data.student;
+
+        if (studentFcm) {
+          localStorage.setItem("fcmToken", studentFcm);
+        } else {
+          localStorage.removeItem("fcmToken");
+        }
 
         // Briefly show success state before proceeding
         setTimeout(() => {

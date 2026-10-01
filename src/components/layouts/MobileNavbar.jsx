@@ -42,11 +42,14 @@ import {
     PeopleAlt,
     Groups,
     EventAvailable,
-    SupportAgent
+    SupportAgent,
+    Build,
+    Group as GroupIcon
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { ROLE_ROUTES } from "../../config/rolesNav";
 import { useNavigate, useLocation } from "react-router-dom";
+import API from "../../api/axios";
 
 import HeaderSearch from "../common/HeaderSearch";
 
@@ -225,8 +228,44 @@ const MobileNavbar = () => {
         return () => clearInterval(interval);
     }, [coords]);
 
+    const [adminServiceTypes, setAdminServiceTypes] = useState(null);
     const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
+
+    useEffect(() => {
+        if (effectiveRole === "SERVICE_ADMIN") {
+            API.get('/api/service-desk/services/my-memberships')
+                .then(res => {
+                    if (res.data.success) {
+                        const adminServices = res.data.data.adminOf || [];
+                        const hasDirect = adminServices.some(s => s.directEmployeeInvolvement !== false);
+                        const hasManual = adminServices.some(s => s.directEmployeeInvolvement === false);
+                        setAdminServiceTypes({ hasDirect, hasManual, count: adminServices.length });
+                    }
+                })
+                .catch(() => {});
+        }
+    }, [effectiveRole, user]);
+
     let menuItems = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
+
+    if (effectiveRole === "SERVICE_ADMIN" && adminServiceTypes) {
+        menuItems = menuItems.flatMap(item => {
+            if (item.text === "Service Team" || item.text === "Service Workers") {
+                const replacementItems = [];
+                if (adminServiceTypes.hasDirect) {
+                    replacementItems.push({ text: "Service Team", path: "/service-desk/admin/team", icon: <GroupIcon /> });
+                }
+                if (adminServiceTypes.hasManual) {
+                    replacementItems.push({ text: "Service Workers", path: "/service-desk/admin/workers", icon: <Build /> });
+                }
+                if (replacementItems.length === 0) {
+                    replacementItems.push({ text: "Service Workers", path: "/service-desk/admin/workers", icon: <Build /> });
+                }
+                return replacementItems;
+            }
+            return [item];
+        });
+    }
 
     if (effectiveRole === "SCHOOL_DEAN" && user?.roles) {
         const deanRoleObj = user.roles.find(r => r.role === "SCHOOL_DEAN" || r.role === "SCHOOL DEAN" || r.key === "SCHOOL_DEAN");
