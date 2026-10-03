@@ -51,6 +51,8 @@ const ManageServiceMembers = () => {
     // Type A: Direct Employee Involvement States
     const [serviceEmps, setServiceEmps] = useState([]);
     const [loadingEmps, setLoadingEmps] = useState(false);
+    const [empSearchQuery, setEmpSearchQuery] = useState('');
+    const [empStatusFilter, setEmpStatusFilter] = useState('ALL'); // ALL, ACTIVE, INACTIVE
     const [openAddDialog, setOpenAddDialog] = useState(false);
     const [employeeSearchQuery, setEmployeeSearchQuery] = useState('');
     const [employeeSearchResults, setEmployeeSearchResults] = useState([]);
@@ -211,17 +213,41 @@ const ManageServiceMembers = () => {
     };
 
     // Remove Direct Employee
-    const handleRemoveEmp = async (employeeId) => {
-        if (window.confirm('Remove this employee from the service team?')) {
+    const handleRemoveEmp = async (member) => {
+        const empId = member.employee?._id || member.employee;
+        const empName = member.employee?.name || 'this employee';
+
+        if ((member.totalTickets || 0) > 0) {
+            toast.error(`Cannot remove ${empName} because they are linked to ${member.totalTickets} ticket(s) in history. You can deactivate them instead.`);
+            return;
+        }
+
+        if (window.confirm(`Remove ${empName} from the service team?`)) {
             try {
-                const res = await API.delete(`/api/service-desk/services/${selectedServiceId}/emps/${employeeId}`);
+                const res = await API.delete(`/api/service-desk/services/${selectedServiceId}/emps/${empId}`);
                 if (res.data.success) {
-                    toast.success('Team member removed');
+                    toast.success(`${empName} removed from service team`);
                     fetchServiceEmps(selectedServiceId);
                 }
             } catch (error) {
-                toast.error('Failed to remove team member');
+                toast.error(error.response?.data?.message || 'Failed to remove team member');
             }
+        }
+    };
+
+    // Toggle Direct Employee Active/Inactive status
+    const handleToggleEmpStatus = async (member) => {
+        const nextState = !(member.isActive !== false);
+        try {
+            const res = await API.patch(`/api/service-desk/services/${selectedServiceId}/emps/${member.employee?._id}/status`, {
+                isActive: nextState
+            });
+            if (res.data.success) {
+                toast.success(`${member.employee?.name || 'Employee'} is now ${nextState ? 'Active' : 'Deactivated'}`);
+                fetchServiceEmps(selectedServiceId);
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to update employee status');
         }
     };
 
@@ -253,8 +279,27 @@ const ManageServiceMembers = () => {
     };
 
     const handleSaveWorker = async (isEdit = false) => {
-        if (!workerFormData.name.trim()) {
+        const trimmedName = workerFormData.name.trim();
+        const trimmedPhone = workerFormData.phone.trim();
+        const trimmedDesignation = workerFormData.designation.trim();
+
+        if (!trimmedName) {
             toast.error('Please enter the technician / worker name');
+            return;
+        }
+
+        if (!/^[a-zA-Z\s.-]+$/.test(trimmedName)) {
+            toast.error('Worker name can only contain letters, spaces, dots, and hyphens (no numbers allowed)');
+            return;
+        }
+
+        if (trimmedPhone && (trimmedPhone.length !== 10 || !/^\d{10}$/.test(trimmedPhone))) {
+            toast.error('Phone number must be exactly 10 digits');
+            return;
+        }
+
+        if (!trimmedDesignation) {
+            toast.error('Please enter designation / trade (mandatory)');
             return;
         }
 
@@ -262,10 +307,9 @@ const ManageServiceMembers = () => {
             setSavingWorker(true);
             if (isEdit) {
                 const res = await API.put(`/api/service-desk/services/${selectedServiceId}/workers/${workerFormData._id}`, {
-                    name: workerFormData.name,
-                    phone: workerFormData.phone,
-                    designation: workerFormData.designation,
-                    notes: workerFormData.notes,
+                    name: trimmedName,
+                    phone: trimmedPhone,
+                    designation: trimmedDesignation,
                     status: workerFormData.status
                 });
                 if (res.data.success) {
@@ -275,10 +319,9 @@ const ManageServiceMembers = () => {
                 }
             } else {
                 const res = await API.post(`/api/service-desk/services/${selectedServiceId}/workers`, {
-                    name: workerFormData.name,
-                    phone: workerFormData.phone,
-                    designation: workerFormData.designation,
-                    notes: workerFormData.notes
+                    name: trimmedName,
+                    phone: trimmedPhone,
+                    designation: trimmedDesignation
                 });
                 if (res.data.success) {
                     toast.success('Field worker added successfully');
@@ -337,6 +380,25 @@ const ManageServiceMembers = () => {
 
     const currentServiceName = currentService?.name || 'Service';
 
+    // Filter Direct Employees
+    const activeEmpsCount = serviceEmps.filter(e => e.isActive !== false).length;
+    const inactiveEmpsCount = serviceEmps.filter(e => e.isActive === false).length;
+
+    const filteredEmps = serviceEmps.filter(m => {
+        const isActive = m.isActive !== false;
+        if (empStatusFilter === 'ACTIVE' && !isActive) return false;
+        if (empStatusFilter === 'INACTIVE' && isActive) return false;
+        if (empSearchQuery.trim()) {
+            const q = empSearchQuery.toLowerCase().trim();
+            const matchName = m.employee?.name?.toLowerCase().includes(q);
+            const matchId = m.employee?.institutionId?.toLowerCase().includes(q);
+            const matchEmail = m.employee?.email?.toLowerCase().includes(q);
+            const matchPhone = m.employee?.phone?.toLowerCase().includes(q);
+            if (!matchName && !matchId && !matchEmail && !matchPhone) return false;
+        }
+        return true;
+    });
+
     // Filter Manual Workers
     const filteredWorkers = workers.filter(w => {
         if (workerStatusFilter !== 'ALL' && w.status !== workerStatusFilter) return false;
@@ -357,10 +419,24 @@ const ManageServiceMembers = () => {
     return (
         <Box sx={{ px: { xs: 2, md: 3 }, pb: 4 }}>
             <PageHeader 
-                title={isDirectEmployeeService ? "Service Members (Portal Employees)" : "Field Workers & Technicians"} 
-                subtitle={`${currentServiceName} Team - Manage staff and workload`}
+                title="Service Employees" 
+                subtitle={`${currentServiceName} — Manage team members & field staff`}
                 action={
-                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <Chip 
+                            icon={isDirectEmployeeService ? <EngineeringIcon sx={{ fontSize: 16 }} /> : <AdminIcon sx={{ fontSize: 16 }} />} 
+                            label={isDirectEmployeeService ? "Mode: Direct Staff (System Users)" : "Mode: Field Technicians (Manual Entry)"} 
+                            size="small"
+                            sx={{
+                                bgcolor: 'rgba(59,130,246,0.1)',
+                                color: '#3b82f6',
+                                fontWeight: 700,
+                                fontSize: '0.75rem',
+                                borderRadius: '8px',
+                                py: 0.5
+                            }}
+                        />
+
                         {adminServices.length > 1 && (
                             <FormControl size="small" sx={{ minWidth: 200, bgcolor: 'background.paper' }}>
                                 <InputLabel>Select Service</InputLabel>
@@ -373,7 +449,7 @@ const ManageServiceMembers = () => {
                                         <MenuItem key={s._id} value={s._id}>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 {s.directEmployeeInvolvement === false ? (
-                                                    <AdminIcon sx={{ fontSize: 16, color: '#f59e0b' }} />
+                                                    <AdminIcon sx={{ fontSize: 16, color: '#3b82f6' }} />
                                                 ) : (
                                                     <EngineeringIcon sx={{ fontSize: 16, color: '#3b82f6' }} />
                                                 )}
@@ -384,6 +460,7 @@ const ManageServiceMembers = () => {
                                 </Select>
                             </FormControl>
                         )}
+
                         {isDirectEmployeeService ? (
                             <Button 
                                 variant="contained" 
@@ -405,16 +482,12 @@ const ManageServiceMembers = () => {
                                 startIcon={<BuildIcon />} 
                                 onClick={handleOpenAddWorker}
                                 sx={{ 
-                                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                    background: 'var(--gradient-primary)',
                                     color: '#ffffff',
                                     textTransform: 'none',
                                     borderRadius: '8px',
                                     px: 3,
-                                    fontWeight: 700,
-                                    boxShadow: '0 4px 12px rgba(245, 158, 11, 0.25)',
-                                    '&:hover': {
-                                        background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
-                                    }
+                                    fontWeight: 600
                                 }}
                             >
                                 Add Field Worker
@@ -423,30 +496,6 @@ const ManageServiceMembers = () => {
                     </Box>
                 }
             />
-
-            {/* Mode Banner for Manual Workers */}
-            {!isDirectEmployeeService && (
-                <Alert 
-                    severity="info" 
-                    icon={<AdminIcon />}
-                    sx={{ 
-                        mb: 3, 
-                        borderRadius: '12px',
-                        border: '1px solid rgba(245, 158, 11, 0.2)',
-                        bgcolor: 'rgba(245, 158, 11, 0.05)',
-                        color: '#92400e',
-                        '& .MuiAlert-icon': { color: '#d97706' }
-                    }}
-                >
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                        Admin Direct Management Mode
-                    </Typography>
-                    <Typography variant="body2" sx={{ mt: 0.2, fontSize: '0.85rem' }}>
-                        For <strong>{currentServiceName}</strong>, field workers (technicians, plumbers, electricians, etc.) are managed manually. 
-                        <strong> No portal login or credentials are created for these workers.</strong> The Service Admin directly updates ticket statuses, while assigning tickets to active workers for internal delegation and tracking.
-                    </Typography>
-                </Alert>
-            )}
 
             {/* Top Stats Grid */}
             <Box sx={{ 
@@ -458,16 +507,16 @@ const ManageServiceMembers = () => {
                 {isDirectEmployeeService ? (
                     <>
                         <StatCard title="Total Members" value={serviceEmps.length} icon={<GroupIcon />} color="#1976d2" />
-                        <StatCard title="Active Members" value={serviceEmps.length} icon={<AvailableIcon />} color="#2e7d32" />
-                        <StatCard title="Service Type" value="Delegated" icon={<EngineeringIcon />} color="#3b82f6" />
-                        <StatCard title="Active Tickets" value={0} icon={<TicketIcon />} color="#1976d2" />
+                        <StatCard title="Active Members" value={serviceEmps.filter(e => e.isActive !== false).length} icon={<AvailableIcon />} color="#2e7d32" />
+                        <StatCard title="Inactive Members" value={serviceEmps.filter(e => e.isActive === false).length} icon={<InactiveIcon />} color="#c62828" />
+                        <StatCard title="Assigned Members" value={serviceEmps.filter(e => (e.activeTickets || 0) > 0).length} icon={<TicketIcon />} color="#2563eb" />
                     </>
                 ) : (
                     <>
-                        <StatCard title="Total Technicians" value={workers.length} icon={<BuildIcon />} color="#d97706" />
-                        <StatCard title="Active Workers" value={activeWorkersCount} icon={<AvailableIcon />} color="#2e7d32" />
-                        <StatCard title="Deactivated / Inactive" value={inactiveWorkersCount} icon={<InactiveIcon />} color="#94a3b8" />
-                        <StatCard title="Active Assigned Tasks" value={totalActiveAssignedTickets} icon={<TicketIcon />} color="#2563eb" />
+                        <StatCard title="Total Members" value={workers.length} icon={<BuildIcon />} color="#1976d2" />
+                        <StatCard title="Active Members" value={activeWorkersCount} icon={<AvailableIcon />} color="#2e7d32" />
+                        <StatCard title="Inactive Members" value={inactiveWorkersCount} icon={<InactiveIcon />} color="#c62828" />
+                        <StatCard title="Assigned Members" value={totalActiveAssignedTickets} icon={<TicketIcon />} color="#2563eb" />
                     </>
                 )}
             </Box>
@@ -476,100 +525,207 @@ const ManageServiceMembers = () => {
             {/* VIEW A: DIRECT PORTAL EMPLOYEES (directEmployeeInvolvement: true) */}
             {/* ----------------------------------------------------------------- */}
             {isDirectEmployeeService ? (
-                loadingEmps ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><Loader /></Box>
-                ) : serviceEmps.length === 0 ? (
-                    <Paper sx={{ p: 5, textAlign: 'center', borderRadius: '16px', border: '1px dashed var(--border-color)' }}>
-                        <Typography variant="body1" color="textSecondary">No team members found for this service.</Typography>
+                <Box>
+                    {/* Filter & Search Bar */}
+                    <Paper sx={{ p: 2, mb: 3, borderRadius: '12px', display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center', justifyContent: 'space-between', border: '1px solid var(--border-color)' }}>
+                        <TextField
+                            size="small"
+                            placeholder="Search employee by name, ID, email, phone..."
+                            value={empSearchQuery}
+                            onChange={(e) => setEmpSearchQuery(e.target.value)}
+                            sx={{ minWidth: 280 }}
+                            slotProps={{
+                                input: {
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <SearchIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                                        </InputAdornment>
+                                    )
+                                }
+                            }}
+                        />
+
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Chip 
+                                label={`All (${serviceEmps.length})`}
+                                clickable
+                                color={empStatusFilter === 'ALL' ? 'primary' : 'default'}
+                                variant={empStatusFilter === 'ALL' ? 'filled' : 'outlined'}
+                                onClick={() => setEmpStatusFilter('ALL')}
+                                sx={{ fontWeight: 600 }}
+                            />
+                            <Chip 
+                                label={`Active (${activeEmpsCount})`}
+                                clickable
+                                color={empStatusFilter === 'ACTIVE' ? 'success' : 'default'}
+                                variant={empStatusFilter === 'ACTIVE' ? 'filled' : 'outlined'}
+                                onClick={() => setEmpStatusFilter('ACTIVE')}
+                                sx={{ fontWeight: 600 }}
+                            />
+                            <Chip 
+                                label={`Deactivated (${inactiveEmpsCount})`}
+                                clickable
+                                color={empStatusFilter === 'INACTIVE' ? 'default' : 'default'}
+                                variant={empStatusFilter === 'INACTIVE' ? 'filled' : 'outlined'}
+                                onClick={() => setEmpStatusFilter('INACTIVE')}
+                                sx={{ fontWeight: 600 }}
+                            />
+                        </Box>
                     </Paper>
-                ) : (
-                    <Box sx={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, 
-                        gap: 3 
-                    }}>
-                        {serviceEmps.map((member) => (
-                            <Paper key={member._id} sx={{ 
-                                p: 3, 
-                                borderRadius: '16px', 
-                                boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
-                                border: '1px solid var(--border-color)',
-                                height: '100%',
-                                display: 'flex',
-                                flexDirection: 'column'
-                            }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                                    <Avatar 
-                                        src={`https://info.aec.edu.in/aec/employeephotos/${member.employee?.institutionId}.jpg`}
-                                        sx={{ width: 56, height: 56, bgcolor: '#e3f2fd', color: '#1976d2', fontWeight: 600 }}
-                                    >
-                                        {member.employee?.name?.charAt(0)}
-                                    </Avatar>
-                                    <Chip 
-                                        label="active" 
-                                        size="small" 
-                                        sx={{ 
-                                            bgcolor: '#e8f5e9', 
-                                            color: '#2e7d32', 
-                                            fontWeight: 600, 
-                                            fontSize: '0.7rem',
-                                            borderRadius: '6px' 
-                                        }} 
-                                    />
-                                </Box>
-                                
-                                <Box sx={{ mb: 2.5, flexGrow: 1 }}>
-                                    <Typography 
-                                        variant="subtitle1" 
-                                        sx={{ 
-                                            fontWeight: 700, 
-                                            lineHeight: 1.3, 
-                                            mb: 0.5, 
-                                            fontSize: '1.05rem', 
-                                            color: 'var(--text-primary)',
-                                            wordBreak: 'break-word'
-                                        }}
-                                    >
-                                        {member.employee?.name || 'Unknown'}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.85rem', mb: 1.5 }}>
-                                        Emp ID: {member.employee?.institutionId || 'N/A'}
-                                    </Typography>
 
-                                    <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', mb: 1 }}>
-                                        <EmailIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
-                                        <Typography variant="body2" sx={{ color: 'text.secondary', wordBreak: 'break-all', fontSize: '0.85rem' }}>
-                                            {member.employee?.email || 'N/A'}
-                                        </Typography>
+                    {loadingEmps ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}><Loader /></Box>
+                    ) : filteredEmps.length === 0 ? (
+                        <Paper sx={{ p: 5, textAlign: 'center', borderRadius: '16px', border: '1px dashed var(--border-color)' }}>
+                            <GroupIcon sx={{ fontSize: 48, color: '#94a3b8', mb: 1 }} />
+                            <Typography variant="h6" sx={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                                No team members found
+                            </Typography>
+                            <Typography variant="body2" color="textSecondary">
+                                {empSearchQuery || empStatusFilter !== 'ALL' 
+                                    ? 'No team members match your filter criteria.' 
+                                    : 'No team members found for this service.'}
+                            </Typography>
+                        </Paper>
+                    ) : (
+                        <Box sx={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(4, 1fr)' }, 
+                            gap: 3 
+                        }}>
+                            {filteredEmps.map((member) => (
+                                <Paper key={member._id} sx={{ 
+                                    p: 3, 
+                                    borderRadius: '16px', 
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+                                    border: member.isActive !== false ? '1px solid var(--border-color)' : '1px dashed #ef9a9a',
+                                    bgcolor: member.isActive !== false ? '#ffffff' : '#fff5f5',
+                                    opacity: member.isActive !== false ? 1 : 0.85,
+                                    height: '100%',
+                                    display: 'flex',
+                                    flexDirection: 'column'
+                                }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                        <Avatar 
+                                            src={`https://info.aec.edu.in/aec/employeephotos/${member.employee?.institutionId}.jpg`}
+                                            sx={{ width: 56, height: 56, bgcolor: '#e3f2fd', color: '#1976d2', fontWeight: 600 }}
+                                        >
+                                            {member.employee?.name?.charAt(0)}
+                                        </Avatar>
+                                        <Tooltip title={`Click to ${member.isActive !== false ? 'Deactivate' : 'Activate'}`}>
+                                            <Chip 
+                                                label={member.isActive !== false ? "Active" : "Inactive"} 
+                                                size="small" 
+                                                onClick={() => handleToggleEmpStatus(member)}
+                                                sx={{ 
+                                                    bgcolor: member.isActive !== false ? '#e8f5e9' : '#ffebee', 
+                                                    color: member.isActive !== false ? '#2e7d32' : '#c62828', 
+                                                    fontWeight: 700, 
+                                                    fontSize: '0.75rem',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                    border: member.isActive !== false ? '1px solid #a5d6a7' : '1px solid #ef9a9a',
+                                                    '&:hover': { opacity: 0.85 }
+                                                }} 
+                                            />
+                                        </Tooltip>
                                     </Box>
-                                    <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-                                        <PhoneIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
-                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>
-                                            {member.employee?.phone || 'N/A'}
+                                    
+                                    <Box sx={{ mb: 2.5, flexGrow: 1 }}>
+                                        <Typography 
+                                            variant="subtitle1" 
+                                            sx={{ 
+                                                fontWeight: 700, 
+                                                lineHeight: 1.3, 
+                                                mb: 0.5, 
+                                                fontSize: '1.05rem', 
+                                                color: 'var(--text-primary)',
+                                                wordBreak: 'break-word'
+                                            }}
+                                        >
+                                            {member.employee?.name || 'Unknown'}
                                         </Typography>
+                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.85rem', mb: 1.5 }}>
+                                            Emp ID: {member.employee?.institutionId || 'N/A'}
+                                        </Typography>
+
+                                        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', mb: 1 }}>
+                                            <EmailIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
+                                            <Typography variant="body2" sx={{ color: 'text.secondary', wordBreak: 'break-all', fontSize: '0.85rem' }}>
+                                                {member.employee?.email || 'N/A'}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+                                            <PhoneIcon sx={{ color: 'text.secondary', fontSize: 18 }} />
+                                            <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>
+                                                {member.employee?.phone || 'N/A'}
+                                            </Typography>
+                                        </Box>
                                     </Box>
-                                </Box>
 
-                                <Divider sx={{ mb: 2 }} />
+                                    <Divider sx={{ mb: 2 }} />
 
-                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-                                    <Button 
-                                        size="small" 
-                                        color="error"
-                                        onClick={() => handleRemoveEmp(member.employee?._id)}
-                                        sx={{ 
-                                            textTransform: 'none', 
-                                            fontWeight: 700,
-                                            fontSize: '0.85rem'
-                                        }}
-                                    >
-                                        Remove Member
-                                    </Button>
-                                </Box>
-                            </Paper>
-                        ))}
-                    </Box>
-                )
+                                    {/* Workload Stats */}
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', mb: 2, bgcolor: '#f8fafc', py: 1, borderRadius: '8px' }}>
+                                        <Box sx={{ textAlign: 'center' }}>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                                Active Tasks
+                                            </Typography>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: member.activeTickets > 0 ? '#2563eb' : 'text.primary' }}>
+                                                {member.activeTickets || 0}
+                                            </Typography>
+                                        </Box>
+                                        <Divider orientation="vertical" flexItem />
+                                        <Box sx={{ textAlign: 'center' }}>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                                Total Linked
+                                            </Typography>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                                                {member.totalTickets || 0}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <Button
+                                            size="small"
+                                            variant="outlined"
+                                            color={member.isActive !== false ? "warning" : "success"}
+                                            onClick={() => handleToggleEmpStatus(member)}
+                                            sx={{ 
+                                                textTransform: 'none', 
+                                                borderRadius: '6px', 
+                                                fontSize: '0.75rem',
+                                                fontWeight: 600,
+                                                py: 0.4
+                                            }}
+                                        >
+                                            {member.isActive !== false ? "Deactivate" : "Activate"}
+                                        </Button>
+
+                                        <Tooltip title={member.totalTickets > 0 ? `Cannot remove (${member.totalTickets} tickets linked)` : "Remove Member"}>
+                                            <span>
+                                                <Button 
+                                                    size="small" 
+                                                    color="error"
+                                                    disabled={member.totalTickets > 0}
+                                                    onClick={() => handleRemoveEmp(member)}
+                                                    sx={{ 
+                                                        textTransform: 'none', 
+                                                        fontWeight: 700,
+                                                        fontSize: '0.85rem'
+                                                    }}
+                                                >
+                                                    Remove
+                                                </Button>
+                                            </span>
+                                        </Tooltip>
+                                    </Box>
+                                </Paper>
+                            ))}
+                        </Box>
+                    )}
+                </Box>
             ) : (
                 /* ----------------------------------------------------------------- */
                 /* VIEW B: MANUAL FIELD WORKERS (directEmployeeInvolvement: false)   */
@@ -640,7 +796,7 @@ const ManageServiceMembers = () => {
                                     variant="contained" 
                                     startIcon={<BuildIcon />}
                                     onClick={handleOpenAddWorker}
-                                    sx={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', textTransform: 'none', borderRadius: '8px' }}
+                                    sx={{ background: 'var(--gradient-primary)', textTransform: 'none', borderRadius: '8px' }}
                                 >
                                     Add First Field Worker
                                 </Button>
@@ -673,8 +829,8 @@ const ManageServiceMembers = () => {
                                                 sx={{ 
                                                     width: 52, 
                                                     height: 52, 
-                                                    bgcolor: isActive ? '#fef3c7' : '#e2e8f0', 
-                                                    color: isActive ? '#d97706' : '#64748b', 
+                                                    bgcolor: isActive ? '#e3f2fd' : '#e2e8f0', 
+                                                    color: isActive ? '#1976d2' : '#64748b', 
                                                     fontWeight: 800,
                                                     fontSize: '1.2rem'
                                                 }}
@@ -683,17 +839,23 @@ const ManageServiceMembers = () => {
                                             </Avatar>
                                             
                                             {/* Status Badge */}
-                                            <Chip 
-                                                label={isActive ? "Active" : "Deactivated"} 
-                                                size="small" 
-                                                sx={{ 
-                                                    bgcolor: isActive ? '#dcfce7' : '#f1f5f9', 
-                                                    color: isActive ? '#15803d' : '#64748b', 
-                                                    fontWeight: 700, 
-                                                    fontSize: '0.72rem',
-                                                    borderRadius: '6px' 
-                                                }} 
-                                            />
+                                            <Tooltip title={`Click to ${isActive ? 'Deactivate' : 'Activate'}`}>
+                                                <Chip 
+                                                    label={isActive ? "Active" : "Inactive"} 
+                                                    size="small" 
+                                                    onClick={() => handleToggleWorkerStatus(worker)}
+                                                    sx={{ 
+                                                        bgcolor: isActive ? '#e8f5e9' : '#ffebee', 
+                                                        color: isActive ? '#2e7d32' : '#c62828', 
+                                                        fontWeight: 700, 
+                                                        fontSize: '0.75rem',
+                                                        borderRadius: '6px',
+                                                        cursor: 'pointer',
+                                                        border: isActive ? '1px solid #a5d6a7' : '1px solid #ef9a9a',
+                                                        '&:hover': { opacity: 0.85 }
+                                                    }} 
+                                                />
+                                            </Tooltip>
                                         </Box>
 
                                         {/* Worker Info */}
@@ -734,13 +896,6 @@ const ManageServiceMembers = () => {
                                                     {worker.phone || 'No phone provided'}
                                                 </Typography>
                                             </Box>
-
-                                            {/* Notes / Specialization */}
-                                            {worker.notes && (
-                                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontStyle: 'italic', mt: 0.5 }}>
-                                                    "{worker.notes}"
-                                                </Typography>
-                                            )}
                                         </Box>
 
                                         <Divider sx={{ mb: 2 }} />
@@ -880,48 +1035,40 @@ const ManageServiceMembers = () => {
             {/* ------------------------------------------------------------- */}
             <Dialog open={openAddWorkerDialog} onClose={() => setOpenAddWorkerDialog(false)} maxWidth="sm" fullWidth>
                 <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <BuildIcon sx={{ color: '#d97706' }} />
-                    <span>Add Manual Field Worker / Technician</span>
+                    <BuildIcon sx={{ color: '#2563eb' }} />
+                    <span>Add Field Worker / Technician</span>
                 </DialogTitle>
                 <DialogContent dividers>
                     <Alert severity="info" sx={{ mb: 2.5, borderRadius: '8px', fontSize: '0.85rem' }}>
-                        This worker will be added for internal ticket assignments. No login account or password will be created.
+                        This worker will be added for internal ticket assignments. They do not have login accounts; the Service Admin updates their work status and ticket progress.
                     </Alert>
 
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 1 }}>
                         <TextField
                             fullWidth
                             required
-                            label="Worker Full Name"
+                            label="Worker Full Name (Letters only) *"
                             placeholder="e.g. Ramesh Kumar"
                             value={workerFormData.name}
-                            onChange={(e) => setWorkerFormData({ ...workerFormData, name: e.target.value })}
+                            onChange={(e) => setWorkerFormData({ ...workerFormData, name: e.target.value.replace(/[^a-zA-Z\s.-]/g, '') })}
                         />
 
                         <TextField
                             fullWidth
-                            label="Phone / Mobile Number"
+                            label="Phone / Mobile Number (10 digits)"
                             placeholder="e.g. 9876543210"
                             value={workerFormData.phone}
-                            onChange={(e) => setWorkerFormData({ ...workerFormData, phone: e.target.value })}
+                            slotProps={{ htmlInput: { maxLength: 10 } }}
+                            onChange={(e) => setWorkerFormData({ ...workerFormData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                         />
 
                         <TextField
                             fullWidth
-                            label="Designation / Skill / Trade"
+                            required
+                            label="Designation / Skill / Trade *"
                             placeholder="e.g. Electrician, Plumber, Carpenter, AC Tech, Cleaner"
                             value={workerFormData.designation}
                             onChange={(e) => setWorkerFormData({ ...workerFormData, designation: e.target.value })}
-                        />
-
-                        <TextField
-                            fullWidth
-                            multiline
-                            rows={3}
-                            label="Notes / Specialization (Optional)"
-                            placeholder="e.g. Handles hostel wiring, works general shift, contractor technician..."
-                            value={workerFormData.notes}
-                            onChange={(e) => setWorkerFormData({ ...workerFormData, notes: e.target.value })}
                         />
                     </Box>
                 </DialogContent>
@@ -929,12 +1076,12 @@ const ManageServiceMembers = () => {
                     <Button onClick={() => setOpenAddWorkerDialog(false)} color="inherit">Cancel</Button>
                     <Button
                         variant="contained"
-                        disabled={!workerFormData.name.trim() || savingWorker}
+                        disabled={!workerFormData.name.trim() || !workerFormData.designation.trim() || savingWorker}
                         onClick={() => handleSaveWorker(false)}
                         sx={{ 
                             px: 4, 
-                            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                            fontWeight: 700
+                            background: 'var(--gradient-primary)',
+                            fontWeight: 600
                         }}
                     >
                         {savingWorker ? 'Saving...' : 'Add Worker'}
@@ -955,21 +1102,23 @@ const ManageServiceMembers = () => {
                         <TextField
                             fullWidth
                             required
-                            label="Worker Full Name"
+                            label="Worker Full Name (Letters only) *"
                             value={workerFormData.name}
-                            onChange={(e) => setWorkerFormData({ ...workerFormData, name: e.target.value })}
+                            onChange={(e) => setWorkerFormData({ ...workerFormData, name: e.target.value.replace(/[^a-zA-Z\s.-]/g, '') })}
                         />
 
                         <TextField
                             fullWidth
-                            label="Phone / Mobile Number"
+                            label="Phone / Mobile Number (10 digits)"
                             value={workerFormData.phone}
-                            onChange={(e) => setWorkerFormData({ ...workerFormData, phone: e.target.value })}
+                            slotProps={{ htmlInput: { maxLength: 10 } }}
+                            onChange={(e) => setWorkerFormData({ ...workerFormData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                         />
 
                         <TextField
                             fullWidth
-                            label="Designation / Skill / Trade"
+                            required
+                            label="Designation / Skill / Trade *"
                             value={workerFormData.designation}
                             onChange={(e) => setWorkerFormData({ ...workerFormData, designation: e.target.value })}
                         />
@@ -985,22 +1134,13 @@ const ManageServiceMembers = () => {
                                 <MenuItem value="INACTIVE">⚪ Inactive / Deactivated (Cannot be assigned)</MenuItem>
                             </Select>
                         </FormControl>
-
-                        <TextField
-                            fullWidth
-                            multiline
-                            rows={3}
-                            label="Notes / Specialization"
-                            value={workerFormData.notes}
-                            onChange={(e) => setWorkerFormData({ ...workerFormData, notes: e.target.value })}
-                        />
                     </Box>
                 </DialogContent>
                 <DialogActions sx={{ p: 2, px: 3 }}>
                     <Button onClick={() => setOpenEditWorkerDialog(false)} color="inherit">Cancel</Button>
                     <Button
                         variant="contained"
-                        disabled={!workerFormData.name.trim() || savingWorker}
+                        disabled={!workerFormData.name.trim() || !workerFormData.designation.trim() || savingWorker}
                         onClick={() => handleSaveWorker(true)}
                         sx={{ px: 4, background: 'var(--gradient-primary)', fontWeight: 700 }}
                     >

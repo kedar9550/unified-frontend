@@ -206,9 +206,9 @@ const TicketDetail = () => {
             const existingIds = (ticket.assignedTo || []).filter(a => a.status !== 'REJECTED').map(a => a.employee?._id || a.employee);
             setSelectedEmps([]);
             
-            const res = await API.get(`/api/service-desk/services/${ticket.service._id}/emps`);
+            const res = await API.get(`/api/service-desk/services/${ticket.service._id}/emps?activeOnly=true`);
             if (res.data.success) {
-                const emps = res.data.data.map(m => m.employee).filter(Boolean);
+                const emps = res.data.data.filter(m => m.isActive !== false).map(m => m.employee).filter(Boolean);
                 setServiceEmps(emps);
                 setSelectedEmps(emps.filter(e => existingIds.includes(e._id)));
                 setAssignModalOpen(true);
