@@ -248,25 +248,6 @@ const MobileNavbar = () => {
 
     let menuItems = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
 
-    if (["SERVICE_ADMIN", "CSR_ADMIN", "CSR ADMIN", "CSR"].includes(effectiveRole) && adminServiceTypes) {
-        menuItems = menuItems.flatMap(item => {
-            if (item.text === "Service Team" || item.text === "Service Workers") {
-                const replacementItems = [];
-                if (adminServiceTypes.hasDirect) {
-                    replacementItems.push({ text: "Service Team", path: "/service-desk/admin/team", icon: <GroupIcon /> });
-                }
-                if (adminServiceTypes.hasManual) {
-                    replacementItems.push({ text: "Service Workers", path: "/service-desk/admin/workers", icon: <Build /> });
-                }
-                if (replacementItems.length === 0) {
-                    replacementItems.push({ text: "Service Workers", path: "/service-desk/admin/workers", icon: <Build /> });
-                }
-                return replacementItems;
-            }
-            return [item];
-        });
-    }
-
     if (effectiveRole === "SCHOOL_DEAN" && user?.roles) {
         const deanRoleObj = user.roles.find(r => r.role === "SCHOOL_DEAN" || r.role === "SCHOOL DEAN" || r.key === "SCHOOL_DEAN");
         if (deanRoleObj && deanRoleObj.schools && deanRoleObj.schools.length > 0) {
