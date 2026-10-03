@@ -42,7 +42,8 @@ export default function TextbookPublication() {
     otherAuthors: [],
     publicationScope: "National",
     customPublisher: "",
-    currencySymbol: "₹"
+    currencySymbol: "₹",
+    numberOfPages: ""
   });
   const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null });
   const [existingFiles, setExistingFiles] = useState({ coverPage: null, authorAffiliation: null, index: null });
@@ -843,7 +844,7 @@ export default function TextbookPublication() {
               const val = e.target.value;
               setForm(prev => ({
                 ...prev,
-                publisher: val,
+                publisher: "",
                 publicationScope: val,
                 customPublisher: "",
                 currencySymbol: val === "National" ? "₹" : "$"
@@ -906,22 +907,33 @@ export default function TextbookPublication() {
               />
             )}
           />
-          {form.publisher === "Others" && (
+        </Box>
+        {form.publisher === "Others" && (
+          <Box>
+            <Typography sx={labelStyle}>Specify Publisher : *</Typography>
             <TextField
               size="small"
               fullWidth
-              sx={{ mt: 1.5 }}
               placeholder="Enter Publisher Name"
               value={form.customPublisher}
               onChange={(e) => setForm(p => ({ ...p, customPublisher: e.target.value }))}
             />
-          )}
-        </Box>
+          </Box>
+        )}
         <Box>
           <Typography sx={labelStyle}>Edition :</Typography>
           <Autocomplete
             freeSolo
-            options={editions.map(e => e.name)}
+            options={[...new Set([
+              "1st Edition", "2nd Edition", "3rd Edition", "4th Edition", "5th Edition", 
+              "6th Edition", "7th Edition", "8th Edition", "9th Edition", "10th Edition",
+              ...editions.map(e => e.name).filter(name => {
+                if (!name) return false;
+                const cleanName = name.replace(/\s+/g, '').toLowerCase();
+                const std = ["1stedition", "2ndedition", "3rdedition", "4thedition", "5thedition", "6thedition", "7thedition", "8thedition", "9thedition", "10thedition"];
+                return !std.includes(cleanName);
+              })
+            ])]}
             value={form.edition}
             onChange={(e, newValue) => setForm(p => ({ ...p, edition: newValue || "" }))}
             onInputChange={(e, newInputValue) => setForm(p => ({ ...p, edition: newInputValue }))}
@@ -1003,7 +1015,18 @@ export default function TextbookPublication() {
             </Box>
           </Box>
         </Box>
-        <Box></Box>
+        <Box>
+          <Typography sx={labelStyle}>Number of Pages :</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            type="number"
+            value={form.numberOfPages}
+            onChange={set("numberOfPages")}
+            slotProps={{ htmlInput: { min: 1 } }}
+            placeholder="e.g. 250"
+          />
+        </Box>
 
         {/* Authors Section */}
         <Box sx={{ gridColumn: { sm: "1 / -1" }, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)", mt: 2 }}>
@@ -1253,7 +1276,8 @@ export default function TextbookPublication() {
         {(() => {
           const isStudentInvolved = form.isStudentsInvolved === "Yes";
           const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
-          const disableIncentive = isStudentInvolved || isPositionGreaterThan5;
+          const isPublisherOthers = form.publisher === "Others";
+          const disableIncentive = isStudentInvolved || isPositionGreaterThan5 || isPublisherOthers;
           const currentApplyIncentive = disableIncentive ? "No" : form.applyIncentive;
 
           let estIncentive = "-";
@@ -1287,10 +1311,30 @@ export default function TextbookPublication() {
                   * Application for incentive is only for the first 5 author positions.
                 </Typography>
               )}
-              {currentApplyIncentive && (
-                <Box sx={{ mt: 2, p: 1.5, background: "var(--bg-glass)", border: "1px solid var(--border-color)", borderRadius: "8px" }}>
-                  <Typography sx={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: 700, mb: 0.5 }}>Estimated Incentive Amount</Typography>
-                  <Typography sx={{ fontSize: "1.1rem", color: "var(--color-primary)", fontWeight: 800 }}>{estIncentive}</Typography>
+              {isPublisherOthers && !isPositionGreaterThan5 && (
+                <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                  * Incentive is not applicable for custom publishers.
+                </Typography>
+              )}
+              {currentApplyIncentive === "Yes" && (
+                <Box sx={{
+                  gridColumn: { sm: "1 / -1" },
+                  p: 2.5,
+                  borderRadius: "12px",
+                  bgcolor: estIncentive !== "Research committee decision" ? "rgba(16, 185, 129, 0.06)" : "rgba(239, 68, 68, 0.05)",
+                  border: `1.5px dashed ${estIncentive !== "Research committee decision" ? "rgba(16, 185, 129, 0.4)" : "rgba(239, 68, 68, 0.3)"}`,
+                  mt: 2
+                }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+                    <Box>
+                      <Typography sx={{ fontSize: "0.8rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: estIncentive !== "Research committee decision" ? "#059669" : "#dc2626" }}>
+                        Estimated Research Incentive Amount
+                      </Typography>
+                      <Typography sx={{ fontSize: estIncentive !== "Research committee decision" ? "1.6rem" : "0.95rem", fontWeight: estIncentive !== "Research committee decision" ? 800 : 700, color: estIncentive !== "Research committee decision" ? "#047857" : "#dc2626", mt: 0.5 }}>
+                        {estIncentive !== "Research committee decision" ? estIncentive : "⚠️ " + estIncentive}
+                      </Typography>
+                    </Box>
+                  </Box>
                 </Box>
               )}
             </>
@@ -1497,9 +1541,10 @@ export default function TextbookPublication() {
               />
             </Box>
 
-            {/* Edition, cost, type, month/year */}
+            {/* Edition, cost, type, month/year, pages */}
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Edition" value={data.edition || "-"} /></Box>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Cost" value={data.cost || "-"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="No. of Pages" value={data.numberOfPages || "-"} /></Box>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Publication Scope" value={data.publicationScope || "National"} /></Box>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Month/Year" value={`${data.month || ""} ${data.year || ""}`} /></Box>
 
