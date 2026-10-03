@@ -38,7 +38,7 @@ function Dashboard() {
       {activeRole === "RESEARCH_FEEDBACK_COMMITTEE" && <ResearchFeedbackDashboard />}
       {activeRole === "FEEDBACK_COORDINATOR" && <FeedbackCoordinatorDashboard />}
       {(activeRole === "RESEARCH_DEAN" || activeRole === "RESEARCH_COORDINATOR") && <RnDDeanDashboard activeRole={activeRole} />}
-      {activeRole === "SERVICE_ADMIN" && <ServiceAdminDashboard />}
+      {(activeRole === "SERVICE_ADMIN" || activeRole === "CSR_ADMIN" || activeRole === "CSR ADMIN" || activeRole === "CSR" || activeRole === "CSR_ADMINISTRATOR") && <ServiceAdminDashboard />}
       {activeRole === "SERVICE_EMP" && <ServiceEmpDashboard />}
       {(activeRole === "STUDENT_EVENT_ADMIN" || activeRole === "STUDENTEVENT_ADMIN" || activeRole === "STUDENT EVENT ADMIN" || activeRole === "VEDA_ADMIN" || activeRole === "VEDA ADMIN" || activeRole === "EVENT_COORDINATOR" || activeRole === "FACULTY_COORDINATOR" || activeRole === "ACCOMMODATION_COORDINATOR" || activeRole === "SCHOOL_COORDINATOR") && <StudentEventAdminDashboard />}
       {["VICE_CHANCELLOR", "DY_PRO_CHANCELLOR", "REGISTRAR", "PRO_VICE_CHANCELLOR_E_S", "PRO_VICE_CHANCELLOR_A", "PRO_VICE_CHANCELLOR_S_P", "DEAN_IQAC", "DEAN_ADMISSIONS", "CONTROLLER_OF_EXAMINATIONS",

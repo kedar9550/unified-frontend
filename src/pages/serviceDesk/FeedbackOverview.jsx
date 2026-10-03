@@ -170,10 +170,29 @@ const FeedbackOverview = () => {
         }
     }, [uniqueServices, serviceFilter]);
 
+    const getUserName = (feedback) => {
+        if (!feedback) return 'Unknown User';
+        if (feedback.submittedBy?.name) return feedback.submittedBy.name;
+        if (feedback.submittedByStudent?.studentname) {
+            return feedback.submittedByStudent.rollno
+                ? `${feedback.submittedByStudent.studentname} (${feedback.submittedByStudent.rollno})`
+                : feedback.submittedByStudent.studentname;
+        }
+        if (feedback.ticket?.studentDetails?.studentname) {
+            return feedback.ticket.studentDetails.rollno
+                ? `${feedback.ticket.studentDetails.studentname} (${feedback.ticket.studentDetails.rollno})`
+                : feedback.ticket.studentDetails.studentname;
+        }
+        if (feedback.studentRollNo) return feedback.studentRollNo;
+        if (feedback.ticket?.createdBy?.name) return feedback.ticket.createdBy.name;
+        return 'Unknown User';
+    };
+
     const filteredRows = useMemo(() => {
         return feedbackData.filter(f => {
+            const userName = getUserName(f).toLowerCase();
             const matchesSearch = !search ||
-                f.submittedBy?.name?.toLowerCase().includes(search.toLowerCase()) ||
+                userName.includes(search.toLowerCase()) ||
                 f.ticket?.ticketNumber?.toLowerCase().includes(search.toLowerCase()) ||
                 f.ticket?.title?.toLowerCase().includes(search.toLowerCase());
 
@@ -188,7 +207,7 @@ const FeedbackOverview = () => {
     const handleExport = () => {
         const csvContent = "data:text/csv;charset=utf-8,"
             + "User,Service,Ticket,Rating,Satisfaction,Comments,Date\n"
-            + filteredRows.map(r => `"${r.submittedBy?.name}","${r.ticket?.service?.name}","${r.ticket?.ticketNumber}","${r.rating}","${r.satisfaction}","${(r.comments || '').replace(/"/g, '""')}","${new Date(r.createdAt).toLocaleDateString()}"`).join("\n");
+            + filteredRows.map(r => `"${getUserName(r)}","${r.ticket?.service?.name}","${r.ticket?.ticketNumber}","${r.rating}","${r.satisfaction}","${(r.comments || '').replace(/"/g, '""')}","${new Date(r.createdAt).toLocaleDateString()}"`).join("\n");
 
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
@@ -476,7 +495,7 @@ const FeedbackOverview = () => {
                                             </TableCell>
                                             <TableCell sx={{ py: 2 }} align="center">
                                                 <Typography variant="body2" sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                                                    {feedback.submittedBy?.name || 'Unknown User'}
+                                                    {getUserName(feedback)}
                                                 </Typography>
                                             </TableCell>
                                             <TableCell sx={{ py: 2, color: 'var(--text-secondary)' }}>
