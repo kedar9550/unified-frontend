@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useLoading } from "../../context/LoadingContext";
 import {
   Box, TextField, MenuItem, Select, Typography, Button,
-  Radio, RadioGroup, FormControlLabel
+  Radio, RadioGroup, FormControlLabel, Chip
 } from "@mui/material";
 import { toast } from "sonner";
 import PageHeader from "../../components/common/PageHeader";
@@ -15,6 +15,12 @@ import {
   labelStyle, disabledField, MONTHS, YEARS
 } from "../../components/faculty/publicationConstants";
 import API from "../../api/axios";
+import mammoth from "mammoth";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 export default function RndConferenceDataEntry() {
   const { user } = useAuth();
@@ -37,24 +43,70 @@ export default function RndConferenceDataEntry() {
     doi: "",
     title: "",
     conferenceName: "",
-    scope: "",
+    location: "", presentationMode: "", conferenceType: "",
     indexing: "",
     month: "",
     year: "",
     publisher: "",
     issnIsbn: "",
-    applyIncentive: "No", // Organisation does not provide conference incentives
+    applyIncentive: "No",
     applyingSeedGrant: "",
     isStudentsInvolved: "No",
     totalAuthors: 1,
     userAuthorPosition: 1,
     otherAuthors: [],
     appraisalEligible: "",
-    approvedAmount: ""
+    approvedAmount: "",
+    sdgs: ""
   };
 
   const [form, setForm] = useState(emptyForm);
-  const [files, setFiles] = useState({ certificate: null, proceedings: null });
+  const [files, setFiles] = useState({ firstPage: null, certificate: null, completeDocument: null, flightTicket: null });
+
+  const [scanningSdg, setScanningSdg] = useState(false);
+  const [scannedSdgResults, setScannedSdgResults] = useState(null);
+  const [sdgMap, setSdgMap] = useState({});
+  const [sdgList, setSdgList] = useState([]);
+
+  useEffect(() => {
+    API.get("/api/sdgs").then(res => {
+      if (res.data?.success) {
+        setSdgList(res.data.data);
+        const map = {};
+        res.data.data.forEach(sdg => {
+          const title = sdg.sdgTitle.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+          map[sdg.sdgNumber] = `${sdg.sdgNumber}: ${title}`;
+        });
+        setSdgMap(map);
+      }
+    }).catch(err => console.error("Failed to fetch SDGs", err));
+  }, []);
+
+  const getSdgName = (sdgCode) => {
+    const cleanCode = (sdgCode || "").trim();
+    if (sdgMap[cleanCode]) return sdgMap[cleanCode];
+    if (cleanCode.startsWith("SDG-")) return cleanCode;
+    const key = `SDG-${cleanCode}`;
+    return sdgMap[key] || cleanCode;
+  };
+
+  const hasPgStudent = form.otherAuthors?.some(ca => ca.CoAuthorType === 'student' && ca.studentQualification === 'PG');
+  const isOtherConferenceType = form.conferenceType === 'Other';
+  const disableIncentive = hasPgStudent || isOtherConferenceType;
+
+  let estimatedAmountStr = "";
+  let estimatedAmountNum = 0;
+  if (form.applyIncentive === "Yes" && !disableIncentive) {
+    if (form.location === "Abroad") {
+      estimatedAmountStr = "The research committee will decide accordingly";
+      estimatedAmountNum = 0;
+    } else {
+      const finalAmount = form.applyingSeedGrant === "Yes" ? 4000 : 8000;
+      estimatedAmountStr = `₹${finalAmount.toLocaleString('en-IN')}`;
+      estimatedAmountNum = finalAmount;
+    }
+  }
+
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -83,7 +135,7 @@ export default function RndConferenceDataEntry() {
         newForm.issnIsbn = "";
         newForm.year = "";
         newForm.month = "";
-        newForm.indexing = "";
+        newForm.scopusIndexed = "";
         setDoiFetched(false);
       }
       if (k === "isStudentsInvolved") {
@@ -101,8 +153,7 @@ export default function RndConferenceDataEntry() {
             empId: a.CoAuthorType === "student" ? "" : a.empId
           }));
         }
-        // applyIncentive is always "No" — organisation does not provide conference incentives
-        newForm.applyIncentive = "No";
+
       }
       return newForm;
     });
@@ -175,7 +226,7 @@ export default function RndConferenceDataEntry() {
         issnIsbn: data.issnIsbn || prev.issnIsbn,
         year: data.year || prev.year,
         month: data.month || prev.month,
-        indexing: "Scopus Indexed"
+        scopusIndexed: "Yes"
       }));
 
       setDoiFetched(true);
@@ -296,8 +347,7 @@ export default function RndConferenceDataEntry() {
           newForm.totalAuthors = parseInt(newForm.totalAuthors) - 1;
         }
       }
-      // applyIncentive is always "No" — organisation does not provide conference incentives
-      newForm.applyIncentive = "No";
+
       if (val === "No") {
         if (newForm.otherAuthors) {
           newForm.otherAuthors = newForm.otherAuthors.map(author => {
@@ -316,17 +366,126 @@ export default function RndConferenceDataEntry() {
     });
   };
 
-  const validateFile = (file) => {
+  const validateFile = (file, k) => {
     if (!file) return true;
-    const allowed = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
-    if (!allowed.includes(file.type)) { toast.error("Only PDF, JPG, and PNG files are allowed"); return false; }
-    if (file.size > 500 * 1024) { toast.error("File size exceeds 500KB limit"); return false; }
+    if (file.type !== 'application/pdf') {
+      toast.error("Only PDF files are allowed");
+      return false;
+    }
+    const isCompleteDoc = k === 'completeDocument';
+    const maxSize = isCompleteDoc ? 5 * 1024 * 1024 : 200 * 1024;
+    if (file.size > maxSize) {
+      toast.error(`File size exceeds ${isCompleteDoc ? "5MB" : "200KB"} limit`);
+      return false;
+    }
     return true;
   };
 
-  const setFile = (k) => (e) => {
+  const handleCompleteDocumentChange = async (e) => {
     const file = e.target.files[0];
-    if (file && validateFile(file)) setFiles(p => ({ ...p, [k]: file }));
+    const k = "completeDocument";
+    if (!file) {
+      setFiles(p => ({ ...p, [k]: null }));
+      setForm(p => ({ ...p, sdgs: "" }));
+      setScannedSdgResults(null);
+      return;
+    }
+
+    if (!validateFile(file, k)) {
+      e.target.value = null;
+      return;
+    }
+
+    setFiles(p => ({ ...p, [k]: file }));
+
+    // Dynamic scan client-side for SDGs
+    setScanningSdg(true);
+    setScannedSdgResults(null);
+    try {
+      let sdgData = {};
+      const res = await API.get("/api/sdgs");
+      if (res.data && res.data.success) {
+        res.data.data.forEach(item => {
+          sdgData[item.sdgNumber] = {
+            title: item.sdgTitle,
+            keywords: item.keywords
+          };
+        });
+      }
+
+      if (Object.keys(sdgData).length === 0) {
+        toast.info("SDG keywords are loading. Dynamic scanning skipped.");
+        setScanningSdg(false);
+        return;
+      }
+
+      let text = "";
+      const fileName = file.name.toLowerCase();
+      if (fileName.endsWith('.pdf')) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          fullText += content.items.map(item => item.str).join(" ") + " ";
+        }
+        text = fullText;
+      } else {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        text = result.value;
+      }
+
+      const normalizeText = (t) => {
+        return t.toLowerCase()
+          .replace(/[\u2018\u2019]/g, "'")
+          .replace(/[\u201C\u201D]/g, '"')
+          .replace(/[^a-z0-9'\s]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      };
+
+      text = normalizeText(text);
+
+      const matchedList = [];
+      Object.entries(sdgData).forEach(([number, data]) => {
+        let matchCount = 0;
+        data.keywords.forEach(keyword => {
+          const kw = normalizeText(keyword);
+          if (kw.length > 2) {
+            const escapedKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`\\b${escapedKw}\\b`, "gi");
+            const matches = text.match(regex);
+            if (matches) {
+              matchCount += matches.length;
+            }
+          }
+        });
+        if (matchCount > 0) {
+          matchedList.push(number);
+        }
+      });
+
+      const matchedStr = matchedList.join(", ");
+      setForm(p => ({ ...p, sdgs: matchedStr }));
+      setScannedSdgResults(matchedList);
+      toast.success(`SDG keyword scanning completed! Matched: ${matchedList.length > 0 ? matchedStr : "None"}`);
+    } catch (err) {
+      console.error("SDG scan error:", err);
+      toast.error("Failed to dynamically scan SDG keywords, but file was attached");
+    } finally {
+      setScanningSdg(false);
+    }
+  };
+
+  const setFile = (k) => (e) => {
+    if (k === "completeDocument") {
+      handleCompleteDocumentChange(e);
+      return;
+    }
+    const file = e.target.files[0];
+    if (file && validateFile(file, k)) setFiles(p => ({ ...p, [k]: file }));
     else e.target.value = null;
   };
 
@@ -336,7 +495,7 @@ export default function RndConferenceDataEntry() {
       return;
     }
 
-    if (!form.title.trim() || !form.conferenceName.trim() || !form.scope || !form.indexing || !form.year || !form.month) {
+    if (!form.title.trim() || !form.conferenceName.trim() || !form.location || !form.conferenceType || !form.scopusIndexed || !form.year || !form.month) {
       toast.error("Please fill in all required fields marked with *");
       return;
     }
@@ -348,8 +507,12 @@ export default function RndConferenceDataEntry() {
 
     // applyIncentive is always "No" — no validation needed for approved amount
 
-    if (!files.certificate || !files.proceedings) {
-      toast.error("Please attach all required documents (Certificate & Proceedings)");
+    if (!files.firstPage || !files.certificate || !files.completeDocument) {
+      toast.error("Please attach all required documents (First Page, Certificate, Complete Document)");
+      return;
+    }
+    if (form.location === "Abroad" && form.presentationMode === "Offline" && !files.flightTicket) {
+      toast.error("Please attach the flight ticket bill for abroad offline conference");
       return;
     }
 
@@ -367,7 +530,7 @@ export default function RndConferenceDataEntry() {
       })).filter(ca => ca.name && ca.affiliation);
 
       const fields = [
-        "doi", "title", "conferenceName", "scope", "indexing",
+        "doi", "title", "conferenceName", "location", "presentationMode", "conferenceType", "scopusIndexed",
         "publisher", "issnIsbn", "applyIncentive", "applyingSeedGrant",
         "totalAuthors", "userAuthorPosition", "isStudentsInvolved",
         "appraisalEligible", "approvedAmount"
@@ -376,6 +539,7 @@ export default function RndConferenceDataEntry() {
         fd.append(k, form[k] ?? "");
       });
 
+      fd.append("estimatedIncentiveAmount", estimatedAmountNum);
       fd.append("month", form.month);
       fd.append("year", form.year);
       fd.append("coAuthors", JSON.stringify(coAuthorsList));
@@ -384,15 +548,19 @@ export default function RndConferenceDataEntry() {
       fd.append("panNumber", targetFacultyDetails?.panNumber || user?.panNumber || "");
       fd.append("isDirectEntry", "true");
       fd.append("targetFacultyEmpId", targetFacultyEmpId);
+      fd.append("sdgs", form.sdgs || "");
 
+      if (files.firstPage) fd.append("firstPage", files.firstPage);
       if (files.certificate) fd.append("certificate", files.certificate);
-      if (files.proceedings) fd.append("proceedings", files.proceedings);
+      if (files.completeDocument) fd.append("completeDocument", files.completeDocument);
+      if (files.flightTicket) fd.append("flightTicket", files.flightTicket);
 
       await API.post("/api/research/conference", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Conference record added directly for faculty!");
 
       setForm(emptyForm);
-      setFiles({ certificate: null, proceedings: null });
+      setFiles({ firstPage: null, certificate: null, completeDocument: null, flightTicket: null });
+      setScannedSdgResults(null);
       setTargetFacultyEmpId("");
       setTargetFacultyName("");
       setIsTargetFacultyValid(false);
@@ -425,7 +593,7 @@ export default function RndConferenceDataEntry() {
                   setTargetFacultyName("");
                   setTargetFacultyDetails(null);
                   setForm(emptyForm);
-                  setFiles({ certificate: null, proceedings: null });
+                  setFiles({ firstPage: null, certificate: null, completeDocument: null, flightTicket: null });
                   setDoiFetched(false);
                 }}
               />
@@ -551,21 +719,60 @@ export default function RndConferenceDataEntry() {
 
             {/* Scope */}
             <Box>
-              <Typography sx={labelStyle}>Conference Scope : *</Typography>
-              <Select size="small" fullWidth displayEmpty value={form.scope} onChange={set("scope")}>
-                <MenuItem value="">Select Scope</MenuItem>
-                <MenuItem value="National">National</MenuItem>
-                <MenuItem value="International">International</MenuItem>
+              <Typography sx={labelStyle}>Conference Location : *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.location} onChange={(e) => {
+                 set("location")(e);
+                 if (e.target.value !== "Abroad") {
+                    setForm(p => ({ ...p, location: e.target.value, presentationMode: "" }));
+                    setFiles(p => ({ ...p, flightTicket: null }));
+                 }
+              }}>
+                <MenuItem value="">Select Location</MenuItem>
+                <MenuItem value="India">India</MenuItem>
+                <MenuItem value="Abroad">Abroad</MenuItem>
+              </Select>
+            </Box>
+            {form.location === "Abroad" && (
+              <Box>
+                <Typography sx={labelStyle}>Presentation Mode : *</Typography>
+                <Select size="small" fullWidth displayEmpty value={form.presentationMode || ""} onChange={(e) => {
+                   set("presentationMode")(e);
+                   if (e.target.value !== "Offline") {
+                      setFiles(p => ({ ...p, flightTicket: null }));
+                   }
+                }}>
+                  <MenuItem value="" disabled>Select Mode</MenuItem>
+                  <MenuItem value="Online">Online</MenuItem>
+                  <MenuItem value="Offline">Offline</MenuItem>
+                </Select>
+              </Box>
+            )}
+
+            <Box>
+              <Typography sx={labelStyle}>Conference Type / Host Institute : *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.conferenceType} onChange={(e) => {
+                 set("conferenceType")(e);
+                 if (e.target.value === "Other") {
+                    setForm(p => ({ ...p, applyIncentive: "No" }));
+                 }
+              }}>
+                <MenuItem value="">Select Type</MenuItem>
+                <MenuItem value="IEEE">IEEE</MenuItem>
+                <MenuItem value="IIT">IIT</MenuItem>
+                <MenuItem value="IISc">IISc</MenuItem>
+                <MenuItem value="NIT">NIT</MenuItem>
+                <MenuItem value="IIM">IIM</MenuItem>
+                <MenuItem value="Other">Other</MenuItem>
               </Select>
             </Box>
 
-            {/* Indexing */}
+            {/* Scopus Indexed */}
             <Box>
-              <Typography sx={labelStyle}>Indexing : *</Typography>
-              <Select size="small" fullWidth displayEmpty value={form.indexing} onChange={set("indexing")}>
-                <MenuItem value="">Select Indexing</MenuItem>
-                <MenuItem value="Scopus Indexed">Scopus Indexed</MenuItem>
-                <MenuItem value="Not Scopus Indexed">Not Scopus Indexed</MenuItem>
+              <Typography sx={labelStyle}>Scopus Indexed : *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.scopusIndexed} onChange={set("scopusIndexed")}>
+                <MenuItem value="">Select</MenuItem>
+                <MenuItem value="Yes">Yes</MenuItem>
+                <MenuItem value="No">No</MenuItem>
               </Select>
             </Box>
           </Grid2>
@@ -680,7 +887,7 @@ export default function RndConferenceDataEntry() {
                                 placeholder="e.g. 21A91A0501"
                               />
                             </Box>
-                            <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
+                            <Box sx={{ flex: 1.5, minWidth: { xs: "100%", sm: "160px" } }}>
                               <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT NAME</Typography>
                               <TextField
                                 size="small"
@@ -689,6 +896,21 @@ export default function RndConferenceDataEntry() {
                                 onChange={(e) => handleCoAuthorChange(ca.authorPosition, "authorName", e.target.value)}
                                 placeholder="Full Name"
                               />
+                            </Box>
+                            <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "110px" } }}>
+                              <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>QUALIFICATION</Typography>
+                              <Select
+                                size="small"
+                                fullWidth
+                                displayEmpty
+                                value={ca.studentQualification || ""}
+                                onChange={(e) => handleCoAuthorChange(ca.authorPosition, "studentQualification", e.target.value)}
+                              >
+                                <MenuItem value="" disabled>Select</MenuItem>
+                                <MenuItem value="UG">UG</MenuItem>
+                                <MenuItem value="PG">PG</MenuItem>
+                                <MenuItem value="Ph.D">Ph.D</MenuItem>
+                              </Select>
                             </Box>
                           </>
                         ) : (
@@ -769,10 +991,22 @@ export default function RndConferenceDataEntry() {
             </Box>
             <Box>
               <Typography sx={labelStyle}>Apply Incentive? : *</Typography>
-              <Select size="small" fullWidth displayEmpty value="No" disabled sx={disabledField}>
+              <Select size="small" fullWidth displayEmpty value={disableIncentive ? "No" : (form.applyIncentive || "No")} onChange={set("applyIncentive")} disabled={disableIncentive} sx={disableIncentive ? disabledField : {}}>
                 <MenuItem value="No">No</MenuItem>
+                <MenuItem value="Yes">Yes</MenuItem>
               </Select>
+              {hasPgStudent && (
+                <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                  * Incentive is not applicable for publications with PG student co-authors.
+                </Typography>
+              )}
             </Box>
+            {form.applyIncentive === "Yes" && !disableIncentive && (
+              <Box>
+                <Typography sx={labelStyle}>Approved Incentive Amount (₹) : *</Typography>
+                <TextField size="small" fullWidth type="number" value={form.approvedAmount} onChange={set("approvedAmount")} />
+              </Box>
+            )}
             <Box>
               <Typography sx={labelStyle}>Article Eligibility for Appraisal : *</Typography>
               <Select size="small" fullWidth displayEmpty value={form.appraisalEligible} onChange={set("appraisalEligible")}>
@@ -782,21 +1016,70 @@ export default function RndConferenceDataEntry() {
               </Select>
             </Box>
           </Grid2>
+          
+          {estimatedAmountStr && (
+            <Box sx={{
+              p: 2,
+              mt: 2,
+              borderRadius: "8px",
+              bgcolor: "rgba(16, 185, 129, 0.05)",
+              border: "1px dashed rgba(16, 185, 129, 0.4)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center"
+            }}>
+              <Typography sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                Estimated Incentive Amount:
+              </Typography>
+              <Typography sx={{ fontWeight: 700, color: "#10b981", fontSize: "1.05rem" }}>
+                {estimatedAmountStr}
+              </Typography>
+            </Box>
+          )}
 
           {/* ── Attachments ── */}
           <SubLabel text="Upload Required Documents:" />
           <NoteBox />
           <Grid2 sx={{ mt: 2 }}>
             <FileField
+              label="Published Paper - 1st Page in conference * :"
+              name="firstPage"
+              onChange={setFile("firstPage")}
+            />
+            <FileField
               label="Attach Certificate of Presentation * :"
               name="certificate"
               onChange={setFile("certificate")}
             />
-            <FileField
-              label="Attach Copy of Proceedings / Abstract Book :"
-              name="proceedings"
-              onChange={setFile("proceedings")}
-            />
+            <Box>
+              <FileField
+                label="Complete Document * :"
+                name="completeDocument"
+                onChange={setFile("completeDocument")}
+              />
+              {scanningSdg && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1, p: 1.5, borderRadius: '8px', bgcolor: 'rgba(25, 118, 210, 0.05)', border: '1px solid rgba(25, 118, 210, 0.2)' }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-primary)' }}>Scanning complete document for SDG keywords...</Typography>
+                </Box>
+              )}
+              {!scanningSdg && form.sdgs && (
+                <Box sx={{ mt: 1.5, p: 2, borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-accent-1)' }}>
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: 'var(--color-primary)', textTransform: 'uppercase', display: 'block', mb: 1 }}>Matched SDGs from Scanning:</Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {form.sdgs.split(', ').map((sdg, idx) => (
+                      <Chip key={idx} label={getSdgName(sdg)} size="small" sx={{ bgcolor: 'rgba(76, 175, 80, 0.1)', color: '#4caf50', fontWeight: 800 }} />
+                    ))}
+                  </Box>
+                </Box>
+              )}
+            </Box>
+            {form.location === "Abroad" && form.presentationMode === "Offline" && (
+              <FileField
+                label="Upload flight ticket bill * :"
+                name="flightTicket"
+                onChange={setFile("flightTicket")}
+              />
+            )}
           </Grid2>
 
           <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
