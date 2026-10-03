@@ -1247,30 +1247,56 @@ export default function TextbookPublication() {
             setDeleteFlags(p => ({ ...p, index: true }));
           }}
         />
-        <Box>
-          {(() => {
-            const isStudentInvolved = form.isStudentsInvolved === "Yes";
-            const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
-            const disableIncentive = isStudentInvolved || isPositionGreaterThan5;
-            return (
-              <>
-                <Typography sx={labelStyle}>Whether you want to apply for incentive?</Typography>
-                <Select size="small" fullWidth displayEmpty value={disableIncentive ? "No" : form.applyIncentive} onChange={set("applyIncentive")} disabled={disableIncentive} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
-                  <MenuItem value="">Select</MenuItem>
-                  <MenuItem value="Yes">Yes</MenuItem>
-                  <MenuItem value="No">No</MenuItem>
-                </Select>
-                {isPositionGreaterThan5 && (
-                  <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
-                    * Application for incentive is only for the first 5 author positions.
-                  </Typography>
-                )}
-              </>
-            );
-          })()}
-        </Box>
-
       </Grid2>
+
+      <Box sx={{ mt: 3, maxWidth: { xs: "100%", md: "calc(50% - 12px)" } }}>
+        {(() => {
+          const isStudentInvolved = form.isStudentsInvolved === "Yes";
+          const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
+          const disableIncentive = isStudentInvolved || isPositionGreaterThan5;
+          const currentApplyIncentive = disableIncentive ? "No" : form.applyIncentive;
+
+          let estIncentive = "-";
+          if (currentApplyIncentive === "Yes") {
+              const pubObj = publishers.find(p => p.name === form.publisher);
+              if (pubObj && pubObj.type) {
+                  if (pubObj.type.toLowerCase() === "national") {
+                      estIncentive = "₹10,000";
+                  } else if (pubObj.type.toLowerCase() === "international") {
+                      estIncentive = "₹20,000";
+                  } else {
+                      estIncentive = "Research committee decision";
+                  }
+              } else {
+                  estIncentive = "Research committee decision";
+              }
+          } else if (currentApplyIncentive === "No") {
+              estIncentive = "₹0";
+          }
+
+          return (
+            <>
+              <Typography sx={labelStyle}>Whether you want to apply for incentive?</Typography>
+              <Select size="small" fullWidth displayEmpty value={currentApplyIncentive} onChange={set("applyIncentive")} disabled={disableIncentive} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
+                <MenuItem value="">Select</MenuItem>
+                <MenuItem value="Yes">Yes</MenuItem>
+                <MenuItem value="No">No</MenuItem>
+              </Select>
+              {isPositionGreaterThan5 && (
+                <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                  * Application for incentive is only for the first 5 author positions.
+                </Typography>
+              )}
+              {currentApplyIncentive && (
+                <Box sx={{ mt: 2, p: 1.5, background: "var(--bg-glass)", border: "1px solid var(--border-color)", borderRadius: "8px" }}>
+                  <Typography sx={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: 700, mb: 0.5 }}>Estimated Incentive Amount</Typography>
+                  <Typography sx={{ fontSize: "1.1rem", color: "var(--color-primary)", fontWeight: 800 }}>{estIncentive}</Typography>
+                </Box>
+              )}
+            </>
+          );
+        })()}
+      </Box>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
         <Button
