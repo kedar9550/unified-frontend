@@ -593,8 +593,6 @@ export const ROLE_ROUTES = {
 
   SERVICE_ADMIN: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
-    { text: "Manage Services", path: "/service-desk/admin/manage-services", icon: <AccountTree /> },
-    { text: "Manage Blocks", path: "/service-desk/admin/manage-blocks", icon: <Apartment /> },
     { text: "Manage Tickets", path: "/service-desk/admin/services", icon: <AssignmentTurnedIn /> },
     { text: "Service Employees", path: "/service-desk/admin/team", icon: <GroupIcon /> },
     { text: "Reports", path: "/service-desk/reports", icon: <Analytics /> },
