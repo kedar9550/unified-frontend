@@ -414,6 +414,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                         <LabelValue label="ISBN" value={data.isbn} horizontal />
                         <LabelValue label="Publication Scope" value={data.publicationScope || "National"} horizontal />
                         <LabelValue label="Edition" value={data.edition} horizontal />
+                        <LabelValue label="No. of Pages" value={data.numberOfPages} horizontal />
                         <LabelValue label="Year" value={data.year} horizontal />
                         <LabelValue 
                             label="Applicant Position" 
@@ -467,6 +468,11 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                                     }}
                                 />
                             }
+                        />
+                        <LabelValue 
+                            label="Estimated Incentive" 
+                            value={data.applyIncentive === 'Yes' ? (data.estimatedIncentiveAmount ? `₹${data.estimatedIncentiveAmount}` : "Research committee decision") : "₹0"} 
+                            horizontal 
                         />
 
                     </Box>
