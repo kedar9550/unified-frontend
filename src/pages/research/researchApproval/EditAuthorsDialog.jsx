@@ -9,7 +9,7 @@ import API from "../../../api/axios";
 
 const labelStyle = { fontSize: 11, fontWeight: 800, color: "var(--color-primary)", textTransform: "uppercase", mb: 1, letterSpacing: "0.5px" };
 
-export default function EditAuthorsDialog({ open, onClose, coAuthors = [], totalAuthors = 1, userAuthorPosition = 1, correspondingAuthor = "No", isStudentsInvolved = "No", onSave }) {
+export default function EditAuthorsDialog({ open, onClose, coAuthors = [], totalAuthors = 1, userAuthorPosition = 1, correspondingAuthor = "No", isStudentsInvolved = "No", onSave, hideCorrespondingAuthor = false }) {
   const [authors, setAuthors] = useState([]);
   const [total, setTotal] = useState(totalAuthors || 1);
   const [position, setPosition] = useState(userAuthorPosition || 1);
@@ -145,13 +145,15 @@ export default function EditAuthorsDialog({ open, onClose, coAuthors = [], total
           </RadioGroup>
         </Box>
 
-        <Box sx={{ mb: 4, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-          <Typography sx={{ ...labelStyle, mb: 0 }}>Corresponding Author : *</Typography>
-          <RadioGroup row value={corrAuthor} onChange={(e) => setCorrAuthor(e.target.value)}>
-            <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
-            <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
-          </RadioGroup>
-        </Box>
+        {!hideCorrespondingAuthor && (
+          <Box sx={{ mb: 4, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+            <Typography sx={{ ...labelStyle, mb: 0 }}>Corresponding Author : *</Typography>
+            <RadioGroup row value={corrAuthor} onChange={(e) => setCorrAuthor(e.target.value)}>
+              <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+              <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+            </RadioGroup>
+          </Box>
+        )}
 
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} sm={6}>

@@ -961,6 +961,22 @@ export default function RndTextbookDataEntry() {
                 <MenuItem value="No">No</MenuItem>
               </Select>
             </Box>
+            {form.applyIncentive && (
+              <Box sx={{ p: 1.5, background: "var(--bg-glass)", border: "1px solid var(--border-color)", borderRadius: "8px" }}>
+                <Typography sx={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: 700, mb: 0.5 }}>Estimated Incentive Amount</Typography>
+                <Typography sx={{ fontSize: "1.1rem", color: "var(--color-primary)", fontWeight: 800 }}>
+                  {(() => {
+                      if (form.applyIncentive === "No" || form.isStudentsInvolved === "Yes") return "₹0";
+                      const pubObj = publishers.find(p => p.name === form.publisher);
+                      if (pubObj && pubObj.type) {
+                          if (pubObj.type.toLowerCase() === "national") return "₹10,000";
+                          if (pubObj.type.toLowerCase() === "international") return "₹20,000";
+                      }
+                      return "Research committee decision";
+                  })()}
+                </Typography>
+              </Box>
+            )}
             {form.applyIncentive === "Yes" && (
               <Box>
                 <Typography sx={labelStyle}>Approved Incentive Amount (₹) : *</Typography>

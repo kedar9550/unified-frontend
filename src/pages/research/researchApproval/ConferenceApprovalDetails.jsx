@@ -38,6 +38,7 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import PublicIcon from "@mui/icons-material/Public";
 import EditIcon from "@mui/icons-material/Edit";
+import EditAuthorsDialog from "./EditAuthorsDialog";
 
 const SDG_COLOR_MAP = {
     1: { code: "SDG-1", label: "SDG-1: No Poverty", color: "#E5243B" },
@@ -79,6 +80,7 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
     const [isEditingDetails, setIsEditingDetails] = useState(false);
     const [editableData, setEditableData] = useState({});
     const [detailsSaving, setDetailsSaving] = useState(false);
+    const [isAuthorModalOpen, setIsAuthorModalOpen] = useState(false);
     const [decisionMode, setDecisionMode] = useState(null);
     const [sdgList, setSdgList] = useState([]);
 
@@ -354,9 +356,25 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                                                     setDetailsSaving(true);
                                                     try {
                                                         const payload = { ...editableData };
-                                                        if (!payload.presentationMode || payload.location !== "Abroad") {
-                                                            delete payload.presentationMode;
+                                                        if (!payload.presentationMode || payload.location !== "Abroad") delete payload.presentationMode;
+                                                        if (payload.approvedAmount === "") delete payload.approvedAmount;
+                                                        if (payload.scopusIndexed === "") delete payload.scopusIndexed;
+                                                        if (payload.conferenceType === "") delete payload.conferenceType;
+                                                        
+                                                        // Filter out incomplete co-authors to prevent backend validation error
+                                                        if (payload.coAuthors && Array.isArray(payload.coAuthors)) {
+                                                            payload.coAuthors = payload.coAuthors
+                                                                .filter(a => a.name && a.name.trim() !== "" && a.affiliation && a.affiliation.trim() !== "" && a.affiliationType !== "Select Affiliation")
+                                                                .map(a => {
+                                                                    const cleanAuthor = { ...a };
+                                                                    if (cleanAuthor.studentQualification === "") delete cleanAuthor.studentQualification;
+                                                                    if (cleanAuthor.studentId === "") delete cleanAuthor.studentId;
+                                                                    if (cleanAuthor.empId === "") delete cleanAuthor.empId;
+                                                                    if (cleanAuthor.employeeId === "") delete cleanAuthor.employeeId;
+                                                                    return cleanAuthor;
+                                                                });
                                                         }
+
                                                         const res = await API.put(`/api/hod/research-requests/conference/${data._id}`, payload);
                                                         if (res.data?.success) {
                                                             const freshRes = await API.get(`/api/research/conference/${data._id}`);
@@ -369,7 +387,13 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                                                             toast.success("Conference details updated successfully");
                                                         }
                                                     } catch (err) {
-                                                        toast.error("Failed to update conference details");
+                                                        console.error("PUT Error:", err);
+                                                        if (err.response) {
+                                                            console.error("Response data:", err.response.data);
+                                                            toast.error(err.response.data.message || "Failed to update conference details");
+                                                        } else {
+                                                            toast.error("Failed to update conference details");
+                                                        }
                                                     } finally {
                                                         setDetailsSaving(false);
                                                     }
@@ -399,6 +423,8 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                                                     userAuthorPosition: data.userAuthorPosition || 1,
                                                     totalAuthors: data.totalAuthors || 1,
                                                     coAuthors: data.coAuthors || [],
+                                                    userAuthorPosition: data.userAuthorPosition || 1,
+                                                    isStudentsInvolved: data.isStudentsInvolved || "No",
                                                     title: data.title || "",
                                                     conferenceName: data.conferenceName || ""
                                                 });
@@ -500,6 +526,11 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                                                 sx={{ minWidth: 120, width: item.type === "number" ? 120 : 250, "& .MuiInputBase-root": { height: 32, fontSize: "0.875rem" } }}
                                                 inputProps={item.type === "number" ? { step: "any" } : {}}
                                             />
+                                            {item.key === "userAuthorPosition" && (
+                                                <Button variant="outlined" size="small" onClick={() => setIsAuthorModalOpen(true)} sx={{ height: 32, textTransform: 'none', borderRadius: '8px' }}>
+                                                    Edit Authors Details
+                                                </Button>
+                                            )}
                                         </Box>
                                     )
                                 ) : item.chip ? (
@@ -777,7 +808,24 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                 </Box>
             </Box>
 
-            {/* Edit Dialog (Removed per user request) */}
+            <EditAuthorsDialog
+                open={isAuthorModalOpen}
+                onClose={() => setIsAuthorModalOpen(false)}
+                coAuthors={editableData.coAuthors || []}
+                totalAuthors={editableData.totalAuthors || 1}
+                userAuthorPosition={editableData.userAuthorPosition || 1}
+                isStudentsInvolved={editableData.isStudentsInvolved || "No"}
+                hideCorrespondingAuthor={true}
+                onSave={(authorsData) => {
+                    setEditableData(prev => ({
+                        ...prev,
+                        coAuthors: authorsData.coAuthors,
+                        totalAuthors: authorsData.totalAuthors,
+                        userAuthorPosition: authorsData.userAuthorPosition,
+                        isStudentsInvolved: authorsData.isStudentsInvolved
+                    }));
+                }}
+            />
         </Box>
     );
 };
