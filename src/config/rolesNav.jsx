@@ -593,12 +593,26 @@ export const ROLE_ROUTES = {
 
   SERVICE_ADMIN: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
-
-    { text: "Service Team", path: "/service-desk/admin/team", icon: <GroupIcon /> },
     { text: "Manage Tickets", path: "/service-desk/admin/services", icon: <AssignmentTurnedIn /> },
+    { text: "Service Team", path: "/service-desk/admin/team", icon: <GroupIcon /> },
     { text: "Reports", path: "/service-desk/reports", icon: <Analytics /> },
     { text: "Feedback Analytics", path: "/service-desk/admin/feedback", icon: <Analytics /> },
+  ],
 
+  CSR_ADMIN: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Manage Tickets", path: "/service-desk/admin/services", icon: <AssignmentTurnedIn /> },
+    { text: "Service Team", path: "/service-desk/admin/team", icon: <GroupIcon /> },
+    { text: "Reports", path: "/service-desk/reports", icon: <Analytics /> },
+    { text: "Feedback Analytics", path: "/service-desk/admin/feedback", icon: <Analytics /> },
+  ],
+
+  "CSR ADMIN": [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Manage Tickets", path: "/service-desk/admin/services", icon: <AssignmentTurnedIn /> },
+    { text: "Service Team", path: "/service-desk/admin/team", icon: <GroupIcon /> },
+    { text: "Reports", path: "/service-desk/reports", icon: <Analytics /> },
+    { text: "Feedback Analytics", path: "/service-desk/admin/feedback", icon: <Analytics /> },
   ],
 
   SERVICE_EMP: [

@@ -232,7 +232,7 @@ const MobileNavbar = () => {
     const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
 
     useEffect(() => {
-        if (effectiveRole === "SERVICE_ADMIN") {
+        if (["SERVICE_ADMIN", "CSR_ADMIN", "CSR ADMIN", "CSR"].includes(effectiveRole)) {
             API.get('/api/service-desk/services/my-memberships')
                 .then(res => {
                     if (res.data.success) {
@@ -248,7 +248,7 @@ const MobileNavbar = () => {
 
     let menuItems = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
 
-    if (effectiveRole === "SERVICE_ADMIN" && adminServiceTypes) {
+    if (["SERVICE_ADMIN", "CSR_ADMIN", "CSR ADMIN", "CSR"].includes(effectiveRole) && adminServiceTypes) {
         menuItems = menuItems.flatMap(item => {
             if (item.text === "Service Team" || item.text === "Service Workers") {
                 const replacementItems = [];
