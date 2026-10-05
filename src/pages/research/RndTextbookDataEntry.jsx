@@ -421,10 +421,7 @@ export default function RndTextbookDataEntry() {
       toast.error("Please select Appraisal Eligible status");
       return;
     }
-    if (!files.coverPage || !files.authorAffiliation || !files.index) {
-      toast.error("Please attach all required documents (Cover Page, Author Affiliation, Index)");
-      return;
-    }
+    // Attachments removed for textbooks
 
     setLoading(true);
     try {
@@ -456,6 +453,19 @@ export default function RndTextbookDataEntry() {
       fd.append("applyIncentive", finalApplyIncentive);
       fd.append("approvedAmount", finalApplyIncentive === "Yes" ? form.approvedAmount : "");
       fd.append("appraisalEligible", form.appraisalEligible || "Yes");
+
+      let estimatedIncentiveAmount = 0;
+      if (finalApplyIncentive === "Yes") {
+          const pubObj = publishers.find(p => p.name === form.publisher);
+          if (pubObj && pubObj.type) {
+              if (pubObj.type.toLowerCase() === "national") {
+                  estimatedIncentiveAmount = 10000;
+              } else if (pubObj.type.toLowerCase() === "international") {
+                  estimatedIncentiveAmount = 20000;
+              }
+          }
+      }
+      fd.append("estimatedIncentiveAmount", estimatedIncentiveAmount);
 
       // Authors
       fd.append("totalAuthors", form.totalAuthors);
@@ -497,11 +507,7 @@ export default function RndTextbookDataEntry() {
       fd.append("isDirectEntry", "true");
       fd.append("targetFacultyEmpId", targetFacultyEmpId);
 
-      // Mandatory files matching backend expected names
-      if (files.coverPage) fd.append("coverPage", files.coverPage);
-      if (files.authorAffiliation) fd.append("authorAffiliation", files.authorAffiliation);
-      if (files.index) fd.append("index", files.index);
-
+      // Mandatory files removed for textbooks
       await API.post("/api/research/textbook", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Textbook publication record added directly for faculty!");
       setForm(emptyForm);
@@ -685,22 +691,13 @@ export default function RndTextbookDataEntry() {
 
             <Box>
               <Typography sx={labelStyle}>Edition :</Typography>
-              <Autocomplete
-                freeSolo
-                options={[...new Set([
-                  "1st Edition", "2nd Edition", "3rd Edition", "4th Edition", "5th Edition", 
-                  "6th Edition", "7th Edition", "8th Edition", "9th Edition", "10th Edition",
-                  ...editions.map(e => typeof e === "string" ? e : e.name).filter(name => {
-                    if (!name) return false;
-                    const cleanName = name.replace(/\s+/g, '').toLowerCase();
-                    const std = ["1stedition", "2ndedition", "3rdedition", "4thedition", "5thedition", "6thedition", "7thedition", "8thedition", "9thedition", "10thedition"];
-                    return !std.includes(cleanName);
-                  })
-                ])]}
+              <TextField
+                fullWidth
+                size="small"
+                type="number"
+                placeholder="Enter Edition"
                 value={form.edition}
-                onChange={(e, newValue) => setForm(p => ({ ...p, edition: newValue || "" }))}
-                onInputChange={(e, newInputValue) => setForm(p => ({ ...p, edition: newInputValue }))}
-                renderInput={(params) => <TextField {...params} size="small" placeholder="Select or type Edition (e.g. 1st Edition)" />}
+                onChange={(e) => setForm(p => ({ ...p, edition: e.target.value }))}
               />
             </Box>
 
@@ -1077,28 +1074,11 @@ export default function RndTextbookDataEntry() {
           </Grid2>
 
           {/* ── Attachments ── */}
-          <SubLabel text="Upload Required Documents:" />
-          <NoteBox />
-          <Grid2 sx={{ mt: 2 }}>
-            <FileField
-              label="Attach CoverPage *"
-              name="coverPage"
-              onChange={setFile("coverPage")}
-              file={files.coverPage}
-            />
-            <FileField
-              label="Attach Page displaying author affiliation *"
-              name="authorAffiliation"
-              onChange={setFile("authorAffiliation")}
-              file={files.authorAffiliation}
-            />
-            <FileField
-              label="Attach Index *"
-              name="index"
-              onChange={setFile("index")}
-              file={files.index}
-            />
-          </Grid2>
+          <Box sx={{ mt: 3, p: 2, bgcolor: 'rgba(255, 193, 7, 0.1)', border: '1px solid #ffb300', borderRadius: '8px' }}>
+            <Typography sx={{ color: '#b27900', fontWeight: 600, fontSize: '0.9rem' }}>
+              Note: No attachments are needed for textbook applications. Please submit a hard copy to the Dean R&C office.
+            </Typography>
+          </Box>
 
           <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
             <SubmitBtn onClick={handleSubmit} disabled={loading || !isTargetFacultyValid}>
