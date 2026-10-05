@@ -458,18 +458,7 @@ export default function TextbookPublication() {
       }
     }
 
-    // Check mandatory file uploads
-    if (!editingId) {
-      if (!files.coverPage || !files.authorAffiliation || !files.index) {
-        toast.error("Please attach all the required documents (Cover Page, Author Affiliation, Index)");
-        return;
-      }
-    } else {
-      if ((!files.coverPage && !existingFiles.coverPage) || (!files.authorAffiliation && !existingFiles.authorAffiliation) || (!files.index && !existingFiles.index)) {
-        toast.error("Please attach all required documents");
-        return;
-      }
-    }
+    // File uploads are no longer mandatory for textbooks
 
     setLoading(true);
     try {
@@ -498,6 +487,16 @@ export default function TextbookPublication() {
         }
       }
 
+      // Calculate estimated incentive
+      let estimatedIncentiveAmount = null;
+      if (submissionForm.applyIncentive === "Yes" && parseInt(submissionForm.userAuthorPosition) <= 5) {
+          if (submissionForm.publicationScope === "National") {
+              estimatedIncentiveAmount = 10000;
+          } else if (submissionForm.publicationScope === "International") {
+              estimatedIncentiveAmount = 20000;
+          }
+      }
+
       // Append standard fields
       fd.append("title", submissionForm.title);
       fd.append("isbn", submissionForm.isbn);
@@ -506,6 +505,9 @@ export default function TextbookPublication() {
       fd.append("userAuthorPosition", submissionForm.userAuthorPosition);
       fd.append("edition", submissionForm.edition);
       fd.append("cost", submissionForm.cost);
+      fd.append("currencySymbol", submissionForm.currencySymbol || "₹");
+      if (submissionForm.numberOfPages) fd.append("numberOfPages", submissionForm.numberOfPages);
+      if (estimatedIncentiveAmount) fd.append("estimatedIncentiveAmount", estimatedIncentiveAmount);
       fd.append("month", submissionForm.month);
       fd.append("year", submissionForm.year);
       fd.append("publicationScope", submissionForm.publicationScope);
@@ -559,7 +561,7 @@ export default function TextbookPublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Textbook Publications</Typography>
-        {/* <Button
+        <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -584,7 +586,7 @@ export default function TextbookPublication() {
           }}
         >
           Apply New
-        </Button> */}
+        </Button>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -883,6 +885,7 @@ export default function TextbookPublication() {
         <Box>
           <Typography sx={labelStyle}>Name of the Publisher :</Typography>
           <Autocomplete
+            disabled={isbnFetchedFields.publisher}
             options={[...publishers.filter(p => p.type === form.publicationScope), { name: "Others", type: form.publicationScope }]}
             getOptionLabel={(option) => option.name}
             isOptionEqualToValue={(option, value) => option.name === value?.name}
@@ -922,22 +925,13 @@ export default function TextbookPublication() {
         )}
         <Box>
           <Typography sx={labelStyle}>Edition :</Typography>
-          <Autocomplete
-            freeSolo
-            options={[...new Set([
-              "1st Edition", "2nd Edition", "3rd Edition", "4th Edition", "5th Edition", 
-              "6th Edition", "7th Edition", "8th Edition", "9th Edition", "10th Edition",
-              ...editions.map(e => e.name).filter(name => {
-                if (!name) return false;
-                const cleanName = name.replace(/\s+/g, '').toLowerCase();
-                const std = ["1stedition", "2ndedition", "3rdedition", "4thedition", "5thedition", "6thedition", "7thedition", "8thedition", "9thedition", "10thedition"];
-                return !std.includes(cleanName);
-              })
-            ])]}
+          <TextField
+            fullWidth
+            size="small"
+            type="number"
+            placeholder="Enter Edition"
             value={form.edition}
-            onChange={(e, newValue) => setForm(p => ({ ...p, edition: newValue || "" }))}
-            onInputChange={(e, newInputValue) => setForm(p => ({ ...p, edition: newInputValue }))}
-            renderInput={(params) => <TextField {...params} size="small" placeholder="Select or type Edition (e.g. 1st Edition)" />}
+            onChange={(e) => setForm(p => ({ ...p, edition: e.target.value }))}
           />
         </Box>
         <Box>
@@ -1237,40 +1231,11 @@ export default function TextbookPublication() {
         )}
       </Grid2>
 
-      <NoteBox />
-
-      <Grid2 sx={{ mt: 3 }}>
-        <FileField
-          label="Attach CoverPage *"
-          name="coverPage"
-          onChange={setFile("coverPage")}
-          existingFileUrl={existingFiles.coverPage}
-          onRemoveExisting={() => {
-            setExistingFiles(p => ({ ...p, coverPage: null }));
-            setDeleteFlags(p => ({ ...p, coverPage: true }));
-          }}
-        />
-        <FileField
-          label="Attach Page displaying author affiliation *"
-          name="authorAffiliation"
-          onChange={setFile("authorAffiliation")}
-          existingFileUrl={existingFiles.authorAffiliation}
-          onRemoveExisting={() => {
-            setExistingFiles(p => ({ ...p, authorAffiliation: null }));
-            setDeleteFlags(p => ({ ...p, authorAffiliation: true }));
-          }}
-        />
-        <FileField
-          label="Attach Index *"
-          name="index"
-          onChange={setFile("index")}
-          existingFileUrl={existingFiles.index}
-          onRemoveExisting={() => {
-            setExistingFiles(p => ({ ...p, index: null }));
-            setDeleteFlags(p => ({ ...p, index: true }));
-          }}
-        />
-      </Grid2>
+      <Box sx={{ mt: 3, p: 2, bgcolor: "rgba(232, 160, 0, 0.1)", border: "1px dashed rgba(232, 160, 0, 0.5)", borderRadius: "12px", maxWidth: { xs: "100%", md: "calc(50% - 12px)" } }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, color: "#b37b00" }}>
+          Note: Please submit a hard copy of the textbook to the Dean R&C office.
+        </Typography>
+      </Box>
 
       <Box sx={{ mt: 3, maxWidth: { xs: "100%", md: "calc(50% - 12px)" } }}>
         {(() => {
@@ -1543,7 +1508,7 @@ export default function TextbookPublication() {
 
             {/* Edition, cost, type, month/year, pages */}
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Edition" value={data.edition || "-"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Cost" value={data.cost || "-"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label={`Cost (${data.currencySymbol || '₹'})`} value={data.cost || "-"} /></Box>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="No. of Pages" value={data.numberOfPages || "-"} /></Box>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Publication Scope" value={data.publicationScope || "National"} /></Box>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Month/Year" value={`${data.month || ""} ${data.year || ""}`} /></Box>
@@ -1688,18 +1653,7 @@ export default function TextbookPublication() {
             </Card>
           )}
 
-          {/* Attached Files previews */}
-          <Box sx={{ mt: 3 }}>
-            <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", mb: 2 }}>
-              <AttachFile sx={{ color: "var(--color-primary)" }} />
-              <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography>
-            </Box>
-            <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }} useFlexGap>
-              {renderDetailFile("Cover Page", data.coverPage)}
-              {renderDetailFile("Author Affiliation", data.authorAffiliation)}
-              {renderDetailFile("Index", data.index)}
-            </Stack>
-          </Box>
+
 
           {/* Remarks/Comments if available */}
           {(data.hodComment || data.rndComment || data.approvedAmount) && (

@@ -16,6 +16,8 @@ import GavelIcon from '@mui/icons-material/Gavel';
 import DownloadIcon from '@mui/icons-material/Download';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
 import { toast } from "sonner";
 import API from "../../../api/axios";
 import EditResearchDetailsDialog from "./EditResearchDetailsDialog";
@@ -33,9 +35,11 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
     const [appraisalEligible, setAppraisalEligible] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
-    const [editOpen, setEditOpen] = useState(false);
     const [approveDialogOpen, setApproveDialogOpen] = useState(false);
     const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+    const [isEditingDetails, setIsEditingDetails] = useState(false);
+    const [editableData, setEditableData] = useState({});
+    const [detailsSaving, setDetailsSaving] = useState(false);
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -109,6 +113,24 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
             </Box>
         );
     }
+
+    const handleSaveDetails = async () => {
+        setDetailsSaving(true);
+        try {
+            const res = await API.put(`/api/research/textbook/${data._id}`, editableData);
+            if (res.data?.success) {
+                toast.success('Details updated successfully');
+                setData(res.data.data);
+                setIsEditingDetails(false);
+                if (res.data.data.approvedAmount) setApprovedAmount(res.data.data.approvedAmount);
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error(err.response?.data?.message || 'Failed to update details');
+        } finally {
+            setDetailsSaving(false);
+        }
+    };
 
     const { facultyId } = data;
 
@@ -408,73 +430,103 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
     
                 {/* Publication Details as Table Format */}
                 <Card sx={{ ...cardStyle, flex: { xs: "1 1 100%", lg: "1 1 48%" }, mb: 0 }}>
-                    <SectionHeader icon={<MenuBookIcon />} title="Publication Details" />
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <SectionHeader icon={<MenuBookIcon />} title="Publication Details" />
+                        {isResearchAdmin && !isEditingDetails && (
+                            <Button
+                                variant="outlined"
+                                startIcon={<EditIcon />}
+                                onClick={() => {
+                                    setEditableData(data);
+                                    setIsEditingDetails(true);
+                                }}
+                                size="small"
+                                sx={{ fontWeight: 600, borderRadius: "8px", textTransform: "none" }}
+                            >
+                                Edit
+                            </Button>
+                        )}
+                        {isResearchAdmin && isEditingDetails && (
+                            <Box sx={{ display: "flex", gap: 1 }}>
+                                <Button
+                                    variant="outlined"
+                                    color="error"
+                                    onClick={() => setIsEditingDetails(false)}
+                                    size="small"
+                                    disabled={detailsSaving}
+                                    sx={{ borderRadius: "8px", textTransform: "none" }}
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    color="success"
+                                    startIcon={<SaveIcon />}
+                                    onClick={handleSaveDetails}
+                                    size="small"
+                                    disabled={detailsSaving}
+                                    sx={{ borderRadius: "8px", textTransform: "none" }}
+                                >
+                                    {detailsSaving ? "Saving..." : "Save"}
+                                </Button>
+                            </Box>
+                        )}
+                    </Box>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
-                        <LabelValue label="Publisher" value={data.publisher} horizontal />
-                        <LabelValue label="ISBN" value={data.isbn} horizontal />
-                        <LabelValue label="Publication Scope" value={data.publicationScope || "National"} horizontal />
-                        <LabelValue label="Edition" value={data.edition} horizontal />
-                        <LabelValue label="No. of Pages" value={data.numberOfPages} horizontal />
-                        <LabelValue label="Year" value={data.year} horizontal />
-                        <LabelValue 
-                            label="Applicant Position" 
-                            horizontal
-                            chip={
+                        {[
+                            { key: "publisher", label: "Publisher", value: data.publisher || "-", editable: true, type: "text" },
+                            { key: "isbn", label: "ISBN", value: data.isbn || "-", editable: true, type: "text" },
+                            { key: "publicationScope", label: "Publication Scope", value: data.publicationScope || "National", editable: true, type: "select", options: ["National", "International"] },
+                            { key: "edition", label: "Edition", value: data.edition || "-", editable: true, type: "number" },
+                            { key: "numberOfPages", label: "No. of Pages", value: data.numberOfPages || "-", editable: true, type: "number" },
+                            { key: "year", label: "Year", value: data.year || "-", editable: true, type: "text" },
+                            { key: "userAuthorPosition", label: "Applicant Position", value: (
                                 (() => {
                                     const pos = data.userAuthorPosition || 1;
                                     const total = data.totalAuthors || 1;
                                     return (
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <Box sx={{
-                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                width: 36, height: 36, borderRadius: '50%',
-                                                bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)',
-                                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '1rem'
-                                            }}>
-                                                {pos}
-                                            </Box>
+                                            <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: '50%', bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)', color: 'var(--color-primary)', fontWeight: 900, fontSize: '1rem' }}>{pos}</Box>
                                             {total && (
                                                 <>
                                                     <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '1rem' }}>of</Typography>
-                                                    <Box sx={{
-                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                        px: 1.5, height: 32, borderRadius: '8px',
-                                                        bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)',
-                                                        color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.95rem'
-                                                    }}>
-                                                        {total} Authors
-                                                    </Box>
+                                                    <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', px: 1.5, height: 32, borderRadius: '8px', bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.95rem' }}>{total} Authors</Box>
                                                 </>
                                             )}
                                         </Box>
                                     );
                                 })()
-                            }
-                        />
-                        <LabelValue label="Cost (₹)" value={data.cost} horizontal />
-                        <LabelValue 
-                            label="Incentive" 
-                            horizontal 
-                            chip={
-                                <Chip
-                                    label={data.applyIncentive}
-                                    size="small"
-                                    sx={{
-                                        bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)",
-                                        color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)",
-                                        fontWeight: 700,
-                                        border: "1px solid",
-                                        borderColor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.3)" : "var(--border-color)"
-                                    }}
-                                />
-                            }
-                        />
-                        <LabelValue 
-                            label="Estimated Incentive" 
-                            value={data.applyIncentive === 'Yes' ? (data.estimatedIncentiveAmount ? `₹${data.estimatedIncentiveAmount}` : "Research committee decision") : "₹0"} 
-                            horizontal 
-                        />
-
+                            ), editable: true, type: "number" },
+                            { key: "cost", label: `Cost (${data.currencySymbol || '₹'})`, value: data.cost || "-", editable: true, type: "text" },
+                            { key: "applyIncentive", label: "Incentive", value: data.applyIncentive || "No", editable: true, type: "select", options: ["Yes", "No"], chip: !isEditingDetails && (
+                                <Chip label={data.applyIncentive} size="small" sx={{ bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)", color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)", fontWeight: 700, border: "1px solid", borderColor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.3)" : "var(--border-color)" }} />
+                            ) },
+                            { key: "estimatedIncentiveAmount", label: "Estimated Incentive", value: (() => {
+                                const current = isEditingDetails ? editableData : data;
+                                if (current.applyIncentive === "No") return "₹0";
+                                let baseAmount = current.estimatedIncentiveAmount || data.estimatedIncentiveAmount || 0;
+                                return baseAmount > 0 ? `₹${baseAmount}` : "Research committee decision";
+                            })(), editable: false, type: "text" }
+                        ].map((item, idx, arr) => (
+                            <Box key={idx} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", p: "12px 16px", borderBottom: idx === arr.length - 1 ? "none" : "1px solid var(--border-color)", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", "&:hover": { bgcolor: "rgba(190, 147, 55, 0.05)" } }}>
+                                <Typography variant="caption" sx={{ flex: { xs: "0 0 130px", sm: "0 0 170px" }, color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 800, fontSize: "0.7rem", display: "inline-block", opacity: 0.9 }}>
+                                    {item.label}
+                                </Typography>
+                                <Box sx={{ flex: 1 }}>
+                                    {isEditingDetails && item.editable ? (
+                                        item.type === "select" ? (
+                                            <Select size="small" fullWidth value={editableData[item.key] || ""} onChange={(e) => setEditableData({ ...editableData, [item.key]: e.target.value })} sx={{ minWidth: 120, height: 32, fontSize: "0.875rem" }}>
+                                                {item.options.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+                                            </Select>
+                                        ) : (
+                                            <TextField size="small" fullWidth type={item.type === "number" ? "number" : "text"} value={editableData[item.key] || ""} onChange={(e) => setEditableData({ ...editableData, [item.key]: e.target.value })} sx={{ "& .MuiInputBase-root": { height: 32, fontSize: "0.875rem" } }} />
+                                        )
+                                    ) : (
+                                        item.chip ? item.chip : <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "0.92rem", wordBreak: "break-word" }}>{item.value}</Typography>
+                                    )}
+                                </Box>
+                            </Box>
+                        ))}
                     </Box>
                 </Card>
             </Box>
@@ -533,15 +585,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                 </TableContainer>
             </Card>
 
-            {/* Attached Documents */}
-            <Card sx={cardStyle}>
-                <SectionHeader icon={<AttachFileIcon />} title="Attached Documents" />
-                <Grid container spacing={3}>
-                    {renderFilePreview("Cover Page", data.coverPage, 1)}
-                    {renderFilePreview("Author Affiliation", data.authorAffiliation, 2)}
-                    {renderFilePreview("Index", data.index, 3)}
-                </Grid>
-            </Card>
+
 
             {/* Decision & Remarks Section */}
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mt: 3, alignItems: "stretch" }}>
@@ -713,18 +757,6 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                 </DialogActions>
             </Dialog>
 
-            {isResearchAdmin && (
-                <EditResearchDetailsDialog
-                    open={editOpen}
-                    onClose={() => setEditOpen(false)}
-                    type="Textbook"
-                    currentData={data}
-                    onSave={(updated) => {
-                        setData(updated);
-                        if (updated.approvedAmount) setApprovedAmount(updated.approvedAmount);
-                    }}
-                />
-            )}
         </Box >
     );
 };
