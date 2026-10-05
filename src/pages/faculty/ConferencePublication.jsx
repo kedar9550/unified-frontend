@@ -44,7 +44,7 @@ export default function ConferencePublication() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const [form, setForm] = useState({
+  const emptyForm = {
     doi: "",
     title: "", conferenceName: "", location: "", presentationMode: "", conferenceType: "", scopusIndexed: "",
     month: "", year: "",
@@ -53,7 +53,9 @@ export default function ConferencePublication() {
     isStudentsInvolved: "No",
     totalAuthors: 1, userAuthorPosition: 1, otherAuthors: [],
     sdgs: ""
-  });
+  };
+
+  const [form, setForm] = useState(emptyForm);
   const [files, setFiles] = useState({ firstPage: null, certificate: null, completeDocument: null, flightTicket: null });
   const [existingFiles, setExistingFiles] = useState({ firstPage: null, certificate: null, completeDocument: null, flightTicket: null });
   
@@ -124,15 +126,9 @@ export default function ConferencePublication() {
   const set = (k) => (e) => {
     const val = e.target.value;
     setForm(p => {
-      const newForm = { ...p, [k]: val };
+      let newForm = { ...p, [k]: val };
       if (k === "doi") {
-        newForm.title = "";
-        newForm.publisher = "";
-        newForm.conferenceName = "";
-        newForm.issnIsbn = "";
-        newForm.year = "";
-        newForm.month = "";
-        newForm.scopusIndexed = "";
+        newForm = { ...emptyForm, doi: val };
         setDoiFetched(false);
         setDoiFetchedFields({});
       }
@@ -1066,11 +1062,11 @@ export default function ConferencePublication() {
       <Grid2>
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
           <Typography sx={labelStyle}>Title of the Research Paper : *</Typography>
-          <TextField size="small" fullWidth value={form.title} onChange={set("title")} placeholder={doiFetchedFields.title ? "Auto-filled from DOI" : "Please Enter Title of the Research Paper"} disabled={doiFetchedFields.title} sx={doiFetchedFields.title ? disabledField : {}} />
+          <TextField size="small" fullWidth value={form.title} onChange={set("title")} placeholder="Auto-filled from DOI" disabled={true} sx={disabledField} />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Publisher : *</Typography>
-          <TextField size="small" fullWidth value={form.publisher} onChange={set("publisher")} placeholder={doiFetchedFields.publisher ? "Auto-filled from DOI" : "Please Enter Publisher"} disabled={doiFetchedFields.publisher} sx={doiFetchedFields.publisher ? disabledField : {}} />
+          <TextField size="small" fullWidth value={form.publisher} onChange={set("publisher")} placeholder="Auto-filled from DOI" disabled={true} sx={disabledField} />
         </Box>
         <Box>
           <Typography sx={labelStyle}>ISSN / ISBN Number :</Typography>
@@ -1084,16 +1080,16 @@ export default function ConferencePublication() {
               if (/^[0-9X-]*$/i.test(val)) setForm(p => ({ ...p, issnIsbn: val }));
             }}
             slotProps={{ htmlInput: { inputMode: 'numeric' } }}
-            disabled={doiFetchedFields.issnIsbn}
-            sx={doiFetchedFields.issnIsbn ? disabledField : {}}
+            disabled={doiFetched && Boolean(doiFetchedFields.issnIsbn)}
+            sx={(doiFetched && Boolean(doiFetchedFields.issnIsbn)) ? disabledField : {}}
           />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Year :</Typography>
           <Select size="small" fullWidth displayEmpty value={form.year} onChange={(e) => {
             setForm(p => ({ ...p, year: e.target.value, month: "" }));
-          }} disabled={doiFetchedFields.year} sx={doiFetchedFields.year ? disabledField : {}}>
-            <MenuItem value="" disabled>{doiFetchedFields.year ? "Auto-filled from DOI" : "Select Year"}</MenuItem>
+          }} disabled={true} sx={disabledField}>
+            <MenuItem value="" disabled>Auto-filled from DOI</MenuItem>
             {(form.year && !YEARS.includes(String(form.year))
               ? [...YEARS, String(form.year)].sort((a, b) => Number(b) - Number(a))
               : YEARS
@@ -1102,8 +1098,8 @@ export default function ConferencePublication() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Month :</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={doiFetchedFields.month} sx={doiFetchedFields.month ? disabledField : {}}>
-            <MenuItem value="" disabled>{doiFetchedFields.month ? "Auto-filled from DOI" : "Select Month"}</MenuItem>
+          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={true} sx={disabledField}>
+            <MenuItem value="" disabled>Auto-filled from DOI</MenuItem>
             {(form.month && !getAvailableMonths().includes(form.month)
               ? [...getAvailableMonths(), form.month]
               : getAvailableMonths()
@@ -1112,7 +1108,7 @@ export default function ConferencePublication() {
         </Box>
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
           <Typography sx={labelStyle}>Name of the Conference : *</Typography>
-          <TextField size="small" fullWidth value={form.conferenceName} onChange={set("conferenceName")} placeholder={doiFetchedFields.conferenceName ? "Auto-filled from DOI" : "Please Enter Name of the Conference"} disabled={doiFetchedFields.conferenceName} sx={doiFetchedFields.conferenceName ? disabledField : {}} />
+          <TextField size="small" fullWidth value={form.conferenceName} onChange={set("conferenceName")} placeholder="Auto-filled from DOI" disabled={true} sx={disabledField} />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Conference Location : *</Typography>
@@ -1162,8 +1158,8 @@ export default function ConferencePublication() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Scopus Indexed : *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.scopusIndexed} onChange={set("scopusIndexed")} disabled={doiFetchedFields.scopusIndexed} sx={doiFetchedFields.scopusIndexed ? disabledField : {}}>
-            <MenuItem value="" disabled>{doiFetchedFields.scopusIndexed ? "Auto-filled from DOI" : "Select Status"}</MenuItem>
+          <Select size="small" fullWidth displayEmpty value={form.scopusIndexed} onChange={set("scopusIndexed")} disabled={true} sx={disabledField}>
+            <MenuItem value="" disabled>Auto-filled from DOI</MenuItem>
             <MenuItem value="Yes">Yes</MenuItem>
             <MenuItem value="No">No</MenuItem>
           </Select>

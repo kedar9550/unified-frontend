@@ -38,6 +38,7 @@ export default function RndConferenceDataEntry() {
   // DOI fetch state
   const [doiFetching, setDoiFetching] = useState(false);
   const [doiFetched, setDoiFetched] = useState(false);
+  const [doiFetchedFields, setDoiFetchedFields] = useState({});
 
   const emptyForm = {
     doi: "",
@@ -127,16 +128,11 @@ export default function RndConferenceDataEntry() {
   const set = (k) => (e) => {
     const val = e.target.value;
     setForm(p => {
-      const newForm = { ...p, [k]: val };
+      let newForm = { ...p, [k]: val };
       if (k === "doi") {
-        newForm.title = "";
-        newForm.publisher = "";
-        newForm.conferenceName = "";
-        newForm.issnIsbn = "";
-        newForm.year = "";
-        newForm.month = "";
-        newForm.scopusIndexed = "";
+        newForm = { ...emptyForm, doi: val };
         setDoiFetched(false);
+        setDoiFetchedFields({});
       }
       if (k === "isStudentsInvolved") {
         if (val === "Yes") {
@@ -230,6 +226,15 @@ export default function RndConferenceDataEntry() {
       }));
 
       setDoiFetched(true);
+      setDoiFetchedFields({
+        title: Boolean(data.title),
+        publisher: Boolean(data.publisher),
+        issnIsbn: Boolean(data.issnIsbn),
+        conferenceName: Boolean(data.conferenceName),
+        year: Boolean(data.year),
+        month: Boolean(data.month),
+        scopusIndexed: true
+      });
       toast.success("Conference paper details fetched successfully!");
     } catch (err) {
       toast.error(err.response?.data?.message || err.message || "Failed to fetch DOI details");
@@ -693,19 +698,19 @@ export default function RndConferenceDataEntry() {
             {/* Title */}
             <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
               <Typography sx={labelStyle}>Title of the Research Paper : *</Typography>
-              <TextField size="small" fullWidth multiline rows={2} value={form.title} onChange={set("title")} placeholder="Enter or auto-fill from DOI" />
+              <TextField size="small" fullWidth multiline rows={2} value={form.title} onChange={set("title")} placeholder="Auto-filled from DOI" disabled={true} sx={disabledField} />
             </Box>
 
             {/* Conference Name */}
             <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
               <Typography sx={labelStyle}>Name of the Conference : *</Typography>
-              <TextField size="small" fullWidth value={form.conferenceName} onChange={set("conferenceName")} placeholder="Enter or auto-fill from DOI" />
+              <TextField size="small" fullWidth value={form.conferenceName} onChange={set("conferenceName")} placeholder="Auto-filled from DOI" disabled={true} sx={disabledField} />
             </Box>
 
             {/* Publisher */}
             <Box>
               <Typography sx={labelStyle}>Publisher : *</Typography>
-              <TextField size="small" fullWidth value={form.publisher} onChange={set("publisher")} placeholder="e.g. IEEE, Springer" />
+              <TextField size="small" fullWidth value={form.publisher} onChange={set("publisher")} placeholder="Auto-filled from DOI" disabled={true} sx={disabledField} />
             </Box>
 
             {/* ISSN/ISBN */}
@@ -714,7 +719,7 @@ export default function RndConferenceDataEntry() {
               <TextField size="small" fullWidth value={form.issnIsbn} onChange={(e) => {
                 const val = e.target.value;
                 if (/^[0-9X-]*$/i.test(val)) setForm(p => ({ ...p, issnIsbn: val }));
-              }} placeholder="e.g. 1234-5678" />
+              }} placeholder="e.g. 1234-5678" disabled={doiFetched && Boolean(doiFetchedFields.issnIsbn)} sx={(doiFetched && Boolean(doiFetchedFields.issnIsbn)) ? disabledField : {}} />
             </Box>
 
             {/* Scope */}
@@ -769,8 +774,8 @@ export default function RndConferenceDataEntry() {
             {/* Scopus Indexed */}
             <Box>
               <Typography sx={labelStyle}>Scopus Indexed : *</Typography>
-              <Select size="small" fullWidth displayEmpty value={form.scopusIndexed} onChange={set("scopusIndexed")}>
-                <MenuItem value="">Select</MenuItem>
+              <Select size="small" fullWidth displayEmpty value={form.scopusIndexed} onChange={set("scopusIndexed")} disabled={true} sx={disabledField}>
+                <MenuItem value="" disabled>Auto-filled from DOI</MenuItem>
                 <MenuItem value="Yes">Yes</MenuItem>
                 <MenuItem value="No">No</MenuItem>
               </Select>
@@ -784,8 +789,8 @@ export default function RndConferenceDataEntry() {
               <Typography sx={labelStyle}>Year : *</Typography>
               <Select size="small" fullWidth displayEmpty value={form.year} onChange={(e) => {
                 setForm(p => ({ ...p, year: e.target.value, month: "" }));
-              }}>
-                <MenuItem value="">Select Year</MenuItem>
+              }} disabled={true} sx={disabledField}>
+                <MenuItem value="" disabled>Auto-filled from DOI</MenuItem>
                 {(form.year && !YEARS.includes(String(form.year))
                   ? [...YEARS, String(form.year)].sort((a, b) => Number(b) - Number(a))
                   : YEARS
@@ -794,8 +799,8 @@ export default function RndConferenceDataEntry() {
             </Box>
             <Box>
               <Typography sx={labelStyle}>Month : *</Typography>
-              <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year}>
-                <MenuItem value="">Select Month</MenuItem>
+              <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={true} sx={disabledField}>
+                <MenuItem value="" disabled>Auto-filled from DOI</MenuItem>
                 {getAvailableMonths().map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
               </Select>
             </Box>
@@ -1047,7 +1052,7 @@ export default function RndConferenceDataEntry() {
               onChange={setFile("firstPage")}
             />
             <FileField
-              label="Attach Certificate of Presentation * :"
+              label="Certificate of Presentation * :"
               name="certificate"
               onChange={setFile("certificate")}
             />
