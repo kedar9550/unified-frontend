@@ -65,13 +65,9 @@ export default function CampusServiceRequestLogin({ isDarkMode, onLoginSuccess, 
         setMaskedMobile(res.data.data.maskedMobile);
         setStudentNamePreview(res.data.data.studentname);
         setStep(2);
+        setOtpInput("");
         setResendTimer(60);
-        if (res.data.data.devOtp) {
-          setOtpInput(res.data.data.devOtp);
-          toast.success(`OTP sent to ${res.data.data.maskedMobile}! (Dev Code: ${res.data.data.devOtp})`, { duration: 6000 });
-        } else {
-          toast.success(res.data.message || "OTP sent successfully");
-        }
+        toast.success(res.data.message || `OTP sent successfully to ${res.data.data.maskedMobile}`);
       }
     } catch (err) {
       const msg = err.response?.data?.message || "Failed to verify roll number. Please check university records.";
@@ -451,14 +447,50 @@ export default function CampusServiceRequestLogin({ isDarkMode, onLoginSuccess, 
         />
       </Box>
 
-      {/* Footer Note */}
-      <Box sx={{ position: "absolute", bottom: 16, left: 0, width: "100%", zIndex: 10 }}>
-        <Typography variant="caption" sx={{ color: isDarkMode ? "#94a3b8" : "#64748b", textAlign: "center", display: "block" }}>
-          Campus Service Request System &bull; <Box component="span" sx={{ background: "var(--gradient-primary)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 700 }}>Aditya University</Box>
-        </Typography>
-        <Typography variant="caption" sx={{ color: isDarkMode ? "#64748b" : "#94a3b8", mt: 0.5, textAlign: "center", display: "block" }}>
-          Designed and Developed by <Box component="span" sx={{ background: "var(--gradient-primary)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 700 }}>IT Application</Box>
-        </Typography>
+      {/* Professional Footer Bar */}
+      <Box
+        component="footer"
+        sx={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          width: "100%",
+          background: isDarkMode
+            ? "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)"
+            : "linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%)",
+          color: "#ffffff",
+          py: 1.5,
+          px: { xs: 2, sm: 4 },
+          borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+          boxShadow: "0 -2px 10px rgba(0, 0, 0, 0.12)",
+          zIndex: 10
+        }}
+      >
+        <Box
+          sx={{
+            maxWidth: 1200,
+            mx: "auto",
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 1,
+            textAlign: { xs: "center", sm: "left" }
+          }}
+        >
+          <Typography variant="body2" sx={{ fontSize: "0.85rem", color: "rgba(255, 255, 255, 0.85)", fontWeight: 500 }}>
+            Campus Service Request System &bull;{" "}
+            <Box component="span" sx={{ color: "#fbbf24", fontWeight: 700 }}>
+              Aditya University
+            </Box>
+          </Typography>
+          <Typography variant="body2" sx={{ fontSize: "0.8rem", color: "rgba(255, 255, 255, 0.65)" }}>
+            Designed & Developed by{" "}
+            <Box component="span" sx={{ color: "#38bdf8", fontWeight: 600 }}>
+              IT Application
+            </Box>
+          </Typography>
+        </Box>
       </Box>
     </Box>
   );

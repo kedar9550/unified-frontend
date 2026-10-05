@@ -39,7 +39,10 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TablePagination
+  TablePagination,
+  Grid,
+  ToggleButton,
+  ToggleButtonGroup
 } from "@mui/material";
 import {
   ConfirmationNumber as TicketIcon,
@@ -77,7 +80,9 @@ import {
   Visibility,
   Info as InfoIcon,
   Hotel as HotelIcon,
-  Apartment as ApartmentIcon
+  Apartment as ApartmentIcon,
+  ViewList as ViewListIcon,
+  ViewModule as ViewGridIcon
 } from "@mui/icons-material";
 import StepConnector, { stepConnectorClasses } from "@mui/material/StepConnector";
 import { styled } from "@mui/material/styles";
@@ -328,7 +333,7 @@ export default function CampusServiceRequest() {
   };
 
   // Dashboard states
-  const [activeTab, setActiveTab] = useState(0); // 0 = Raise Ticket, 1 = My Requests
+  const [activeTab, setActiveTab] = useState(0); // 0 = My Requests, 1 = Raise Ticket
   const [services, setServices] = useState([]);
   const [blocks, setBlocks] = useState([]);
   const [metaLoading, setMetaLoading] = useState(false);
@@ -360,12 +365,13 @@ export default function CampusServiceRequest() {
   const [pendingFeedbackIndex, setPendingFeedbackIndex] = useState(0);
   const [autoFeedbackPromptShown, setAutoFeedbackPromptShown] = useState(false);
 
-  // Ticket Detail View Dialog & Table Pagination
+  // Ticket Detail View Dialog, Table Pagination & View Mode
   const [detailOpen, setDetailOpen] = useState(false);
   const [selectedTicketDetail, setSelectedTicketDetail] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [tableSearchQuery, setTableSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState("table"); // "table" | "card"
 
   const handleOpenTicketDetail = (ticket) => {
     setSelectedTicketDetail(ticket);
@@ -547,7 +553,7 @@ export default function CampusServiceRequest() {
       if (fcmToken || savedToken) {
         await axios.post(`${BACKEND_URL}/api/campus-service-request/auth/logout`, { fcmToken }, {
           headers: savedToken ? { Authorization: `Bearer ${savedToken}` } : {}
-        }).catch(() => {});
+        }).catch(() => { });
       }
     } catch (err) {
       console.warn("[Campus Desk] Logout warning:", err);
@@ -645,9 +651,9 @@ export default function CampusServiceRequest() {
         setPriority("MEDIUM");
         setDescription("");
         setAttachments([]);
-        // Refresh list and switch to My Requests tab
+        // Refresh list and switch to My Requests tab (Tab 0)
         fetchMyTickets();
-        setActiveTab(1);
+        setActiveTab(0);
       }
     } catch (err) {
       const msg = err.response?.data?.message || "Failed to submit service request";
@@ -762,7 +768,7 @@ export default function CampusServiceRequest() {
   // SCREEN 2: AUTHENTICATED STUDENT SERVICE DESK
   // =============================================================
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "var(--bg-main, #f8fafc)", color: "var(--text-primary, #1e293b)", pb: 2 }}>
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", bgcolor: "var(--bg-main, #f8fafc)", color: "var(--text-primary, #1e293b)" }}>
       {/* Top Banner & Header */}
       <Box
         sx={{
@@ -1135,7 +1141,7 @@ export default function CampusServiceRequest() {
       </Box>
 
       {/* Main Container */}
-      <Box sx={{ maxWidth: 1200, mx: "auto", px: { xs: 2, sm: 4 }, pt: "100px" }}>
+      <Box sx={{ maxWidth: 1200, width: "100%", mx: "auto", px: { xs: 2, sm: 4 }, pt: "100px", pb: 4, flex: 1 }}>
         {/* Navigation Tabs */}
         <CustomTabs
           value={activeTab}
@@ -1143,20 +1149,20 @@ export default function CampusServiceRequest() {
           sx={{ mb: 4, mt: 0 }}
           tabs={[
             {
-              label: "Raise Service Request",
-              icon: <AddIcon />
-            },
-            {
               label: `My Requests & Live Tracking (${myTickets.length})`,
               icon: <HistoryIcon />
+            },
+            {
+              label: "Raise Service Request",
+              icon: <AddIcon />
             }
           ]}
         />
 
         {/* ----------------------------------------------------------- */}
-        {/* TAB 1: RAISE SERVICE REQUEST FORM                           */}
+        {/* TAB 2: RAISE SERVICE REQUEST FORM                           */}
         {/* ----------------------------------------------------------- */}
-        {activeTab === 0 && (
+        {activeTab === 1 && (
           <Box sx={{ maxWidth: 880, mx: "auto" }}>
             {/* Form Card */}
             <Card sx={{ borderRadius: "16px", border: "1px solid var(--border-color, #e2e8f0)", bgcolor: "var(--bg-paper, #ffffff)", color: "var(--text-primary, #1e293b)", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>
@@ -1426,9 +1432,9 @@ export default function CampusServiceRequest() {
         )}
 
         {/* ----------------------------------------------------------- */}
-        {/* TAB 2: MY REQUESTS & LIVE TRACKING                          */}
+        {/* TAB 1: MY REQUESTS & LIVE TRACKING                          */}
         {/* ----------------------------------------------------------- */}
-        {activeTab === 1 && (
+        {activeTab === 0 && (
           <Box>
             {/* Filter, Search, and Refresh Bar */}
             <Card
@@ -1478,8 +1484,8 @@ export default function CampusServiceRequest() {
                   </FormControl>
                 </Box>
 
-                {/* Search */}
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+                {/* Search & View Mode Switcher */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap", width: { xs: "100%", sm: "auto" }, justifyContent: "space-between" }}>
                   <TextField
                     size="small"
                     placeholder="Search Ticket #, Title, Category..."
@@ -1489,18 +1495,70 @@ export default function CampusServiceRequest() {
                       setPage(0);
                     }}
                     sx={{
-                      width: { xs: "100%", sm: 260 },
+                      width: { xs: "100%", sm: 240 },
                       "& .MuiOutlinedInput-root": {
                         borderRadius: "10px",
                         bgcolor: "var(--bg-paper, #ffffff)"
                       }
                     }}
                   />
+
+                  {/* Toggle View Switcher: Table vs Cards */}
+                  <ToggleButtonGroup
+                    value={viewMode}
+                    exclusive
+                    onChange={(e, newMode) => {
+                      if (newMode !== null) setViewMode(newMode);
+                    }}
+                    size="small"
+                    sx={{
+                      bgcolor: isDarkMode ? "rgba(255,255,255,0.06)" : "#f1f5f9",
+                      p: "3px",
+                      borderRadius: "10px",
+                      border: "1px solid var(--border-color, #e2e8f0)",
+                      "& .MuiToggleButton-root": {
+                        border: "none",
+                        borderRadius: "7px",
+                        px: 1.5,
+                        py: 0.5,
+                        fontWeight: 700,
+                        textTransform: "none",
+                        color: "var(--text-secondary, #64748b)",
+                        transition: "all 0.2s ease",
+                        "&.Mui-selected": {
+                          bgcolor: isDarkMode ? "#2563eb" : "#ffffff",
+                          color: isDarkMode ? "#ffffff" : "#2563eb",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
+                        }
+                      }
+                    }}
+                  >
+                    <ToggleButton value="table">
+                      <Tooltip title="Table View">
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
+                          <ViewListIcon fontSize="small" />
+                          <Typography variant="caption" sx={{ fontWeight: 700, display: { xs: "none", sm: "inline" } }}>
+                            Table
+                          </Typography>
+                        </Box>
+                      </Tooltip>
+                    </ToggleButton>
+                    <ToggleButton value="card">
+                      <Tooltip title="Card View">
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
+                          <ViewGridIcon fontSize="small" />
+                          <Typography variant="caption" sx={{ fontWeight: 700, display: { xs: "none", sm: "inline" } }}>
+                            Cards
+                          </Typography>
+                        </Box>
+                      </Tooltip>
+                    </ToggleButton>
+                  </ToggleButtonGroup>
                 </Box>
               </CardContent>
             </Card>
 
-            {/* Content: Loading / Empty / Table */}
+            {/* Content: Loading / Empty / Data Table / Data Cards */}
             {loadingTickets ? (
               <Box sx={{ py: 8, textAlign: "center" }}>
                 <CircularProgress size={36} sx={{ color: "var(--primary-gradient)" }} />
@@ -1517,11 +1575,12 @@ export default function CampusServiceRequest() {
                 <Typography variant="body2" sx={{ color: "var(--text-secondary, #64748b)", mt: 0.5, mb: 3 }}>
                   {tableSearchQuery ? "No tickets matched your search query." : "You haven't raised any requests in this category yet."}
                 </Typography>
-                <Button variant="contained" onClick={() => setActiveTab(0)} sx={{ borderRadius: "10px", fontWeight: 700 }}>
+                <Button variant="contained" onClick={() => setActiveTab(1)} sx={{ borderRadius: "10px", fontWeight: 700 }}>
                   Raise a Request
                 </Button>
               </Card>
-            ) : (
+            ) : viewMode === "table" ? (
+              /* TABLE VIEW */
               <Paper
                 elevation={0}
                 sx={{
@@ -1569,8 +1628,8 @@ export default function CampusServiceRequest() {
                         const assignedName = activeAssignedTo.length > 0
                           ? activeAssignedTo.map((a) => a.employee?.name).join(", ")
                           : activeWorkers.length > 0
-                          ? activeWorkers.map((w) => w.worker?.name || "Technician").join(", ")
-                          : (t.status === "OPEN" ? "Pending Assignment" : "Unassigned");
+                            ? activeWorkers.map((w) => w.worker?.name || "Technician").join(", ")
+                            : (t.status === "OPEN" ? "Pending Assignment" : "Unassigned");
 
                         return (
                           <TableRow
@@ -1696,6 +1755,211 @@ export default function CampusServiceRequest() {
                   }}
                 />
               </Paper>
+            ) : (
+              /* CARD / GRID VIEW */
+              <Box>
+                <Grid container spacing={2.5}>
+                  {paginatedTickets.map((t) => {
+                    const activeAssignedTo = (t.assignedTo || []).filter((a) => a.status !== "REJECTED");
+                    const activeWorkers = t.assignedWorkers || [];
+                    const assignedName = activeAssignedTo.length > 0
+                      ? activeAssignedTo.map((a) => a.employee?.name).join(", ")
+                      : activeWorkers.length > 0
+                        ? activeWorkers.map((w) => w.worker?.name || "Technician").join(", ")
+                        : (t.status === "OPEN" ? "Pending Assignment" : "Unassigned");
+
+                    return (
+                      <Grid item xs={12} sm={6} md={4} key={t._id}>
+                        <Card
+                          onClick={() => handleOpenTicketDetail(t)}
+                          sx={{
+                            height: "100%",
+                            display: "flex",
+                            flexDirection: "column",
+                            borderRadius: "16px",
+                            border: "1px solid var(--border-color, #e2e8f0)",
+                            bgcolor: "var(--bg-paper, #ffffff)",
+                            boxShadow: "0 4px 16px rgba(0,0,0,0.03)",
+                            transition: "all 0.22s ease-in-out",
+                            cursor: "pointer",
+                            "&:hover": {
+                              transform: "translateY(-4px)",
+                              boxShadow: "0 10px 28px rgba(37, 99, 235, 0.14)",
+                              borderColor: "#3b82f6"
+                            }
+                          }}
+                        >
+                          <CardContent sx={{ p: 2.5, flex: 1, display: "flex", flexDirection: "column" }}>
+                            {/* Card Header: Ticket # & Status Badge */}
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#2563eb", fontFamily: "monospace", fontSize: "0.88rem" }}>
+                                {t.ticketNumber}
+                              </Typography>
+                              {getStatusBadge(t.status)}
+                            </Box>
+
+                            {/* Issue Title */}
+                            <Typography
+                              variant="h6"
+                              sx={{
+                                fontWeight: 700,
+                                fontSize: "0.98rem",
+                                color: "var(--text-primary, #0f172a)",
+                                mb: 1.5,
+                                lineHeight: 1.35,
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden"
+                              }}
+                            >
+                              {t.title}
+                            </Typography>
+
+                            {/* Category & Priority Badges */}
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2, flexWrap: "wrap" }}>
+                              <Chip
+                                label={t.service?.name || "Software"}
+                                size="small"
+                                variant="outlined"
+                                sx={{
+                                  fontWeight: 600,
+                                  fontSize: "0.72rem",
+                                  borderRadius: "6px",
+                                  borderColor: "var(--border-color, #cbd5e1)",
+                                  color: "var(--text-primary, #334155)"
+                                }}
+                              />
+                              <Chip
+                                label={t.priority}
+                                size="small"
+                                sx={{
+                                  bgcolor: SLA_MAP[t.priority]?.bg || "#f1f5f9",
+                                  color: SLA_MAP[t.priority]?.color || "#334155",
+                                  fontWeight: 700,
+                                  fontSize: "0.7rem",
+                                  height: 22
+                                }}
+                              />
+                            </Box>
+
+                            <Divider sx={{ my: 1.5, borderColor: "var(--border-color, rgba(0,0,0,0.06))" }} />
+
+                            {/* Details: Assigned To & Raised On */}
+                            <Box sx={{ mt: "auto", display: "flex", flexDirection: "column", gap: 1 }}>
+                              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <Typography variant="caption" sx={{ color: "var(--text-secondary, #64748b)", fontWeight: 600, display: "flex", alignItems: "center", gap: 0.5 }}>
+                                  <AssignedUserIcon sx={{ fontSize: 15 }} /> Assigned:
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    fontWeight: 700,
+                                    color: (t.assignedTo?.filter((a) => a.status !== "REJECTED").length > 0 || (t.assignedWorkers?.length > 0)) ? "#2563eb" : "var(--text-secondary, #64748b)",
+                                    maxWidth: 140,
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap"
+                                  }}
+                                >
+                                  {assignedName}
+                                </Typography>
+                              </Box>
+
+                              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <Typography variant="caption" sx={{ color: "var(--text-secondary, #64748b)", fontWeight: 600, display: "flex", alignItems: "center", gap: 0.5 }}>
+                                  <CalendarIcon sx={{ fontSize: 15 }} /> Raised:
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: "var(--text-secondary, #64748b)", fontWeight: 600 }}>
+                                  {formatRaisedOnDate(t.createdAt)}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </CardContent>
+
+                          {/* Card Action Footer */}
+                          <Box
+                            sx={{
+                              px: 2.5,
+                              py: 1.2,
+                              bgcolor: isDarkMode ? "rgba(255,255,255,0.03)" : "#f8fafc",
+                              borderTop: "1px solid var(--border-color, #e2e8f0)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              gap: 1.5
+                            }}
+                          >
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: isDarkMode ? "#60a5fa" : "#2563eb",
+                                fontWeight: 700,
+                                fontSize: "0.78rem",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap"
+                              }}
+                            >
+                              View tracking & timeline
+                            </Typography>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              endIcon={<Visibility sx={{ fontSize: 15 }} />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenTicketDetail(t);
+                              }}
+                              sx={{
+                                borderRadius: "8px",
+                                textTransform: "none",
+                                fontWeight: 700,
+                                fontSize: "0.75rem",
+                                py: 0.5,
+                                px: 1.8,
+                                flexShrink: 0,
+                                whiteSpace: "nowrap",
+                                background: "var(--gradient-primary, linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%))",
+                                boxShadow: "0 2px 6px rgba(37, 99, 235, 0.2)"
+                              }}
+                            >
+                              View
+                            </Button>
+                          </Box>
+                        </Card>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+
+                {/* Card Pagination */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    mt: 3,
+                    borderRadius: "12px",
+                    border: "1px solid var(--border-color, #e2e8f0)",
+                    bgcolor: "var(--bg-paper, #ffffff)"
+                  }}
+                >
+                  <TablePagination
+                    rowsPerPageOptions={[6, 10, 25]}
+                    component="div"
+                    count={filteredTickets.length}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    onPageChange={(e, newPage) => setPage(newPage)}
+                    onRowsPerPageChange={(e) => {
+                      setRowsPerPage(parseInt(e.target.value, 10));
+                      setPage(0);
+                    }}
+                    sx={{
+                      color: "var(--text-secondary, #64748b)"
+                    }}
+                  />
+                </Paper>
+              </Box>
             )}
           </Box>
         )}
@@ -1949,261 +2213,261 @@ export default function CampusServiceRequest() {
               {(!["RESOLVED", "REJECTED", "CLOSED"].includes(selectedTicketDetail.status) ||
                 (ticketComments[selectedTicketDetail._id] && ticketComments[selectedTicketDetail._id].length > 0) ||
                 ticketCommentsLoading[selectedTicketDetail._id]) && (
-                <Box
-                sx={{
-                  mt: 2,
-                  border: "1px solid var(--border-color, #e2e8f0)",
-                  borderRadius: "14px",
-                  bgcolor: "var(--bg-panel, #f8fafc)",
-                  overflow: "hidden"
-                }}
-              >
-                {/* Chat Header */}
-                <Box
-                  sx={{
-                    p: 1.6,
-                    px: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    bgcolor: "var(--bg-paper, #ffffff)",
-                    borderBottom: "1px solid var(--border-color, #e2e8f0)"
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
+                  <Box
+                    sx={{
+                      mt: 2,
+                      border: "1px solid var(--border-color, #e2e8f0)",
+                      borderRadius: "14px",
+                      bgcolor: "var(--bg-panel, #f8fafc)",
+                      overflow: "hidden"
+                    }}
+                  >
+                    {/* Chat Header */}
                     <Box
                       sx={{
-                        width: 32,
-                        height: 32,
-                        borderRadius: "8px",
-                        bgcolor: selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" && selectedTicketDetail.status !== "RESOLVED" ? "rgba(37, 99, 235, 0.1)" : "rgba(100, 116, 139, 0.1)",
-                        color: selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" && selectedTicketDetail.status !== "RESOLVED" ? "#2563eb" : "#64748b",
+                        p: 1.6,
+                        px: 2,
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center"
+                        justifyContent: "space-between",
+                        bgcolor: "var(--bg-paper, #ffffff)",
+                        borderBottom: "1px solid var(--border-color, #e2e8f0)"
                       }}
                     >
-                      <ChatIcon sx={{ fontSize: 18 }} />
-                    </Box>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--text-primary, #0f172a)" }}>
-                      Comments & Live Discussion
-                    </Typography>
-                    {selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" && selectedTicketDetail.status !== "RESOLVED" ? (
-                      <Chip
-                        icon={<DotIcon sx={{ fontSize: "10px !important", color: "#16a34a !important" }} />}
-                        label="Chat Active"
-                        size="small"
-                        sx={{
-                          height: 20,
-                          fontSize: "0.7rem",
-                          fontWeight: 600,
-                          bgcolor: "#dcfce7",
-                          color: "#15803d",
-                          pl: 0.5
-                        }}
-                      />
-                    ) : (
-                      <Chip
-                        label="Archived"
-                        size="small"
-                        sx={{
-                          height: 20,
-                          fontSize: "0.7rem",
-                          fontWeight: 600,
-                          bgcolor: "#f1f5f9",
-                          color: "#64748b"
-                        }}
-                      />
-                    )}
-                  </Box>
-                </Box>
-
-                {/* Chat Messages */}
-                <Box sx={{ p: 2, bgcolor: "var(--bg-paper, #ffffff)" }}>
-                  {ticketCommentsLoading[selectedTicketDetail._id] ? (
-                    <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 4, gap: 1.5 }}>
-                      <CircularProgress size={20} />
-                      <Typography variant="caption" sx={{ color: "var(--text-secondary, #64748b)" }}>
-                        Loading conversation...
-                      </Typography>
-                    </Box>
-                  ) : (
-                    <>
-                      <Box
-                        sx={{
-                          maxHeight: 260,
-                          minHeight: 100,
-                          overflowY: "auto",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 2,
-                          p: 2,
-                          mb: 2,
-                          borderRadius: "10px",
-                          bgcolor: "var(--bg-panel, #f8fafc)",
-                          border: "1px solid var(--border-color, #e2e8f0)"
-                        }}
-                      >
-                        {(!ticketComments[selectedTicketDetail._id] || ticketComments[selectedTicketDetail._id].length === 0) ? (
-                          <Box sx={{ py: 3, textAlign: "center" }}>
-                            <Typography variant="body2" sx={{ color: "var(--text-secondary, #64748b)", fontSize: "0.85rem" }}>
-                              💬 No comments yet. Have a question or note for the technician? Start the conversation below!
-                            </Typography>
-                          </Box>
-                        ) : (
-                          ticketComments[selectedTicketDetail._id].map((msg, idx) => {
-                            const isStudent = msg.senderType === "STUDENT" || !msg.sender;
-                            const msgDate = new Date(msg.createdAt).toLocaleString("en-IN", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true
-                            });
-
-                            return (
-                              <Box
-                                key={msg._id || idx}
-                                sx={{
-                                  display: "flex",
-                                  flexDirection: isStudent ? "row-reverse" : "row",
-                                  alignItems: "flex-start",
-                                  gap: 1.5
-                                }}
-                              >
-                                <Avatar
-                                  src={isStudent ? `https://info.aec.edu.in/adityacentral/StudentPhotos/${student?.rollno}.jpg` : undefined}
-                                  sx={{
-                                    width: 32,
-                                    height: 32,
-                                    bgcolor: isStudent ? "#2563eb" : "#475569",
-                                    color: "#ffffff",
-                                    fontSize: "0.8rem",
-                                    fontWeight: 700
-                                  }}
-                                >
-                                  {isStudent
-                                    ? (student?.studentname?.charAt(0) || "S")
-                                    : (msg.sender?.name?.charAt(0) || msg.senderName?.charAt(0) || "T")}
-                                </Avatar>
-
-                                <Box
-                                  sx={{
-                                    maxWidth: "80%",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: isStudent ? "flex-end" : "flex-start"
-                                  }}
-                                >
-                                  <Box
-                                    sx={{
-                                      p: 1.6,
-                                      borderRadius: "12px",
-                                      borderTopRightRadius: isStudent ? 0 : "12px",
-                                      borderTopLeftRadius: !isStudent ? 0 : "12px",
-                                      bgcolor: isStudent ? "#2563eb" : "var(--bg-paper, #ffffff)",
-                                      border: isStudent ? "none" : "1px solid var(--border-color, #e2e8f0)",
-                                      color: isStudent ? "#ffffff" : "var(--text-primary, #0f172a)",
-                                      boxShadow: "0 1px 3px rgba(0,0,0,0.04)"
-                                    }}
-                                  >
-                                    {!isStudent && (
-                                      <Typography
-                                        variant="caption"
-                                        sx={{
-                                          display: "block",
-                                          fontWeight: 800,
-                                          color: "#2563eb",
-                                          fontSize: "0.72rem",
-                                          textTransform: "uppercase",
-                                          letterSpacing: "0.3px",
-                                          mb: 0.5
-                                        }}
-                                      >
-                                        {msg.sender?.name || msg.senderName || "Technician / Support"}
-                                      </Typography>
-                                    )}
-                                    <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.5, fontSize: "0.85rem" }}>
-                                      {msg.message}
-                                    </Typography>
-                                    <Typography
-                                      variant="caption"
-                                      sx={{
-                                        display: "block",
-                                        textAlign: "right",
-                                        mt: 0.6,
-                                        fontSize: "0.65rem",
-                                        color: isStudent ? "rgba(255,255,255,0.75)" : "var(--text-secondary, #64748b)"
-                                      }}
-                                    >
-                                      {msgDate}
-                                    </Typography>
-                                  </Box>
-                                </Box>
-                              </Box>
-                            );
-                          })
-                        )}
-                      </Box>
-
-                      {/* Comment Input */}
-                      {selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" && selectedTicketDetail.status !== "RESOLVED" ? (
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
                         <Box
-                          component="form"
-                          onSubmit={(e) => handleSendTicketComment(selectedTicketDetail._id, e)}
-                          sx={{ display: "flex", gap: 1.5, alignItems: "center" }}
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: "8px",
+                            bgcolor: selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" && selectedTicketDetail.status !== "RESOLVED" ? "rgba(37, 99, 235, 0.1)" : "rgba(100, 116, 139, 0.1)",
+                            color: selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" && selectedTicketDetail.status !== "RESOLVED" ? "#2563eb" : "#64748b",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center"
+                          }}
                         >
-                          <Avatar
-                            src={`https://info.aec.edu.in/adityacentral/StudentPhotos/${student?.rollno}.jpg`}
-                            sx={{ width: 34, height: 34, bgcolor: "#2563eb", fontSize: "0.8rem", fontWeight: 700 }}
-                          >
-                            {student?.studentname?.charAt(0) || "S"}
-                          </Avatar>
-                          <TextField
+                          <ChatIcon sx={{ fontSize: 18 }} />
+                        </Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--text-primary, #0f172a)" }}>
+                          Comments & Live Discussion
+                        </Typography>
+                        {selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" && selectedTicketDetail.status !== "RESOLVED" ? (
+                          <Chip
+                            icon={<DotIcon sx={{ fontSize: "10px !important", color: "#16a34a !important" }} />}
+                            label="Chat Active"
                             size="small"
-                            fullWidth
-                            placeholder="Add a comment or reply to technician..."
-                            value={newMessages[selectedTicketDetail._id] || ""}
-                            onChange={(e) => setNewMessages((prev) => ({ ...prev, [selectedTicketDetail._id]: e.target.value }))}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSendTicketComment(selectedTicketDetail._id, e);
-                              }
-                            }}
-                            disabled={sendingComment[selectedTicketDetail._id]}
                             sx={{
-                              "& .MuiOutlinedInput-root": {
-                                borderRadius: "10px",
-                                bgcolor: "var(--bg-panel, #f8fafc)"
-                              }
+                              height: 20,
+                              fontSize: "0.7rem",
+                              fontWeight: 600,
+                              bgcolor: "#dcfce7",
+                              color: "#15803d",
+                              pl: 0.5
                             }}
                           />
-                          <Button
-                            type="submit"
-                            variant="contained"
-                            disabled={!newMessages[selectedTicketDetail._id]?.trim() || sendingComment[selectedTicketDetail._id]}
+                        ) : (
+                          <Chip
+                            label="Archived"
+                            size="small"
                             sx={{
-                              bgcolor: "#2563eb",
-                              color: "#ffffff",
-                              minWidth: 42,
-                              width: 42,
-                              height: 40,
-                              p: 0,
+                              height: 20,
+                              fontSize: "0.7rem",
+                              fontWeight: 600,
+                              bgcolor: "#f1f5f9",
+                              color: "#64748b"
+                            }}
+                          />
+                        )}
+                      </Box>
+                    </Box>
+
+                    {/* Chat Messages */}
+                    <Box sx={{ p: 2, bgcolor: "var(--bg-paper, #ffffff)" }}>
+                      {ticketCommentsLoading[selectedTicketDetail._id] ? (
+                        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 4, gap: 1.5 }}>
+                          <CircularProgress size={20} />
+                          <Typography variant="caption" sx={{ color: "var(--text-secondary, #64748b)" }}>
+                            Loading conversation...
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <>
+                          <Box
+                            sx={{
+                              maxHeight: 260,
+                              minHeight: 100,
+                              overflowY: "auto",
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 2,
+                              p: 2,
+                              mb: 2,
                               borderRadius: "10px",
-                              "&:hover": { bgcolor: "#1d4ed8" }
+                              bgcolor: "var(--bg-panel, #f8fafc)",
+                              border: "1px solid var(--border-color, #e2e8f0)"
                             }}
                           >
-                            {sendingComment[selectedTicketDetail._id] ? <CircularProgress size={18} color="inherit" /> : <SendIcon sx={{ fontSize: 18 }} />}
-                          </Button>
-                        </Box>
-                      ) : null}
-                    </>
-                  )}
-                </Box>
-              </Box>
-            )}
+                            {(!ticketComments[selectedTicketDetail._id] || ticketComments[selectedTicketDetail._id].length === 0) ? (
+                              <Box sx={{ py: 3, textAlign: "center" }}>
+                                <Typography variant="body2" sx={{ color: "var(--text-secondary, #64748b)", fontSize: "0.85rem" }}>
+                                  💬 No comments yet. Have a question or note for the technician? Start the conversation below!
+                                </Typography>
+                              </Box>
+                            ) : (
+                              ticketComments[selectedTicketDetail._id].map((msg, idx) => {
+                                const isStudent = msg.senderType === "STUDENT" || !msg.sender;
+                                const msgDate = new Date(msg.createdAt).toLocaleString("en-IN", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true
+                                });
+
+                                return (
+                                  <Box
+                                    key={msg._id || idx}
+                                    sx={{
+                                      display: "flex",
+                                      flexDirection: isStudent ? "row-reverse" : "row",
+                                      alignItems: "flex-start",
+                                      gap: 1.5
+                                    }}
+                                  >
+                                    <Avatar
+                                      src={isStudent ? `https://info.aec.edu.in/adityacentral/StudentPhotos/${student?.rollno}.jpg` : undefined}
+                                      sx={{
+                                        width: 32,
+                                        height: 32,
+                                        bgcolor: isStudent ? "#2563eb" : "#475569",
+                                        color: "#ffffff",
+                                        fontSize: "0.8rem",
+                                        fontWeight: 700
+                                      }}
+                                    >
+                                      {isStudent
+                                        ? (student?.studentname?.charAt(0) || "S")
+                                        : (msg.sender?.name?.charAt(0) || msg.senderName?.charAt(0) || "T")}
+                                    </Avatar>
+
+                                    <Box
+                                      sx={{
+                                        maxWidth: "80%",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: isStudent ? "flex-end" : "flex-start"
+                                      }}
+                                    >
+                                      <Box
+                                        sx={{
+                                          p: 1.6,
+                                          borderRadius: "12px",
+                                          borderTopRightRadius: isStudent ? 0 : "12px",
+                                          borderTopLeftRadius: !isStudent ? 0 : "12px",
+                                          bgcolor: isStudent ? "#2563eb" : "var(--bg-paper, #ffffff)",
+                                          border: isStudent ? "none" : "1px solid var(--border-color, #e2e8f0)",
+                                          color: isStudent ? "#ffffff" : "var(--text-primary, #0f172a)",
+                                          boxShadow: "0 1px 3px rgba(0,0,0,0.04)"
+                                        }}
+                                      >
+                                        {!isStudent && (
+                                          <Typography
+                                            variant="caption"
+                                            sx={{
+                                              display: "block",
+                                              fontWeight: 800,
+                                              color: "#2563eb",
+                                              fontSize: "0.72rem",
+                                              textTransform: "uppercase",
+                                              letterSpacing: "0.3px",
+                                              mb: 0.5
+                                            }}
+                                          >
+                                            {msg.sender?.name || msg.senderName || "Technician / Support"}
+                                          </Typography>
+                                        )}
+                                        <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.5, fontSize: "0.85rem" }}>
+                                          {msg.message}
+                                        </Typography>
+                                        <Typography
+                                          variant="caption"
+                                          sx={{
+                                            display: "block",
+                                            textAlign: "right",
+                                            mt: 0.6,
+                                            fontSize: "0.65rem",
+                                            color: isStudent ? "rgba(255,255,255,0.75)" : "var(--text-secondary, #64748b)"
+                                          }}
+                                        >
+                                          {msgDate}
+                                        </Typography>
+                                      </Box>
+                                    </Box>
+                                  </Box>
+                                );
+                              })
+                            )}
+                          </Box>
+
+                          {/* Comment Input */}
+                          {selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" && selectedTicketDetail.status !== "RESOLVED" ? (
+                            <Box
+                              component="form"
+                              onSubmit={(e) => handleSendTicketComment(selectedTicketDetail._id, e)}
+                              sx={{ display: "flex", gap: 1.5, alignItems: "center" }}
+                            >
+                              <Avatar
+                                src={`https://info.aec.edu.in/adityacentral/StudentPhotos/${student?.rollno}.jpg`}
+                                sx={{ width: 34, height: 34, bgcolor: "#2563eb", fontSize: "0.8rem", fontWeight: 700 }}
+                              >
+                                {student?.studentname?.charAt(0) || "S"}
+                              </Avatar>
+                              <TextField
+                                size="small"
+                                fullWidth
+                                placeholder="Add a comment or reply to technician..."
+                                value={newMessages[selectedTicketDetail._id] || ""}
+                                onChange={(e) => setNewMessages((prev) => ({ ...prev, [selectedTicketDetail._id]: e.target.value }))}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSendTicketComment(selectedTicketDetail._id, e);
+                                  }
+                                }}
+                                disabled={sendingComment[selectedTicketDetail._id]}
+                                sx={{
+                                  "& .MuiOutlinedInput-root": {
+                                    borderRadius: "10px",
+                                    bgcolor: "var(--bg-panel, #f8fafc)"
+                                  }
+                                }}
+                              />
+                              <Button
+                                type="submit"
+                                variant="contained"
+                                disabled={!newMessages[selectedTicketDetail._id]?.trim() || sendingComment[selectedTicketDetail._id]}
+                                sx={{
+                                  bgcolor: "#2563eb",
+                                  color: "#ffffff",
+                                  minWidth: 42,
+                                  width: 42,
+                                  height: 40,
+                                  p: 0,
+                                  borderRadius: "10px",
+                                  "&:hover": { bgcolor: "#1d4ed8" }
+                                }}
+                              >
+                                {sendingComment[selectedTicketDetail._id] ? <CircularProgress size={18} color="inherit" /> : <SendIcon sx={{ fontSize: 18 }} />}
+                              </Button>
+                            </Box>
+                          ) : null}
+                        </>
+                      )}
+                    </Box>
+                  </Box>
+                )}
 
               {/* Feedback Section when RESOLVED */}
               {selectedTicketDetail.status === "RESOLVED" && !selectedTicketDetail.feedback && (
@@ -2256,10 +2520,10 @@ export default function CampusServiceRequest() {
       {/* ----------------------------------------------------------- */}
       {/* FEEDBACK & RATING MODAL (Share Your Feedback)               */}
       {/* ----------------------------------------------------------- */}
-      <Dialog 
-        open={feedbackOpen} 
-        onClose={() => setFeedbackOpen(false)} 
-        maxWidth="sm" 
+      <Dialog
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        maxWidth="sm"
         fullWidth
         PaperProps={{
           sx: {
@@ -2281,18 +2545,18 @@ export default function CampusServiceRequest() {
             <CloseIcon />
           </IconButton>
         </DialogTitle>
-        
+
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 1 }}>
-            
+
             {/* Rating Section */}
             <Box>
               <Typography sx={{ fontWeight: 600, mb: 1, color: "var(--text-primary, #0f172a)" }}>
                 1. How would you rate your overall experience?
               </Typography>
-              <Rating 
-                name="feedback-rating" 
-                value={rating} 
+              <Rating
+                name="feedback-rating"
+                value={rating}
                 onChange={(e, newValue) => setRating(newValue || 0)}
                 size="large"
               />
@@ -2306,13 +2570,13 @@ export default function CampusServiceRequest() {
               <Typography sx={{ fontWeight: 600, mb: 2, color: "var(--text-primary, #0f172a)" }}>
                 2. How satisfied are you with our service?
               </Typography>
-              <RadioGroup 
+              <RadioGroup
                 value={satisfaction}
                 onChange={(e) => setSatisfaction(e.target.value)}
                 sx={{ gap: 1.5 }}
               >
                 {["Very Satisfied", "Satisfied", "Neutral", "Dissatisfied", "Very Dissatisfied"].map((level) => (
-                  <Box 
+                  <Box
                     key={level}
                     sx={{
                       border: "1px solid",
@@ -2328,9 +2592,9 @@ export default function CampusServiceRequest() {
                       }
                     }}
                   >
-                    <FormControlLabel 
-                      value={level} 
-                      control={<Radio size="small" />} 
+                    <FormControlLabel
+                      value={level}
+                      control={<Radio size="small" />}
                       label={level}
                       sx={{ width: "100%", m: 0 }}
                     />
@@ -2344,7 +2608,7 @@ export default function CampusServiceRequest() {
               <Typography sx={{ fontWeight: 600, mb: 1, color: "var(--text-primary, #0f172a)" }}>
                 3. Additional Comments
               </Typography>
-              <TextField 
+              <TextField
                 fullWidth
                 multiline
                 rows={4}
@@ -2360,15 +2624,15 @@ export default function CampusServiceRequest() {
             </Box>
           </Box>
         </DialogContent>
-        
+
         <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             fullWidth
             onClick={handleSubmitFeedback}
             disabled={submittingFeedback}
-            sx={{ 
-              py: 1.5, 
+            sx={{
+              py: 1.5,
               borderRadius: "12px",
               textTransform: "none",
               fontSize: "1rem",
@@ -2381,14 +2645,36 @@ export default function CampusServiceRequest() {
           </Button>
         </DialogActions>
       </Dialog>
-      {/* Footer Note */}
-      <Box sx={{ mt: 4, textAlign: "center", width: "100%" }}>
-        <Typography variant="caption" sx={{ color: isDarkMode ? "#94a3b8" : "#64748b", display: "block" }}>
-          Campus Service Request System &bull; <Box component="span" sx={{ background: "var(--gradient-primary)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 700 }}>Aditya University</Box>
-        </Typography>
-        <Typography variant="caption" sx={{ color: isDarkMode ? "#64748b" : "#94a3b8", mt: 0.5, display: "block" }}>
-          Designed and Developed by <Box component="span" sx={{ background: "var(--gradient-primary)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: 700 }}>IT Application</Box>
-        </Typography>
+      {/* Professional Footer Bar */}
+      <Box
+        component="footer"
+        sx={{
+          width: "100%",
+          background: "transparent",
+          py: 1.5,
+          px: { xs: 2, sm: 4 },
+        }}
+      >
+        <Box
+          sx={{
+            maxWidth: 1200,
+            mx: "auto",
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 1,
+            textAlign: { xs: "center", sm: "left" }
+          }}
+        >
+
+          <Typography variant="body2" sx={{ fontSize: "0.78rem", color: isDarkMode ? "rgba(255,255,255,0.5)" : "#475569", fontWeight: 500 }}>
+            Designed & Developed by{" "}
+            <Box component="span" sx={{ background: "var(--gradient-primary)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", fontWeight: 700 }}>
+              IT Applications
+            </Box>
+          </Typography>
+        </Box>
       </Box>
     </Box>
   );

@@ -339,6 +339,7 @@ const ManageTickets = () => {
                     </Box>
                 ) : (
                     <DataTable 
+                        showViewModeSwitcher={true}
                         columns={["Ticket #", "Requester", "Title / Work Assignment", "Priority", "Status", "Due Date / SLA", "Created", "Actions"]}
                         alignments={["left", "left", "left", "center", "center", "center", "center", "center"]}
                         nonSortableColumns={[7]}
