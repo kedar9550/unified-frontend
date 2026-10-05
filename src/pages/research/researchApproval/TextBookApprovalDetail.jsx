@@ -21,6 +21,7 @@ import SaveIcon from '@mui/icons-material/Save';
 import { toast } from "sonner";
 import API from "../../../api/axios";
 import EditResearchDetailsDialog from "./EditResearchDetailsDialog";
+import EditAuthorsDialog from "./EditAuthorsDialog";
 
 const TextBookApprovalDetail = ({ id, onBack, role }) => {
     const [data, setData] = useState(null);
@@ -40,6 +41,8 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
     const [isEditingDetails, setIsEditingDetails] = useState(false);
     const [editableData, setEditableData] = useState({});
     const [detailsSaving, setDetailsSaving] = useState(false);
+    const [isAuthorModalOpen, setIsAuthorModalOpen] = useState(false);
+    const [publishers, setPublishers] = useState([]);
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -62,7 +65,20 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                 setLoading(false);
             }
         };
+        
+        const fetchPublishers = async () => {
+            try {
+                const res = await API.get("/api/publishers");
+                if (res.data?.success) {
+                    setPublishers(res.data.data || []);
+                }
+            } catch (error) {
+                console.error("Failed to fetch publishers", error);
+            }
+        };
+
         fetchDetails();
+        fetchPublishers();
     }, [id]);
 
     const handleAction = async (action) => {
@@ -117,7 +133,49 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
     const handleSaveDetails = async () => {
         setDetailsSaving(true);
         try {
-            const res = await API.put(`/api/research/textbook/${data._id}`, editableData);
+            const payload = { ...editableData };
+            
+            // Reconstruct full authors array for the backend
+            if (payload.coAuthors) {
+                const allAuthors = [];
+                const userPos = parseInt(payload.userAuthorPosition) || 1;
+                const total = parseInt(payload.totalAuthors) || 1;
+                
+                for (let i = 1; i <= total; i++) {
+                    if (i === userPos) {
+                        allAuthors.push({
+                            authorPosition: i,
+                            authorName: data.facultyId?.name || "Applicant",
+                            affiliationType: "Aditya University"
+                        });
+                    } else {
+                        const ca = payload.coAuthors.find(c => Number(c.authorPosition) === i);
+                        if (ca) {
+                            allAuthors.push({
+                                ...ca,
+                                authorName: ca.name || ca.authorName,
+                                affiliationName: ca.affiliation || ca.affiliationName
+                            });
+                        }
+                    }
+                }
+                payload.authors = JSON.stringify(allAuthors);
+                delete payload.coAuthors;
+            }
+
+            // Recalculate estimatedIncentiveAmount
+            let estimatedIncentiveAmount = 0;
+            const isPublisherValid = publishers.some(p => p.name === payload.publisher);
+            if (payload.applyIncentive === "Yes" && parseInt(payload.userAuthorPosition) <= 5 && isPublisherValid) {
+                if (payload.publicationScope === "National") {
+                    estimatedIncentiveAmount = 10000;
+                } else if (payload.publicationScope === "International") {
+                    estimatedIncentiveAmount = 20000;
+                }
+            }
+            payload.estimatedIncentiveAmount = estimatedIncentiveAmount;
+
+            const res = await API.put(`/api/research/textbook/${data._id}`, payload);
             if (res.data?.success) {
                 toast.success('Details updated successfully');
                 setData(res.data.data);
@@ -437,7 +495,16 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                                 variant="outlined"
                                 startIcon={<EditIcon />}
                                 onClick={() => {
-                                    setEditableData(data);
+                                    const applicantPos = parseInt(data.userAuthorPosition) || 1;
+                                    const coAuthors = (data.authors || []).filter(a => parseInt(a.authorPosition) !== applicantPos).map(a => ({
+                                        ...a,
+                                        name: a.authorName,
+                                        affiliation: a.affiliationName
+                                    }));
+                                    setEditableData({
+                                        ...data,
+                                        coAuthors: coAuthors
+                                    });
                                     setIsEditingDetails(true);
                                 }}
                                 size="small"
@@ -504,8 +571,21 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                             { key: "estimatedIncentiveAmount", label: "Estimated Incentive", value: (() => {
                                 const current = isEditingDetails ? editableData : data;
                                 if (current.applyIncentive === "No") return "₹0";
+                                
                                 let baseAmount = current.estimatedIncentiveAmount || data.estimatedIncentiveAmount || 0;
-                                return baseAmount > 0 ? `₹${baseAmount}` : "Research committee decision";
+                                
+                                if (isEditingDetails) {
+                                    const isPublisherValid = publishers.some(p => p.name === current.publisher);
+                                    if (parseInt(current.userAuthorPosition) > 5 || !isPublisherValid) {
+                                        baseAmount = 0;
+                                    } else if (current.publicationScope === "National") {
+                                        baseAmount = 10000;
+                                    } else if (current.publicationScope === "International") {
+                                        baseAmount = 20000;
+                                    }
+                                }
+                                
+                                return baseAmount > 0 ? `₹${baseAmount}` : "Not Applicable";
                             })(), editable: false, type: "text" }
                         ].map((item, idx, arr) => (
                             <Box key={idx} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", p: "12px 16px", borderBottom: idx === arr.length - 1 ? "none" : "1px solid var(--border-color)", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", "&:hover": { bgcolor: "rgba(190, 147, 55, 0.05)" } }}>
@@ -519,7 +599,14 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                                                 {item.options.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
                                             </Select>
                                         ) : (
-                                            <TextField size="small" fullWidth type={item.type === "number" ? "number" : "text"} value={editableData[item.key] || ""} onChange={(e) => setEditableData({ ...editableData, [item.key]: e.target.value })} sx={{ "& .MuiInputBase-root": { height: 32, fontSize: "0.875rem" } }} />
+                                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                                <TextField size="small" fullWidth type={item.type === "number" ? "number" : "text"} value={editableData[item.key] || ""} onChange={(e) => setEditableData({ ...editableData, [item.key]: e.target.value })} sx={{ "& .MuiInputBase-root": { height: 32, fontSize: "0.875rem" } }} />
+                                                {item.key === "userAuthorPosition" && (
+                                                    <Button variant="outlined" size="small" onClick={() => setIsAuthorModalOpen(true)} sx={{ height: 32, textTransform: 'none', borderRadius: '8px', whiteSpace: 'nowrap', flexShrink: 0, px: 2 }}>
+                                                        Edit Authors Details
+                                                    </Button>
+                                                )}
+                                            </Box>
                                         )
                                     ) : (
                                         item.chip ? item.chip : <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "0.92rem", wordBreak: "break-word" }}>{item.value}</Typography>
@@ -757,7 +844,25 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                 </DialogActions>
             </Dialog>
 
-        </Box >
+            <EditAuthorsDialog
+                open={isAuthorModalOpen}
+                onClose={() => setIsAuthorModalOpen(false)}
+                coAuthors={editableData.coAuthors || []}
+                totalAuthors={editableData.totalAuthors || 1}
+                userAuthorPosition={editableData.userAuthorPosition || 1}
+                isStudentsInvolved={editableData.isStudentsInvolved || "No"}
+                hideCorrespondingAuthor={true}
+                onSave={(authorsData) => {
+                    setEditableData(prev => ({
+                        ...prev,
+                        coAuthors: authorsData.coAuthors,
+                        totalAuthors: authorsData.totalAuthors,
+                        userAuthorPosition: authorsData.userAuthorPosition,
+                        isStudentsInvolved: authorsData.isStudentsInvolved
+                    }));
+                }}
+            />
+        </Box>
     );
 };
 
