@@ -157,7 +157,8 @@ const PublicOnlyRoute = ({ children }) => {
     if (user) {
       const params = new URLSearchParams(location.search);
       const urlEmpId = params.get("empId");
-      if (urlEmpId && String(user.institutionId) !== String(urlEmpId)) {
+      const currentId = user.institutionId || user.employeeId || user.empId || user.id;
+      if (urlEmpId && currentId && String(currentId).toLowerCase().trim() !== String(urlEmpId).toLowerCase().trim()) {
         logout();
       }
     }
@@ -166,7 +167,8 @@ const PublicOnlyRoute = ({ children }) => {
   if (user) {
     const params = new URLSearchParams(location.search);
     const urlEmpId = params.get("empId");
-    if (urlEmpId && String(user.institutionId) !== String(urlEmpId)) {
+    const currentId = user.institutionId || user.employeeId || user.empId || user.id;
+    if (urlEmpId && currentId && String(currentId).toLowerCase().trim() !== String(urlEmpId).toLowerCase().trim()) {
       // Wait for useEffect to log out, don't redirect to dashboard
       return null;
     }

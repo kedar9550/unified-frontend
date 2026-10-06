@@ -234,12 +234,24 @@ export default function Login({ defaultSignUp = false }) {
   const [loginData, setLoginData] = useState({ id: '', password: '' });
   const [loginMsg, setLoginMsg] = useState({ text: '', type: '' });
 
-  // Read empId from URL if provided
+  // Read empId from URL if provided & prevent browser autofill from overriding it
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const empIdFromUrl = params.get('empId');
     if (empIdFromUrl) {
-      setLoginData(prev => ({ ...prev, id: empIdFromUrl }));
+      setLoginData({ id: empIdFromUrl, password: '' });
+
+      // Override browser password manager autofill if it replaces username shortly after mount
+      const t1 = setTimeout(() => {
+        setLoginData(prev => ({ ...prev, id: empIdFromUrl }));
+      }, 200);
+      const t2 = setTimeout(() => {
+        setLoginData(prev => ({ ...prev, id: empIdFromUrl }));
+      }, 600);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
     }
   }, [location.search]);
 
@@ -619,6 +631,7 @@ export default function Login({ defaultSignUp = false }) {
           <form className="auth-form" onSubmit={handleLoginSubmit}>
             <div className="auth-field">
               <input id="login-id" type="text" placeholder=" "
+                autoComplete={new URLSearchParams(location.search).get('empId') ? "off" : "username"}
                 value={loginData.id}
                 onChange={e => setLoginData({ ...loginData, id: e.target.value })} />
               <label className="auth-label" htmlFor="login-id">Employee ID</label>
