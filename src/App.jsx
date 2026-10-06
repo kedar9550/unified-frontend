@@ -109,6 +109,7 @@ import FormPreview from "./pages/majorEventAdmin/FormPreview";
 import Payments from "./pages/studenteventsadmin/Payments";
 import ManualAdding from "./pages/studenteventsadmin/ManualAdding";
 import PendingPayments from "./pages/studenteventsadmin/PendingPayments";
+import VerifyPayment from "./pages/studenteventsadmin/VerifyPayment";
 import Registrations from "./pages/studenteventsadmin/Registrations";
 import Participants from "./pages/studenteventsadmin/Participants";
 import AttendanceReport from "./pages/studenteventsadmin/AttendanceReport";
@@ -351,6 +352,9 @@ function App() {
         <Route path="/Eventveda/manual-adding" element={<ProtectedRoute element={<ManualAdding />} />} />
         <Route path="/Eventveda/manual-adding/pending" element={<ProtectedRoute element={<PendingPayments />} />} />
         <Route path="/Eventveda/pending-payments" element={<ProtectedRoute element={<PendingPayments />} />} />
+        <Route path="/Eventveda/verifypayment" element={<ProtectedRoute element={<VerifyPayment />} />} />
+        <Route path="/Eventveda/payments/verifypayment" element={<ProtectedRoute element={<VerifyPayment />} />} />
+        <Route path="/Eventveda/payments/verify" element={<ProtectedRoute element={<VerifyPayment />} />} />
         <Route path="/Eventveda/registrations" element={<ProtectedRoute element={<Registrations />} />} />
         <Route path="/Eventveda/registrations/add-member" element={<ProtectedRoute element={<AddTeamMember />} />} />
         <Route path="/Eventveda/participants" element={<ProtectedRoute element={<Participants mode="all" />} />} />
