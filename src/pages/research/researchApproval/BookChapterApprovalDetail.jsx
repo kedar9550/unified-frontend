@@ -17,9 +17,11 @@ import AttachFileIcon2 from '@mui/icons-material/AttachFile';
 import DownloadIcon from '@mui/icons-material/Download';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
+import EditIcon from '@mui/icons-material/Edit';
+import EditAuthorsDialog from './EditAuthorsDialog';
+import SaveIcon from '@mui/icons-material/Save';
 import { toast } from "sonner";
 import API from "../../../api/axios";
-import EditResearchDetailsDialog from "./EditResearchDetailsDialog";
 
 const BookChapterApprovalDetail = ({ id, onBack, role }) => {
     const [data, setData] = useState(null);
@@ -32,11 +34,13 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
     const [remarks, setRemarks] = useState("");
     const [approvedAmount, setApprovedAmount] = useState("");
     const [appraisalEligible, setAppraisalEligible] = useState("");
+    const [decisionMode, setDecisionMode] = useState(null); // null | 'Approve' | 'Reject'
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
-    const [editOpen, setEditOpen] = useState(false);
-    const [approveDialogOpen, setApproveDialogOpen] = useState(false);
-    const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+    const [isEditingDetails, setIsEditingDetails] = useState(false);
+    const [editableData, setEditableData] = useState(null);
+    const [detailsSaving, setDetailsSaving] = useState(false);
+    const [isAuthorModalOpen, setIsAuthorModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -61,6 +65,54 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
         };
         fetchDetails();
     }, [id]);
+
+    
+    const handleSaveDetails = async () => {
+        setDetailsSaving(true);
+        try {
+            const payload = { ...editableData };
+            
+            // Reconstruct full coAuthors array for the backend
+            if (payload.coAuthors) {
+                const allAuthors = [];
+                const userPos = parseInt(payload.userAuthorPosition) || 1;
+                const total = parseInt(payload.totalAuthors) || 1;
+                
+                for (let i = 1; i <= total; i++) {
+                    if (i === userPos) {
+                        allAuthors.push({
+                            authorPosition: i,
+                            name: data.facultyId?.name || "Applicant",
+                            affiliation: "Aditya University"
+                        });
+                    } else {
+                        const ca = payload.coAuthors.find(c => Number(c.authorPosition) === i);
+                        if (ca) {
+                            allAuthors.push({
+                                ...ca,
+                                name: ca.name,
+                                affiliation: ca.affiliation
+                            });
+                        }
+                    }
+                }
+                payload.coAuthors = JSON.stringify(allAuthors);
+            }
+
+            const res = await API.put(`/api/hod/research-requests/book-chapter/${data._id}`, payload);
+            if (res.data?.success) {
+                toast.success('Details updated successfully');
+                setData(res.data.data);
+                setIsEditingDetails(false);
+                if (res.data.data.approvedAmount) setApprovedAmount(res.data.data.approvedAmount);
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error(err.response?.data?.message || 'Failed to update details');
+        } finally {
+            setDetailsSaving(false);
+        }
+    };
 
     const handleAction = async (action) => {
         if (!remarks && action === 'Reject') {
@@ -152,6 +204,7 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
             <Box sx={{ flex: horizontal ? 1 : "none" }}>
                 {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.9rem" }}>{value || "-"}</Typography>}
             </Box>
+
         </Box>
     );
 
@@ -255,31 +308,105 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
 
                 {/* Publication Details */}
                 <Card sx={{ ...cardStyle, flex: { xs: "1 1 100%", lg: "1 1 48%" }, mb: 0 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><AutoStoriesIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Publication Details</Typography></Box>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}><AutoStoriesIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Publication Details</Typography></Box>
+                        {isResearchAdmin && !isEditingDetails && (
+                            <Button
+                                variant="outlined"
+                                startIcon={<EditIcon />}
+                                onClick={() => {
+                                    const applicantPos = parseInt(data.userAuthorPosition) || 1;
+                                    const coAuthors = (data.coAuthors || []).filter(a => parseInt(a.authorPosition) !== applicantPos);
+                                    setEditableData({ ...data, coAuthors });
+                                    setIsEditingDetails(true);
+                                }}
+                                sx={{ borderRadius: "20px", textTransform: "none", fontWeight: 600, px: 2, height: 32 }}
+                            >
+                                Edit
+                            </Button>
+                        )}
+                        {isResearchAdmin && isEditingDetails && (
+                            <Box sx={{ display: "flex", gap: 1 }}>
+                                <Button variant="outlined" color="error" onClick={() => setIsEditingDetails(false)} size="small" disabled={detailsSaving} sx={{ borderRadius: "8px", textTransform: "none" }}>Cancel</Button>
+                                <Button variant="contained" color="success" startIcon={<SaveIcon />} onClick={handleSaveDetails} size="small" disabled={detailsSaving} sx={{ borderRadius: "8px", textTransform: "none" }}>{detailsSaving ? "Saving..." : "Save"}</Button>
+                            </Box>
+                        )}
+                    </Box>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
-                        <LabelValue label="Publisher" value={data.publisher} horizontal />
-                        <LabelValue label="Pub Year" value={data.yearOfPublication} horizontal />
-                        <LabelValue label="DOI" value={data.doi || "-"} horizontal />
-                        <LabelValue label="Publication Scope" value={data.publicationScope || "National"} horizontal />
-                        <LabelValue 
-                            label="Applicant Position" 
-                            horizontal
-                            chip={
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Box sx={{
-                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                        width: 36, height: 36, borderRadius: '50%',
-                                        bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)',
-                                        color: 'var(--color-primary)', fontWeight: 900, fontSize: '1rem'
-                                    }}>
-                                        {data.userAuthorPosition || 1}
-                                    </Box>
+                        {[
+                            { key: "chapterTitle", label: "Chapter Title", value: data.chapterTitle || "-", editable: false, type: "text" },
+                            { key: "publisher", label: "Publisher", value: data.publisher || "-", editable: true, type: "text" },
+                            { key: "isbn", label: "ISBN", value: data.isbn || "-", editable: true, type: "text" },
+                            { key: "doi", label: "DOI", value: data.doi || "-", editable: true, type: "text" },
+                            { key: "publicationScope", label: "Publication Scope", value: data.publicationScope || "National", editable: true, type: "select", options: ["National", "International"] },
+                            { key: "yearOfPublication", label: "Pub Year", value: data.yearOfPublication || "-", editable: true, type: "text" },
+                            { key: "month", label: "Month", value: data.month || "-", editable: true, type: "select", options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] },
+                            { key: "userAuthorPosition", label: "Applicant Position", value: (
+                                (() => {
+                                    const pos = data.userAuthorPosition || 1;
+                                    const total = data.totalAuthors || 1;
+                                    return (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: '50%', bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)', color: 'var(--color-primary)', fontWeight: 900, fontSize: '1rem' }}>{pos}</Box>
+                                            {total && (
+                                                <>
+                                                    <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '1rem' }}>of</Typography>
+                                                    <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', px: 1.5, height: 32, borderRadius: '8px', bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.95rem' }}>{total} Authors</Box>
+                                                </>
+                                            )}
+                                        </Box>
+                                    );
+                                })()
+                            ), editable: true, type: "number" },
+                            { key: "totalAuthors", label: "Total Authors", value: data.totalAuthors || "-", editable: true, type: "number" },
+                            { key: "applyIncentive", label: "Incentive", value: data.applyIncentive || "No", editable: true, type: "select", options: ["Yes", "No"], chip: !isEditingDetails && (
+                                <Chip label={data.applyIncentive} size="small" sx={{ bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)", color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)", fontWeight: 700, border: "1px solid", borderColor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.3)" : "var(--border-color)" }} />
+                            ) },
+                            { key: "applyingSeedGrant", label: "Seed Grant Work", value: data.applyingSeedGrant || "No", editable: true, type: "select", options: ["Yes", "No"] },
+                            { key: "estimatedIncentiveAmount", label: "Estimated Incentive", value: (() => {
+                                const current = isEditingDetails ? editableData : data;
+                                if (current.applyIncentive === "No" || current.applyIncentive === "no") return "₹0";
+                                
+                                let baseAmount = 7500;
+                                if (current.applyingSeedGrant === "Yes") {
+                                    baseAmount = 3750;
+                                }
+                                
+                                if (isEditingDetails) {
+                                    if (current.servingAsEditor === "Yes" || current.isStudentsInvolved === "Yes" || parseInt(current.userAuthorPosition) > 5) {
+                                        baseAmount = 0;
+                                    }
+                                }
+                                
+                                return baseAmount > 0 ? `₹${baseAmount}` : "Not Applicable";
+                            })(), editable: false, type: "text" }
+                        ].map((item, idx, arr) => (
+                            <Box key={idx} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", p: "12px 16px", borderBottom: idx === arr.length - 1 ? "none" : "1px solid var(--border-color)", transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)", "&:hover": { bgcolor: "rgba(190, 147, 55, 0.05)" } }}>
+                                <Typography variant="caption" sx={{ flex: { xs: "0 0 130px", sm: "0 0 170px" }, color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 800, fontSize: "0.7rem", display: "inline-block", opacity: 0.9 }}>
+                                    {item.label}
+                                </Typography>
+                                <Box sx={{ flex: 1 }}>
+                                    {isEditingDetails && item.editable ? (
+                                        item.type === "select" ? (
+                                            <Select size="small" fullWidth value={editableData[item.key] || ""} onChange={(e) => setEditableData({ ...editableData, [item.key]: e.target.value })} sx={{ minWidth: 120, height: 32, fontSize: "0.875rem" }}>
+                                                {item.options.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+                                            </Select>
+                                        ) : (
+                                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                                <TextField size="small" fullWidth type={item.type === "number" ? "number" : "text"} value={editableData[item.key] || ""} onChange={(e) => setEditableData({ ...editableData, [item.key]: e.target.value })} sx={{ "& .MuiInputBase-root": { height: 32, fontSize: "0.875rem" } }} />
+                                                {item.key === "userAuthorPosition" && (
+                                                    <Button variant="outlined" size="small" onClick={() => setIsAuthorModalOpen(true)} sx={{ height: 32, textTransform: 'none', borderRadius: '8px', whiteSpace: 'nowrap', flexShrink: 0, px: 2 }}>
+                                                        Edit Authors Details
+                                                    </Button>
+                                                )}
+                                            </Box>
+                                        )
+                                    ) : (
+                                        item.chip ? item.chip : <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "0.92rem", wordBreak: "break-word" }}>{item.value}</Typography>
+                                    )}
                                 </Box>
-                            }
-                        />
-                        <LabelValue label="Month/Year" value={`${data.month} ${data.year}`} horizontal />
-                        <LabelValue label="Incentive" horizontal chip={<Chip label={data.applyIncentive} size="small" sx={{ bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)", color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)", fontWeight: 800, border: "1px solid", borderColor: data.applyIncentive === 'Yes' ? "#4caf5044" : "var(--border-color)" }} />} />
-                        <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant} horizontal />
+                            </Box>
+                        ))}
                     </Box>
                 </Card>
             </Box>
@@ -339,17 +466,14 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
                                         return (
                                             <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
                                                 <TableCell>
-                                                    <Box sx={{
-                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                        width: 32, height: 32, borderRadius: '50%',
-                                                        bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
-                                                        color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
-                                                    }}>
+                                                    <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem' }}>
                                                         {pos}
                                                     </Box>
                                                 </TableCell>
                                                 <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
-                                                <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)", textTransform: "capitalize" }}>{ca.CoAuthorType || "-"}</TableCell>
+                                                <TableCell sx={{ fontWeight: 600 }}>
+                                                    <Chip label={ca.CoAuthorType === 'student' ? 'Student' : 'Faculty/Other'} size="small" sx={{ height: 24, fontSize: '0.7rem', fontWeight: 800, bgcolor: ca.CoAuthorType === 'student' ? 'rgba(46, 125, 50, 0.1)' : 'rgba(2, 136, 209, 0.1)', color: ca.CoAuthorType === 'student' ? '#2e7d32' : '#0288d1' }} />
+                                                </TableCell>
                                                 <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
                                             </TableRow>
                                         );
@@ -368,6 +492,7 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
                     {[
                         { title: "Cover Page", path: data.coverPage },
                         { title: "Author Affiliation & Chapter Title", path: data.authorAffiliation },
+                        { title: "Total Book Chapter", path: data.totalBookChapter },
                         { title: "Index", path: data.index },
                         { title: "Soft Copy", path: data.softCopy }
                     ].filter(doc => doc.path).map((doc, idx) => renderFilePreview(doc.title, doc.path, idx + 1))}
@@ -383,14 +508,63 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
                             
-                            <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3 }}>
-                                Please review the details above and choose an action to proceed with this submission.
-                            </Typography>
+                            {!decisionMode ? (
+                                <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
+                                    <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => setDecisionMode('Reject')} sx={{ px: 3, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>Reject</Button>
+                                    <Button variant="contained" color="success" disabled={actionLoading} onClick={() => setDecisionMode('Approve')} sx={{ px: 4, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
+                                </Box>
+                            ) : (
+                                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                                    {decisionMode === 'Approve' && isResearchAdmin && (
+                                        <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                                            {data.applyIncentive === 'Yes' && (
+                                                <Box sx={{ flex: 1, minWidth: 200 }}>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--color-primary)", fontSize: "0.8rem" }}>
+                                                        APPROVED INCENTIVE AMOUNT (₹) *
+                                                    </Typography>
+                                                    <TextField
+                                                        fullWidth size="small" type="number"
+                                                        placeholder="Enter amount"
+                                                        value={approvedAmount}
+                                                        onChange={e => setApprovedAmount(e.target.value)}
+                                                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                                                    />
+                                                </Box>
+                                            )}
+                                            <Box sx={{ flex: 1, minWidth: 200 }}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--color-primary)", fontSize: "0.8rem" }}>
+                                                    ARTICLE ELIGIBILITY FOR APPRAISAL *
+                                                </Typography>
+                                                <Select fullWidth size="small" value={appraisalEligible} onChange={e => setAppraisalEligible(e.target.value)} displayEmpty sx={{ borderRadius: "10px" }}>
+                                                    <MenuItem value="" disabled>Select Eligibility</MenuItem>
+                                                    <MenuItem value="Yes">Yes</MenuItem>
+                                                    <MenuItem value="No">No</MenuItem>
+                                                </Select>
+                                            </Box>
+                                        </Box>
+                                    )}
 
-                            <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-start" }}>
-                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => setRejectDialogOpen(true)} sx={{ px: 3, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>Reject</Button>
-                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => setApproveDialogOpen(true)} sx={{ px: 4, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
-                            </Box>
+                                    <Box>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--text-primary)", fontSize: "0.8rem" }}>
+                                            {decisionMode === 'Reject' ? "REJECTION REASON (REQUIRED) *" : "REMARKS / COMMENTS (OPTIONAL)"}
+                                        </Typography>
+                                        <TextField
+                                            fullWidth multiline rows={3}
+                                            placeholder={`Provide ${decisionMode.toLowerCase()} comments...`}
+                                            value={remarks}
+                                            onChange={e => setRemarks(e.target.value)}
+                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                                        />
+                                    </Box>
+
+                                    <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end", mt: 1 }}>
+                                        <Button variant="outlined" color="inherit" disabled={actionLoading} onClick={() => setDecisionMode(null)} sx={{ px: 3, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>Cancel</Button>
+                                        <Button variant="contained" color={decisionMode === 'Approve' ? "success" : "error"} disabled={actionLoading} onClick={() => handleAction(decisionMode)} sx={{ px: 4, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>
+                                            {actionLoading ? "Processing..." : `Confirm ${decisionMode === 'Approve' ? (isHOD ? "Approve & Forward" : "Final Approve") : "Rejection"}`}
+                                        </Button>
+                                    </Box>
+                                </Box>
+                            )}
                         </Card>
                     ) : (
                         <Card sx={{ ...cardStyle, p: 4, textAlign: "center", mb: 0 }}>
@@ -408,111 +582,24 @@ const BookChapterApprovalDetail = ({ id, onBack, role }) => {
                 </Box>
             </Box>
 
-            {/* Approve Dialog */}
-            <Dialog open={approveDialogOpen} onClose={() => setApproveDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>
-                <DialogTitle sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                    {isHOD ? "Approve & Forward Submission" : "Final Approve Submission"}
-                </DialogTitle>
-                <DialogContent>
-                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 2.5 }}>
-                        Please confirm approval details for this book chapter submission:
-                    </Typography>
 
-                    {isResearchAdmin && data.applyIncentive === 'Yes' && (
-                        <Box sx={{ mb: 2.5 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--color-primary)", fontSize: "0.8rem" }}>
-                                APPROVED INCENTIVE AMOUNT (₹) *
-                            </Typography>
-                            <TextField 
-                                fullWidth size="small" type="number" 
-                                placeholder="Enter approved incentive amount" 
-                                value={approvedAmount} 
-                                onChange={e => setApprovedAmount(e.target.value)} 
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
-                            />
-                        </Box>
-                    )}
-
-                    {isResearchAdmin && (
-                        <Box sx={{ mb: 2.5 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--color-primary)", fontSize: "0.8rem" }}>
-                                ARTICLE ELIGIBILITY FOR APPRAISAL *
-                            </Typography>
-                            <Select fullWidth size="small" value={appraisalEligible} onChange={e => setAppraisalEligible(e.target.value)} displayEmpty sx={{ borderRadius: "10px" }}>
-                                <MenuItem value="" disabled>Select Eligibility</MenuItem>
-                                <MenuItem value="Yes">Yes</MenuItem>
-                                <MenuItem value="No">No</MenuItem>
-                            </Select>
-                        </Box>
-                    )}
-
-                    <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--text-primary)", fontSize: "0.8rem" }}>
-                            REMARKS / COMMENTS (OPTIONAL)
-                        </Typography>
-                        <TextField 
-                            fullWidth multiline rows={3} 
-                            placeholder="Provide review comments..." 
-                            value={remarks} 
-                            onChange={e => setRemarks(e.target.value)} 
-                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
-                        />
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 2 }}>
-                    <Button onClick={() => setApproveDialogOpen(false)} disabled={actionLoading} sx={{ color: "var(--text-secondary)", textTransform: "none" }}>
-                        Cancel
-                    </Button>
-                    <Button 
-                        variant="contained" color="success" disabled={actionLoading} 
-                        onClick={() => handleAction('Approve')}
-                        sx={{ borderRadius: "8px", px: 3, textTransform: "none", fontWeight: 700 }}
-                    >
-                        {actionLoading ? "Processing..." : "Confirm Approve"}
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Reject Dialog */}
-            <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>
-                <DialogTitle sx={{ fontWeight: 800, color: "#d32f2f" }}>
-                    Reject Submission
-                </DialogTitle>
-                <DialogContent>
-                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 2 }}>
-                        Please provide a reason for rejecting this submission:
-                    </Typography>
-                    <TextField 
-                        fullWidth multiline rows={3} 
-                        placeholder="Provide rejection comments (Required)..." 
-                        value={remarks} 
-                        onChange={e => setRemarks(e.target.value)} 
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
-                    />
-                </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 2 }}>
-                    <Button onClick={() => setRejectDialogOpen(false)} disabled={actionLoading} sx={{ color: "var(--text-secondary)", textTransform: "none" }}>
-                        Cancel
-                    </Button>
-                    <Button 
-                        variant="contained" color="error" disabled={actionLoading} 
-                        onClick={() => handleAction('Reject')}
-                        sx={{ borderRadius: "8px", px: 3, textTransform: "none", fontWeight: 700 }}
-                    >
-                        {actionLoading ? "Processing..." : "Confirm Rejection"}
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            {isResearchAdmin && (
-                <EditResearchDetailsDialog
-                    open={editOpen}
-                    onClose={() => setEditOpen(false)}
-                    type="Book Chapter"
-                    currentData={data}
-                    onSave={(updated) => {
-                        setData(updated);
-                        if (updated.approvedAmount) setApprovedAmount(updated.approvedAmount);
+            {editableData && (
+                <EditAuthorsDialog
+                    open={isAuthorModalOpen}
+                    onClose={() => setIsAuthorModalOpen(false)}
+                    coAuthors={editableData.coAuthors || []}
+                    totalAuthors={editableData.totalAuthors || 1}
+                    userAuthorPosition={editableData.userAuthorPosition || 1}
+                    isStudentsInvolved={editableData.isStudentsInvolved || "No"}
+                    hideCorrespondingAuthor={true}
+                    onSave={(authorsData) => {
+                        setEditableData(prev => ({
+                            ...prev,
+                            coAuthors: authorsData.coAuthors,
+                            totalAuthors: authorsData.totalAuthors,
+                            userAuthorPosition: authorsData.userAuthorPosition,
+                            isStudentsInvolved: authorsData.isStudentsInvolved
+                        }));
                     }}
                 />
             )}

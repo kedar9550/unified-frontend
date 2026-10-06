@@ -593,7 +593,10 @@ export default function ConferencePublication() {
       toast.error("DOI is mandatory. Please enter the DOI.");
       return;
     }
-    if (!form.title || !form.conferenceName || !form.location || (form.location === "Abroad" && !form.presentationMode) || !form.conferenceType || !form.scopusIndexed || !form.publisher || !form.applyingSeedGrant || !form.applyIncentive) {
+    
+    const computedApplyIncentive = disableIncentive ? "No" : form.applyIncentive;
+    
+    if (!form.title || !form.conferenceName || !form.location || (form.location === "Abroad" && !form.presentationMode) || !form.conferenceType || !form.scopusIndexed || !form.publisher || !form.applyingSeedGrant || !computedApplyIncentive) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -686,7 +689,7 @@ export default function ConferencePublication() {
       fd.append("isStudentsInvolved", form.isStudentsInvolved || "No");
       fd.append("month", form.month);
       fd.append("year", form.year);
-      fd.append("applyIncentive", disableIncentive ? "No" : form.applyIncentive);
+      fd.append("applyIncentive", computedApplyIncentive);
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
       fd.append("estimatedIncentiveAmount", estimatedAmountNum);
       fd.append("academicYear", selectedYear);

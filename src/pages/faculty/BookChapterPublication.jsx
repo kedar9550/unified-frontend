@@ -49,12 +49,12 @@ export default function BookChapterPublication() {
     chaptersContributed: "", publisher: "", month: "", year: "",
     isStudentsInvolved: "No",
     applyIncentive: "", publicationScope: "", applyingSeedGrant: "",
-    isbnNumber: "",
+    isbnNumber: "", servingAsEditor: "",
     totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
   });
-  const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
-  const [existingFiles, setExistingFiles] = useState({ authorAffiliation: null });
-  const [deleteFlags, setDeleteFlags] = useState({ authorAffiliation: false });
+  const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null, softCopy: null, totalBookChapter: null });
+  const [existingFiles, setExistingFiles] = useState({ authorAffiliation: null, totalBookChapter: null });
+  const [deleteFlags, setDeleteFlags] = useState({ authorAffiliation: false, totalBookChapter: false });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -108,17 +108,19 @@ export default function BookChapterPublication() {
       publicationScope: pub.publicationScope || pub.level || "",
       applyingSeedGrant: pub.applyingSeedGrant || "",
       isbnNumber: pub.isbnNumber || "",
+      servingAsEditor: pub.servingAsEditor || "",
       totalAuthors: pub.totalAuthors || 1,
       userAuthorPosition: pub.userAuthorPosition || 1,
       otherAuthors: mappedAuthors
     });
     const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:9000";
     setExistingFiles({
-      authorAffiliation: pub.authorAffiliation ? `${backendUrl}${pub.authorAffiliation}` : null
+      authorAffiliation: pub.authorAffiliation ? `${backendUrl}${pub.authorAffiliation}` : null,
+      totalBookChapter: pub.totalBookChapter ? `${backendUrl}${pub.totalBookChapter}` : null
     });
-    setDeleteFlags({ authorAffiliation: false });
+    setDeleteFlags({ authorAffiliation: false, totalBookChapter: false });
     setDoiFetched(!!pub.doi);
-    setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
+    setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null, totalBookChapter: null });
     setViewMode("form");
   };
 
@@ -144,15 +146,20 @@ export default function BookChapterPublication() {
         newForm.applyIncentive = "No";
       }
       if (k === "doi") {
-        newForm.textBookName = "";
-        newForm.chapterTitle = "";
-        newForm.publisher = "";
-        newForm.publicationScope = "";
-        newForm.month = "";
-        newForm.year = "";
+        const emptyForm = {
+          doi: val,
+          textBookName: "", chapterTitle: "", yearOfPublication: "",
+          chaptersContributed: "", publisher: "", month: "", year: "",
+          isStudentsInvolved: "No",
+          applyIncentive: "", publicationScope: "", applyingSeedGrant: "",
+          isbnNumber: "", servingAsEditor: "",
+          totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
+        };
         setScopusIndexed(false);
         setDoiFetching(false);
         setDoiFetched(null);
+        setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null, totalBookChapter: null });
+        return emptyForm;
       }
       return newForm;
     });
@@ -213,7 +220,7 @@ export default function BookChapterPublication() {
       if (!scopusRes.ok) {
         if (scopusRes.status === 401) toast.error("Scopus API key unauthorized. Please contact admin.");
         else if (scopusRes.status === 429) toast.error("Scopus API rate limit exceeded. Try again later.");
-        else toast.error(`Scopus API error (HTTP ${scopusRes.status}). Please fill manually.`);
+        else toast.error(`Scopus API error (HTTP ${scopusRes.status}).`);
         setDoiFetched(false);
         return;
       }
@@ -221,7 +228,7 @@ export default function BookChapterPublication() {
       const entry = scopusJson?.["search-results"]?.entry?.[0];
 
       if (!entry || entry.error || (!entry["dc:title"] && !entry["prism:publicationName"])) {
-        toast.warning("This DOI was not found in Scopus. Please fill details manually.");
+        toast.warning("This DOI was not found in Scopus.");
         setScopusIndexed(false);
         setDoiFetched(false);
         return;
@@ -246,7 +253,7 @@ export default function BookChapterPublication() {
         month: month || prev.month,
       }));
     } catch (err) {
-      toast.error("Network error connecting to Scopus. Please fill the fields manually.");
+      toast.error("Network error connecting to Scopus.");
       setDoiFetched(false);
     } finally {
       setDoiFetching(false);
@@ -721,12 +728,21 @@ export default function BookChapterPublication() {
     if (!form.publisher) newErrors.publisher = true;
     if (!form.month) newErrors.month = true;
     if (!form.year) newErrors.year = true;
-    if (!form.applyIncentive) newErrors.applyIncentive = true;
     if (!form.applyingSeedGrant) newErrors.applyingSeedGrant = true;
     if (!form.publicationScope) newErrors.publicationScope = true;
     if (!form.isbnNumber) newErrors.isbnNumber = true;
+    if (!form.servingAsEditor) newErrors.servingAsEditor = true;
+
+    const isStudentInvolved = form.isStudentsInvolved === "Yes";
+    const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
+    const isEditor = form.servingAsEditor === "Yes";
+    const disableIncentive = isStudentInvolved || isPositionGreaterThan5 || isEditor;
+    const computedApplyIncentive = disableIncentive ? "No" : form.applyIncentive;
+
+    if (!computedApplyIncentive) newErrors.applyIncentive = true;
 
     if (!files.authorAffiliation && !existingFiles.authorAffiliation) newErrors.authorAffiliation = true;
+    if (!files.totalBookChapter && !existingFiles.totalBookChapter) newErrors.totalBookChapter = true;
 
     setErrors(newErrors);
 
@@ -801,17 +817,25 @@ export default function BookChapterPublication() {
       fd.append("chaptersContributed", form.chaptersContributed || "");
       fd.append("publisher", form.publisher || "");
       fd.append("isbnNumber", form.isbnNumber || "");
+      fd.append("servingAsEditor", form.servingAsEditor || "");
       fd.append("publicationScope", form.publicationScope);
       fd.append("coAuthors", JSON.stringify(coAuthorsList));
       fd.append("isStudentsInvolved", form.isStudentsInvolved || "No");
       fd.append("month", form.month);
       fd.append("year", form.year);
-      fd.append("applyIncentive", parseInt(form.userAuthorPosition) > 5 ? "No" : form.applyIncentive);
+      fd.append("applyIncentive", computedApplyIncentive);
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
       fd.append("scopusIndexed", scopusIndexed ? "Yes" : "No");
 
+      let estimatedIncentiveAmount = 0;
+      if (computedApplyIncentive === "Yes") {
+        estimatedIncentiveAmount = form.applyingSeedGrant === "Yes" ? 3750 : 7500;
+      }
+      fd.append("estimatedIncentiveAmount", estimatedIncentiveAmount.toString());
+
       Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
       if (deleteFlags.authorAffiliation) fd.append("deleteAuthorAffiliation", "true");
+      if (deleteFlags.totalBookChapter) fd.append("deleteTotalBookChapter", "true");
 
       fd.append("academicYear", selectedYear);
       fd.append("college", user?.college || "");
@@ -827,12 +851,12 @@ export default function BookChapterPublication() {
         chaptersContributed: "", publisher: "", month: "", year: "",
         isStudentsInvolved: "No",
         applyIncentive: "", publicationScope: "", applyingSeedGrant: "",
-        isbnNumber: "",
+        isbnNumber: "", servingAsEditor: "",
         totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
       });
-      setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
-      setExistingFiles({ authorAffiliation: null });
-      setDeleteFlags({ authorAffiliation: false });
+      setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null, totalBookChapter: null });
+      setExistingFiles({ authorAffiliation: null, totalBookChapter: null });
+      setDeleteFlags({ authorAffiliation: false, totalBookChapter: false });
       setEditMode(false);
       setEditId(null);
       setErrors({});
@@ -858,7 +882,7 @@ export default function BookChapterPublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Book Chapter Publications</Typography>
-        {/* <Button
+        <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -883,7 +907,7 @@ export default function BookChapterPublication() {
           }}
         >
           Apply New
-        </Button> */}
+        </Button>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -1178,9 +1202,10 @@ export default function BookChapterPublication() {
           <TextField
             size="small"
             fullWidth
-            placeholder="Enter the title of the chapter"
+            placeholder="Auto-filled from DOI"
             value={form.chapterTitle}
             onChange={set("chapterTitle")}
+            disabled
             error={!!errors.chapterTitle}
             helperText={errors.chapterTitle ? "Title is required" : ""}
           />
@@ -1197,7 +1222,7 @@ export default function BookChapterPublication() {
               value={form.isbnNumber}
               onChange={(e) => {
                 const val = e.target.value;
-                if (/^[0-9-]*$/.test(val)) setForm(p => ({ ...p, isbnNumber: val }));
+                if (/^[0-9-]*$/.test(val)) setForm(p => ({ ...p, isbnNumber: val, textBookName: "" }));
               }}
               slotProps={{ htmlInput: { inputMode: "numeric" } }}
             />
@@ -1231,6 +1256,33 @@ export default function BookChapterPublication() {
             <MenuItem value="" disabled>Select Scope</MenuItem>
             <MenuItem value="National">National</MenuItem>
             <MenuItem value="International">International</MenuItem>
+          </Select>
+        </Box>
+
+        <Box>
+          <Typography sx={labelStyle}>Scopus Indexed : *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            value={scopusIndexed ? "Yes" : "No"}
+            disabled
+          />
+        </Box>
+
+        <Box>
+          <Typography sx={labelStyle}>Serving as Editor : *</Typography>
+          <Select
+            size="small"
+            fullWidth
+            value={form.servingAsEditor || ""}
+            onChange={set("servingAsEditor")}
+            error={!!errors.servingAsEditor}
+            displayEmpty
+            MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}
+          >
+            <MenuItem value="" disabled>Select</MenuItem>
+            <MenuItem value="Yes">Yes</MenuItem>
+            <MenuItem value="No">No</MenuItem>
           </Select>
         </Box>
 
@@ -1429,7 +1481,7 @@ export default function BookChapterPublication() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Month: *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year} error={!!errors.month} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
+          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} error={!!errors.month} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
             <MenuItem value="">Select Month</MenuItem>
             {getAvailableMonths().map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
           </Select>
@@ -1442,6 +1494,7 @@ export default function BookChapterPublication() {
         <FileField
           label="Attach Page displaying author affiliation and chapter title"
           name="authorAffiliation"
+          file={files.authorAffiliation}
           onChange={setFile("authorAffiliation")}
           error={!!errors.authorAffiliation}
           onError={(m) => toast.error(m)}
@@ -1451,23 +1504,49 @@ export default function BookChapterPublication() {
             setDeleteFlags(p => ({ ...p, authorAffiliation: true }));
           }}
         />
-        <Box>
-          <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")} error={!!errors.applyingSeedGrant} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
-            <MenuItem value="">Select</MenuItem>
-            <MenuItem value="Yes">Yes</MenuItem>
-            <MenuItem value="No">No</MenuItem>
-          </Select>
-        </Box>
-        <Box>
-          {(() => {
-            const isStudentInvolved = form.isStudentsInvolved === "Yes";
-            const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
-            const disableIncentive = isStudentInvolved || isPositionGreaterThan5;
-            return (
-              <>
+        <FileField
+          label="Total Book Chapter *"
+          file={files.totalBookChapter}
+          name="totalBookChapter"
+          maxSize={5 * 1024 * 1024}
+          onChange={setFile("totalBookChapter")}
+          error={!!errors.totalBookChapter}
+          onError={(m) => toast.error(m)}
+          existingFileUrl={existingFiles.totalBookChapter}
+          onRemoveExisting={() => {
+            setExistingFiles(p => ({ ...p, totalBookChapter: null }));
+            setDeleteFlags(p => ({ ...p, totalBookChapter: true }));
+          }}
+        />
+        {(() => {
+          const isStudentInvolved = form.isStudentsInvolved === "Yes";
+          const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
+          const isEditor = form.servingAsEditor === "Yes";
+          const disableIncentive = isStudentInvolved || isPositionGreaterThan5 || isEditor;
+          const currentApplyIncentive = disableIncentive ? "No" : form.applyIncentive;
+          
+          let estIncentive = "₹0";
+          if (currentApplyIncentive === "Yes") {
+              if (form.applyingSeedGrant === "Yes") {
+                  estIncentive = "₹3750";
+              } else {
+                  estIncentive = "₹7500";
+              }
+          }
+          
+          return (
+            <>
+              <Box>
+                <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
+                <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")} error={!!errors.applyingSeedGrant} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
+                  <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="Yes">Yes</MenuItem>
+                  <MenuItem value="No">No</MenuItem>
+                </Select>
+              </Box>
+              <Box>
                 <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
-                <Select size="small" fullWidth displayEmpty value={disableIncentive ? "No" : form.applyIncentive} onChange={set("applyIncentive")} disabled={disableIncentive} error={!!errors.applyIncentive} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
+                <Select size="small" fullWidth displayEmpty value={currentApplyIncentive} onChange={set("applyIncentive")} disabled={disableIncentive} error={!!errors.applyIncentive} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
                   <MenuItem value="">Select</MenuItem>
                   <MenuItem value="Yes">Yes</MenuItem>
                   <MenuItem value="No">No</MenuItem>
@@ -1477,10 +1556,37 @@ export default function BookChapterPublication() {
                     * Application for incentive is only for the first 5 author positions.
                   </Typography>
                 )}
-              </>
-            );
-          })()}
-        </Box>
+                {isEditor && !isPositionGreaterThan5 && (
+                  <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                    * Incentive is not applicable when serving as an editor.
+                  </Typography>
+                )}
+              </Box>
+
+              {currentApplyIncentive === "Yes" && (
+                <Box sx={{
+                  gridColumn: { sm: "1 / -1" },
+                  p: 2.5,
+                  borderRadius: "12px",
+                  bgcolor: "rgba(16, 185, 129, 0.06)",
+                  border: "1.5px dashed rgba(16, 185, 129, 0.4)",
+                  mt: 2
+                }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+                    <Box>
+                      <Typography sx={{ fontSize: "0.8rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: "#059669" }}>
+                        Estimated Research Incentive Amount
+                      </Typography>
+                      <Typography sx={{ fontSize: "1.6rem", fontWeight: 800, color: "#047857", mt: 0.5 }}>
+                        {estIncentive}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              )}
+            </>
+          );
+        })()}
       </Grid2>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>

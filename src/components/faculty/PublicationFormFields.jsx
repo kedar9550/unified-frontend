@@ -79,7 +79,7 @@ export function NoteBox() {
         1. Please Upload PDF Only.
       </Typography>
       <Typography variant="caption" sx={{ color: "var(--text-primary)", fontWeight: 500, fontSize: "0.8rem" }}>
-        2. File Size: Up to <strong style={{ color: "#f59e0b" }}>5MB</strong> for Complete Journal and <strong style={{ color: "#f59e0b" }}>200KB</strong> for other documents.
+        2. File Size: Up to <strong style={{ color: "#f59e0b" }}>5MB</strong> for Complete Document and <strong style={{ color: "#f59e0b" }}>200KB</strong> for other documents.
       </Typography>
       <Box sx={{ mt: 1, pt: 1, borderTop: "1px solid rgba(245, 158, 11, 0.1)", display: "flex", flexWrap: "wrap", gap: 2 }}>
         <Typography sx={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>Optimizer Links:</Typography>
@@ -90,12 +90,21 @@ export function NoteBox() {
 }
 
 // File upload field
-export function FileField({ label, name, onChange, error, onError, accept = ".pdf", maxSize = 200 * 1024, existingFileUrl, existingFileName, onRemoveExisting }) {
+export function FileField({ label, name, onChange, error, onError, accept = ".pdf", maxSize = 200 * 1024, existingFileUrl, existingFileName, onRemoveExisting, file }) {
   const [fileName, setFileName] = useState("");
   const [preview, setPreview] = useState(null);
   const [fileType, setFileType] = useState("");
   const [openModal, setOpenModal] = useState(false);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!file && !existingFileUrl) {
+      setFileName("");
+      setPreview(null);
+      setFileType("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }, [file, existingFileUrl]);
 
   useEffect(() => {
     return () => {

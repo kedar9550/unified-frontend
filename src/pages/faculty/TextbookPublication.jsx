@@ -421,7 +421,13 @@ export default function TextbookPublication() {
       }
     }
 
-    if (!form.applyIncentive) {
+    const isStudentInvolved = form.isStudentsInvolved === "Yes";
+    const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
+    const isPublisherOthers = form.publisher === "Others";
+    const disableIncentive = isStudentInvolved || isPositionGreaterThan5 || isPublisherOthers;
+    const computedApplyIncentive = disableIncentive ? "No" : form.applyIncentive;
+
+    if (!computedApplyIncentive) {
       toast.error("Please select whether you want to apply for an incentive");
       return;
     }
@@ -489,7 +495,7 @@ export default function TextbookPublication() {
 
       // Calculate estimated incentive
       let estimatedIncentiveAmount = null;
-      if (submissionForm.applyIncentive === "Yes" && parseInt(submissionForm.userAuthorPosition) <= 5) {
+      if (computedApplyIncentive === "Yes") {
           if (submissionForm.publicationScope === "National") {
               estimatedIncentiveAmount = 10000;
           } else if (submissionForm.publicationScope === "International") {
@@ -513,7 +519,7 @@ export default function TextbookPublication() {
       fd.append("publicationScope", submissionForm.publicationScope);
       fd.append("publisher", submissionForm.publisher === "Others" ? submissionForm.customPublisher : submissionForm.publisher);
       fd.append("isStudentsInvolved", submissionForm.isStudentsInvolved || "No");
-      fd.append("applyIncentive", parseInt(submissionForm.userAuthorPosition) > 5 ? "No" : submissionForm.applyIncentive);
+      fd.append("applyIncentive", computedApplyIncentive);
       fd.append("authors", JSON.stringify(allAuthors));
 
       fd.append("academicYear", selectedYear);
