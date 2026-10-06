@@ -132,11 +132,22 @@ import VerifyCertificate from "./pages/public/VerifyCertificate";
 import Transaction from "./pages/RazorpayTransactions/Transaction";
 
 
+// Central Events Module
+import CentralEventTypesPage from "./pages/centralEvents/CentralEventTypesPage";
+import CentralEventCategoriesPage from "./pages/centralEvents/CentralEventCategoriesPage";
+import CentralEventsListPage from "./pages/centralEvents/CentralEventsListPage";
+import CentralEventDetailPage from "./pages/centralEvents/CentralEventDetailPage";
+import CentralEventCreatePage from "./pages/centralEvents/CentralEventCreatePage";
+import PaymentCheckoutPage from "./pages/centralEvents/PaymentCheckoutPage";
+
+
+
 // Infrastructure
 import Building from "./pages/Infrastructure/Building";
 import Floor from "./pages/Infrastructure/Floor";
 import Ground from "./pages/Infrastructure/Ground";
 import NotFound from "./pages/NotFound";
+
 
 const PublicOnlyRoute = ({ children }) => {
   const { user, logout } = useAuth();
@@ -396,12 +407,23 @@ function App() {
         <Route path="/major-event-admin/form-assign" element={<ProtectedRoute element={<FormAssign />} />} />
         <Route path="/major-event-admin/form-preview" element={<ProtectedRoute element={<FormPreview />} />} />
 
+        {/* Central Events Module Routes */}
+        <Route path="/central-events/types" element={<ProtectedRoute element={<CentralEventTypesPage />} />} />
+        <Route path="/central-events/categories" element={<ProtectedRoute element={<CentralEventCategoriesPage />} />} />
+        <Route path="/central-events" element={<ProtectedRoute element={<CentralEventsListPage />} />} />
+        <Route path="/central-events/create" element={<ProtectedRoute element={<CentralEventCreatePage />} />} />
+        <Route path="/central-events/:slug" element={<ProtectedRoute element={<CentralEventDetailPage />} />} />
+        <Route path="/pay/:token" element={<ProtectedRoute element={<PaymentCheckoutPage />} />} />
+
+
+
         {/* Infrastructure */}
         <Route path="/infrastructure/building" element={<ProtectedRoute element={<Building />} />} />
         <Route path="/infrastructure/floors" element={<ProtectedRoute element={<Floor />} />} />
         <Route path="/infrastructure/grounds" element={<ProtectedRoute element={<Ground />} />} />
         <Route path="*" element={<ProtectedRoute element={<NotFound />} />} />
       </Routes>
+
     </>
   );
 }
