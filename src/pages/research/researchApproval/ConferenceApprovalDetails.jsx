@@ -149,7 +149,7 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
             if (res.data?.success) {
                 toast.success(`Request ${action === 'Approve' ? (isHOD ? 'Forwarded to R&D' : 'Approved') : 'Rejected'} successfully`);
                 setDecisionMode(null);
-                onBack(); 
+                onBack();
             }
         } catch (error) {
             console.error("Action failed", error);
@@ -257,8 +257,8 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                         <Chip
                             icon={
                                 /approved/i.test(data.status) ? <CheckCircleOutlineIcon sx={{ fontSize: "16px !important", color: "inherit" }} /> :
-                                /reject/i.test(data.status) ? <CloseIcon sx={{ fontSize: "16px !important", color: "inherit" }} /> :
-                                <AccessTimeIcon sx={{ fontSize: "16px !important", color: "inherit" }} />
+                                    /reject/i.test(data.status) ? <CloseIcon sx={{ fontSize: "16px !important", color: "inherit" }} /> :
+                                        <AccessTimeIcon sx={{ fontSize: "16px !important", color: "inherit" }} />
                             }
                             label={data.status || "Pending at HOD"}
                             sx={{
@@ -346,11 +346,11 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                                     isEditingDetails ? (
                                         <Box sx={{ display: "flex", gap: 1 }}>
                                             <Button size="small" variant="outlined" color="inherit" onClick={() => setIsEditingDetails(false)} disabled={detailsSaving}>Cancel</Button>
-                                            <Button 
-                                                size="small" 
-                                                variant="contained" 
-                                                color="primary" 
-                                                startIcon={<SaveIcon />} 
+                                            <Button
+                                                size="small"
+                                                variant="contained"
+                                                color="primary"
+                                                startIcon={<SaveIcon />}
                                                 disabled={detailsSaving}
                                                 onClick={async () => {
                                                     setDetailsSaving(true);
@@ -360,7 +360,7 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                                                         if (payload.approvedAmount === "") delete payload.approvedAmount;
                                                         if (payload.scopusIndexed === "") delete payload.scopusIndexed;
                                                         if (payload.conferenceType === "") delete payload.conferenceType;
-                                                        
+
                                                         // Filter out incomplete co-authors to prevent backend validation error
                                                         if (payload.coAuthors && Array.isArray(payload.coAuthors)) {
                                                             payload.coAuthors = payload.coAuthors
@@ -403,9 +403,9 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                                             </Button>
                                         </Box>
                                     ) : (
-                                        <Button 
-                                            size="small" 
-                                            variant="outlined" 
+                                        <Button
+                                            size="small"
+                                            variant="outlined"
                                             startIcon={<EditIcon />}
                                             onClick={() => {
                                                 setEditableData({
@@ -439,109 +439,113 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                             </Box>
                         </Box>
                         <Box sx={{ display: "flex", flexDirection: "column" }}>
-                        {[
-                            { key: "academicYear", label: "Academic Year", value: data.academicYear?.year || "-", icon: <CalendarTodayIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
-                            { key: "doi", label: "DOI", value: data.doi || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
-                            { key: "userAuthorPosition", label: "Applicant Position", value: (
-                                (() => {
-                                    const pos = data.userAuthorPosition || 1;
-                                    const total = data.totalAuthors || 1;
-                                    return (
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: '50%', bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem' }}>{pos}</Box>
-                                            {total && (
-                                                <>
-                                                    <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.9rem' }}>of</Typography>
-                                                    <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', px: 1.2, height: 28, borderRadius: '8px', bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.85rem' }}>{total} Authors</Box>
-                                                </>
-                                            )}
-                                        </Box>
-                                    );
-                                })()
-                            ), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "number" },
-                            { key: "conferenceType", label: "Conference Type", value: data.conferenceType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["IEEE", "IIT", "IISc", "NIT", "IIM", "Other"] },
-                            { key: "scopusIndexed", label: "Scopus Indexed", value: data.scopusIndexed || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
-                            { key: "location", label: "Location", value: data.location || "-", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["India", "Abroad"] },
-                            ...((isEditingDetails ? editableData.location === "Abroad" : data.location === "Abroad") ? [{ key: "presentationMode", label: "Presentation Mode", value: data.presentationMode || "-", icon: <PersonIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Online", "Offline"] }] : []),
-                            { key: "publisher", label: "Publisher", value: data.publisher || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
-                            { key: "issnIsbn", label: "ISSN / ISBN", value: data.issnIsbn || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
-                            { key: "month", label: "Publishing Date", value: `${data.month || ""} ${data.year || ""}`.trim() || "-", icon: <CalendarTodayIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "monthYear" },
-                            { key: "applyingSeedGrant", label: "Seed Grant Work", value: data.applyingSeedGrant || "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
-                            { key: "applyIncentive", label: "Apply For Incentive", value: data.applyIncentive || "No", icon: <CardGiftcardIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
-                            { key: "estimatedIncentiveAmount", label: "Estimated Incentive", value: (() => {
-                                const current = isEditingDetails ? editableData : data;
-                                if (current.applyIncentive === "No") return "₹0";
-                                if (current.location === "Abroad") return "__";
-                                if (current.conferenceType === "Other") return "₹0";
-                                let baseAmount = data.estimatedIncentiveAmount || 0;
-                                if (data.applyingSeedGrant === "Yes") baseAmount = baseAmount * 2;
-                                if (current.applyingSeedGrant === "Yes") return `₹${baseAmount / 2}`;
-                                return baseAmount > 0 ? `₹${baseAmount}` : "Research committee decision";
-                            })(), icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
-                            { key: "approvedAmount", label: "Approved Incentive Amount", value: data.approvedAmount || "-", icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "number" }
-                        ].map((item, idx, arr) => (
-                            <Box key={idx} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 1.6, borderBottom: idx === arr.length - 1 ? "none" : "1px solid var(--border-color)", "&:hover": { bgcolor: "rgba(0,0,0,0.015)" }, transition: "background 0.2s" }}>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                                    {item.icon}
-                                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.875rem" }}>
-                                        {item.label}
-                                    </Typography>
-                                </Box>
-                                {isEditingDetails && item.editable ? (
-                                    item.type === "select" ? (
-                                        <Select
-                                            size="small"
-                                            value={editableData[item.key] || ""}
-                                            onChange={(e) => setEditableData({ ...editableData, [item.key]: e.target.value })}
-                                            sx={{ minWidth: 120, height: 32, fontSize: "0.875rem" }}
-                                        >
-                                            {item.options.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-                                        </Select>
-                                    ) : item.type === "monthYear" ? (
-                                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            {[
+                                { key: "academicYear", label: "Academic Year", value: data.academicYear?.year || "-", icon: <CalendarTodayIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                { key: "doi", label: "DOI", value: data.doi || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false },
+                                {
+                                    key: "userAuthorPosition", label: "Applicant Position", value: (
+                                        (() => {
+                                            const pos = data.userAuthorPosition || 1;
+                                            const total = data.totalAuthors || 1;
+                                            return (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: '50%', bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem' }}>{pos}</Box>
+                                                    {total && (
+                                                        <>
+                                                            <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.9rem' }}>of</Typography>
+                                                            <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', px: 1.2, height: 28, borderRadius: '8px', bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.85rem' }}>{total} Authors</Box>
+                                                        </>
+                                                    )}
+                                                </Box>
+                                            );
+                                        })()
+                                    ), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "number"
+                                },
+                                { key: "conferenceType", label: "Conference Type", value: data.conferenceType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["IEEE", "IIT", "IISc", "NIT", "IIM", "Other"] },
+                                { key: "scopusIndexed", label: "Scopus Indexed", value: data.scopusIndexed || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
+                                { key: "location", label: "Location", value: data.location || "-", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["India", "Abroad"] },
+                                ...((isEditingDetails ? editableData.location === "Abroad" : data.location === "Abroad") ? [{ key: "presentationMode", label: "Presentation Mode", value: data.presentationMode || "-", icon: <PersonIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Online", "Offline"] }] : []),
+                                { key: "publisher", label: "Publisher", value: data.publisher || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
+                                { key: "issnIsbn", label: "ISSN / ISBN", value: data.issnIsbn || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
+                                { key: "month", label: "Publishing Date", value: `${data.month || ""} ${data.year || ""}`.trim() || "-", icon: <CalendarTodayIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "monthYear" },
+                                { key: "applyingSeedGrant", label: "Seed Grant Work", value: data.applyingSeedGrant || "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
+                                { key: "applyIncentive", label: "Apply For Incentive", value: data.applyIncentive || "No", icon: <CardGiftcardIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
+                                {
+                                    key: "estimatedIncentiveAmount", label: "Estimated Incentive", value: (() => {
+                                        const current = isEditingDetails ? editableData : data;
+                                        if (current.applyIncentive === "No") return "₹0";
+                                        if (current.location === "Abroad") return "__";
+                                        if (current.conferenceType === "Other") return "₹0";
+                                        let baseAmount = data.estimatedIncentiveAmount || 0;
+                                        if (data.applyingSeedGrant === "Yes") baseAmount = baseAmount * 2;
+                                        if (current.applyingSeedGrant === "Yes") return `₹${baseAmount / 2}`;
+                                        return baseAmount > 0 ? `₹${baseAmount}` : "Research committee decision";
+                                    })(), icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: false
+                                },
+                                { key: "approvedAmount", label: "Approved Incentive Amount", value: data.approvedAmount || "-", icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "number" }
+                            ].map((item, idx, arr) => (
+                                <Box key={idx} sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 1.6, borderBottom: idx === arr.length - 1 ? "none" : "1px solid var(--border-color)", "&:hover": { bgcolor: "rgba(0,0,0,0.015)" }, transition: "background 0.2s" }}>
+                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                        {item.icon}
+                                        <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.875rem" }}>
+                                            {item.label}
+                                        </Typography>
+                                    </Box>
+                                    {isEditingDetails && item.editable ? (
+                                        item.type === "select" ? (
                                             <Select
                                                 size="small"
-                                                value={editableData.month || ""}
-                                                onChange={(e) => setEditableData({ ...editableData, month: e.target.value })}
-                                                sx={{ minWidth: 100, height: 32, fontSize: "0.875rem" }}
-                                            >
-                                                {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
-                                            </Select>
-                                            <Select
-                                                size="small"
-                                                value={editableData.year || ""}
-                                                onChange={(e) => setEditableData({ ...editableData, year: e.target.value })}
-                                                sx={{ minWidth: 80, height: 32, fontSize: "0.875rem" }}
-                                            >
-                                                {Array.from({ length: 15 }, (_, i) => String(new Date().getFullYear() - 10 + i)).map(y => <MenuItem key={y} value={y}>{y}</MenuItem>)}
-                                            </Select>
-                                        </Box>
-                                    ) : (
-                                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                                            <TextField
-                                                size="small"
-                                                type={item.type === "number" ? "number" : "text"}
                                                 value={editableData[item.key] || ""}
                                                 onChange={(e) => setEditableData({ ...editableData, [item.key]: e.target.value })}
-                                                sx={{ minWidth: 120, width: item.type === "number" ? 120 : 250, "& .MuiInputBase-root": { height: 32, fontSize: "0.875rem" } }}
-                                                inputProps={item.type === "number" ? { step: "any" } : {}}
-                                            />
-                                            {item.key === "userAuthorPosition" && (
-                                                <Button variant="outlined" size="small" onClick={() => setIsAuthorModalOpen(true)} sx={{ height: 32, textTransform: 'none', borderRadius: '8px' }}>
-                                                    Edit Authors Details
-                                                </Button>
-                                            )}
-                                        </Box>
-                                    )
-                                ) : item.chip ? (
-                                    item.chip
-                                ) : (
-                                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", textAlign: "right", maxWidth: "55%", wordBreak: "break-word" }}>
-                                        {item.value}
-                                    </Typography>
-                                )}
-                            </Box>
-                        ))}
+                                                sx={{ minWidth: 120, height: 32, fontSize: "0.875rem" }}
+                                            >
+                                                {item.options.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+                                            </Select>
+                                        ) : item.type === "monthYear" ? (
+                                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                                <Select
+                                                    size="small"
+                                                    value={editableData.month || ""}
+                                                    onChange={(e) => setEditableData({ ...editableData, month: e.target.value })}
+                                                    sx={{ minWidth: 100, height: 32, fontSize: "0.875rem" }}
+                                                >
+                                                    {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
+                                                </Select>
+                                                <Select
+                                                    size="small"
+                                                    value={editableData.year || ""}
+                                                    onChange={(e) => setEditableData({ ...editableData, year: e.target.value })}
+                                                    sx={{ minWidth: 80, height: 32, fontSize: "0.875rem" }}
+                                                >
+                                                    {Array.from({ length: 15 }, (_, i) => String(new Date().getFullYear() - 10 + i)).map(y => <MenuItem key={y} value={y}>{y}</MenuItem>)}
+                                                </Select>
+                                            </Box>
+                                        ) : (
+                                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                                <TextField
+                                                    size="small"
+                                                    type={item.type === "number" ? "number" : "text"}
+                                                    value={editableData[item.key] || ""}
+                                                    onChange={(e) => setEditableData({ ...editableData, [item.key]: e.target.value })}
+                                                    sx={{ minWidth: 120, width: item.type === "number" ? 120 : 250, "& .MuiInputBase-root": { height: 32, fontSize: "0.875rem" } }}
+                                                    inputProps={item.type === "number" ? { step: "any" } : {}}
+                                                />
+                                                {item.key === "userAuthorPosition" && (
+                                                    <Button variant="outlined" size="small" onClick={() => setIsAuthorModalOpen(true)} sx={{ height: 32, textTransform: 'none', borderRadius: '8px' }}>
+                                                        Edit Authors Details
+                                                    </Button>
+                                                )}
+                                            </Box>
+                                        )
+                                    ) : item.chip ? (
+                                        item.chip
+                                    ) : (
+                                        <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", textAlign: "right", maxWidth: "55%", wordBreak: "break-word" }}>
+                                            {item.value}
+                                        </Typography>
+                                    )}
+                                </Box>
+                            ))}
                         </Box>
                     </Card>
                 </Box>
@@ -557,7 +561,8 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                                 SDGs Matched
                             </Typography>
                         </Box>
-                        <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1.25, flex: 1, minHeight: 0, overflowY: "auto",
+                        <Box sx={{
+                            p: 2, display: "flex", flexDirection: "column", gap: 1.25, flex: 1, minHeight: 0, overflowY: "auto",
                             "&::-webkit-scrollbar": { width: "5px" },
                             "&::-webkit-scrollbar-track": { background: "rgba(0, 0, 0, 0.03)", borderRadius: "10px" },
                             "&::-webkit-scrollbar-thumb": { background: "rgba(0, 0, 0, 0.15)", borderRadius: "10px", "&:hover": { background: "var(--color-primary)" } }
@@ -583,7 +588,7 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                                     const color = dbSdg?.backgroundColor || fallback.color;
                                     const imageUrl = dbSdg?.imageUrl ? `${API.defaults.baseURL || ''}${dbSdg.imageUrl}` : null;
                                     const label = dbSdg?.sdgTitle ? `SDG-${num}: ${dbSdg.sdgTitle}` : fallback.label;
-                                    
+
                                     return (
                                         <Box
                                             key={idx}
@@ -728,7 +733,7 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
             {/* Actions */}
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mt: 3 }}>
                 {data.hodComment && <Box sx={{ flex: 1, minWidth: 300 }}><Card sx={{ ...cardStyle, borderLeft: "4px solid #ffc107", height: "100%", mb: 0 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><HistoryIcon sx={{ color: "#ffc107" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>HOD Review</Typography></Box><Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}><Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.hodComment}"</Typography></Box></Card></Box>}
-                
+
                 <Box sx={{ flex: 1, minWidth: 350 }}>
                     {((isResearchAdmin && data.status === 'Pending at R&D') || (isHOD && data.status === 'Pending')) ? (
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
@@ -757,11 +762,11 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
                                             )}
                                             <Box sx={{ flex: "1 1 200px" }}>
                                                 <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>ARTICLE ELIGIBILITY FOR APPRAISAL *</Typography>
-                                                <Select 
-                                                    fullWidth size="small" 
-                                                    value={appraisalEligible} 
-                                                    onChange={e => setAppraisalEligible(e.target.value)} 
-                                                    displayEmpty 
+                                                <Select
+                                                    fullWidth size="small"
+                                                    value={appraisalEligible}
+                                                    onChange={e => setAppraisalEligible(e.target.value)}
+                                                    displayEmpty
                                                     sx={{ borderRadius: "10px", bgcolor: "var(--bg-panel)" }}
                                                 >
                                                     <MenuItem value="" disabled>Select Eligibility</MenuItem>
@@ -779,11 +784,11 @@ const ConferenceApprovalDetails = ({ id, onBack, role }) => {
 
                                     <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end", mt: 1 }}>
                                         <Button variant="outlined" color="inherit" onClick={() => setDecisionMode(null)} sx={{ px: 3 }}>Cancel</Button>
-                                        <Button 
-                                            variant="contained" 
-                                            color={decisionMode === 'Reject' ? "error" : "success"} 
-                                            disabled={actionLoading} 
-                                            onClick={() => handleAction(decisionMode)} 
+                                        <Button
+                                            variant="contained"
+                                            color={decisionMode === 'Reject' ? "error" : "success"}
+                                            disabled={actionLoading}
+                                            onClick={() => handleAction(decisionMode)}
                                             sx={{ px: 4 }}
                                         >
                                             {decisionMode === 'Reject' ? "Confirm Reject" : "Approve"}
