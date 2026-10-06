@@ -443,55 +443,55 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                         </Box>
                     </Box>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0, flexWrap: "wrap" }}>
-                            {(data.isNoDoi === 'Yes' || (data.doi && String(data.doi).startsWith('NODOI'))) && (
-                                <Chip
-                                    label="Without DOI / Manual Entry"
-                                    sx={{
-                                        bgcolor: "rgba(234, 88, 12, 0.12)",
-                                        color: "#ea580c",
-                                        border: "1px solid rgba(234, 88, 12, 0.3)",
-                                        fontWeight: 800,
-                                        borderRadius: "20px",
-                                        px: 1,
-                                        py: 0.5
-                                    }}
-                                />
-                            )}
-                            {data.isInstitutionRecord === 'Yes' && (
-                                <Chip
-                                    label="Institution Record"
-                                    sx={{
-                                        bgcolor: "rgba(2, 136, 209, 0.1)",
-                                        color: "#0288d1",
-                                        border: "1px solid rgba(2, 136, 209, 0.3)",
-                                        fontWeight: 700,
-                                        borderRadius: "20px",
-                                        px: 1,
-                                        py: 0.5
-                                    }}
-                                />
-                            )}
-                            {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
-                                <Chip
-                                    label="R&D Direct Entry"
-                                    sx={{
-                                        bgcolor: "rgba(124, 58, 237, 0.1)",
-                                        color: "#7c3aed",
-                                        border: "1px solid rgba(124, 58, 237, 0.3)",
-                                        fontWeight: 700,
-                                        borderRadius: "20px",
-                                        px: 1,
-                                        py: 0.5
-                                    }}
-                                />
-                            )}
+                        {(data.isNoDoi === 'Yes' || (data.doi && String(data.doi).startsWith('NODOI'))) && (
                             <Chip
-                                icon={
-                                    /approved/i.test(data.status) ? <CheckCircleOutlineIcon sx={{ fontSize: "16px !important", color: "inherit" }} /> :
+                                label="Without DOI / Manual Entry"
+                                sx={{
+                                    bgcolor: "rgba(234, 88, 12, 0.12)",
+                                    color: "#ea580c",
+                                    border: "1px solid rgba(234, 88, 12, 0.3)",
+                                    fontWeight: 800,
+                                    borderRadius: "20px",
+                                    px: 1,
+                                    py: 0.5
+                                }}
+                            />
+                        )}
+                        {data.isInstitutionRecord === 'Yes' && (
+                            <Chip
+                                label="Institution Record"
+                                sx={{
+                                    bgcolor: "rgba(2, 136, 209, 0.1)",
+                                    color: "#0288d1",
+                                    border: "1px solid rgba(2, 136, 209, 0.3)",
+                                    fontWeight: 700,
+                                    borderRadius: "20px",
+                                    px: 1,
+                                    py: 0.5
+                                }}
+                            />
+                        )}
+                        {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
+                            <Chip
+                                label="R&D Direct Entry"
+                                sx={{
+                                    bgcolor: "rgba(124, 58, 237, 0.1)",
+                                    color: "#7c3aed",
+                                    border: "1px solid rgba(124, 58, 237, 0.3)",
+                                    fontWeight: 700,
+                                    borderRadius: "20px",
+                                    px: 1,
+                                    py: 0.5
+                                }}
+                            />
+                        )}
+                        <Chip
+                            icon={
+                                /approved/i.test(data.status) ? <CheckCircleOutlineIcon sx={{ fontSize: "16px !important", color: "inherit" }} /> :
                                     /reject/i.test(data.status) ? <CloseIcon sx={{ fontSize: "16px !important", color: "inherit" }} /> :
-                                    <AccessTimeIcon sx={{ fontSize: "16px !important", color: "inherit" }} />
-                                }
-                                label={data.status || "Pending at HOD"}
+                                        <AccessTimeIcon sx={{ fontSize: "16px !important", color: "inherit" }} />
+                            }
+                            label={data.status || "Pending at HOD"}
                             sx={{
                                 bgcolor: /approved/i.test(data.status) ? "rgba(46, 125, 50, 0.1)" : /reject/i.test(data.status) ? "rgba(211, 47, 47, 0.1)" : "rgba(237, 108, 2, 0.1)",
                                 color: /approved/i.test(data.status) ? "#2e7d32" : /reject/i.test(data.status) ? "#d32f2f" : "#ed6c02",
@@ -518,18 +518,18 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 }}
             >
                 <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "var(--text-secondary)" }} />} sx={{ p: 3, pb: 2, pt: 2 }}>
-                    <Box sx={{ 
-                        display: "flex", 
-                        alignItems: { xs: "flex-start", sm: "center" }, 
-                        justifyContent: "space-between", 
-                        width: "100%", 
-                        pr: { xs: 0, sm: 2 }, 
-                        flexDirection: { xs: "column", sm: "row" }, 
-                        gap: { xs: 2, sm: 0 } 
+                    <Box sx={{
+                        display: "flex",
+                        alignItems: { xs: "flex-start", sm: "center" },
+                        justifyContent: "space-between",
+                        width: "100%",
+                        pr: { xs: 0, sm: 2 },
+                        flexDirection: { xs: "column", sm: "row" },
+                        gap: { xs: 2, sm: 0 }
                     }}>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 2, width: "100%" }}>
-                            <Avatar 
-                                src={profileImageSrc || ""} 
+                            <Avatar
+                                src={profileImageSrc || ""}
                                 sx={{ width: 52, height: 52, bgcolor: "var(--color-primary)", fontSize: "1.2rem", fontWeight: 800, flexShrink: 0 }}
                             >
                                 {data.facultyId?.name?.charAt(0) || "A"}
@@ -617,11 +617,11 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                     isEditingDetails ? (
                                         <Box sx={{ display: "flex", gap: 1 }}>
                                             <Button size="small" variant="outlined" color="inherit" onClick={() => setIsEditingDetails(false)} disabled={detailsSaving}>Cancel</Button>
-                                            <Button 
-                                                size="small" 
-                                                variant="contained" 
-                                                color="primary" 
-                                                startIcon={<SaveIcon />} 
+                                            <Button
+                                                size="small"
+                                                variant="contained"
+                                                color="primary"
+                                                startIcon={<SaveIcon />}
                                                 disabled={detailsSaving}
                                                 onClick={async () => {
                                                     setDetailsSaving(true);
@@ -648,9 +648,9 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                             </Button>
                                         </Box>
                                     ) : (
-                                        <Button 
-                                            size="small" 
-                                            variant="outlined" 
+                                        <Button
+                                            size="small"
+                                            variant="outlined"
                                             startIcon={<EditIcon />}
                                             onClick={() => {
                                                 setEditableData({
@@ -725,37 +725,39 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                     icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />,
                                     editable: false
                                 },
-                                { key: "userAuthorPosition", label: "Applicant Author Position", chip: (
-                                    (() => {
-                                        const pos = data.userAuthorPosition || (data.firstAuthor === "Yes" ? 1 : data.authorPosition) || 1;
-                                        const total = data.totalAuthors || 1;
-                                        return (
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Box sx={{
-                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                    width: 32, height: 32, borderRadius: '50%',
-                                                    bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)',
-                                                    color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.9rem'
-                                                }}>
-                                                    {pos}
+                                {
+                                    key: "userAuthorPosition", label: "Applicant Author Position", chip: (
+                                        (() => {
+                                            const pos = data.userAuthorPosition || (data.firstAuthor === "Yes" ? 1 : data.authorPosition) || 1;
+                                            const total = data.totalAuthors || 1;
+                                            return (
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Box sx={{
+                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                        width: 32, height: 32, borderRadius: '50%',
+                                                        bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)',
+                                                        color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.9rem'
+                                                    }}>
+                                                        {pos}
+                                                    </Box>
+                                                    {total && (
+                                                        <>
+                                                            <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem' }}>of</Typography>
+                                                            <Box sx={{
+                                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                                px: 1.2, height: 28, borderRadius: '8px',
+                                                                bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)',
+                                                                color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                                            }}>
+                                                                {total} Authors
+                                                            </Box>
+                                                        </>
+                                                    )}
                                                 </Box>
-                                                {total && (
-                                                    <>
-                                                        <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem' }}>of</Typography>
-                                                        <Box sx={{
-                                                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                            px: 1.2, height: 28, borderRadius: '8px',
-                                                            bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)',
-                                                            color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.85rem'
-                                                        }}>
-                                                            {total} Authors
-                                                        </Box>
-                                                    </>
-                                                )}
-                                            </Box>
-                                        );
-                                    })()
-                                ), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "number" },
+                                            );
+                                        })()
+                                    ), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "number"
+                                },
                                 { key: "correspondingAuthor", label: "Corresponding Author", value: data.correspondingAuthor || "No", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
                                 { key: "journalQuartile", label: "Journal Quartile", value: data.journalQuartile || data.categoryOfJournal || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Q1", "Q2", "Q3", "Q4", "None"] },
                                 { key: "isScopus", label: "Scopus", value: data.isScopus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["Yes", "No"] },
@@ -797,7 +799,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                             {item.label}
                                         </Typography>
                                     </Box>
-                                    
+
                                     {isEditingDetails && item.editable ? (
                                         item.type === "select" ? (
                                             <Select
@@ -966,7 +968,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                     const color = dbSdg?.backgroundColor || fallback.color;
                                     const imageUrl = dbSdg?.imageUrl ? `${API.defaults.baseURL || ''}${dbSdg.imageUrl}` : null;
                                     const label = dbSdg?.sdgTitle ? `SDG-${num}: ${dbSdg.sdgTitle}` : fallback.label;
-                                    
+
                                     return (
                                         <Box
                                             key={idx}
@@ -1162,11 +1164,11 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                             )}
                                             <Box sx={{ flex: "1 1 200px" }}>
                                                 <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>ARTICLE ELIGIBILITY FOR APPRAISAL *</Typography>
-                                                <Select 
-                                                    fullWidth size="small" 
-                                                    value={appraisalEligible} 
-                                                    onChange={e => setAppraisalEligible(e.target.value)} 
-                                                    displayEmpty 
+                                                <Select
+                                                    fullWidth size="small"
+                                                    value={appraisalEligible}
+                                                    onChange={e => setAppraisalEligible(e.target.value)}
+                                                    displayEmpty
                                                     sx={{ borderRadius: "10px", bgcolor: "var(--bg-panel)" }}
                                                 >
                                                     <MenuItem value="" disabled>Select Eligibility</MenuItem>
@@ -1184,11 +1186,11 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
 
                                     <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end", mt: 1 }}>
                                         <Button variant="outlined" color="inherit" onClick={() => setDecisionMode(null)} sx={{ px: 3 }}>Cancel</Button>
-                                        <Button 
-                                            variant="contained" 
-                                            color={decisionMode === 'Reject' ? "error" : "success"} 
-                                            disabled={actionLoading} 
-                                            onClick={() => handleAction(decisionMode)} 
+                                        <Button
+                                            variant="contained"
+                                            color={decisionMode === 'Reject' ? "error" : "success"}
+                                            disabled={actionLoading}
+                                            onClick={() => handleAction(decisionMode)}
                                             sx={{ px: 4 }}
                                         >
                                             {decisionMode === 'Reject' ? "Confirm Reject" : "Approve"}
@@ -1218,41 +1220,41 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 <>
                     <EditResearchDetailsDialog
                         open={editOpen}
-                    onClose={() => setEditOpen(false)}
-                    type="Journal"
-                    currentData={data}
-                    onSave={(updated) => {
-                        setData(updated);
-                        if (updated.hIndex) setHIndex(updated.hIndex);
-                        const updatedIF = updated.jcrImpactFactor || updated.impactFactor;
-                        if (updatedIF) setJcrImpactFactor(updatedIF);
-                        if (updated.citations) setCitations(updated.citations);
-                        if (updated.journalQuartile) setQuartile(updated.journalQuartile);
-                        if (updated.journalType) setJournalType(updated.journalType);
-                        if (updated.journalCategory) setJournalCategory(updated.journalCategory);
-                        if (updated.appraisalEligible) setAppraisalEligible(updated.appraisalEligible);
-                        if (updated.approvedAmount) setApprovedAmount(updated.approvedAmount);
-                    }}
-                />
-                <EditAuthorsDialog
-                    open={isAuthorModalOpen}
-                    onClose={() => setIsAuthorModalOpen(false)}
-                    coAuthors={editableData.coAuthors || []}
-                    totalAuthors={editableData.totalAuthors || 1}
-                    userAuthorPosition={editableData.userAuthorPosition || 1}
-                    correspondingAuthor={editableData.correspondingAuthor || "No"}
-                    isStudentsInvolved={editableData.isStudentsInvolved || "No"}
-                    onSave={(authorsData) => {
-                        setEditableData(prev => ({
-                            ...prev,
-                            coAuthors: authorsData.coAuthors,
-                            totalAuthors: authorsData.totalAuthors,
-                            userAuthorPosition: authorsData.userAuthorPosition,
-                            correspondingAuthor: authorsData.correspondingAuthor,
-                            isStudentsInvolved: authorsData.isStudentsInvolved
-                        }));
-                    }}
-                />
+                        onClose={() => setEditOpen(false)}
+                        type="Journal"
+                        currentData={data}
+                        onSave={(updated) => {
+                            setData(updated);
+                            if (updated.hIndex) setHIndex(updated.hIndex);
+                            const updatedIF = updated.jcrImpactFactor || updated.impactFactor;
+                            if (updatedIF) setJcrImpactFactor(updatedIF);
+                            if (updated.citations) setCitations(updated.citations);
+                            if (updated.journalQuartile) setQuartile(updated.journalQuartile);
+                            if (updated.journalType) setJournalType(updated.journalType);
+                            if (updated.journalCategory) setJournalCategory(updated.journalCategory);
+                            if (updated.appraisalEligible) setAppraisalEligible(updated.appraisalEligible);
+                            if (updated.approvedAmount) setApprovedAmount(updated.approvedAmount);
+                        }}
+                    />
+                    <EditAuthorsDialog
+                        open={isAuthorModalOpen}
+                        onClose={() => setIsAuthorModalOpen(false)}
+                        coAuthors={editableData.coAuthors || []}
+                        totalAuthors={editableData.totalAuthors || 1}
+                        userAuthorPosition={editableData.userAuthorPosition || 1}
+                        correspondingAuthor={editableData.correspondingAuthor || "No"}
+                        isStudentsInvolved={editableData.isStudentsInvolved || "No"}
+                        onSave={(authorsData) => {
+                            setEditableData(prev => ({
+                                ...prev,
+                                coAuthors: authorsData.coAuthors,
+                                totalAuthors: authorsData.totalAuthors,
+                                userAuthorPosition: authorsData.userAuthorPosition,
+                                correspondingAuthor: authorsData.correspondingAuthor,
+                                isStudentsInvolved: authorsData.isStudentsInvolved
+                            }));
+                        }}
+                    />
                 </>
             )}
         </Box >
