@@ -989,13 +989,13 @@ export default function JournalPublication() {
     const val = e.target.value;
     setForm((prev) => {
       let newForm = { ...prev, isStudentsInvolved: val };
-      
+
       // If previous value was "No" and new is "Yes", increment by 1
       if (prev.isStudentsInvolved === "No" && val === "Yes") {
         if (parseInt(newForm.totalAuthors) == 1) {
           newForm.totalAuthors = parseInt(newForm.totalAuthors) + 1;
         }
-      } 
+      }
       // If previous value was "Yes" and new is "No", decrement by 1
       else if (prev.isStudentsInvolved === "Yes" && val === "No") {
         if (parseInt(newForm.totalAuthors) == 2) {

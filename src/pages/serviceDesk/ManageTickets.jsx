@@ -168,9 +168,9 @@ const ManageTickets = () => {
         } else {
             // Fetch direct portal employees
             try {
-                const res = await API.get(`/api/service-desk/services/${selectedServiceId}/emps`);
+                const res = await API.get(`/api/service-desk/services/${selectedServiceId}/emps?activeOnly=true`);
                 if (res.data.success) {
-                    const emps = res.data.data.map(m => m.employee).filter(Boolean);
+                    const emps = res.data.data.filter(m => m.isActive !== false).map(m => m.employee).filter(Boolean);
                     setAvailableEmpsForAssign(emps);
                     const existingIds = (ticket.assignedTo || []).filter(a => a.status !== 'REJECTED').map(a => a.employee?._id || a.employee);
                     setSelectedAssignees(emps.filter(e => existingIds.includes(e._id)));
@@ -339,6 +339,7 @@ const ManageTickets = () => {
                     </Box>
                 ) : (
                     <DataTable 
+                        showViewModeSwitcher={true}
                         columns={["Ticket #", "Requester", "Title / Work Assignment", "Priority", "Status", "Due Date / SLA", "Created", "Actions"]}
                         alignments={["left", "left", "left", "center", "center", "center", "center", "center"]}
                         nonSortableColumns={[7]}

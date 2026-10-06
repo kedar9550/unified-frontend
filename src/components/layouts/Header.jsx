@@ -375,86 +375,100 @@ const Header = ({ isSidebarCollapsed }) => {
             sx={{
               mx: 1.5,
               mb: 1.5,
-              p: 0.8,
-              maxHeight: "190px", // Fits 3 roles, scrolls for more
-              overflowY: "auto",
-              overscrollBehavior: "contain",
               borderRadius: "16px",
               border: "1px solid var(--border-color)",
               background: "var(--bg-paper)",
               boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
-              display: "flex",
-              flexDirection: "column",
-              gap: 0.5,
-              "&::-webkit-scrollbar": { width: 3 },
-              "&::-webkit-scrollbar-thumb": { background: "transparent", borderRadius: 4 }
+              overflow: "hidden",
             }}
           >
-            {user?.roles?.map((r) => {
-              const isActive = r.role === activeRole;
-              const isUniprime = r.role.toUpperCase() === "UNIPRIME";
+            <Box
+              sx={{
+                p: 0.8,
+                maxHeight: "190px", // Fits 3 roles, scrolls for more
+                overflowY: "auto",
+                overscrollBehavior: "contain",
+                display: "flex",
+                flexDirection: "column",
+                gap: 0.5,
+                "&::-webkit-scrollbar": { width: "2px" },
+                "&::-webkit-scrollbar-track": {
+                  background: "transparent",
+                  marginTop: "8px",
+                  marginBottom: "8px",
+                },
+                "&::-webkit-scrollbar-thumb": {
+                  background: "var(--gradient-primary)",
+                  borderRadius: "2px",
+                },
+              }}
+            >
+              {user?.roles?.map((r) => {
+                const isActive = r.role === activeRole;
+                const isUniprime = r.role.toUpperCase() === "UNIPRIME";
 
-              return (
-                <MenuItem
-                  key={r.role}
-                  onClick={() => handleRoleSwitch(r.role)}
-                  selected={isActive}
-                  sx={{
-                    borderRadius: "12px",
-                    fontSize: "0.75rem",
-                    fontWeight: 700,
-                    color: isActive ? "var(--color-primary)" : "var(--text-secondary)",
-                    background: isActive ? "var(--bg-accent-4) !important" : "transparent",
-                    border: "none",
-                    py: 1.2,
-                    px: 1.5,
-                    mb: 0.5,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    transition: "all 0.2s ease",
-                    minWidth: 0, // Prevent grid track overflow
-                    "&:hover": {
-                      background: isActive ? "var(--bg-accent-4) !important" : "var(--bg-panel)"
-                    },
-                    "&:last-child": { mb: 0 }
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
-                    {/* Circular Icon Badge */}
-                    <Box
-                      sx={{
-                        width: 34,
-                        height: 34,
-                        borderRadius: "50%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: isActive ? "var(--bg-accent-4)" : "var(--bg-panel)",
-                        color: isActive ? "var(--color-primary)" : "var(--text-secondary)",
-                        flexShrink: 0
-                      }}
-                    >
-                      {isUniprime ? <Domain sx={{ fontSize: 20 }} /> : <School sx={{ fontSize: 20 }} />}
+                return (
+                  <MenuItem
+                    key={r.role}
+                    onClick={() => handleRoleSwitch(r.role)}
+                    selected={isActive}
+                    sx={{
+                      borderRadius: "12px",
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                      color: isActive ? "var(--color-primary)" : "var(--text-secondary)",
+                      background: isActive ? "var(--bg-accent-4) !important" : "transparent",
+                      border: "none",
+                      py: 1.2,
+                      px: 1.5,
+                      mb: 0.5,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      transition: "all 0.2s ease",
+                      minWidth: 0, // Prevent grid track overflow
+                      "&:hover": {
+                        background: isActive ? "var(--bg-accent-4) !important" : "var(--bg-panel)"
+                      },
+                      "&:last-child": { mb: 0 }
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
+                      {/* Circular Icon Badge */}
+                      <Box
+                        sx={{
+                          width: 34,
+                          height: 34,
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: isActive ? "var(--bg-accent-4)" : "var(--bg-panel)",
+                          color: isActive ? "var(--color-primary)" : "var(--text-secondary)",
+                          flexShrink: 0
+                        }}
+                      >
+                        {isUniprime ? <Domain sx={{ fontSize: 20 }} /> : <School sx={{ fontSize: 20 }} />}
+                      </Box>
+                      <Typography
+                        noWrap
+                        sx={{
+                          fontWeight: 800,
+                          fontSize: "0.85rem",
+                          letterSpacing: "0.3px",
+                          textOverflow: "ellipsis",
+                          overflow: "hidden"
+                        }}
+                      >
+                        {r.name || capitalizeRole(r.role)}
+                      </Typography>
                     </Box>
-                    <Typography
-                      noWrap
-                      sx={{
-                        fontWeight: 800,
-                        fontSize: "0.85rem",
-                        letterSpacing: "0.3px",
-                        textOverflow: "ellipsis",
-                        overflow: "hidden"
-                      }}
-                    >
-                      {r.name || capitalizeRole(r.role)}
-                    </Typography>
-                  </Box>
 
-                  {isActive && <Check sx={{ fontSize: 18, color: "var(--color-primary)" }} />}
-                </MenuItem>
-              );
-            })}
+                    {isActive && <Check sx={{ fontSize: 18, color: "var(--color-primary)" }} />}
+                  </MenuItem>
+                );
+              })}
+            </Box>
           </Box>
 
           {/* Action Section */}

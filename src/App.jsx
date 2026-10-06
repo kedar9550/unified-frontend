@@ -111,6 +111,7 @@ import FormPreview from "./pages/majorEventAdmin/FormPreview";
 import Payments from "./pages/studenteventsadmin/Payments";
 import ManualAdding from "./pages/studenteventsadmin/ManualAdding";
 import PendingPayments from "./pages/studenteventsadmin/PendingPayments";
+import VerifyPayment from "./pages/studenteventsadmin/VerifyPayment";
 import Registrations from "./pages/studenteventsadmin/Registrations";
 import Participants from "./pages/studenteventsadmin/Participants";
 import AttendanceReport from "./pages/studenteventsadmin/AttendanceReport";
@@ -131,11 +132,22 @@ import VerifyCertificate from "./pages/public/VerifyCertificate";
 import Transaction from "./pages/RazorpayTransactions/Transaction";
 
 
+// Central Events Module
+import CentralEventTypesPage from "./pages/centralEvents/CentralEventTypesPage";
+import CentralEventCategoriesPage from "./pages/centralEvents/CentralEventCategoriesPage";
+import CentralEventsListPage from "./pages/centralEvents/CentralEventsListPage";
+import CentralEventDetailPage from "./pages/centralEvents/CentralEventDetailPage";
+import CentralEventCreatePage from "./pages/centralEvents/CentralEventCreatePage";
+import PaymentCheckoutPage from "./pages/centralEvents/PaymentCheckoutPage";
+
+
+
 // Infrastructure
 import Building from "./pages/Infrastructure/Building";
 import Floor from "./pages/Infrastructure/Floor";
 import Ground from "./pages/Infrastructure/Ground";
 import NotFound from "./pages/NotFound";
+
 
 const PublicOnlyRoute = ({ children }) => {
   const { user, logout } = useAuth();
@@ -145,7 +157,8 @@ const PublicOnlyRoute = ({ children }) => {
     if (user) {
       const params = new URLSearchParams(location.search);
       const urlEmpId = params.get("empId");
-      if (urlEmpId && String(user.institutionId) !== String(urlEmpId)) {
+      const currentId = user.institutionId || user.employeeId || user.empId || user.id;
+      if (urlEmpId && currentId && String(currentId).toLowerCase().trim() !== String(urlEmpId).toLowerCase().trim()) {
         logout();
       }
     }
@@ -154,7 +167,8 @@ const PublicOnlyRoute = ({ children }) => {
   if (user) {
     const params = new URLSearchParams(location.search);
     const urlEmpId = params.get("empId");
-    if (urlEmpId && String(user.institutionId) !== String(urlEmpId)) {
+    const currentId = user.institutionId || user.employeeId || user.empId || user.id;
+    if (urlEmpId && currentId && String(currentId).toLowerCase().trim() !== String(urlEmpId).toLowerCase().trim()) {
       // Wait for useEffect to log out, don't redirect to dashboard
       return null;
     }
@@ -360,6 +374,9 @@ function App() {
         <Route path="/Eventveda/manual-adding" element={<ProtectedRoute element={<ManualAdding />} />} />
         <Route path="/Eventveda/manual-adding/pending" element={<ProtectedRoute element={<PendingPayments />} />} />
         <Route path="/Eventveda/pending-payments" element={<ProtectedRoute element={<PendingPayments />} />} />
+        <Route path="/Eventveda/verifypayment" element={<ProtectedRoute element={<VerifyPayment />} />} />
+        <Route path="/Eventveda/payments/verifypayment" element={<ProtectedRoute element={<VerifyPayment />} />} />
+        <Route path="/Eventveda/payments/verify" element={<ProtectedRoute element={<VerifyPayment />} />} />
         <Route path="/Eventveda/registrations" element={<ProtectedRoute element={<Registrations />} />} />
         <Route path="/Eventveda/registrations/add-member" element={<ProtectedRoute element={<AddTeamMember />} />} />
         <Route path="/Eventveda/participants" element={<ProtectedRoute element={<Participants mode="all" />} />} />
@@ -390,12 +407,23 @@ function App() {
         <Route path="/major-event-admin/form-assign" element={<ProtectedRoute element={<FormAssign />} />} />
         <Route path="/major-event-admin/form-preview" element={<ProtectedRoute element={<FormPreview />} />} />
 
+        {/* Central Events Module Routes */}
+        <Route path="/central-events/types" element={<ProtectedRoute element={<CentralEventTypesPage />} />} />
+        <Route path="/central-events/categories" element={<ProtectedRoute element={<CentralEventCategoriesPage />} />} />
+        <Route path="/central-events" element={<ProtectedRoute element={<CentralEventsListPage />} />} />
+        <Route path="/central-events/create" element={<ProtectedRoute element={<CentralEventCreatePage />} />} />
+        <Route path="/central-events/:slug" element={<ProtectedRoute element={<CentralEventDetailPage />} />} />
+        <Route path="/pay/:token" element={<ProtectedRoute element={<PaymentCheckoutPage />} />} />
+
+
+
         {/* Infrastructure */}
         <Route path="/infrastructure/building" element={<ProtectedRoute element={<Building />} />} />
         <Route path="/infrastructure/floors" element={<ProtectedRoute element={<Floor />} />} />
         <Route path="/infrastructure/grounds" element={<ProtectedRoute element={<Ground />} />} />
         <Route path="*" element={<ProtectedRoute element={<NotFound />} />} />
       </Routes>
+
     </>
   );
 }

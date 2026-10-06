@@ -263,45 +263,45 @@ export default function TextbookPublication() {
   const handleCoAuthorChange = (pos, field, value) => {
     setForm(p => {
       const updated = p.otherAuthors.map(a => {
-      if (a.authorPosition === pos) {
-        const newA = { ...a, [field]: value };
-        
-        if (field === "CoAuthorType") {
-          if (value === "faculty") {
-            newA.studentId = "";
-            if (a.CoAuthorType === "student") {
-              newA.authorName = "";
-              newA.empId = "";
-            }
-          } else if (value === "student") {
-            newA.empId = "";
-            newA.affiliationType = "Aditya University";
-            newA.affiliationName = "Aditya University";
-            if (a.CoAuthorType === "faculty") {
-              newA.authorName = "";
-            }
-          }
-        }
-        
-        if (field === "affiliationType") {
-          if (value === "Aditya University") {
-            newA.affiliationName = "Aditya University";
-            newA.authorName = ""; // clear name so it can be fetched
-            newA.empId = "";
-            newA.studentId = "";
-          } else {
-            newA.affiliationName = "";
-            newA.empId = "";
-            newA.authorName = "";
-            newA.studentId = "";
-          }
-        }
-        return newA;
-      }
-      return a;
-    });
+        if (a.authorPosition === pos) {
+          const newA = { ...a, [field]: value };
 
-    return { ...p, otherAuthors: updated };
+          if (field === "CoAuthorType") {
+            if (value === "faculty") {
+              newA.studentId = "";
+              if (a.CoAuthorType === "student") {
+                newA.authorName = "";
+                newA.empId = "";
+              }
+            } else if (value === "student") {
+              newA.empId = "";
+              newA.affiliationType = "Aditya University";
+              newA.affiliationName = "Aditya University";
+              if (a.CoAuthorType === "faculty") {
+                newA.authorName = "";
+              }
+            }
+          }
+
+          if (field === "affiliationType") {
+            if (value === "Aditya University") {
+              newA.affiliationName = "Aditya University";
+              newA.authorName = ""; // clear name so it can be fetched
+              newA.empId = "";
+              newA.studentId = "";
+            } else {
+              newA.affiliationName = "";
+              newA.empId = "";
+              newA.authorName = "";
+              newA.studentId = "";
+            }
+          }
+          return newA;
+        }
+        return a;
+      });
+
+      return { ...p, otherAuthors: updated };
     });
 
     // Fetch name if Aditya University and Employee ID is entered (length >= 3)
@@ -317,20 +317,20 @@ export default function TextbookPublication() {
     const val = e.target.value;
     setForm((prev) => {
       let newForm = { ...prev, isStudentsInvolved: val };
-      
+
       // If previous value was "No" and new is "Yes", increment by 1
       if (prev.isStudentsInvolved === "No" && val === "Yes") {
         if (parseInt(newForm.totalAuthors) == 1) {
           newForm.totalAuthors = parseInt(newForm.totalAuthors) + 1;
         }
-      } 
+      }
       // If previous value was "Yes" and new is "No", decrement by 1
       else if (prev.isStudentsInvolved === "Yes" && val === "No") {
         if (parseInt(newForm.totalAuthors) == 2) {
           newForm.totalAuthors = parseInt(newForm.totalAuthors) - 1;
         }
       }
-      
+
       if (val === "Yes") {
         newForm.applyIncentive = "No";
       } else {
@@ -341,7 +341,7 @@ export default function TextbookPublication() {
             delete newAuthor.CoAuthorType;
             delete newAuthor.studentId;
             if (author.CoAuthorType === "student" && newAuthor.affiliationType === "Aditya University") {
-               newAuthor.affiliationType = "";
+              newAuthor.affiliationType = "";
             }
             return newAuthor;
           });
@@ -567,7 +567,7 @@ export default function TextbookPublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Textbook Publications</Typography>
-        <Button
+        {/* <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -592,7 +592,7 @@ export default function TextbookPublication() {
           }}
         >
           Apply New
-        </Button>
+        </Button> */}
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -1253,20 +1253,20 @@ export default function TextbookPublication() {
 
           let estIncentive = "-";
           if (currentApplyIncentive === "Yes") {
-              const pubObj = publishers.find(p => p.name === form.publisher);
-              if (pubObj && pubObj.type) {
-                  if (pubObj.type.toLowerCase() === "national") {
-                      estIncentive = "₹10,000";
-                  } else if (pubObj.type.toLowerCase() === "international") {
-                      estIncentive = "₹20,000";
-                  } else {
-                      estIncentive = "Research committee decision";
-                  }
+            const pubObj = publishers.find(p => p.name === form.publisher);
+            if (pubObj && pubObj.type) {
+              if (pubObj.type.toLowerCase() === "national") {
+                estIncentive = "₹10,000";
+              } else if (pubObj.type.toLowerCase() === "international") {
+                estIncentive = "₹20,000";
               } else {
-                  estIncentive = "Research committee decision";
+                estIncentive = "Research committee decision";
               }
+            } else {
+              estIncentive = "Research committee decision";
+            }
           } else if (currentApplyIncentive === "No") {
-              estIncentive = "₹0";
+            estIncentive = "₹0";
           }
 
           return (

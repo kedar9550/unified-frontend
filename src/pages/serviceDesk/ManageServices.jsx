@@ -397,17 +397,14 @@ const ManageServices = () => {
                     </Box>
                 ) : (
                     <DataTable
-                        columns={["Service Name", "Description", "Scope", "Employee Involvement", "Status", "Actions"]}
-                        alignments={["left", "left", "center", "center", "center", "right"]}
-                        nonSortableColumns={[5]}
+                        showViewModeSwitcher={true}
+                        columns={["Service Name", "Scope", "Employee Involvement", "Status", "Actions"]}
+                        alignments={["left", "left", "left", "center", "center"]}
+                        nonSortableColumns={[4]}
                         rows={services.map(service => [
                             {
                                 value: service.name,
                                 display: <Typography sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>{service.name}</Typography>
-                            },
-                            {
-                                value: service.description || '',
-                                display: <Typography variant="body2" sx={{ color: 'var(--text-secondary)' }}>{service.description || '--'}</Typography>
                             },
                             {
                                 value: service.isGlobalService
@@ -478,7 +475,7 @@ const ManageServices = () => {
                             {
                                 value: '',
                                 display: (
-                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
                                         {service.isActive && (
                                             <Tooltip title="Manage Admins">
                                                 <IconButton color="info" onClick={() => handleOpenAdmins(service)} size="small" sx={{ background: 'var(--bg-glass)' }}>

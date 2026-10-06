@@ -40,6 +40,7 @@ import {
   FlagCircleRounded,
   PersonAdd,
   HourglassEmpty,
+  Category,
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
@@ -47,8 +48,26 @@ import React from "react";
 
 // Configuration for which side navigation items each role should see.
 export const ROLE_ROUTES = {
+  GLOBAL_EVENT_ADMIN: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Central Events",
+      icon: <EventAvailable />,
+      nested: [
+        { text: "Event Types", path: "/central-events/types", icon: <Category /> },
+        { text: "Event Categories", path: "/central-events/categories", icon: <Category /> },
+        { text: "All Central Events", path: "/central-events", icon: <EventAvailable /> },
+
+
+        // { text: "Create Central Event", path: "/central-events/create", icon: <EventAvailable /> },
+      ]
+    },
+  ],
+
+
   // Navigation items for the Student default role
   STUDENT: [
+
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Academics", path: "/academics", icon: <MenuBook /> },
   ],
@@ -593,12 +612,30 @@ export const ROLE_ROUTES = {
 
   SERVICE_ADMIN: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
-
-    { text: "Service Team", path: "/service-desk/admin/team", icon: <GroupIcon /> },
     { text: "Manage Tickets", path: "/service-desk/admin/services", icon: <AssignmentTurnedIn /> },
+    { text: "Service Employees", path: "/service-desk/admin/team", icon: <GroupIcon /> },
     { text: "Reports", path: "/service-desk/reports", icon: <Analytics /> },
     { text: "Feedback Analytics", path: "/service-desk/admin/feedback", icon: <Analytics /> },
+  ],
 
+  CSR_ADMIN: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Manage Services", path: "/service-desk/admin/manage-services", icon: <AccountTree /> },
+    { text: "Manage Blocks", path: "/service-desk/admin/manage-blocks", icon: <Apartment /> },
+    { text: "Manage Tickets", path: "/service-desk/admin/services", icon: <AssignmentTurnedIn /> },
+    { text: "Service Employees", path: "/service-desk/admin/team", icon: <GroupIcon /> },
+    { text: "Reports", path: "/service-desk/reports", icon: <Analytics /> },
+    { text: "Feedback Analytics", path: "/service-desk/admin/feedback", icon: <Analytics /> },
+  ],
+
+  "CSR ADMIN": [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Manage Services", path: "/service-desk/admin/manage-services", icon: <AccountTree /> },
+    { text: "Manage Blocks", path: "/service-desk/admin/manage-blocks", icon: <Apartment /> },
+    { text: "Manage Tickets", path: "/service-desk/admin/services", icon: <AssignmentTurnedIn /> },
+    { text: "Service Employees", path: "/service-desk/admin/team", icon: <GroupIcon /> },
+    { text: "Reports", path: "/service-desk/reports", icon: <Analytics /> },
+    { text: "Feedback Analytics", path: "/service-desk/admin/feedback", icon: <Analytics /> },
   ],
 
   SERVICE_EMP: [
@@ -647,6 +684,7 @@ export const ROLE_ROUTES = {
             { text: "List", path: "/Eventveda/payments", icon: <Payment /> },
             { text: "Manual Adding", path: "/Eventveda/manual-adding", icon: <PersonAdd /> },
             { text: "Pending", path: "/Eventveda/manual-adding/pending", icon: <HourglassEmpty /> },
+            { text: "Verify Payment", path: "/Eventveda/verifypayment", icon: <Verified /> },
           ]
         },
         {

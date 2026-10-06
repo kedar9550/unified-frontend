@@ -47,7 +47,8 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Download as DownloadIcon,
-  Sync as SyncIcon
+  Sync as SyncIcon,
+  VerifiedUser as VerifiedUserIcon
 } from '@mui/icons-material';
 import * as XLSX from 'xlsx-js-style';
 import { useNavigate } from 'react-router-dom';
@@ -910,6 +911,29 @@ const PendingPayments = () => {
                 Clear Filters
               </Button>
             )}
+
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={() => navigate('/Eventveda/verifypayment')}
+              startIcon={<VerifiedUserIcon />}
+              sx={{
+                borderRadius: '10px',
+                textTransform: 'none',
+                fontWeight: 700,
+                fontSize: '0.82rem',
+                px: 2,
+                py: 0.75,
+                borderColor: '#2563eb',
+                color: '#2563eb',
+                '&:hover': {
+                  borderColor: '#1d4ed8',
+                  bgcolor: 'rgba(37, 99, 235, 0.04)'
+                }
+              }}
+            >
+              Verify Payment (CSV)
+            </Button>
 
             <Button
               variant="contained"

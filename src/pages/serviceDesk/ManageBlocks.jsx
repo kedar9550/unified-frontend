@@ -231,8 +231,9 @@ const ManageBlocks = () => {
                 </Box>
             ) : (
                 <DataTable
+                    showViewModeSwitcher={true}
                     columns={["Block Name", "Category & Type", "Block Code", "Status", "Actions"]}
-                    alignments={["left", "left", "center", "center", "right"]}
+                    alignments={["left", "left", "center", "center", "center"]}
                     nonSortableColumns={[4]}
                     rows={filteredBlocks.map(block => [
                         {
@@ -325,7 +326,7 @@ const ManageBlocks = () => {
                         {
                             value: '',
                             display: (
-                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
                                     <Tooltip title="Edit Block">
                                         <IconButton size="small" color="primary" onClick={() => handleOpen(block)} sx={{ background: 'var(--bg-glass)' }}>
                                             <EditIcon fontSize="small" />
