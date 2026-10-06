@@ -240,7 +240,7 @@
   cursor: not-allowed;
 }
 
-.auth-field input:disabled + .auth-label {
+.auth-field input:disabled+.auth-label {
   color: var(--text-secondary) !important;
   opacity: 0.7;
 }
