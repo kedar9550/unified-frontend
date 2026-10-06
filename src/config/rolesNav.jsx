@@ -665,6 +665,7 @@ export const ROLE_ROUTES = {
             { text: "List", path: "/Eventveda/payments", icon: <Payment /> },
             { text: "Manual Adding", path: "/Eventveda/manual-adding", icon: <PersonAdd /> },
             { text: "Pending", path: "/Eventveda/manual-adding/pending", icon: <HourglassEmpty /> },
+            { text: "Verify Payment", path: "/Eventveda/verifypayment", icon: <Verified /> },
           ]
         },
         {
