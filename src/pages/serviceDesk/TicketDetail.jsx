@@ -16,7 +16,9 @@ import {
     CheckCircle as CheckCircleIcon,
     RadioButtonUnchecked as RadioButtonUncheckedIcon,
     WatchLater as WatchLaterIcon,
-    Person as PersonIcon
+    Person as PersonIcon,
+    EditCalendar as EditCalendarIcon,
+    Build as BuildIcon
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
@@ -25,6 +27,13 @@ import API from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import { toast } from 'sonner';
+import {
+    PriorityBadge,
+    DueCountdownBadge,
+    calculateSlaDueDate,
+    formatForDateTimeInput,
+    formatExactDateTime
+} from '../../utils/serviceDeskSla';
 
 const getStatusColor = (status) => {
     switch (status) {
@@ -65,13 +74,25 @@ const TicketDetail = () => {
     // Modals
     const [assignModalOpen, setAssignModalOpen] = useState(false);
     const [rejectModalOpen, setRejectModalOpen] = useState(false);
+    const [slaModalOpen, setSlaModalOpen] = useState(false);
     
-    // Assign state
+    // Assign state (Portal Employees)
     const [serviceEmps, setServiceEmps] = useState([]);
     const [selectedEmps, setSelectedEmps] = useState([]);
-    const [assignPriority, setAssignPriority] = useState('');
+    const [assignPriority, setAssignPriority] = useState('MEDIUM');
     const [assignDueDate, setAssignDueDate] = useState('');
     const [assigning, setAssigning] = useState(false);
+
+    // Assign Field Workers state (for services with directEmployeeInvolvement === false)
+    const [assignWorkersModalOpen, setAssignWorkersModalOpen] = useState(false);
+    const [serviceWorkers, setServiceWorkers] = useState([]);
+    const [selectedWorkers, setSelectedWorkers] = useState([]);
+    const [assignWorkerNote, setAssignWorkerNote] = useState('');
+
+    // SLA state
+    const [slaPriority, setSlaPriority] = useState('MEDIUM');
+    const [slaDueDate, setSlaDueDate] = useState('');
+    const [updatingSla, setUpdatingSla] = useState(false);
     
     // Reject state
     const [rejectReason, setRejectReason] = useState('');
@@ -86,6 +107,12 @@ const TicketDetail = () => {
     const [empActionStatus, setEmpActionStatus] = useState('');
     const [empActionNote, setEmpActionNote] = useState('');
     const [updatingEmpStatus, setUpdatingEmpStatus] = useState(false);
+
+    // Admin Direct Status Action state
+    const [adminDirectStatusModalOpen, setAdminDirectStatusModalOpen] = useState(false);
+    const [adminTargetStatus, setAdminTargetStatus] = useState('');
+    const [adminStatusNote, setAdminStatusNote] = useState('');
+    const [updatingAdminStatus, setUpdatingAdminStatus] = useState(false);
 
     useEffect(() => {
         fetchTicketData();
@@ -155,17 +182,17 @@ const TicketDetail = () => {
     };
     
     const handleSendMessage = async (e) => {
-        e.preventDefault();
-        if (!newMessage.trim() || !ticket?.isChatActive) return;
+        if (e) e.preventDefault();
+        const text = newMessage.trim();
+        if (!text || !ticket?.isChatActive) return;
         
+        setNewMessage('');
         try {
-            const res = await API.post(`/api/service-desk/tickets/${id}/comments`, {
-                message: newMessage
+            await API.post(`/api/service-desk/tickets/${id}/comments`, {
+                message: text
             });
-            if (res.data.success) {
-                setNewMessage('');
-            }
         } catch (error) {
+            setNewMessage(text);
             toast.error(error.response?.data?.message || 'Failed to send message');
         }
     };
@@ -173,20 +200,77 @@ const TicketDetail = () => {
     // --- Admin Actions ---
     const openAssignModal = async () => {
         try {
-            setAssignPriority(ticket.priority || 'MEDIUM');
-            setAssignDueDate(ticket.dueDate ? ticket.dueDate.split('T')[0] : '');
-            const existingIds = ticket.assignedTo.filter(a => a.status !== 'REJECTED').map(a => a.employee._id);
+            const p = ticket.priority || 'MEDIUM';
+            setAssignPriority(p);
+            setAssignDueDate(formatForDateTimeInput(ticket.dueDate || calculateSlaDueDate(p, ticket.createdAt)));
+            const existingIds = (ticket.assignedTo || []).filter(a => a.status !== 'REJECTED').map(a => a.employee?._id || a.employee);
             setSelectedEmps([]);
             
-            const res = await API.get(`/api/service-desk/services/${ticket.service._id}/emps`);
+            const res = await API.get(`/api/service-desk/services/${ticket.service._id}/emps?activeOnly=true`);
             if (res.data.success) {
-                const emps = res.data.data.map(m => m.employee).filter(Boolean);
+                const emps = res.data.data.filter(m => m.isActive !== false).map(m => m.employee).filter(Boolean);
                 setServiceEmps(emps);
                 setSelectedEmps(emps.filter(e => existingIds.includes(e._id)));
                 setAssignModalOpen(true);
             }
         } catch (error) {
             toast.error('Failed to fetch service employees');
+        }
+    };
+
+    // --- Assign Field Workers Actions (for services with directEmployeeInvolvement === false) ---
+    const openAssignWorkersModal = async () => {
+        try {
+            setSelectedWorkers([]);
+            setAssignWorkerNote('');
+            setAssignPriority(ticket.priority || 'MEDIUM');
+            setAssignDueDate(formatForDateTimeInput(ticket.dueDate || calculateSlaDueDate(ticket.priority || 'MEDIUM', ticket.createdAt)));
+
+            const res = await API.get(`/api/service-desk/services/${ticket.service._id}/workers?status=ACTIVE`);
+            if (res.data.success) {
+                const workers = res.data.data || [];
+                setServiceWorkers(workers);
+                const existingIds = (ticket.assignedWorkers || []).map(w => w.worker?._id || w.worker);
+                setSelectedWorkers(workers.filter(w => existingIds.includes(w._id)));
+                setAssignWorkersModalOpen(true);
+            }
+        } catch (error) {
+            toast.error('Failed to fetch active field workers');
+        }
+    };
+
+    const handleAssignWorkers = async () => {
+        if (selectedWorkers.length === 0) {
+            toast.error('Select at least one technician / field worker');
+            return;
+        }
+        try {
+            setAssigning(true);
+            const res = await API.post(`/api/service-desk/tickets/${id}/assign-workers`, {
+                workerIds: selectedWorkers.map(w => w._id),
+                priority: assignPriority,
+                dueDate: assignDueDate ? new Date(assignDueDate) : null,
+                note: assignWorkerNote
+            });
+            if (res.data.success) {
+                toast.success('Field technicians assigned successfully');
+                setAssignWorkersModalOpen(false);
+                setSelectedWorkers([]);
+                setAssignWorkerNote('');
+                fetchTicketData();
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to assign technicians');
+        } finally {
+            setAssigning(false);
+        }
+    };
+
+    const handleAssignPriorityChange = (newPriority) => {
+        setAssignPriority(newPriority);
+        if (ticket) {
+            const newDue = calculateSlaDueDate(newPriority, ticket.createdAt || new Date());
+            setAssignDueDate(formatForDateTimeInput(newDue));
         }
     };
     
@@ -200,7 +284,7 @@ const TicketDetail = () => {
             const res = await API.post(`/api/service-desk/tickets/${id}/assign`, {
                 employeeIds: selectedEmps.map(e => e._id),
                 priority: assignPriority,
-                dueDate: assignDueDate || null
+                dueDate: assignDueDate ? new Date(assignDueDate) : null
             });
             if (res.data.success) {
                 toast.success('Ticket assigned successfully');
@@ -212,6 +296,41 @@ const TicketDetail = () => {
             toast.error(error.response?.data?.message || 'Failed to assign ticket');
         } finally {
             setAssigning(false);
+        }
+    };
+
+    // --- SLA / Due Date Adjustment Actions ---
+    const openSlaModal = () => {
+        const p = ticket.priority || 'MEDIUM';
+        setSlaPriority(p);
+        setSlaDueDate(formatForDateTimeInput(ticket.dueDate || calculateSlaDueDate(p, ticket.createdAt)));
+        setSlaModalOpen(true);
+    };
+
+    const handleSlaPriorityChange = (newPriority) => {
+        setSlaPriority(newPriority);
+        if (ticket) {
+            const newDue = calculateSlaDueDate(newPriority, ticket.createdAt || new Date());
+            setSlaDueDate(formatForDateTimeInput(newDue));
+        }
+    };
+
+    const handleSlaUpdate = async () => {
+        try {
+            setUpdatingSla(true);
+            const res = await API.put(`/api/service-desk/tickets/${id}/sla`, {
+                priority: slaPriority,
+                dueDate: slaDueDate ? new Date(slaDueDate) : null
+            });
+            if (res.data.success) {
+                toast.success('Priority and Due Date updated successfully');
+                setSlaModalOpen(false);
+                fetchTicketData();
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to update SLA');
+        } finally {
+            setUpdatingSla(false);
         }
     };
     
@@ -234,6 +353,27 @@ const TicketDetail = () => {
             toast.error(error.response?.data?.message || 'Failed to reject ticket');
         } finally {
             setRejecting(false);
+        }
+    };
+
+    const handleAdminDirectStatus = async () => {
+        if (!adminTargetStatus) return;
+        try {
+            setUpdatingAdminStatus(true);
+            const res = await API.put(`/api/service-desk/tickets/${id}/admin-status`, {
+                status: adminTargetStatus,
+                note: adminStatusNote
+            });
+            if (res.data.success) {
+                toast.success(`Ticket status updated to ${adminTargetStatus.replace('_', ' ')}`);
+                setAdminDirectStatusModalOpen(false);
+                setAdminStatusNote('');
+                fetchTicketData();
+            }
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to update ticket status');
+        } finally {
+            setUpdatingAdminStatus(false);
         }
     };
 
@@ -354,12 +494,24 @@ const TicketDetail = () => {
                             <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, letterSpacing: 0.5 }}>
                                 {ticket.ticketNumber}
                             </Typography>
-                            <Typography variant="h5" sx={{ fontWeight: 700, mt: 0.5, color: 'var(--text-primary)' }}>
-                                {ticket.title}
-                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 0.5, flexWrap: 'wrap' }}>
+                                <Typography variant="h5" sx={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                                    {ticket.title}
+                                </Typography>
+                                {ticket.subcategory && (
+                                    <Chip 
+                                        label={`Subcategory: ${ticket.subcategory}`} 
+                                        size="small" 
+                                        variant="outlined" 
+                                        color="primary" 
+                                        sx={{ fontWeight: 600, borderRadius: '6px' }} 
+                                    />
+                                )}
+                            </Box>
                         </Box>
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                            <Chip label={ticket.priority} size="small" color="error" sx={{ fontWeight: 700, borderRadius: '4px' }} />
+                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <PriorityBadge priority={ticket.priority} size="medium" />
+                            <DueCountdownBadge dueDate={ticket.dueDate} status={ticket.status} size="medium" />
                             <Chip label={ticket.status} size="small" color={getStatusColor(ticket.status)} sx={{ fontWeight: 700, borderRadius: '4px' }} />
                         </Box>
                     </Box>
@@ -369,22 +521,41 @@ const TicketDetail = () => {
                     <Grid container spacing={3}>
                         <Grid xs={6} sm={3}>
                             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Created By</Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                {ticket.createdBy?.name || 'Unknown'}
-                            </Typography>
+                            {ticket.creatorType === 'STUDENT' ? (
+                                <Box>
+                                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#1d4ed8' }}>
+                                        🎓 {ticket.studentDetails?.studentname || 'Student'} ({ticket.studentDetails?.rollno})
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                        {ticket.studentDetails?.branch || ''} {ticket.studentDetails?.mobilenumber ? `• 📞 ${ticket.studentDetails.mobilenumber}` : ''}
+                                    </Typography>
+                                </Box>
+                            ) : (
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                    {ticket.createdBy?.name || 'Staff Member'}
+                                </Typography>
+                            )}
                         </Grid>
                         <Grid xs={6} sm={3}>
                             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Assigned To</Typography>
                             <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                {ticket.assignedTo && ticket.assignedTo.filter(a => a.status !== 'REJECTED').length > 0 
-                                    ? ticket.assignedTo.filter(a => a.status !== 'REJECTED').map(a => a.employee?.name).join(', ') 
-                                    : 'Not Assigned'}
+                                {ticket.assignedWorkers && ticket.assignedWorkers.length > 0
+                                    ? ticket.assignedWorkers.map(w => w.worker ? `${w.worker.name} (${w.worker.designation || 'Technician'})` : '').filter(Boolean).join(', ')
+                                    : (ticket.assignedTo && ticket.assignedTo.filter(a => a.status !== 'REJECTED').length > 0 
+                                        ? ticket.assignedTo.filter(a => a.status !== 'REJECTED').map(a => a.employee?.name).join(', ') 
+                                        : 'Not Assigned')}
                             </Typography>
                         </Grid>
                         <Grid xs={6} sm={3}>
                             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Created</Typography>
                             <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                {new Date(ticket.createdAt).toLocaleDateString()}
+                                {ticket.createdAt ? new Date(ticket.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                            </Typography>
+                        </Grid>
+                        <Grid xs={6} sm={3}>
+                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Target Due Date</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                                {formatExactDateTime(ticket.dueDate)}
                             </Typography>
                         </Grid>
                         <Grid xs={6} sm={3}>
@@ -393,6 +564,15 @@ const TicketDetail = () => {
                                 {ticket.service?.name || 'N/A'}
                             </Typography>
                         </Grid>
+                        {ticket.block && (
+                            <Grid xs={6} sm={3}>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Location / Block</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: '#1e40af' }}>
+                                    {ticket.block.blockName}
+                                    {ticket.block.blockType === 'HOSTEL' ? ` (${ticket.block.genderTag === 'GIRLS' ? 'Girls Hostel' : 'Boys Hostel'})` : ''} ({ticket.block.blockCode})
+                                </Typography>
+                            </Grid>
+                        )}
                     </Grid>
 
                     {isAdminView && ticket.assignedTo?.some(a => a.status === 'REJECTED') && (
@@ -440,7 +620,7 @@ const TicketDetail = () => {
                         </Paper>
 
                         {/* Comments Chat Interface */}
-                        {ticket.status !== 'CLOSED' && ticket.status !== 'REJECTED' && (
+                        {ticket.status !== 'CLOSED' && ticket.status !== 'REJECTED' && ticket.status !== 'RESOLVED' && (
                             <Paper sx={{ p: 0, borderRadius: '12px', background: 'var(--bg-panel)', boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.05)', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                                 <Box sx={{ p: 2, borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center' }}>
                                     <Typography variant="h6" sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>
@@ -736,16 +916,73 @@ const TicketDetail = () => {
                             <Paper sx={{ p: 3, borderRadius: '12px', background: 'var(--bg-panel)', boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.05)', border: '1px solid var(--border-color)' }}>
                                 <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Admin Actions</Typography>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    {ticket.service?.directEmployeeInvolvement !== false ? (
+                                        <Button 
+                                            variant="contained" 
+                                            color="primary"
+                                            startIcon={<AssignmentIcon />}
+                                            onClick={openAssignModal}
+                                            fullWidth
+                                            sx={{ textTransform: 'none', borderRadius: '8px', py: 1 }}
+                                        >
+                                            Assign Employees
+                                        </Button>
+                                    ) : (
+                                        <>
+                                            <Button 
+                                                variant="contained" 
+                                                startIcon={<BuildIcon />}
+                                                onClick={openAssignWorkersModal}
+                                                fullWidth
+                                                sx={{ 
+                                                    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                                    color: '#ffffff',
+                                                    textTransform: 'none', 
+                                                    borderRadius: '8px', 
+                                                    py: 1,
+                                                    fontWeight: 700,
+                                                    boxShadow: '0 4px 12px rgba(245, 158, 11, 0.25)',
+                                                    '&:hover': {
+                                                        background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)',
+                                                    }
+                                                }}
+                                            >
+                                                Assign Field Worker(s)
+                                            </Button>
+
+                                            {ticket.status === 'OPEN' && (
+                                                <Button 
+                                                    variant="contained" 
+                                                    color="info"
+                                                    onClick={() => { setAdminTargetStatus('IN_PROGRESS'); setAdminDirectStatusModalOpen(true); }}
+                                                    fullWidth
+                                                    sx={{ textTransform: 'none', borderRadius: '8px', py: 1 }}
+                                                >
+                                                    Start Work (In Progress)
+                                                </Button>
+                                            )}
+                                            <Button 
+                                                variant="contained" 
+                                                color="success"
+                                                onClick={() => { setAdminTargetStatus('RESOLVED'); setAdminDirectStatusModalOpen(true); }}
+                                                fullWidth
+                                                sx={{ textTransform: 'none', borderRadius: '8px', py: 1 }}
+                                            >
+                                                Mark as Resolved
+                                            </Button>
+                                        </>
+                                    )}
                                     <Button 
-                                        variant="contained" 
-                                        color="primary"
-                                        startIcon={<AssignmentIcon />}
-                                        onClick={openAssignModal}
+                                        variant="outlined" 
+                                        color="warning"
+                                        startIcon={<EditCalendarIcon />}
+                                        onClick={openSlaModal}
                                         fullWidth
                                         sx={{ textTransform: 'none', borderRadius: '8px', py: 1 }}
                                     >
-                                        Assign Employees
+                                        Update SLA / Due Date
                                     </Button>
+
                                     <Button 
                                         variant="outlined" 
                                         color="error"
@@ -849,35 +1086,36 @@ const TicketDetail = () => {
             <Dialog open={assignModalOpen} onClose={() => setAssignModalOpen(false)} maxWidth="sm" fullWidth>
                 <DialogTitle>Assign Ticket #{ticket?.ticketNumber}</DialogTitle>
                 <DialogContent dividers sx={{ minHeight: '300px' }}>
-                    <Box sx={{ mb: 3, display: 'flex', gap: 2 }}>
+                    <Box sx={{ mb: 3, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
                         <FormControl fullWidth size="small">
                             <InputLabel>Priority</InputLabel>
                             <Select
                                 value={assignPriority}
                                 label="Priority"
-                                onChange={(e) => setAssignPriority(e.target.value)}
+                                onChange={(e) => handleAssignPriorityChange(e.target.value)}
                             >
-                                <MenuItem value="LOW">Low</MenuItem>
-                                <MenuItem value="MEDIUM">Medium</MenuItem>
-                                <MenuItem value="HIGH">High</MenuItem>
+                                <MenuItem value="CRITICAL">Critical (2 Hours)</MenuItem>
+                                <MenuItem value="HIGH">High (4 Hours)</MenuItem>
+                                <MenuItem value="MEDIUM">Medium (24 Hours)</MenuItem>
+                                <MenuItem value="LOW">Low (72 Hours)</MenuItem>
                             </Select>
                         </FormControl>
 
                         <TextField
                             fullWidth
                             size="small"
-                            type="date"
-                            label="Due Date"
+                            type="datetime-local"
+                            label="Due Date & Time"
                             slotProps={{ 
-                                inputLabel: { shrink: true },
-                                htmlInput: { min: new Date().toISOString().split('T')[0] }
+                                inputLabel: { shrink: true }
                             }}
                             value={assignDueDate}
                             onChange={(e) => setAssignDueDate(e.target.value)}
+                            helperText="Target resolution deadline"
                         />
                     </Box>
 
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>Assign To</Typography>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Assign To Service Employees *</Typography>
                     <Autocomplete
                         multiple
                         fullWidth
@@ -904,6 +1142,129 @@ const TicketDetail = () => {
                 </DialogActions>
             </Dialog>
 
+            {/* Assign Field Workers Modal (Manual Technicians) */}
+            <Dialog open={assignWorkersModalOpen} onClose={() => setAssignWorkersModalOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <BuildIcon sx={{ color: '#d97706' }} />
+                    <span>Assign Field Technicians - #{ticket?.ticketNumber}</span>
+                </DialogTitle>
+                <DialogContent dividers sx={{ minHeight: '300px' }}>
+                    <Box sx={{ mb: 3, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Priority</InputLabel>
+                            <Select
+                                value={assignPriority}
+                                label="Priority"
+                                onChange={(e) => handleAssignPriorityChange(e.target.value)}
+                            >
+                                <MenuItem value="CRITICAL">Critical (2 Hours)</MenuItem>
+                                <MenuItem value="HIGH">High (4 Hours)</MenuItem>
+                                <MenuItem value="MEDIUM">Medium (24 Hours)</MenuItem>
+                                <MenuItem value="LOW">Low (72 Hours)</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        <TextField
+                            fullWidth
+                            size="small"
+                            type="datetime-local"
+                            label="Due Date & Time"
+                            slotProps={{ 
+                                inputLabel: { shrink: true }
+                            }}
+                            value={assignDueDate}
+                            onChange={(e) => setAssignDueDate(e.target.value)}
+                            helperText="Target resolution deadline"
+                        />
+                    </Box>
+
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>Select Field Worker(s) *</Typography>
+                    <Autocomplete
+                        multiple
+                        fullWidth
+                        options={serviceWorkers}
+                        getOptionLabel={(option) => `${option.name} (${option.designation || 'Technician'}) ${option.phone ? '• ' + option.phone : ''}`}
+                        isOptionEqualToValue={(option, value) => option._id === value._id}
+                        value={selectedWorkers}
+                        onChange={(e, newValue) => setSelectedWorkers(newValue)}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                variant="outlined"
+                                placeholder="Select Field Technicians"
+                            />
+                        )}
+                        noOptionsText="No active field workers found for this service. Add workers in Service Members page."
+                    />
+
+                    <TextField
+                        fullWidth
+                        multiline
+                        rows={2}
+                        label="Assignment Note / Instructions (Optional)"
+                        placeholder="e.g. Please bring 15A switch replacement..."
+                        value={assignWorkerNote}
+                        onChange={(e) => setAssignWorkerNote(e.target.value)}
+                        sx={{ mt: 2.5 }}
+                    />
+                </DialogContent>
+                <DialogActions sx={{ p: 2, px: 3 }}>
+                    <Button onClick={() => setAssignWorkersModalOpen(false)} disabled={assigning}>Cancel</Button>
+                    <Button 
+                        variant="contained" 
+                        onClick={handleAssignWorkers} 
+                        disabled={assigning || selectedWorkers.length === 0}
+                        sx={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', fontWeight: 700 }}
+                    >
+                        {assigning ? 'Assigning...' : 'Assign Workers'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* SLA / Due Date Adjustment Modal */}
+            <Dialog open={slaModalOpen} onClose={() => setSlaModalOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Update Priority & Due Date - #{ticket?.ticketNumber}</DialogTitle>
+                <DialogContent dividers>
+                    <Typography variant="body2" sx={{ mb: 2.5, color: 'text.secondary' }}>
+                        Modify ticket severity / priority and expected target deadline.
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Priority</InputLabel>
+                            <Select
+                                value={slaPriority}
+                                label="Priority"
+                                onChange={(e) => handleSlaPriorityChange(e.target.value)}
+                            >
+                                <MenuItem value="CRITICAL">Critical (2 Hours SLA)</MenuItem>
+                                <MenuItem value="HIGH">High (4 Hours SLA)</MenuItem>
+                                <MenuItem value="MEDIUM">Medium (24 Hours SLA)</MenuItem>
+                                <MenuItem value="LOW">Low (72 Hours SLA)</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        <TextField
+                            fullWidth
+                            size="small"
+                            type="datetime-local"
+                            label="Target Due Date & Time"
+                            slotProps={{ 
+                                inputLabel: { shrink: true }
+                            }}
+                            value={slaDueDate}
+                            onChange={(e) => setSlaDueDate(e.target.value)}
+                            helperText="Calculated from priority SLA, or customize as needed"
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, px: 3 }}>
+                    <Button onClick={() => setSlaModalOpen(false)} disabled={updatingSla}>Cancel</Button>
+                    <Button variant="contained" onClick={handleSlaUpdate} disabled={updatingSla}>
+                        {updatingSla ? 'Updating...' : 'Save Changes'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             <Dialog open={rejectModalOpen} onClose={() => setRejectModalOpen(false)} maxWidth="sm" fullWidth>
                 <DialogTitle>Reject Ticket</DialogTitle>
                 <DialogContent>
@@ -923,6 +1284,42 @@ const TicketDetail = () => {
                     <Button onClick={() => setRejectModalOpen(false)}>Cancel</Button>
                     <Button variant="contained" color="error" onClick={handleReject} disabled={rejecting || !rejectReason.trim()}>
                         {rejecting ? 'Rejecting...' : 'Reject'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Admin Direct Status Update Modal */}
+            <Dialog open={adminDirectStatusModalOpen} onClose={() => setAdminDirectStatusModalOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+                <DialogTitle sx={{ fontWeight: 600 }}>
+                    {adminTargetStatus === 'RESOLVED' ? 'Mark Ticket as Resolved' : `Update Status to ${adminTargetStatus}`}
+                </DialogTitle>
+                <DialogContent dividers>
+                    <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                        {adminTargetStatus === 'RESOLVED'
+                            ? 'Please provide resolution notes or details of the action taken.'
+                            : 'Provide any optional notes regarding this work status change.'}
+                    </Typography>
+                    <TextField
+                        fullWidth
+                        multiline
+                        rows={3}
+                        label="Resolution Note / Comments"
+                        placeholder="Detail the work performed..."
+                        value={adminStatusNote}
+                        onChange={(e) => setAdminStatusNote(e.target.value)}
+                        size="small"
+                    />
+                </DialogContent>
+                <DialogActions sx={{ p: 2, px: 3 }}>
+                    <Button onClick={() => setAdminDirectStatusModalOpen(false)} color="inherit" sx={{ textTransform: 'none' }}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        color="success"
+                        onClick={handleAdminDirectStatus}
+                        disabled={updatingAdminStatus}
+                        sx={{ textTransform: 'none', borderRadius: 2, px: 3 }}
+                    >
+                        {updatingAdminStatus ? 'Saving...' : 'Confirm Resolution'}
                     </Button>
                 </DialogActions>
             </Dialog>

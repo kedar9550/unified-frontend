@@ -26,6 +26,7 @@ import {
   ListAlt,
   AssignmentInd,
   AccountTree,
+  Apartment,
   Assessment,
   Settings,
   CloudUpload,
@@ -80,6 +81,7 @@ export const ROLE_ROUTES = {
       text: "Value addition",
       icon: <AccountBalance />,
       nested: [
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/value-addition/contribution", icon: <WorkspacePremium /> },
       ],
@@ -177,7 +179,8 @@ export const ROLE_ROUTES = {
     //   text: "Special Data Entry",
     //   icon: <Description />,
     //   nested: [
-    //     { text: "Resource Utilization", path: "/uniprime/special-data-entry/resource-utilization" },
+    //     { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
+    { text: "Resource Utilization", path: "/uniprime/special-data-entry/resource-utilization", icon: <Assignment /> },
     //   ]
     // },
     {
@@ -193,10 +196,12 @@ export const ROLE_ROUTES = {
       icon: <SupportAgent />,
       nested: [
         { text: "Manage Services", path: "/service-desk/admin/manage-services", icon: <AccountTree /> },
+        { text: "Manage Blocks", path: "/service-desk/admin/manage-blocks", icon: <Apartment /> },
         { text: "Reports", path: "/service-desk/reports", icon: <Assessment /> },
         { text: "Feedback Analytics", path: "/service-desk/admin/feedback", icon: <Analytics /> }
       ]
-    }
+    },
+    { text: "Transactions", path: "/transactions", icon: <Payment /> }
   ],
 
   // Example for a future "Department HOD" role
@@ -293,6 +298,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -306,6 +312,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -319,6 +326,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -332,6 +340,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -345,6 +354,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -358,6 +368,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -371,6 +382,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -384,6 +396,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -397,6 +410,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -410,6 +424,7 @@ export const ROLE_ROUTES = {
       icon: <Verified />,
       nested: [
 
+        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/hod/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/hod/value-addition/contribution", icon: <WorkspacePremium /> }
       ]
@@ -457,11 +472,11 @@ export const ROLE_ROUTES = {
   "RESEARCH_DEAN": [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     {
-      text: "Approvals",
-      icon: <Verified />,
+      text: "Research",
+      icon: <LibraryBooks />,
       nested: [
         {
-          text: "Research",
+          text: "Approvals",
           path: "/research-dean/approvals"
         },
         // {
@@ -578,12 +593,30 @@ export const ROLE_ROUTES = {
 
   SERVICE_ADMIN: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
-
-    { text: "Service Team", path: "/service-desk/admin/team", icon: <GroupIcon /> },
     { text: "Manage Tickets", path: "/service-desk/admin/services", icon: <AssignmentTurnedIn /> },
+    { text: "Service Employees", path: "/service-desk/admin/team", icon: <GroupIcon /> },
     { text: "Reports", path: "/service-desk/reports", icon: <Analytics /> },
     { text: "Feedback Analytics", path: "/service-desk/admin/feedback", icon: <Analytics /> },
+  ],
 
+  CSR_ADMIN: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Manage Services", path: "/service-desk/admin/manage-services", icon: <AccountTree /> },
+    { text: "Manage Blocks", path: "/service-desk/admin/manage-blocks", icon: <Apartment /> },
+    { text: "Manage Tickets", path: "/service-desk/admin/services", icon: <AssignmentTurnedIn /> },
+    { text: "Service Employees", path: "/service-desk/admin/team", icon: <GroupIcon /> },
+    { text: "Reports", path: "/service-desk/reports", icon: <Analytics /> },
+    { text: "Feedback Analytics", path: "/service-desk/admin/feedback", icon: <Analytics /> },
+  ],
+
+  "CSR ADMIN": [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Manage Services", path: "/service-desk/admin/manage-services", icon: <AccountTree /> },
+    { text: "Manage Blocks", path: "/service-desk/admin/manage-blocks", icon: <Apartment /> },
+    { text: "Manage Tickets", path: "/service-desk/admin/services", icon: <AssignmentTurnedIn /> },
+    { text: "Service Employees", path: "/service-desk/admin/team", icon: <GroupIcon /> },
+    { text: "Reports", path: "/service-desk/reports", icon: <Analytics /> },
+    { text: "Feedback Analytics", path: "/service-desk/admin/feedback", icon: <Analytics /> },
   ],
 
   SERVICE_EMP: [

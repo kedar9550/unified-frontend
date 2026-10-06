@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { Search, Close, Download, Description, Groups, Article, Person, AttachFile, Visibility, Edit, CurrencyRupee, CardGiftcard } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
+import { Alert, AlertTitle } from "@mui/material";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn
@@ -86,7 +87,8 @@ const getMatchedSdgBadgeList = (sdgInput) => {
 };
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const JOURNAL_TYPES = ["SCI", "SCIE", "ESCI", "None"];
+const JOURNAL_TYPES = ["SCIE", "SCI", "ESCI", "SSCI", "AHCI", "None"];
+const JOURNAL_CATEGORIES = ["IEEE", "ASME", "ASCE", "ACM", "OTHERS"];
 const QUARTILE_OPTIONS = ["Q1", "Q2", "Q3", "Q4", "None"];
 const INCENTIVE_OPTIONS = ["National", "International"];
 
@@ -95,6 +97,7 @@ export default function JournalPublication() {
   const { user } = useAuth();
   const { startLoading, stopLoading } = useLoading();
   const [viewMode, setViewMode] = useState("list"); // 'list' | 'select-year' | 'form'
+  const [isNoDoiMode, setIsNoDoiMode] = useState(false);
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const academicYearSelectRef = useRef(null);
@@ -283,7 +286,7 @@ export default function JournalPublication() {
           ],
           [
             "Journal Quartile: *", "[ ] Q1  [ ] Q2  [ ] Q3  [ ] Q4  [ ] None",
-            "Type of Journal: *", "[ ] SCI  [ ] SCIE  [ ] ESCI  [ ] None"
+            "Type of Journal (WoS) : *", "[ ] SCIE  [ ] SCI  [ ] ESCI  [ ] SSCI  [ ] AHCI  [ ] None"
           ],
           [
             "Indexed in Scopus? *", "[ ] YES    [ ] NO",
@@ -334,6 +337,10 @@ export default function JournalPublication() {
         body: [
           [
             { content: "Are students involved in this work as co-authors? *", fontStyle: "bold", colSpan: 2 },
+            { content: "[ ] YES    [ ] NO", colSpan: 2 }
+          ],
+          [
+            { content: "Corresponding Author? *", fontStyle: "bold", colSpan: 2 },
             { content: "[ ] YES    [ ] NO", colSpan: 2 }
           ],
           [
@@ -505,25 +512,28 @@ export default function JournalPublication() {
 
   const emptyForm = {
     doi: "",
+    isNoDoi: "No",
     paperTitle: "",
     journalName: "",
     journalQuartile: "",
-    journalType: "",
+    journalType: "None",
+    isWos: "No",
+    journalCategory: "",
     vol: "",
     issue: "",
     pageNos: "",
-    hIndex: "",
-    jcrImpactFactor: "",
+    hIndex: "0",
+    jcrImpactFactor: "0",
     numberOfReferencesBelongingToAGEC: 0,
     agecReferencingNumbers: "",
     month: "",
     year: "",
     applyIncentive: "",
-    publicationScope: "",
     applyingSeedGrant: "",
     completeJournalName: "",
     sdgs: "",
     isStudentsInvolved: "No",
+    correspondingAuthor: "No",
     issn: "",
     eissn: "",
     isScopus: "No",
@@ -568,6 +578,7 @@ export default function JournalPublication() {
           authorPosition: i,
           CoAuthorType: "faculty",
           studentId: "",
+          studentQualification: "",
           affiliationType: "",
           empId: "",
           authorName: "",
@@ -578,6 +589,52 @@ export default function JournalPublication() {
     setForm(p => ({ ...p, otherAuthors: newOtherAuthors }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.totalAuthors, form.userAuthorPosition]);
+
+  const [estimatedIncentiveState, setEstimatedIncentiveState] = useState(null);
+  const [incentiveLoading, setIncentiveLoading] = useState(false);
+
+  // Live query backend incentive calculation API
+  useEffect(() => {
+    if (form.applyIncentive !== "Yes") {
+      setEstimatedIncentiveState(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        setIncentiveLoading(true);
+        const res = await API.post("/api/research/journal/calculate-incentive", {
+          ...form,
+          coAuthors: form.otherAuthors
+        });
+        setEstimatedIncentiveState(res.data);
+      } catch (err) {
+        setEstimatedIncentiveState({
+          success: false,
+          message: err.response?.data?.message || "Failed to calculate incentive"
+        });
+      } finally {
+        setIncentiveLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [
+    form.applyIncentive,
+    form.journalQuartile,
+    form.journalCategory,
+    form.userAuthorPosition,
+    form.correspondingAuthor,
+    form.numberOfReferencesBelongingToAGEC,
+    form.jcrImpactFactor,
+    form.hIndex,
+    form.isScopus,
+    form.isWos,
+    form.journalType,
+    form.isStudentsInvolved,
+    form.otherAuthors,
+    form.applyingSeedGrant
+  ]);
 
   useEffect(() => {
     API.get("/api/research/journal")
@@ -597,12 +654,14 @@ export default function JournalPublication() {
         newForm.paperTitle = "";
         newForm.journalName = "";
         newForm.journalQuartile = "";
-        newForm.journalType = "";
+        newForm.journalType = "None";
+        newForm.isWos = "No";
+        newForm.journalCategory = "";
         newForm.vol = "";
         newForm.issue = "";
         newForm.pageNos = "";
-        newForm.hIndex = "";
-        newForm.jcrImpactFactor = "";
+        newForm.hIndex = "0";
+        newForm.jcrImpactFactor = "0";
         newForm.month = "";
         newForm.year = "";
         newForm.sdgs = "";
@@ -615,17 +674,26 @@ export default function JournalPublication() {
         setScannedSdgResults(null);
       }
       if (k === "isStudentsInvolved") {
+        if (val === "Yes") {
+          if (parseInt(newForm.totalAuthors) < 2 || isNaN(parseInt(newForm.totalAuthors))) {
+            newForm.totalAuthors = 2;
+          }
+        }
         if (val === "No") {
-          newForm.otherAuthors = newForm.otherAuthors.map(a => ({
+          newForm.otherAuthors = (newForm.otherAuthors || []).map(a => ({
             ...a,
             CoAuthorType: "faculty",
             studentId: "",
+            studentQualification: "",
             authorName: a.CoAuthorType === "student" ? "" : a.authorName,
             empId: a.CoAuthorType === "student" ? "" : a.empId
           }));
-          newForm.applyIncentive = "";
-        } else if (val === "Yes") {
+        }
+        const hasPg = val === "Yes" && (newForm.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+        if (hasPg) {
           newForm.applyIncentive = "No";
+        } else {
+          newForm.applyIncentive = "";
         }
       }
       return newForm;
@@ -652,9 +720,9 @@ export default function JournalPublication() {
 
   const validateFile = (file) => {
     if (!file) return true;
-    const allowed = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
-    if (!allowed.includes(file.type)) { toast.error("Only PDF, JPG, and PNG files are allowed"); return false; }
-    if (file.size > 500 * 1024) { toast.error("File size exceeds 500KB limit"); return false; }
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (!isPdf) { toast.error("Only PDF files are allowed"); return false; }
+    if (file.size > 200 * 1024) { toast.error("File size exceeds 200KB limit"); return false; }
     return true;
   };
 
@@ -796,6 +864,9 @@ export default function JournalPublication() {
       const fetched = {};
       const patch = {};
 
+      const resolvedJournalType = (data.journalType && ["SCIE", "SCI", "ESCI", "SSCI", "AHCI"].includes(data.journalType)) ? data.journalType : "None";
+      const resolvedIsWos = data.isWos || (resolvedJournalType !== "None" ? "Yes" : "No");
+
       const map = {
         paperTitle: data.title,
         journalName: data.journalName,
@@ -805,11 +876,14 @@ export default function JournalPublication() {
         month: data.month,
         year: data.year,
         journalQuartile: data.journalQuartile,
-        journalType: data.journalType,
+        journalType: resolvedJournalType,
+        isWos: resolvedIsWos,
         issn: data.issn || "",
         eissn: data.eissn || "",
         isScopus: data.isScopus || "No",
-        citations: data.citations || ""
+        citations: data.citations || "",
+        jcrImpactFactor: data.jcrImpactFactor !== undefined && data.jcrImpactFactor !== null ? String(data.jcrImpactFactor) : "0",
+        hIndex: data.hIndex !== undefined && data.hIndex !== null ? String(data.hIndex) : "0"
       };
 
       Object.entries(map).forEach(([k, v]) => {
@@ -854,39 +928,58 @@ export default function JournalPublication() {
   };
 
   const handleCoAuthorChange = (pos, field, value) => {
-    const updated = form.otherAuthors.map(a => {
-      if (a.authorPosition !== pos) return a;
-      const newA = { ...a, [field]: value };
+    setForm(p => {
+      const hadPg = p.isStudentsInvolved === "Yes" && (p.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+      const updated = p.otherAuthors.map(a => {
+        if (a.authorPosition !== pos) return a;
+        const newA = { ...a, [field]: value };
 
-      if (field === "CoAuthorType") {
-        if (value === "student") {
-          newA.empId = "";
-          newA.affiliationType = "Aditya University";
-          newA.affiliationName = "Aditya University";
-          newA.authorName = "";
-        } else {
-          newA.studentId = "";
-          newA.authorName = "";
+        if (field === "CoAuthorType") {
+          if (value === "student") {
+            newA.empId = "";
+            newA.affiliationType = "Aditya University";
+            newA.affiliationName = "Aditya University";
+            newA.authorName = "";
+            newA.studentQualification = "";
+          } else {
+            newA.studentId = "";
+            newA.authorName = "";
+            newA.studentQualification = "";
+          }
         }
+
+        if (field === "affiliationType") {
+          if (value === "Aditya University") {
+            newA.affiliationName = "Aditya University";
+            newA.authorName = "";
+            newA.empId = "";
+          } else {
+            newA.affiliationName = "";
+            newA.empId = "";
+            newA.authorName = "";
+          }
+        }
+        return newA;
+      });
+
+      const hasPg = p.isStudentsInvolved === "Yes" && updated.some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+
+      let newApplyIncentive = p.applyIncentive;
+      if (hasPg) {
+        newApplyIncentive = "No";
+      } else if (field === "studentQualification" || (hadPg && !hasPg) || field === "CoAuthorType") {
+        newApplyIncentive = "";
       }
 
-      if (field === "affiliationType") {
-        if (value === "Aditya University") {
-          newA.affiliationName = "Aditya University";
-          newA.authorName = "";
-          newA.empId = "";
-        } else {
-          newA.affiliationName = "";
-          newA.empId = "";
-          newA.authorName = "";
-        }
-      }
-      return newA;
+      return {
+        ...p,
+        otherAuthors: updated,
+        applyIncentive: newApplyIncentive
+      };
     });
-    setForm(p => ({ ...p, otherAuthors: updated }));
 
     if (field === "empId" && value.length >= 3) {
-      const author = updated.find(a => a.authorPosition === pos);
+      const author = form.otherAuthors.find(a => a.authorPosition === pos);
       if (author?.affiliationType === "Aditya University") fetchCoAuthorName(pos, value);
     }
   };
@@ -896,22 +989,41 @@ export default function JournalPublication() {
     const val = e.target.value;
     setForm((prev) => {
       let newForm = { ...prev, isStudentsInvolved: val };
+      
+      // If previous value was "No" and new is "Yes", increment by 1
+      if (prev.isStudentsInvolved === "No" && val === "Yes") {
+        if (parseInt(newForm.totalAuthors) == 1) {
+          newForm.totalAuthors = parseInt(newForm.totalAuthors) + 1;
+        }
+      } 
+      // If previous value was "Yes" and new is "No", decrement by 1
+      else if (prev.isStudentsInvolved === "Yes" && val === "No") {
+        if (parseInt(newForm.totalAuthors) == 2) {
+          newForm.totalAuthors = parseInt(newForm.totalAuthors) - 1;
+        }
+      }
 
-      if (val === "Yes") {
-        newForm.applyIncentive = "No";
-      } else {
-        newForm.applyIncentive = "";
+      if (val === "No") {
         if (newForm.otherAuthors) {
           newForm.otherAuthors = newForm.otherAuthors.map(author => {
             const newAuthor = { ...author };
             delete newAuthor.CoAuthorType;
             delete newAuthor.studentId;
+            delete newAuthor.studentQualification;
             if (author.CoAuthorType === "student" && newAuthor.affiliationType === "Aditya University") {
               newAuthor.affiliationType = "";
             }
             return newAuthor;
           });
         }
+        newForm.applyIncentive = "";
+      }
+
+      const hasPg = val === "Yes" && (newForm.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+      if (hasPg) {
+        newForm.applyIncentive = "No";
+      } else if (val === "Yes") {
+        newForm.applyIncentive = "";
       }
       return newForm;
     });
@@ -926,7 +1038,19 @@ export default function JournalPublication() {
       toast.error("Please update your profile with PAN Number and College before submitting");
       return;
     }
-    if (!form.doi || !form.paperTitle || !form.journalName || !form.month || !form.year || !form.journalQuartile || !form.journalType || !form.isScopus) {
+    if (
+      !form.doi ||
+      !form.paperTitle ||
+      !form.journalName ||
+      !form.month ||
+      !form.year ||
+      !form.journalQuartile ||
+      !form.journalType ||
+      !form.journalCategory ||
+      !form.isScopus ||
+      !form.issn ||
+      !form.eissn
+    ) {
       toast.error("Please fill all mandatory fields (*)");
       return;
     }
@@ -945,12 +1069,32 @@ export default function JournalPublication() {
       toast.error("Please select whether applying as a Seed Grant Work");
       return;
     }
+    if (isNoDoiMode) {
+      if (!form.paperTitle || !form.paperTitle.trim()) {
+        toast.error("Title of the Article is mandatory");
+        return;
+      }
+      if (!form.journalName || !form.journalName.trim()) {
+        toast.error("Name of the Journal is mandatory");
+        return;
+      }
+      if (!form.journalQuartile) {
+        toast.error("Journal Quartile is mandatory");
+        return;
+      }
+      if (!form.year || !form.month) {
+        toast.error("Publication Year and Month are mandatory");
+        return;
+      }
+    }
+
     if (!form.applyIncentive) {
       toast.error("Please select whether you want to apply for an incentive");
       return;
     }
-    if (!form.publicationScope) {
-      toast.error("Please select National or International for Publication Scope");
+
+    if (form.applyIncentive === "Yes" && estimatedIncentiveState && !estimatedIncentiveState.success) {
+      toast.error(estimatedIncentiveState.message || "Please provide mandatory fields to calculate estimated incentive.");
       return;
     }
 
@@ -966,9 +1110,9 @@ export default function JournalPublication() {
           !a.affiliationType ||
           (a.affiliationType === "Others" && (!a.authorName || !a.affiliationName)) ||
           (a.affiliationType === "Aditya University" && a.CoAuthorType === "faculty" && (!a.empId || !a.authorName)) ||
-          (a.affiliationType === "Aditya University" && a.CoAuthorType === "student" && (!a.studentId || !a.authorName))
+          (a.affiliationType === "Aditya University" && a.CoAuthorType === "student" && (!a.studentId || !a.authorName || !a.studentQualification))
         ) {
-          toast.error(`Please complete details for Author Position ${a.authorPosition}.`);
+          toast.error(`Please complete details and qualification for Author Position ${a.authorPosition}.`);
           return;
         }
       }
@@ -995,18 +1139,24 @@ export default function JournalPublication() {
         affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliationName || ""),
         employeeId: (a.affiliationType === "Aditya University" && a.CoAuthorType !== "student") ? a.empId : null,
         studentId: (a.affiliationType === "Aditya University" && a.CoAuthorType === "student") ? a.studentId : null,
+        studentQualification: (a.affiliationType === "Aditya University" && a.CoAuthorType === "student") ? (a.studentQualification || null) : null,
         CoAuthorType: form.isStudentsInvolved === "Yes" ? (a.CoAuthorType || "faculty") : "faculty",
         authorPosition: a.authorPosition
       })).filter(ca => ca.name && ca.affiliation);
 
       const fields = [
-        "doi", "paperTitle", "journalName", "journalType",
-        "vol", "issue", "agecReferencingNumbers", "applyIncentive", "publicationScope",
+        "doi", "isNoDoi", "paperTitle", "journalName", "journalType", "journalCategory",
+        "vol", "issue", "agecReferencingNumbers", "applyIncentive",
         "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor", "isStudentsInvolved",
+        "correspondingAuthor",
         "issn", "eissn", "isScopus", "citations"
       ];
       fields.forEach(k => {
-        fd.append(k, form[k] ?? "");
+        let val = form[k] ?? "";
+        if (k === "hIndex" && (val === "" || val === undefined || val === null)) val = "0";
+        if (k === "jcrImpactFactor" && (val === "" || val === undefined || val === null)) val = "0";
+        if (k === "applyIncentive" && parseInt(form.userAuthorPosition) > 5) val = "No";
+        fd.append(k, val);
       });
 
       fd.append("numberOfReferencesBelongingToAGEC", form.numberOfReferencesBelongingToAGEC || 0);
@@ -1038,6 +1188,7 @@ export default function JournalPublication() {
       setFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
       setExistingFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
       setEditJournalId(null);
+      setIsNoDoiMode(false);
       setDoiFetched(false);
       setDoiFetchedFields({});
       setSelectedYear("");
@@ -1052,14 +1203,18 @@ export default function JournalPublication() {
   const handleEditJournal = (pub) => {
     setEditJournalId(pub._id);
     setSelectedYear(pub.academicYear?._id || pub.academicYear);
+    const isNoDoiPub = pub.isNoDoi === 'Yes' || (pub.doi && String(pub.doi).startsWith('NODOI'));
+    setIsNoDoiMode(isNoDoiPub);
 
     // Set form fields
     setForm({
       doi: pub.doi || "",
+      isNoDoi: isNoDoiPub ? "Yes" : "No",
       paperTitle: pub.paperTitle || "",
       journalName: pub.journalName || "",
       journalQuartile: pub.journalQuartile || pub.categoryOfJournal || "",
       journalType: pub.journalType || "",
+      journalCategory: pub.journalCategory || "",
       vol: pub.vol || "",
       issue: pub.issue || "",
       pageNos: pub.pageNos || pub.pageRange || "",
@@ -1070,11 +1225,11 @@ export default function JournalPublication() {
       month: pub.publishedMonth || pub.month || "",
       year: pub.publishedYear || pub.year || "",
       applyIncentive: pub.applyIncentive || pub.incentiveApplied || "",
-      publicationScope: pub.publicationScope || "",
       applyingSeedGrant: pub.applyingSeedGrant || "",
       completeJournalName: pub.completeJournalName || "",
       sdgs: pub.sdgs || "",
       isStudentsInvolved: pub.isStudentsInvolved || "No",
+      correspondingAuthor: pub.correspondingAuthor || "No",
       issn: pub.issn || "",
       eissn: pub.eissn || "",
       isScopus: pub.isScopus || "No",
@@ -1085,6 +1240,7 @@ export default function JournalPublication() {
         authorPosition: ca.authorPosition,
         CoAuthorType: ca.CoAuthorType || "faculty",
         studentId: ca.studentId || "",
+        studentQualification: ca.studentQualification || "",
         affiliationType: ca.affiliation || "",
         empId: ca.employeeId || "",
         authorName: ca.name || "",
@@ -1103,6 +1259,40 @@ export default function JournalPublication() {
     setViewMode("form");
   };
 
+  const handleOpenManualEntry = () => {
+    const activeYearDoc = academicYears.find(y => y.active) || academicYears[0];
+    if (!activeYearDoc) {
+      setNoActiveYearAlertOpen(true);
+      return;
+    }
+    const dummyDoi = `NODOI-AUS-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
+    setSelectedYear(activeYearDoc._id);
+    setIsNoDoiMode(true);
+    setEditJournalId(null);
+    setDoiFetched(false);
+    setDoiFetchedFields({});
+    setForm({
+      ...emptyForm,
+      doi: dummyDoi,
+      isNoDoi: "Yes"
+    });
+    setFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
+    setExistingFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
+    setViewMode("form");
+  };
+
+  const handleOpenApplyNew = () => {
+    const activeYear = academicYears.length > 0;
+    if (activeYear) {
+      setIsNoDoiMode(false);
+      setEditJournalId(null);
+      setSelectedYear("");
+      setViewMode("select-year");
+    } else {
+      setNoActiveYearAlertOpen(true);
+    }
+  };
+
   // ── Render helpers ────────────────────────────────────────────────────────────
   const renderList = () => (
     <Box>
@@ -1119,8 +1309,8 @@ export default function JournalPublication() {
         <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
           <Button
             variant="outlined"
-            startIcon={<Download />}
-            onClick={() => generateOfflineFormPDF(user)}
+            startIcon={<Edit />}
+            onClick={handleOpenManualEntry}
             sx={{
               borderColor: "var(--color-primary)",
               color: "var(--color-primary)",
@@ -1134,20 +1324,12 @@ export default function JournalPublication() {
               }
             }}
           >
-            Download Offline Form
+            Manual Entry (Without DOI)
           </Button>
 
           <Button
             variant="contained"
-            onClick={() => {
-              const activeYear = academicYears.length > 0;
-              if (activeYear) {
-                setSelectedYear("");
-                setViewMode("select-year");
-              } else {
-                setNoActiveYearAlertOpen(true);
-              }
-            }}
+            onClick={handleOpenApplyNew}
             sx={{ background: "var(--gradient-primary)", px: 3, fontWeight: 700, textTransform: "none", "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }, transition: "all 0.2s ease" }}
           >
             Apply New
@@ -1193,7 +1375,25 @@ export default function JournalPublication() {
             <TableBody>
               {publicationsList.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((pub, i) => (
                 <TableRow key={pub._id || i} sx={{ "&:hover": { background: "var(--bg-accent-1)" }, transition: "background 0.15s" }}>
-                  <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2, maxWidth: 200 }}>{pub.paperTitle || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2, maxWidth: 220 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, flexWrap: "wrap" }}>
+                      <span>{pub.paperTitle || "N/A"}</span>
+                      {(pub.isNoDoi === 'Yes' || (pub.doi && String(pub.doi).startsWith('NODOI'))) && (
+                        <Chip
+                          label="No DOI"
+                          size="small"
+                          sx={{
+                            height: 19,
+                            fontSize: "0.65rem",
+                            fontWeight: 800,
+                            bgcolor: "rgba(234, 88, 12, 0.12)",
+                            color: "#ea580c",
+                            border: "1px solid rgba(234, 88, 12, 0.3)"
+                          }}
+                        />
+                      )}
+                    </Box>
+                  </TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.journalName || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.journalQuartile || pub.categoryOfJournal || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
@@ -1346,75 +1546,98 @@ export default function JournalPublication() {
   const isFetched = (field) => doiFetched && doiFetchedFields[field];
 
   const renderForm = () => (
-    <FormCard title="Journal Publication Submission">
+    <FormCard title={isNoDoiMode ? "Journal Publication Manual Entry (Without DOI)" : "Journal Publication Submission"}>
       {/* Academic Year Selection */}
-      <Box sx={{ mb: 3, display: "flex", alignItems: "center", gap: 2 }}>
+      <Box sx={{ mb: 3, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
         <Typography sx={{ ...labelStyle, mb: 0 }}>Academic Year :</Typography>
         <Select
           size="small"
           value={selectedYear}
           onChange={(e) => setSelectedYear(e.target.value)}
-          sx={{ minWidth: 150, background: "var(--bg-panel)", ...(!editJournalId ? disabledField : {}) }}
-          disabled={!editJournalId}
+          sx={{ minWidth: 160, background: "var(--bg-panel)", ...((!editJournalId || isNoDoiMode) ? disabledField : {}) }}
+          disabled={!editJournalId || isNoDoiMode}
         >
           {academicYears.map(y => (
-            <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
+            <MenuItem key={y._id} value={y._id}>{y.year} {y.active ? "(Active)" : ""}</MenuItem>
           ))}
         </Select>
+        {isNoDoiMode && (
+          <Chip label="Fixed Active Academic Year" size="small" sx={{ bgcolor: "rgba(16, 185, 129, 0.1)", color: "#10b981", fontWeight: 700 }} />
+        )}
       </Box>
 
       <FacultyInfoRow />
 
       {/* ── DOI Section ── */}
-      <Box sx={{ mb: 2.5, p: 2.5, borderRadius: "12px", border: "2px solid var(--color-primary)", background: "var(--bg-accent-1)", boxShadow: "0 2px 12px rgba(var(--color-primary-rgb,99,102,241),0.08)" }}>
-        <Typography sx={{ ...labelStyle, color: "var(--color-primary)", mb: 1 }}>
-          DOI (Digital Object Identifier) : *
-          <span style={{ fontWeight: 400, textTransform: "none", fontSize: 10, opacity: 0.7 }}> — Enter DOI to auto-fill details (only journal papers accepted)</span>
-        </Typography>
-        <Box sx={{ display: "flex", gap: 1.5, flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "stretch", sm: "flex-start" } }}>
+      {isNoDoiMode ? (
+        <Box sx={{ mb: 2.5, p: 2.5, borderRadius: "12px", border: "2px dashed #ea580c", background: "rgba(234, 88, 12, 0.04)" }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1, flexWrap: "wrap", gap: 1 }}>
+            <Typography sx={{ ...labelStyle, color: "#ea580c", mb: 0, fontWeight: 800 }}>
+              DOI (Digital Object Identifier) :
+            </Typography>
+            <Chip label="Manual Entry Mode (No DOI)" size="small" sx={{ bgcolor: "rgba(234, 88, 12, 0.15)", color: "#ea580c", fontWeight: 800 }} />
+          </Box>
           <TextField
             size="small"
             fullWidth
             value={form.doi}
-            onChange={set("doi")}
-            placeholder="e.g. 10.1038/s41598-024-12345-y"
-            onKeyDown={(e) => { if (e.key === "Enter") fetchDOIData(); }}
-            slotProps={{
-              input: {
-                sx: { background: "var(--bg-panel)" },
-                endAdornment: doiFetched ? (
-                  <Box component="span" sx={{ display: "flex", alignItems: "center", color: "#10b981", fontSize: 18, mr: 0.5 }}>✓</Box>
-                ) : null
-              }
-            }}
+            disabled={true}
+            sx={{ ...disabledField, background: "var(--bg-panel)" }}
+            helperText="System-generated dummy reference identifier (Non-editable). Please fill all publication details manually below."
+            FormHelperTextProps={{ sx: { fontSize: "0.75rem", color: "var(--text-secondary)", mt: 0.5 } }}
           />
-          <Button
-            variant="contained"
-            onClick={fetchDOIData}
-            disabled={doiFetching || !form.doi.trim()}
-            sx={{
-              width: { xs: "100%", sm: "auto" },
-              minWidth: 110,
-              height: "40px",
-              background: "var(--gradient-primary)",
-              textTransform: "none",
-              fontWeight: 700,
-              flexShrink: 0,
-              "&:hover": { opacity: 0.9 },
-              "&.Mui-disabled": { opacity: 0.5 }
-            }}
-          >
-            {doiFetching ? "Fetching..." : "Fetch Details"}
-          </Button>
         </Box>
-        {doiFetched && (
-          <Typography sx={{ mt: 1, fontSize: 11, color: form.isScopus === "Yes" ? "#10b981" : "#f59e0b", fontWeight: 700 }}>
-            {form.isScopus === "Yes"
-              ? "✓ Details auto-filled from Scopus. Review and complete any remaining fields below."
-              : "✓ Details auto-filled from Crossref (Not found in Scopus). Review and complete any remaining fields below."}
+      ) : (
+        <Box sx={{ mb: 2.5, p: 2.5, borderRadius: "12px", border: "2px solid var(--color-primary)", background: "var(--bg-accent-1)", boxShadow: "0 2px 12px rgba(var(--color-primary-rgb,99,102,241),0.08)" }}>
+          <Typography sx={{ ...labelStyle, color: "var(--color-primary)", mb: 1 }}>
+            DOI (Digital Object Identifier) : *
+            <span style={{ fontWeight: 400, textTransform: "none", fontSize: 10, opacity: 0.7 }}> — Enter DOI to auto-fill details (only journal papers accepted)</span>
           </Typography>
-        )}
-      </Box>
+          <Box sx={{ display: "flex", gap: 1.5, flexDirection: { xs: "column", sm: "row" }, alignItems: { xs: "stretch", sm: "flex-start" } }}>
+            <TextField
+              size="small"
+              fullWidth
+              value={form.doi}
+              onChange={set("doi")}
+              placeholder="e.g. 10.1038/s41598-024-12345-y"
+              onKeyDown={(e) => { if (e.key === "Enter") fetchDOIData(); }}
+              slotProps={{
+                input: {
+                  sx: { background: "var(--bg-panel)" },
+                  endAdornment: doiFetched ? (
+                    <Box component="span" sx={{ display: "flex", alignItems: "center", color: "#10b981", fontSize: 18, mr: 0.5 }}>✓</Box>
+                  ) : null
+                }
+              }}
+            />
+            <Button
+              variant="contained"
+              onClick={fetchDOIData}
+              disabled={doiFetching || !form.doi.trim()}
+              sx={{
+                width: { xs: "100%", sm: "auto" },
+                minWidth: 110,
+                height: "40px",
+                background: "var(--gradient-primary)",
+                textTransform: "none",
+                fontWeight: 700,
+                flexShrink: 0,
+                "&:hover": { opacity: 0.9 },
+                "&.Mui-disabled": { opacity: 0.5 }
+              }}
+            >
+              {doiFetching ? "Fetching..." : "Fetch Details"}
+            </Button>
+          </Box>
+          {doiFetched && (
+            <Typography sx={{ mt: 1, fontSize: 11, color: form.isScopus === "Yes" ? "#10b981" : "#f59e0b", fontWeight: 700 }}>
+              {form.isScopus === "Yes"
+                ? "✓ Details auto-filled from Scopus. Review and complete any remaining fields below."
+                : "✓ Details auto-filled from Crossref (Not found in Scopus). Review and complete any remaining fields below."}
+            </Typography>
+          )}
+        </Box>
+      )}
 
       {/* ── Article Details ── */}
       <SubLabel text="Details of the Journal Article:" />
@@ -1422,32 +1645,82 @@ export default function JournalPublication() {
         {/* Title */}
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
           <Typography sx={labelStyle}>Title of the Article : *</Typography>
-          <TextField size="small" fullWidth multiline rows={2} value={form.paperTitle} onChange={set("paperTitle")} disabled={true} sx={disabledField} placeholder="Auto-filled from DOI" />
+          <TextField
+            size="small"
+            fullWidth
+            multiline
+            rows={2}
+            value={form.paperTitle}
+            onChange={set("paperTitle")}
+            disabled={!isNoDoiMode && !editJournalId}
+            sx={(!isNoDoiMode && !editJournalId) ? disabledField : {}}
+            placeholder={isNoDoiMode ? "Enter Title of the Article" : "Auto-filled from DOI"}
+          />
         </Box>
 
         {/* Journal Name */}
         <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
           <Typography sx={labelStyle}>Name of the Journal : *</Typography>
-          <TextField size="small" fullWidth value={form.journalName} onChange={set("journalName")} disabled={true} sx={disabledField} placeholder="Auto-filled from DOI" />
+          <TextField
+            size="small"
+            fullWidth
+            value={form.journalName}
+            onChange={set("journalName")}
+            disabled={!isNoDoiMode && !editJournalId}
+            sx={(!isNoDoiMode && !editJournalId) ? disabledField : {}}
+            placeholder={isNoDoiMode ? "Enter Name of the Journal" : "Auto-filled from DOI"}
+          />
         </Box>
 
         {/* Quartile */}
         <Box>
           <Typography sx={labelStyle}>Journal Quartile : *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.journalQuartile} onChange={set("journalQuartile")} disabled={true} sx={disabledField}>
-            <MenuItem value="">Auto-filled from DOI</MenuItem>
+          <Select
+            size="small"
+            fullWidth
+            displayEmpty
+            value={form.journalQuartile}
+            onChange={set("journalQuartile")}
+            disabled={!isNoDoiMode && !editJournalId}
+            sx={(!isNoDoiMode && !editJournalId) ? disabledField : {}}
+          >
+            <MenuItem value="">{isNoDoiMode ? "Select Quartile" : "Auto-filled from DOI"}</MenuItem>
             {QUARTILE_OPTIONS.map(q => <MenuItem key={q} value={q}>{q}</MenuItem>)}
           </Select>
         </Box>
 
         {/* Journal Type */}
         <Box>
-          <Typography sx={labelStyle}>Type of Journal : *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.journalType || ""} onChange={set("journalType")} disabled={true} sx={disabledField}>
-            <MenuItem value="">Auto-filled from DOI</MenuItem>
-            {(form.journalType && !JOURNAL_TYPES.includes(form.journalType)
-              ? [...JOURNAL_TYPES, form.journalType]
-              : JOURNAL_TYPES
+          <Typography sx={labelStyle}>Type of Journal (WoS) : *</Typography>
+          <Select
+            size="small"
+            fullWidth
+            displayEmpty
+            value={form.journalType || "None"}
+            onChange={(e) => {
+              const val = e.target.value;
+              setForm(p => ({
+                ...p,
+                journalType: val,
+                isWos: (val && val !== "None") ? "Yes" : "No"
+              }));
+            }}
+            disabled={!isNoDoiMode && !editJournalId}
+            sx={(!isNoDoiMode && !editJournalId) ? disabledField : {}}
+          >
+            <MenuItem value="None">{isNoDoiMode ? "None (Not WoS)" : "Auto-filled from DOI"}</MenuItem>
+            {JOURNAL_TYPES.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+          </Select>
+        </Box>
+
+        {/* Journal Category */}
+        <Box>
+          <Typography sx={labelStyle}>Journal Category : *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.journalCategory || ""} onChange={set("journalCategory")}>
+            <MenuItem value="">Select Category</MenuItem>
+            {(form.journalCategory && !JOURNAL_CATEGORIES.includes(form.journalCategory)
+              ? [...JOURNAL_CATEGORIES, form.journalCategory]
+              : JOURNAL_CATEGORIES
             ).map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
           </Select>
         </Box>
@@ -1455,19 +1728,94 @@ export default function JournalPublication() {
         {/* Indexed in Scopus */}
         <Box>
           <Typography sx={labelStyle}>Indexed in Scopus : *</Typography>
-          <TextField size="small" fullWidth value={form.isScopus || ""} disabled={true} sx={disabledField} placeholder="Auto-filled from DOI" />
+          {isNoDoiMode ? (
+            <Select
+              size="small"
+              fullWidth
+              value={form.isScopus || "No"}
+              onChange={set("isScopus")}
+            >
+              <MenuItem value="No">No</MenuItem>
+              <MenuItem value="Yes">Yes</MenuItem>
+            </Select>
+          ) : (
+            <TextField size="small" fullWidth value={form.isScopus || ""} disabled={true} sx={disabledField} placeholder="Auto-filled from DOI" />
+          )}
+        </Box>
+
+        {/* ISSN */}
+        <Box>
+          <Typography sx={labelStyle}>ISSN : *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            value={form.issn || ""}
+            onChange={set("issn")}
+            disabled={!isNoDoiMode && isFetched("issn")}
+            sx={(!isNoDoiMode && isFetched("issn")) ? disabledField : {}}
+            placeholder={(!isNoDoiMode && isFetched("issn")) ? "Auto-filled from DOI" : "Enter ISSN (e.g. 1234-5678)"}
+          />
+        </Box>
+
+        {/* e-ISSN */}
+        <Box>
+          <Typography sx={labelStyle}>e-ISSN : *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            value={form.eissn || ""}
+            onChange={set("eissn")}
+            disabled={!isNoDoiMode && isFetched("eissn")}
+            sx={(!isNoDoiMode && isFetched("eissn")) ? disabledField : {}}
+            placeholder={(!isNoDoiMode && isFetched("eissn")) ? "Auto-filled from DOI" : "Enter e-ISSN (e.g. 1234-5678)"}
+          />
+        </Box>
+
+        {/* H-Index */}
+        <Box>
+          <Typography sx={labelStyle}>H-Index : *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            type="number"
+            value={form.hIndex === "" || form.hIndex === undefined || form.hIndex === null ? "0" : form.hIndex}
+            onChange={set("hIndex")}
+            placeholder="0"
+            helperText="Default is 0, update if applicable"
+            FormHelperTextProps={{ sx: { fontSize: "0.75rem", color: "var(--text-secondary)", mt: 0.5 } }}
+          />
+        </Box>
+
+        {/* JCR Impact Factor */}
+        <Box>
+          <Typography sx={labelStyle}>JCR Impact Factor : *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            value={form.jcrImpactFactor === "" || form.jcrImpactFactor === undefined || form.jcrImpactFactor === null ? "0" : form.jcrImpactFactor}
+            onChange={set("jcrImpactFactor")}
+            placeholder="0"
+            helperText="Default is 0, update if applicable"
+            FormHelperTextProps={{ sx: { fontSize: "0.75rem", color: "var(--text-secondary)", mt: 0.5 } }}
+          />
         </Box>
 
         {/* Vol */}
         <Box>
           <Typography sx={labelStyle}>Vol :</Typography>
-          <TextField size="small" fullWidth value={form.vol} onChange={set("vol")} disabled={isFetched("vol")} sx={isFetched("vol") ? disabledField : {}} />
+          <TextField size="small" fullWidth value={form.vol} onChange={set("vol")} disabled={!isNoDoiMode && isFetched("vol")} sx={(!isNoDoiMode && isFetched("vol")) ? disabledField : {}} />
         </Box>
 
         {/* Issue */}
         <Box>
           <Typography sx={labelStyle}>Issue :</Typography>
-          <TextField size="small" fullWidth value={form.issue} onChange={set("issue")} disabled={isFetched("issue")} sx={isFetched("issue") ? disabledField : {}} />
+          <TextField size="small" fullWidth value={form.issue} onChange={set("issue")} disabled={!isNoDoiMode && isFetched("issue")} sx={(!isNoDoiMode && isFetched("issue")) ? disabledField : {}} />
+        </Box>
+
+        {/* Page Nos */}
+        <Box>
+          <Typography sx={labelStyle}>Page Nos :</Typography>
+          <TextField size="small" fullWidth value={form.pageNos} onChange={set("pageNos")} disabled={!isNoDoiMode && isFetched("pageNos")} sx={(!isNoDoiMode && isFetched("pageNos")) ? disabledField : {}} placeholder="e.g. 100-110" />
         </Box>
 
         {/* Referencing Nos */}
@@ -1491,7 +1839,7 @@ export default function JournalPublication() {
           <Typography sx={labelStyle}>Year : *</Typography>
           <Select size="small" fullWidth displayEmpty value={form.year} onChange={(e) => {
             setForm(p => ({ ...p, year: e.target.value, month: "" }));
-          }} disabled={isFetched("year")} sx={isFetched("year") ? disabledField : {}}>
+          }} disabled={!isNoDoiMode && isFetched("year")} sx={(!isNoDoiMode && isFetched("year")) ? disabledField : {}}>
             <MenuItem value="">Select Year</MenuItem>
             {(form.year && !YEARS.includes(String(form.year))
               ? [...YEARS, String(form.year)].sort((a, b) => Number(b) - Number(a))
@@ -1501,7 +1849,7 @@ export default function JournalPublication() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Month : *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={(!form.year) || (isFetched("month") && !!form.month)} sx={(isFetched("month") && !!form.month) ? disabledField : {}}>
+          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={(!form.year) || (!isNoDoiMode && isFetched("month") && !!form.month)} sx={(!isNoDoiMode && isFetched("month") && !!form.month) ? disabledField : {}}>
             <MenuItem value="">Select Month</MenuItem>
             {getAvailableMonths().map(m => <MenuItem key={m} value={m}>{m}</MenuItem>)}
           </Select>
@@ -1515,6 +1863,13 @@ export default function JournalPublication() {
           <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
             <Typography sx={{ ...labelStyle, mb: 0 }}>Are students involved in this work as co-authors? *</Typography>
             <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={handleStudentsInvolvedChange}>
+              <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+              <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+            </RadioGroup>
+          </Box>
+          <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+            <Typography sx={{ ...labelStyle, mb: 0 }}>Corresponding Author : *</Typography>
+            <RadioGroup row value={form.correspondingAuthor || "No"} onChange={set("correspondingAuthor")}>
               <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
               <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
             </RadioGroup>
@@ -1588,7 +1943,7 @@ export default function JournalPublication() {
                   {ca.affiliationType === "Aditya University" ? (
                     ca.CoAuthorType === "student" ? (
                       <>
-                        <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
+                        <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "110px" } }}>
                           <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT ROLL NO</Typography>
                           <TextField
                             size="small"
@@ -1598,7 +1953,7 @@ export default function JournalPublication() {
                             placeholder="e.g. 21A91A0501"
                           />
                         </Box>
-                        <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
+                        <Box sx={{ flex: 1.5, minWidth: { xs: "100%", sm: "160px" } }}>
                           <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT NAME</Typography>
                           <TextField
                             size="small"
@@ -1607,6 +1962,21 @@ export default function JournalPublication() {
                             onChange={(e) => handleCoAuthorChange(ca.authorPosition, "authorName", e.target.value)}
                             placeholder="Full Name"
                           />
+                        </Box>
+                        <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "110px" } }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>QUALIFICATION</Typography>
+                          <Select
+                            size="small"
+                            fullWidth
+                            displayEmpty
+                            value={ca.studentQualification || ""}
+                            onChange={(e) => handleCoAuthorChange(ca.authorPosition, "studentQualification", e.target.value)}
+                          >
+                            <MenuItem value="" disabled>Select</MenuItem>
+                            <MenuItem value="UG">UG</MenuItem>
+                            <MenuItem value="PG">PG</MenuItem>
+                            <MenuItem value="Ph.D">Ph.D</MenuItem>
+                          </Select>
                         </Box>
                       </>
                     ) : (
@@ -1740,20 +2110,81 @@ export default function JournalPublication() {
           </Select>
         </Box>
         <Box>
-          <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"} sx={form.isStudentsInvolved === "Yes" ? disabledField : {}}>
-            <MenuItem value="">Select</MenuItem>
-            <MenuItem value="Yes">Yes</MenuItem>
-            <MenuItem value="No">No</MenuItem>
-          </Select>
+          {(() => {
+            const hasPgStudent = form.isStudentsInvolved === "Yes" && (form.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+            const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
+            const disableIncentive = hasPgStudent || isPositionGreaterThan5;
+            return (
+              <>
+                <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
+                <Select
+                  size="small"
+                  fullWidth
+                  displayEmpty
+                  value={disableIncentive ? "No" : form.applyIncentive}
+                  onChange={set("applyIncentive")}
+                  disabled={disableIncentive}
+                  sx={disableIncentive ? disabledField : {}}
+                >
+                  <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="Yes">Yes</MenuItem>
+                  <MenuItem value="No">No</MenuItem>
+                </Select>
+                {hasPgStudent && !isPositionGreaterThan5 && (
+                  <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                    * Incentive is not applicable for publications with PG student co-authors.
+                  </Typography>
+                )}
+                {isPositionGreaterThan5 && (
+                  <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                    * Application for incentive is only for the first 5 author positions.
+                  </Typography>
+                )}
+              </>
+            );
+          })()}
         </Box>
-        <Box>
-          <Typography sx={labelStyle}>Publication Scope : *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.publicationScope} onChange={set("publicationScope")}>
-            <MenuItem value="">Select</MenuItem>
-            {INCENTIVE_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
-          </Select>
-        </Box>
+
+        {/* Live Estimated Incentive Preview from Backend API */}
+        {form.applyIncentive === "Yes" && (
+          <Box sx={{
+            gridColumn: { sm: "1 / -1" },
+            p: 2.5,
+            borderRadius: "12px",
+            bgcolor: estimatedIncentiveState?.success && estimatedIncentiveState?.isEligible ? "rgba(16, 185, 129, 0.06)" : "rgba(239, 68, 68, 0.05)",
+            border: `1.5px dashed ${estimatedIncentiveState?.success && estimatedIncentiveState?.isEligible ? "rgba(16, 185, 129, 0.4)" : "rgba(239, 68, 68, 0.3)"}`,
+            mt: 1
+          }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+              <Box>
+                <Typography sx={{ fontSize: "0.8rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: estimatedIncentiveState?.success && estimatedIncentiveState?.isEligible ? "#059669" : "#dc2626" }}>
+                  Estimated Research Incentive Amount {incentiveLoading && <Loader size={12} sx={{ display: 'inline-block', ml: 1 }} />}
+                </Typography>
+                {estimatedIncentiveState?.success && estimatedIncentiveState?.isEligible ? (
+                  <Typography sx={{ fontSize: "1.6rem", fontWeight: 800, color: "#047857", mt: 0.5 }}>
+                    ₹{estimatedIncentiveState.estimatedIncentiveAmount.toLocaleString('en-IN')}
+                  </Typography>
+                ) : (
+                  <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, color: "#dc2626", mt: 0.5 }}>
+                    ⚠️ {estimatedIncentiveState?.message || estimatedIncentiveState?.breakdown || "Calculating..."}
+                  </Typography>
+                )}
+              </Box>
+              {estimatedIncentiveState?.success && estimatedIncentiveState?.isEligible && (
+                <Chip
+                  label={`Author Share: ${estimatedIncentiveState.authorPercentageLabel}`}
+                  sx={{ bgcolor: "rgba(16, 185, 129, 0.15)", color: "#065f46", fontWeight: 700, fontSize: "0.75rem" }}
+                />
+              )}
+            </Box>
+
+            {estimatedIncentiveState?.success && estimatedIncentiveState?.isEligible && (
+              <Typography sx={{ fontSize: "0.8rem", color: "var(--text-secondary)", mt: 1, pt: 1, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+                💡 <strong>Calculation Breakdown:</strong> {estimatedIncentiveState.breakdown}
+              </Typography>
+            )}
+          </Box>
+        )}
       </Grid2>
 
       {/* ── Actions ── */}
@@ -1919,6 +2350,20 @@ export default function JournalPublication() {
                 </Box>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0, flexWrap: "wrap" }}>
+                {(data.isNoDoi === 'Yes' || (data.doi && String(data.doi).startsWith('NODOI'))) && (
+                  <Chip
+                    label="Without DOI / Manual Entry"
+                    sx={{
+                      bgcolor: "rgba(234, 88, 12, 0.12)",
+                      color: "#ea580c",
+                      border: "1px solid rgba(234, 88, 12, 0.3)",
+                      fontWeight: 700,
+                      borderRadius: "20px",
+                      px: 1,
+                      py: 0.5
+                    }}
+                  />
+                )}
                 {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
                   <Chip
                     label="R&D Direct Entry"
@@ -1990,7 +2435,17 @@ export default function JournalPublication() {
                 <Box sx={{ display: "flex", flexDirection: "column" }}>
                   {[
                     { label: "Academic Year", value: data.academicYear?.year || "-", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    { label: "DOI", value: data.doi || "-", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    {
+                      label: "DOI",
+                      chip: (data.isNoDoi === 'Yes' || (data.doi && String(data.doi).startsWith('NODOI'))) ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                          <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{data.doi}</Typography>
+                          <Chip label="Manual Entry (No DOI)" size="small" sx={{ height: 20, fontSize: "0.65rem", fontWeight: 800, bgcolor: "rgba(234, 88, 12, 0.12)", color: "#ea580c", border: "1px solid rgba(234, 88, 12, 0.3)" }} />
+                        </Box>
+                      ) : null,
+                      value: data.doi || "-",
+                      icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />
+                    },
                     {
                       label: "Applicant Author Position", chip: (
                         (() => {
@@ -2024,9 +2479,11 @@ export default function JournalPublication() {
                         })()
                       ), icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />
                     },
+                    { label: "Corresponding Author", value: data.correspondingAuthor || "No", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Journal Quartile", value: data.journalQuartile || data.categoryOfJournal || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Scopus", value: data.isScopus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    { label: "Journal Type", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Type of Journal (WoS)", value: data.journalType || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Journal Category", value: data.journalCategory || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "ISSN", value: data.issn || "-", icon: <Article sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "e-ISSN", value: data.eissn || "-", icon: <Article sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Volume", value: data.vol || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
@@ -2040,6 +2497,7 @@ export default function JournalPublication() {
                     { label: "Number of References Belonging to AGEC", value: data.numberOfReferencesBelongingToAGEC !== undefined ? data.numberOfReferencesBelongingToAGEC : (data.papersCited !== undefined ? data.papersCited : "-"), icon: <Groups sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Seed Grant Work", value: data.applyingSeedGrant || "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Apply For Incentive", value: data.applyIncentive || "No", icon: <CardGiftcard sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Estimated Incentive Amount", value: data.estimatedIncentiveAmount ? `₹${Number(data.estimatedIncentiveAmount).toLocaleString('en-IN')}` : "₹0", icon: <CurrencyRupee sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Approved Incentive Amount", value: data.approvedAmount ? `₹${data.approvedAmount}` : "-", icon: <CurrencyRupee sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> }
                   ].map((item, idx, arr) => (
                     <Box
@@ -2084,20 +2542,9 @@ export default function JournalPublication() {
               flexDirection: "column",
               gap: 3
             }}>
-              {/* Top Right Card: Scope, Eligibility, Claimant */}
+              {/* Top Right Card: Eligibility, Claimant */}
               <Paper elevation={0} sx={{ p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", flexShrink: 0 }}>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 2, borderBottom: "1px solid var(--border-color)" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                      <PublicIcon sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
-                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
-                        Publication Scope
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                      {data.publicationScope || data.incentiveApplied || "National"}
-                    </Typography>
-                  </Box>
 
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 2, borderBottom: "1px solid var(--border-color)" }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -2314,7 +2761,9 @@ export default function JournalPublication() {
                                 </Box>
                               </TableCell>
                               <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
-                              <TableCell sx={{ color: "var(--text-secondary)", textTransform: "capitalize" }}>{ca.CoAuthorType || "-"}</TableCell>
+                              <TableCell sx={{ color: "var(--text-secondary)", textTransform: "capitalize" }}>
+                                {ca.CoAuthorType === "student" && ca.studentQualification ? `Student (${ca.studentQualification})` : (ca.CoAuthorType || "-")}
+                              </TableCell>
                               <TableCell sx={{ color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
                             </TableRow>
                           );
@@ -2361,7 +2810,7 @@ export default function JournalPublication() {
           </Box>
 
           {/* Remarks/Comments if available */}
-          {(data.hodComment || data.rndComment) && (
+          {(data.hodComment || data.rndComment || data.approvedAmount) && (
             <Box sx={{ mt: 4, display: "flex", flexDirection: "column", gap: 2 }}>
               {data.hodComment && (
                 <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
@@ -2369,10 +2818,19 @@ export default function JournalPublication() {
                   <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.hodComment}"</Typography>
                 </Box>
               )}
-              {data.rndComment && (
+              {(data.rndComment || data.approvedAmount) && (
                 <Box sx={{ p: 2, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "10px", border: "1px solid rgba(76, 175, 80, 0.2)" }}>
-                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
-                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
+                  {data.rndComment && (
+                    <>
+                      <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
+                      <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
+                    </>
+                  )}
+                  {data.approvedAmount && (
+                    <Typography variant="h6" sx={{ mt: data.rndComment ? 2 : 0, fontWeight: 900, color: "#10b981" }}>
+                      Approved Amount: ₹{data.approvedAmount}
+                    </Typography>
+                  )}
                 </Box>
               )}
             </Box>
@@ -2392,6 +2850,17 @@ export default function JournalPublication() {
         subtitle="Manage and submit your journal publications"
         onBack={viewMode !== "list" ? () => setViewMode("list") : undefined}
       />
+      {(!user?.panNumber || !user?.college) && (
+        <Box sx={{ px: 3, mb: 4 }}>
+          <Alert severity="warning" variant="filled" sx={{ borderRadius: "16px" }}>
+            <AlertTitle sx={{ fontWeight: 700 }}>Profile Details Incomplete</AlertTitle>
+            <Typography variant="body2">
+              You must complete the following fields in your profile before you submit:
+              <strong> PAN Number, College</strong>. Please navigate to the Profile settings to update them.
+            </Typography>
+          </Alert>
+        </Box>
+      )}
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}

@@ -42,11 +42,14 @@ import {
     PeopleAlt,
     Groups,
     EventAvailable,
-    SupportAgent
+    SupportAgent,
+    Build,
+    Group as GroupIcon
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { ROLE_ROUTES } from "../../config/rolesNav";
 import { useNavigate, useLocation } from "react-router-dom";
+import API from "../../api/axios";
 
 import HeaderSearch from "../common/HeaderSearch";
 
@@ -225,7 +228,24 @@ const MobileNavbar = () => {
         return () => clearInterval(interval);
     }, [coords]);
 
+    const [adminServiceTypes, setAdminServiceTypes] = useState(null);
     const effectiveRole = activeRole || (user?.roles && user.roles[0]?.role) || "STUDENT";
+
+    useEffect(() => {
+        if (["SERVICE_ADMIN", "CSR_ADMIN", "CSR ADMIN", "CSR"].includes(effectiveRole)) {
+            API.get('/api/service-desk/services/my-memberships')
+                .then(res => {
+                    if (res.data.success) {
+                        const adminServices = res.data.data.adminOf || [];
+                        const hasDirect = adminServices.some(s => s.directEmployeeInvolvement !== false);
+                        const hasManual = adminServices.some(s => s.directEmployeeInvolvement === false);
+                        setAdminServiceTypes({ hasDirect, hasManual, count: adminServices.length });
+                    }
+                })
+                .catch(() => {});
+        }
+    }, [effectiveRole, user]);
+
     let menuItems = ROLE_ROUTES[effectiveRole] || ROLE_ROUTES.STUDENT;
 
     if (effectiveRole === "SCHOOL_DEAN" && user?.roles) {

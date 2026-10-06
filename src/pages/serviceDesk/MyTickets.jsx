@@ -11,6 +11,8 @@ import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 
+import { PriorityBadge, DueCountdownBadge } from '../../utils/serviceDeskSla';
+
 const getStatusColor = (status) => {
     switch (status) {
         case 'OPEN': return 'info';
@@ -106,22 +108,38 @@ const MyTickets = () => {
                     </Box>
                 ) : (
                     <DataTable 
-                        columns={["Ticket #", "Service", "Title", "Priority", "Status", "Created At", "Action"]}
-                        alignments={["left", "left", "left", "center", "center", "left", "right"]}
-                        nonSortableColumns={[6]}
+                        columns={["Ticket #", "Service", "Title", "Priority", "Status", "Due Date / SLA", "Created At", "Action"]}
+                        alignments={["left", "left", "left", "center", "center", "center", "left", "right"]}
+                        nonSortableColumns={[7]}
                         rows={tickets.map((t) => [
                             { value: t.ticketNumber, display: <Typography fontWeight={600} color="primary">#{t.ticketNumber}</Typography> },
                             { value: t.service?.name || 'Unknown', display: t.service?.name || 'Unknown' },
-                            { value: t.title, display: t.title },
+                            {
+                                value: t.title,
+                                display: (
+                                    <Box>
+                                        <Typography sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t.title}</Typography>
+                                        {t.subcategory && t.subcategory !== t.title && (
+                                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                                {t.subcategory}
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                )
+                            },
                             { 
                                 value: t.priority, 
-                                display: <Typography fontSize="0.875rem" fontWeight={500} color={t.priority === 'HIGH' ? 'error.main' : t.priority === 'MEDIUM' ? 'warning.main' : 'text.secondary'}>{t.priority}</Typography> 
+                                display: <PriorityBadge priority={t.priority} />
                             },
                             { 
                                 value: t.status, 
                                 display: <Chip label={t.status} color={getStatusColor(t.status)} size="small" sx={{ fontWeight: 600, borderRadius: '6px' }} /> 
                             },
-                            { value: new Date(t.createdAt).getTime(), display: new Date(t.createdAt).toLocaleString() },
+                            {
+                                value: t.dueDate || '',
+                                display: <DueCountdownBadge dueDate={t.dueDate} status={t.status} />
+                            },
+                            { value: new Date(t.createdAt).getTime(), display: new Date(t.createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }) },
                             {
                                 value: '',
                                 display: (

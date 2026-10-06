@@ -7,6 +7,7 @@ import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody,
 import { toast } from "sonner";
 import { Delete, Search, CurrencyRupee, Close, Groups, MenuBook, AttachFile, Description, Download, Visibility, Edit, CheckCircle, Cancel, AccessTime } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
+import { Alert, AlertTitle } from "@mui/material";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn
@@ -41,7 +42,8 @@ export default function TextbookPublication() {
     otherAuthors: [],
     publicationScope: "National",
     customPublisher: "",
-    currencySymbol: "₹"
+    currencySymbol: "₹",
+    numberOfPages: ""
   });
   const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null });
   const [existingFiles, setExistingFiles] = useState({ coverPage: null, authorAffiliation: null, index: null });
@@ -117,6 +119,23 @@ export default function TextbookPublication() {
         newForm.year = "";
         setIsbnFetched(false);
         setIsbnFetchedFields({ title: false, publisher: false });
+      }
+      if (k === "isStudentsInvolved") {
+        if (val === "Yes") {
+          if (parseInt(newForm.totalAuthors) < 2 || isNaN(parseInt(newForm.totalAuthors))) {
+            newForm.totalAuthors = 2;
+          }
+        } else if (val === "No") {
+          newForm.otherAuthors = (newForm.otherAuthors || []).map(a => ({
+            ...a,
+            CoAuthorType: "faculty",
+            studentId: "",
+            studentQualification: "",
+            authorName: a.CoAuthorType === "student" ? "" : a.authorName,
+            empId: a.CoAuthorType === "student" ? "" : a.empId
+          }));
+          newForm.applyIncentive = "";
+        }
       }
       return newForm;
     });
@@ -242,7 +261,8 @@ export default function TextbookPublication() {
   };
 
   const handleCoAuthorChange = (pos, field, value) => {
-    const updated = form.otherAuthors.map(a => {
+    setForm(p => {
+      const updated = p.otherAuthors.map(a => {
       if (a.authorPosition === pos) {
         const newA = { ...a, [field]: value };
         
@@ -281,11 +301,12 @@ export default function TextbookPublication() {
       return a;
     });
 
-    setForm(p => ({ ...p, otherAuthors: updated }));
+    return { ...p, otherAuthors: updated };
+    });
 
     // Fetch name if Aditya University and Employee ID is entered (length >= 3)
     if (field === "empId" && value.length >= 3) {
-      const author = updated.find(a => a.authorPosition === pos);
+      const author = form.otherAuthors.find(a => a.authorPosition === pos);
       if (author && author.affiliationType === "Aditya University" && author.CoAuthorType !== "student") {
         fetchCoAuthorName(pos, value);
       }
@@ -296,6 +317,19 @@ export default function TextbookPublication() {
     const val = e.target.value;
     setForm((prev) => {
       let newForm = { ...prev, isStudentsInvolved: val };
+      
+      // If previous value was "No" and new is "Yes", increment by 1
+      if (prev.isStudentsInvolved === "No" && val === "Yes") {
+        if (parseInt(newForm.totalAuthors) == 1) {
+          newForm.totalAuthors = parseInt(newForm.totalAuthors) + 1;
+        }
+      } 
+      // If previous value was "Yes" and new is "No", decrement by 1
+      else if (prev.isStudentsInvolved === "Yes" && val === "No") {
+        if (parseInt(newForm.totalAuthors) == 2) {
+          newForm.totalAuthors = parseInt(newForm.totalAuthors) - 1;
+        }
+      }
       
       if (val === "Yes") {
         newForm.applyIncentive = "No";
@@ -424,18 +458,7 @@ export default function TextbookPublication() {
       }
     }
 
-    // Check mandatory file uploads
-    if (!editingId) {
-      if (!files.coverPage || !files.authorAffiliation || !files.index) {
-        toast.error("Please attach all the required documents (Cover Page, Author Affiliation, Index)");
-        return;
-      }
-    } else {
-      if ((!files.coverPage && !existingFiles.coverPage) || (!files.authorAffiliation && !existingFiles.authorAffiliation) || (!files.index && !existingFiles.index)) {
-        toast.error("Please attach all required documents");
-        return;
-      }
-    }
+    // File uploads are no longer mandatory for textbooks
 
     setLoading(true);
     try {
@@ -464,6 +487,16 @@ export default function TextbookPublication() {
         }
       }
 
+      // Calculate estimated incentive
+      let estimatedIncentiveAmount = null;
+      if (submissionForm.applyIncentive === "Yes" && parseInt(submissionForm.userAuthorPosition) <= 5) {
+          if (submissionForm.publicationScope === "National") {
+              estimatedIncentiveAmount = 10000;
+          } else if (submissionForm.publicationScope === "International") {
+              estimatedIncentiveAmount = 20000;
+          }
+      }
+
       // Append standard fields
       fd.append("title", submissionForm.title);
       fd.append("isbn", submissionForm.isbn);
@@ -472,12 +505,15 @@ export default function TextbookPublication() {
       fd.append("userAuthorPosition", submissionForm.userAuthorPosition);
       fd.append("edition", submissionForm.edition);
       fd.append("cost", submissionForm.cost);
+      fd.append("currencySymbol", submissionForm.currencySymbol || "₹");
+      if (submissionForm.numberOfPages) fd.append("numberOfPages", submissionForm.numberOfPages);
+      if (estimatedIncentiveAmount) fd.append("estimatedIncentiveAmount", estimatedIncentiveAmount);
       fd.append("month", submissionForm.month);
       fd.append("year", submissionForm.year);
       fd.append("publicationScope", submissionForm.publicationScope);
       fd.append("publisher", submissionForm.publisher === "Others" ? submissionForm.customPublisher : submissionForm.publisher);
       fd.append("isStudentsInvolved", submissionForm.isStudentsInvolved || "No");
-      fd.append("applyIncentive", submissionForm.applyIncentive);
+      fd.append("applyIncentive", parseInt(submissionForm.userAuthorPosition) > 5 ? "No" : submissionForm.applyIncentive);
       fd.append("authors", JSON.stringify(allAuthors));
 
       fd.append("academicYear", selectedYear);
@@ -810,7 +846,7 @@ export default function TextbookPublication() {
               const val = e.target.value;
               setForm(prev => ({
                 ...prev,
-                publisher: val,
+                publisher: "",
                 publicationScope: val,
                 customPublisher: "",
                 currencySymbol: val === "National" ? "₹" : "$"
@@ -849,6 +885,7 @@ export default function TextbookPublication() {
         <Box>
           <Typography sx={labelStyle}>Name of the Publisher :</Typography>
           <Autocomplete
+            disabled={isbnFetchedFields.publisher}
             options={[...publishers.filter(p => p.type === form.publicationScope), { name: "Others", type: form.publicationScope }]}
             getOptionLabel={(option) => option.name}
             isOptionEqualToValue={(option, value) => option.name === value?.name}
@@ -873,26 +910,28 @@ export default function TextbookPublication() {
               />
             )}
           />
-          {form.publisher === "Others" && (
+        </Box>
+        {form.publisher === "Others" && (
+          <Box>
+            <Typography sx={labelStyle}>Specify Publisher : *</Typography>
             <TextField
               size="small"
               fullWidth
-              sx={{ mt: 1.5 }}
               placeholder="Enter Publisher Name"
               value={form.customPublisher}
               onChange={(e) => setForm(p => ({ ...p, customPublisher: e.target.value }))}
             />
-          )}
-        </Box>
+          </Box>
+        )}
         <Box>
           <Typography sx={labelStyle}>Edition :</Typography>
-          <Autocomplete
-            freeSolo
-            options={editions.map(e => e.name)}
+          <TextField
+            fullWidth
+            size="small"
+            type="number"
+            placeholder="Enter Edition"
             value={form.edition}
-            onChange={(e, newValue) => setForm(p => ({ ...p, edition: newValue || "" }))}
-            onInputChange={(e, newInputValue) => setForm(p => ({ ...p, edition: newInputValue }))}
-            renderInput={(params) => <TextField {...params} size="small" placeholder="Select or type Edition (e.g. 1st Edition)" />}
+            onChange={(e) => setForm(p => ({ ...p, edition: e.target.value }))}
           />
         </Box>
         <Box>
@@ -970,7 +1009,18 @@ export default function TextbookPublication() {
             </Box>
           </Box>
         </Box>
-        <Box></Box>
+        <Box>
+          <Typography sx={labelStyle}>Number of Pages :</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            type="number"
+            value={form.numberOfPages}
+            onChange={set("numberOfPages")}
+            slotProps={{ htmlInput: { min: 1 } }}
+            placeholder="e.g. 250"
+          />
+        </Box>
 
         {/* Authors Section */}
         <Box sx={{ gridColumn: { sm: "1 / -1" }, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)", mt: 2 }}>
@@ -1181,49 +1231,81 @@ export default function TextbookPublication() {
         )}
       </Grid2>
 
-      <NoteBox />
+      <Box sx={{ mt: 3, p: 2, bgcolor: "rgba(232, 160, 0, 0.1)", border: "1px dashed rgba(232, 160, 0, 0.5)", borderRadius: "12px", maxWidth: { xs: "100%", md: "calc(50% - 12px)" } }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, color: "#b37b00" }}>
+          Note: Please submit a hard copy of the textbook to the Dean R&C office.
+        </Typography>
+      </Box>
 
-      <Grid2 sx={{ mt: 3 }}>
-        <FileField
-          label="Attach CoverPage *"
-          name="coverPage"
-          onChange={setFile("coverPage")}
-          existingFileUrl={existingFiles.coverPage}
-          onRemoveExisting={() => {
-            setExistingFiles(p => ({ ...p, coverPage: null }));
-            setDeleteFlags(p => ({ ...p, coverPage: true }));
-          }}
-        />
-        <FileField
-          label="Attach Page displaying author affiliation *"
-          name="authorAffiliation"
-          onChange={setFile("authorAffiliation")}
-          existingFileUrl={existingFiles.authorAffiliation}
-          onRemoveExisting={() => {
-            setExistingFiles(p => ({ ...p, authorAffiliation: null }));
-            setDeleteFlags(p => ({ ...p, authorAffiliation: true }));
-          }}
-        />
-        <FileField
-          label="Attach Index *"
-          name="index"
-          onChange={setFile("index")}
-          existingFileUrl={existingFiles.index}
-          onRemoveExisting={() => {
-            setExistingFiles(p => ({ ...p, index: null }));
-            setDeleteFlags(p => ({ ...p, index: true }));
-          }}
-        />
-        <Box>
-          <Typography sx={labelStyle}>Whether you want to apply for incentive?</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
-            <MenuItem value="">Select</MenuItem>
-            <MenuItem value="Yes">Yes</MenuItem>
-            <MenuItem value="No">No</MenuItem>
-          </Select>
-        </Box>
+      <Box sx={{ mt: 3, maxWidth: { xs: "100%", md: "calc(50% - 12px)" } }}>
+        {(() => {
+          const isStudentInvolved = form.isStudentsInvolved === "Yes";
+          const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
+          const isPublisherOthers = form.publisher === "Others";
+          const disableIncentive = isStudentInvolved || isPositionGreaterThan5 || isPublisherOthers;
+          const currentApplyIncentive = disableIncentive ? "No" : form.applyIncentive;
 
-      </Grid2>
+          let estIncentive = "-";
+          if (currentApplyIncentive === "Yes") {
+              const pubObj = publishers.find(p => p.name === form.publisher);
+              if (pubObj && pubObj.type) {
+                  if (pubObj.type.toLowerCase() === "national") {
+                      estIncentive = "₹10,000";
+                  } else if (pubObj.type.toLowerCase() === "international") {
+                      estIncentive = "₹20,000";
+                  } else {
+                      estIncentive = "Research committee decision";
+                  }
+              } else {
+                  estIncentive = "Research committee decision";
+              }
+          } else if (currentApplyIncentive === "No") {
+              estIncentive = "₹0";
+          }
+
+          return (
+            <>
+              <Typography sx={labelStyle}>Whether you want to apply for incentive?</Typography>
+              <Select size="small" fullWidth displayEmpty value={currentApplyIncentive} onChange={set("applyIncentive")} disabled={disableIncentive} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
+                <MenuItem value="">Select</MenuItem>
+                <MenuItem value="Yes">Yes</MenuItem>
+                <MenuItem value="No">No</MenuItem>
+              </Select>
+              {isPositionGreaterThan5 && (
+                <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                  * Application for incentive is only for the first 5 author positions.
+                </Typography>
+              )}
+              {isPublisherOthers && !isPositionGreaterThan5 && (
+                <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                  * Incentive is not applicable for custom publishers.
+                </Typography>
+              )}
+              {currentApplyIncentive === "Yes" && (
+                <Box sx={{
+                  gridColumn: { sm: "1 / -1" },
+                  p: 2.5,
+                  borderRadius: "12px",
+                  bgcolor: estIncentive !== "Research committee decision" ? "rgba(16, 185, 129, 0.06)" : "rgba(239, 68, 68, 0.05)",
+                  border: `1.5px dashed ${estIncentive !== "Research committee decision" ? "rgba(16, 185, 129, 0.4)" : "rgba(239, 68, 68, 0.3)"}`,
+                  mt: 2
+                }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+                    <Box>
+                      <Typography sx={{ fontSize: "0.8rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: estIncentive !== "Research committee decision" ? "#059669" : "#dc2626" }}>
+                        Estimated Research Incentive Amount
+                      </Typography>
+                      <Typography sx={{ fontSize: estIncentive !== "Research committee decision" ? "1.6rem" : "0.95rem", fontWeight: estIncentive !== "Research committee decision" ? 800 : 700, color: estIncentive !== "Research committee decision" ? "#047857" : "#dc2626", mt: 0.5 }}>
+                        {estIncentive !== "Research committee decision" ? estIncentive : "⚠️ " + estIncentive}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              )}
+            </>
+          );
+        })()}
+      </Box>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
         <Button
@@ -1424,9 +1506,10 @@ export default function TextbookPublication() {
               />
             </Box>
 
-            {/* Edition, cost, type, month/year */}
+            {/* Edition, cost, type, month/year, pages */}
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Edition" value={data.edition || "-"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Cost" value={data.cost || "-"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label={`Cost (${data.currencySymbol || '₹'})`} value={data.cost || "-"} /></Box>
+            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="No. of Pages" value={data.numberOfPages || "-"} /></Box>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Publication Scope" value={data.publicationScope || "National"} /></Box>
             <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Month/Year" value={`${data.month || ""} ${data.year || ""}`} /></Box>
 
@@ -1570,21 +1653,10 @@ export default function TextbookPublication() {
             </Card>
           )}
 
-          {/* Attached Files previews */}
-          <Box sx={{ mt: 3 }}>
-            <Box sx={{ display: "flex", gap: 1.5, alignItems: "center", mb: 2 }}>
-              <AttachFile sx={{ color: "var(--color-primary)" }} />
-              <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography>
-            </Box>
-            <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }} useFlexGap>
-              {renderDetailFile("Cover Page", data.coverPage)}
-              {renderDetailFile("Author Affiliation", data.authorAffiliation)}
-              {renderDetailFile("Index", data.index)}
-            </Stack>
-          </Box>
+
 
           {/* Remarks/Comments if available */}
-          {(data.hodComment || data.rndComment) && (
+          {(data.hodComment || data.rndComment || data.approvedAmount) && (
             <Box sx={{ mt: 4, display: "flex", flexDirection: "column", gap: 2 }}>
               {data.hodComment && (
                 <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
@@ -1592,10 +1664,19 @@ export default function TextbookPublication() {
                   <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.hodComment}"</Typography>
                 </Box>
               )}
-              {data.rndComment && (
+              {(data.rndComment || data.approvedAmount) && (
                 <Box sx={{ p: 2, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "10px", border: "1px solid rgba(76, 175, 80, 0.2)" }}>
-                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
-                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
+                  {data.rndComment && (
+                    <>
+                      <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
+                      <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
+                    </>
+                  )}
+                  {data.approvedAmount && (
+                    <Typography variant="h6" sx={{ mt: data.rndComment ? 2 : 0, fontWeight: 900, color: "#10b981" }}>
+                      Approved Amount: ₹{data.approvedAmount}
+                    </Typography>
+                  )}
                 </Box>
               )}
             </Box>
@@ -1615,6 +1696,17 @@ export default function TextbookPublication() {
         subtitle="Manage and submit your textbook publications"
         onBack={viewMode !== "list" ? () => setViewMode("list") : undefined}
       />
+      {(!user?.panNumber || !user?.college) && (
+        <Box sx={{ px: 3, mb: 4 }}>
+          <Alert severity="warning" variant="filled" sx={{ borderRadius: "16px" }}>
+            <AlertTitle sx={{ fontWeight: 700 }}>Profile Details Incomplete</AlertTitle>
+            <Typography variant="body2">
+              You must complete the following fields in your profile before you submit:
+              <strong> PAN Number, College</strong>. Please navigate to the Profile settings to update them.
+            </Typography>
+          </Alert>
+        </Box>
+      )}
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}
       {viewMode === "form" && renderForm()}

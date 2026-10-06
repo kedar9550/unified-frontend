@@ -16,6 +16,7 @@ import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
 import PersonIcon from "@mui/icons-material/Person";
 import PageHeader from "../../components/common/PageHeader";
+import { Alert, AlertTitle } from "@mui/material";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn
@@ -357,7 +358,7 @@ export default function PatentPublication() {
       fd.append("patentFiledCountry", form.patentFiledCountry === 'Others' ? form.customCountryName : form.patentFiledCountry);
       fd.append("coInventors", JSON.stringify(coInventorsList));
       fd.append("isStudentsInvolved", form.isStudentsInvolved || "No");
-      fd.append("applyIncentive", form.applyIncentive);
+      fd.append("applyIncentive", parseInt(form.userInventorPosition) > 5 ? "No" : form.applyIncentive);
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
       fd.append("totalInventors", String(total));
 
@@ -403,7 +404,7 @@ export default function PatentPublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Patent Publications</Typography>
-        <Button
+        {/* <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -429,7 +430,7 @@ export default function PatentPublication() {
           }}
         >
           Apply New
-        </Button>
+        </Button> */}
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -958,12 +959,31 @@ export default function PatentPublication() {
           </Select>
         </Box>
         <Box sx={{ mt: 1 }}>
-          <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"}>
-            <MenuItem value="">Select</MenuItem>
-            <MenuItem value="Yes">Yes</MenuItem>
-            <MenuItem value="No">No</MenuItem>
-          </Select>
+          {(() => {
+            const isStudentInvolved = form.isStudentsInvolved === "Yes";
+            const isPositionGreaterThan5 = parseInt(form.userInventorPosition) > 5;
+            const disableIncentive = isStudentInvolved || isPositionGreaterThan5;
+            return (
+              <>
+                <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
+                <Select size="small" fullWidth displayEmpty value={disableIncentive ? "No" : form.applyIncentive} onChange={set("applyIncentive")} disabled={disableIncentive}>
+                  <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="Yes">Yes</MenuItem>
+                  <MenuItem value="No">No</MenuItem>
+                </Select>
+                {isStudentInvolved && !isPositionGreaterThan5 && (
+                  <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                    * Incentive is not applicable for publications with student co-inventors.
+                  </Typography>
+                )}
+                {isPositionGreaterThan5 && (
+                  <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                    * Application for incentive is only for the first 5 inventor positions.
+                  </Typography>
+                )}
+              </>
+            );
+          })()}
         </Box>
       </Grid2>
 
@@ -1462,7 +1482,7 @@ export default function PatentPublication() {
           })()}
 
           {/* Remarks/Comments if available */}
-          {(data.hodComment || data.rndComment) && (
+          {(data.hodComment || data.rndComment || data.approvedAmount) && (
             <Box sx={{ mt: 3, display: "flex", flexDirection: "column", gap: 2 }}>
               {data.hodComment && (
                 <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "12px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
@@ -1470,10 +1490,19 @@ export default function PatentPublication() {
                   <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)", fontWeight: 600 }}>"{data.hodComment}"</Typography>
                 </Box>
               )}
-              {data.rndComment && (
+              {(data.rndComment || data.approvedAmount) && (
                 <Box sx={{ p: 2, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "12px", border: "1px solid rgba(76, 175, 80, 0.2)" }}>
-                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#2e7d32", textTransform: "uppercase" }}>R&D Remarks</Typography>
-                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)", fontWeight: 600 }}>"{data.rndComment}"</Typography>
+                  {data.rndComment && (
+                    <>
+                      <Typography variant="caption" sx={{ fontWeight: 900, color: "#2e7d32", textTransform: "uppercase" }}>R&D Remarks</Typography>
+                      <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)", fontWeight: 600 }}>"{data.rndComment}"</Typography>
+                    </>
+                  )}
+                  {data.approvedAmount && (
+                    <Typography variant="h6" sx={{ mt: data.rndComment ? 2 : 0, fontWeight: 900, color: "#10b981" }}>
+                      Approved Amount: ₹{data.approvedAmount}
+                    </Typography>
+                  )}
                 </Box>
               )}
             </Box>
@@ -1495,6 +1524,17 @@ export default function PatentPublication() {
         subtitle="Manage and submit your patent publications"
         onBack={viewMode !== "list" ? () => setViewMode("list") : undefined}
       />
+      {(!user?.panNumber || !user?.college) && (
+        <Box sx={{ px: 3, mb: 4 }}>
+          <Alert severity="warning" variant="filled" sx={{ borderRadius: "16px" }}>
+            <AlertTitle sx={{ fontWeight: 700 }}>Profile Details Incomplete</AlertTitle>
+            <Typography variant="body2">
+              You must complete the following fields in your profile before you submit:
+              <strong> PAN Number, College</strong>. Please navigate to the Profile settings to update them.
+            </Typography>
+          </Alert>
+        </Box>
+      )}
 
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}

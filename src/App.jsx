@@ -85,11 +85,13 @@ import RaiseTicket from "./pages/serviceDesk/RaiseTicket";
 import MyTickets from "./pages/serviceDesk/MyTickets";
 import TicketDetail from "./pages/serviceDesk/TicketDetail";
 import ManageServices from "./pages/serviceDesk/ManageServices";
+import ManageBlocks from "./pages/serviceDesk/ManageBlocks";
 import ManageTickets from "./pages/serviceDesk/ManageTickets";
 import ManageServiceMembers from "./pages/serviceDesk/ManageServiceMembers";
 import AssignedToMe from "./pages/serviceDesk/AssignedToMe";
 import Reports from "./pages/serviceDesk/Reports";
 import FeedbackOverview from "./pages/serviceDesk/FeedbackOverview";
+import CampusServiceRequest from "./pages/serviceDesk/CampusServiceRequest/CampusServiceRequest";
 
 //Student Event Admin
 import EventCreation from "./pages/studenteventsadmin/evencreation";
@@ -127,6 +129,7 @@ import ParticipationCertificates from "./pages/studenteventsadmin/ParticipationC
 import Enquiries from "./pages/studenteventsadmin/Enquiries";
 import SendMail from "./pages/studenteventsadmin/SendMail";
 import VerifyCertificate from "./pages/public/VerifyCertificate";
+import Transaction from "./pages/RazorpayTransactions/Transaction";
 
 
 // Infrastructure
@@ -251,6 +254,7 @@ function App() {
         <Route path="/uniprime/discrepancies" element={<ProtectedRoute element={<UniprimeDiscrepancies />} />} />
         <Route path="/uniprime/research-uploads" element={<ProtectedRoute element={<ResearchUploads />} />} />
         <Route path="/uniprime/hierarchy-mapping" element={<ProtectedRoute element={<HierarchyMapping />} />} />
+        <Route path="/transactions" element={<ProtectedRoute element={<Transaction />} />} />
 
         {/* Value Addition Modules */}
         <Route path="/value-addition/resource-utilization" element={<ProtectedRoute element={<ResourceUtilization />} />} />
@@ -317,6 +321,9 @@ function App() {
         {/* Public Certificate Verification Route */}
         <Route path="/verify/certificate/:receipt/:roll" element={<VerifyCertificate />} />
 
+        {/* Public Student Campus Service Desk Portal */}
+        <Route path="/campus-service-request" element={<CampusServiceRequest />} />
+
 
 
         <Route path="/doi-test" element={<DOIFetcher />} />
@@ -327,8 +334,10 @@ function App() {
         <Route path="/service-desk/assigned-to-me" element={<ProtectedRoute element={<AssignedToMe />} />} />
         <Route path="/service-desk/ticket/:id" element={<ProtectedRoute element={<TicketDetail />} />} />
         <Route path="/service-desk/admin/manage-services" element={<ProtectedRoute element={<ManageServices />} />} />
+        <Route path="/service-desk/admin/manage-blocks" element={<ProtectedRoute element={<ManageBlocks />} />} />
         <Route path="/service-desk/admin/services" element={<ProtectedRoute element={<ManageTickets />} />} />
         <Route path="/service-desk/admin/team" element={<ProtectedRoute element={<ManageServiceMembers />} />} />
+        <Route path="/service-desk/admin/workers" element={<ProtectedRoute element={<ManageServiceMembers />} />} />
         <Route path="/service-desk/reports" element={<ProtectedRoute element={<Reports />} />} />
         <Route path="/service-desk/admin/feedback" element={<ProtectedRoute element={<FeedbackOverview />} />} />
 

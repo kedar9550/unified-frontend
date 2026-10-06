@@ -1,0 +1,556 @@
+import Loader from "../../../components/common/Loader";
+import React, { useState, useEffect } from "react";
+import {
+    Box, Typography, Grid, Card, Button, TextField,
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, IconButton, Stack, Select, MenuItem,
+    Dialog, DialogTitle, DialogContent, DialogActions
+} from "@mui/material";
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import SchoolIcon from '@mui/icons-material/School';
+import PersonIcon from '@mui/icons-material/Person';
+import DescriptionIcon from '@mui/icons-material/Description';
+import GroupsIcon from '@mui/icons-material/Groups';
+import HistoryIcon from '@mui/icons-material/History';
+import GavelIcon from '@mui/icons-material/Gavel';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import DownloadIcon from '@mui/icons-material/Download';
+import { toast } from "sonner";
+import API from "../../../api/axios";
+import EditResearchDetailsDialog from "./EditResearchDetailsDialog";
+
+const ConferenceApprovalDetails = ({ id, onBack, role }) => {
+    const [data, setData] = useState(null);
+    const r = typeof role !== 'undefined' ? role : (typeof effectiveRole !== 'undefined' ? effectiveRole : '');
+    const isDean = r === 'RESEARCH_DEAN';
+    const isCoordinator = r === 'RESEARCH_COORDINATOR';
+    const isResearchAdmin = isDean || isCoordinator;
+    const isHOD = !isResearchAdmin;
+    const [loading, setLoading] = useState(true);
+    const [remarks, setRemarks] = useState("");
+    const [approvedAmount, setApprovedAmount] = useState("");
+    const [appraisalEligible, setAppraisalEligible] = useState("");
+    const [actionLoading, setActionLoading] = useState(false);
+    const [imgError, setImgError] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
+    const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+    const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+
+    useEffect(() => {
+        const fetchDetails = async () => {
+            try {
+                const res = await API.get(`/api/research/conference/${id}`);
+                if (res.data?.success) {
+                    setData(res.data.data);
+                    if (isResearchAdmin) {
+                        if (res.data.data.rndComment) setRemarks(res.data.data.rndComment);
+                    } else {
+                        if (res.data.data.hodComment) setRemarks(res.data.data.hodComment);
+                    }
+                    if (res.data.data.approvedAmount) setApprovedAmount(res.data.data.approvedAmount);
+                    if (res.data.data.appraisalEligible) setAppraisalEligible(res.data.data.appraisalEligible);
+                }
+            } catch (error) {
+                console.error("Failed to fetch conference details", error);
+                toast.error(error.response?.data?.message || "Failed to load details");
+            } finally {
+                loading && setLoading(false);
+            }
+        };
+        fetchDetails();
+    }, [id]);
+
+    const handleAction = async (action) => {
+        if (!remarks && action === 'Reject') {
+            toast.error('Remarks are required for rejection');
+            return;
+        }
+
+        if (action === 'Approve') {
+            if (isResearchAdmin && data.applyIncentive === 'Yes' && (!approvedAmount || Number(approvedAmount) <= 0)) {
+                toast.error('Please enter a valid approved incentive amount');
+                return;
+            }
+            if (isResearchAdmin && !appraisalEligible) {
+                toast.error('Please select Appraisal Eligible status');
+                return;
+            }
+        }
+
+        setActionLoading(true);
+        try {
+            const endpoint = isResearchAdmin ? `/api/research/conference/rnd-action/${id}` : `/api/research/conference/hod-action/${id}`;
+            const res = await API.put(endpoint, {
+                action,
+                comment: remarks,
+                approvedAmount: isResearchAdmin && action === 'Approve' && data.applyIncentive === 'Yes' ? approvedAmount : undefined,
+                appraisalEligible: isResearchAdmin && action === 'Approve' ? (appraisalEligible || undefined) : undefined
+            });
+            if (res.data?.success) {
+                toast.success(`Request ${action === 'Approve' ? (isHOD ? 'Forwarded to R&D' : 'Approved') : 'Rejected'} successfully`);
+                setApproveDialogOpen(false);
+                setRejectDialogOpen(false);
+                onBack(); 
+            }
+        } catch (error) {
+            console.error("Action failed", error);
+            toast.error(error.response?.data?.message || "Action failed. Please try again.");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    if (loading) return null;
+    if (!data) return <Box sx={{ textAlign: 'center', p: 5 }}><Typography color="error">Failed to load data.</Typography><Button onClick={onBack} sx={{ mt: 2 }}>Go Back</Button></Box>;
+
+    const { facultyId } = data;
+    const statusStyle = (() => {
+        const s = data.status || "";
+        if (/Pending/i.test(s)) return { bg: "rgba(255, 193, 7, 0.1)", color: "#ff9800", dot: "#ff9800" };
+        if (/Approved/i.test(s)) return { bg: "rgba(76, 175, 80, 0.1)", color: "#4caf50", dot: "#4caf50" };
+        if (/Rejected/i.test(s)) return { bg: "rgba(244, 67, 54, 0.1)", color: "#f44336", dot: "#f44336" };
+        return { bg: "#f5f5f5", color: "#666", dot: "#666" };
+    })();
+
+    const LabelValue = ({ label, value, chip, horizontal = false }) => (
+        <Box sx={{
+            p: horizontal ? "10px 16px" : 2, borderRadius: "14px", background: horizontal ? "transparent" : "rgba(255,255,255,0.02)",
+            height: "100%", display: "flex", flexDirection: horizontal ? "row" : "column",
+            alignItems: horizontal ? "center" : "flex-start", justifyContent: horizontal ? "flex-start" : "center",
+            gap: horizontal ? 2 : 0.5, transition: "all 0.3s ease",
+            borderBottom: horizontal ? "1px solid var(--border-color)" : "1px solid transparent",
+            "&:last-child": { borderBottom: "none" },
+            "&:hover": { borderColor: "var(--color-primary)", bgcolor: "rgba(190, 147, 55, 0.05)", transform: "translateY(-2px)", boxShadow: "var(--shadow-premium)" }
+        }}>
+            <Typography variant="caption" sx={{ flex: horizontal ? { xs: "0 0 120px", sm: "0 0 150px" } : "none", color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 900, fontSize: "0.65rem", mb: horizontal ? 0 : 0.5 }}>{label}</Typography>
+            <Box sx={{ flex: horizontal ? 1 : "none" }}>
+                {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.9rem" }}>{value || "-"}</Typography>}
+            </Box>
+        </Box>
+    );
+
+    const renderFilePreview = (title, filepath, index) => {
+        if (!filepath) return null;
+        const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+        const fileUrl = filepath.startsWith('http') ? filepath : `${backendURL}${filepath}`;
+        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filepath);
+
+        return (
+            <Grid key={index} item xs={12} sm={6} md={3}>
+                <Box sx={{ mb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.75rem", textTransform: "uppercase" }}>
+                        {index}. {title}
+                    </Typography>
+                    <IconButton size="small" href={fileUrl} download target="_blank" sx={{ color: "var(--color-primary)" }}><DownloadIcon fontSize="small" /></IconButton>
+                </Box>
+                <Box sx={{
+                    height: 180, display: "flex", alignItems: "center", justifyContent: "center",
+                    border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "12px",
+                    overflow: "hidden", cursor: "pointer", transition: "all 0.3s ease",
+                    "&:hover": { borderColor: "var(--color-primary)", transform: "translateY(-4px)", boxShadow: "var(--shadow-premium)" }
+                }} onClick={() => window.open(fileUrl, '_blank')}>
+                    {isImage ? <img src={fileUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Box sx={{ textAlign: "center" }}><DescriptionIcon sx={{ fontSize: 40, color: "var(--text-secondary)", mb: 1 }} /><Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>PDF View</Typography></Box>}
+                </Box>
+            </Grid>
+        );
+    };
+
+    const cardStyle = {
+        p: 3,
+        mb: 3,
+        borderRadius: "20px",
+        border: "1px solid var(--border-color)",
+        background: "var(--bg-glass)",
+        backdropFilter: "blur(10px)",
+        boxShadow: "var(--shadow-premium)",
+    };
+
+
+
+    return (
+        <Box sx={{ width: "100%", pb: 5 }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+                <Button startIcon={<ArrowBackIcon />} onClick={onBack} sx={{ color: "var(--color-primary)", fontWeight: 700, textTransform: "none" }}>Back to Request List</Button>
+            </Box>
+
+            {/* Header Card */}
+            <Card sx={cardStyle}>
+                <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "center", sm: "flex-start" }, gap: 2, mb: 4 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                        <Box sx={{ width: 50, height: 50, borderRadius: "50%", bgcolor: "rgba(190, 147, 55, 0.1)", color: "var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}><SchoolIcon /></Box>
+                        <Box>
+                            <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{data.title}</Typography>
+                            <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Conference: {data.conferenceName}</Typography>
+                        </Box>
+                    </Box>
+                    <Box sx={{ textAlign: { xs: "center", sm: "right" }, display: "flex", flexDirection: "column", alignItems: { xs: "center", sm: "flex-end" }, gap: 0.5 }}>
+                        <Box sx={{ display: "flex", gap: 1 }}>
+                            {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
+                                <Chip label="R&D Direct Entry" sx={{ bgcolor: "rgba(124, 58, 237, 0.1)", color: "#7c3aed", border: "1px solid rgba(124, 58, 237, 0.3)", fontWeight: 800, borderRadius: "8px", fontSize: "0.65rem" }} />
+                            )}
+                            <Chip label="Conference Publication" sx={{ bgcolor: "rgba(16, 185, 129, 0.1)", color: "#10b981", fontWeight: 800, borderRadius: "8px", textTransform: "uppercase", fontSize: "0.65rem" }} />
+                        </Box>
+                        <Typography variant="caption" sx={{ display: "block", mt: 0.5, color: "var(--text-secondary)", fontWeight: 700 }}>Submitted on {new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</Typography>
+                    </Box>
+                </Box>
+
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, width: "100%" }}>
+                    <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 23%" } }}>
+                        <LabelValue label="Academic Year" value={data.academicYear?.year} />
+                    </Box>
+                    <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 23%" } }}>
+                        <LabelValue label="Reference ID" value={`CONF-${new Date(data.createdAt).getFullYear()}-${data._id.substring(data._id.length - 6).toUpperCase()}`} />
+                    </Box>
+                    <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 23%" } }}>
+                        <LabelValue label="Submission Date" value={new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} />
+                    </Box>
+                    <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 23%" } }}>
+                        <Box sx={{ 
+                            p: 2, borderRadius: "14px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center",
+                            background: "rgba(255,255,255,0.02)", border: "1px solid transparent",
+                            "&:hover": { borderColor: "var(--color-primary)", bgcolor: "rgba(190, 147, 55, 0.05)", transform: "translateY(-2px)", boxShadow: "var(--shadow-premium)" },
+                            transition: "all 0.3s ease"
+                        }}>
+                            <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 900, fontSize: "0.65rem", mb: 0.5 }}>Status</Typography>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: statusStyle.dot, boxShadow: `0 0 10px ${statusStyle.dot}` }} />
+                                <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{data.status}</Typography>
+                            </Box>
+                        </Box>
+                    </Box>
+                </Box>
+            </Card>
+
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3, mb: 3 }}>
+                {/* Applicant Info */}
+                <Card sx={{ ...cardStyle, mb: 0 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><PersonIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Applicant Information</Typography></Box>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 3, alignItems: "center" }}>
+                        <Box sx={{ width: 100, height: 100, borderRadius: "50%", background: "var(--bg-panel)", border: "2px solid var(--border-color)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "var(--shadow-premium)" }}>
+                            {(() => {
+                                const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+                                const portalImg = facultyId?.profileImage ? (facultyId.profileImage.startsWith('http') ? facultyId.profileImage : `${backendURL}${facultyId.profileImage.startsWith('/') ? facultyId.profileImage : `/${facultyId.profileImage}`}`) : null;
+                                const ecapImg = facultyId?.institutionId ? `https://info.aec.edu.in/aus/employeephotos/${facultyId.institutionId}.jpg` : null;
+                                const src = portalImg || ecapImg;
+
+                                if (src && !imgError) {
+                                    return (
+                                        <img 
+                                            src={src} 
+                                            alt={facultyId?.name} 
+                                            style={{ width: "100%", height: "100%", objectFit: "cover" }} 
+                                            onError={() => setImgError(true)}
+                                        />
+                                    );
+                                }
+                                return <Typography sx={{ fontSize: 36, fontWeight: 800, color: "var(--text-secondary)" }}>{facultyId?.name?.charAt(0).toUpperCase() || "F"}</Typography>;
+                            })()}
+                        </Box>
+                        <Box sx={{ width: "100%" }}>
+                            <LabelValue label="Name" value={facultyId?.name} horizontal />
+                            <LabelValue label="Designation" value={facultyId?.designation} horizontal />
+                            <LabelValue label="Parent Department" value={facultyId?.coreDepartment?.name || facultyId?.department?.name} horizontal />
+                            <LabelValue label="Emp ID" value={facultyId?.institutionId} horizontal />
+                            <LabelValue label="Contact" value={facultyId?.phone || facultyId?.contactNumber} horizontal />
+                            <LabelValue label="PAN Number" value={data.panNumber} horizontal />
+                            <LabelValue label="College" value={data.college || "Aditya University"} horizontal />
+                        </Box>
+                    </Box>
+                </Card>
+
+                {/* Conference Paper Details */}
+                <Card sx={{ ...cardStyle, mb: 0 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><SchoolIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Conference Paper Details</Typography></Box>
+                    <Box sx={{ display: "flex", flexDirection: "column" }}>
+                        <LabelValue label="Title of Research Paper" value={data.title} horizontal />
+                        <LabelValue label="DOI" value={data.doi || "-"} horizontal />
+                        <LabelValue label="Name of Conference" value={data.conferenceName} horizontal />
+                        <LabelValue label="Publication Scope" value={data.scope || data.level || "National"} horizontal />
+                        <LabelValue label="Scopus Indexed" value={data.scopusIndexed || "-"} horizontal />
+                        <LabelValue 
+                            label="Applicant Position" 
+                            horizontal
+                            chip={
+                                (() => {
+                                    const pos = data.userAuthorPosition || 1;
+                                    const total = data.totalAuthors || 1;
+                                    return (
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Box sx={{
+                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                width: 36, height: 36, borderRadius: '50%',
+                                                bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)',
+                                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '1rem'
+                                            }}>
+                                                {pos}
+                                            </Box>
+                                            {total && (
+                                                <>
+                                                    <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '1rem' }}>of</Typography>
+                                                    <Box sx={{
+                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                        px: 1.5, height: 32, borderRadius: '8px',
+                                                        bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)',
+                                                        color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.95rem'
+                                                    }}>
+                                                        {total} Authors
+                                                    </Box>
+                                                </>
+                                            )}
+                                        </Box>
+                                    );
+                                })()
+                            }
+                        />
+                        <LabelValue label="Publishing Date" value={`${data.month || ""} ${data.year || ""}`} horizontal />
+                        <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant || "No"} horizontal />
+                        <LabelValue label="Applied for Incentive" value={data.applyIncentive || "No"} horizontal />
+                        {data.estimatedIncentiveAmount !== undefined && (
+                            <LabelValue 
+                                label="Estimated Incentive" 
+                                value={data.estimatedIncentiveAmount > 0 ? `₹${data.estimatedIncentiveAmount}` : "The research committee will decide accordingly"} 
+                                horizontal 
+                            />
+                        )}
+                    </Box>
+                </Card>
+            </Box>
+
+            {/* Co-Authors - shown above Attached Documents */}
+            {(() => {
+                const applicantPos = parseInt(data.userAuthorPosition) || 1;
+                const applicantName = (data.facultyId?.name || "").trim().toLowerCase();
+                const applicantEmpId = (data.facultyId?.institutionId || data.facultyId?._id || "").toString().trim().toLowerCase();
+
+                const filteredCoAuthors = (data.coAuthors || []).filter((ca, index) => {
+                    const pos = ca.authorPosition;
+                    if (pos && pos === applicantPos) return false;
+
+                    const caEmpId = (ca.employeeId?.institutionId || ca.employeeId?._id || ca.employeeId || "").toString().trim().toLowerCase();
+                    if (caEmpId && applicantEmpId && caEmpId === applicantEmpId) return false;
+
+                    const caName = (ca.name || "").trim().toLowerCase();
+                    if (caName && applicantName && (caName === applicantName || caName.includes(applicantName) || applicantName.includes(caName))) return false;
+
+                    return true;
+                });
+
+                if (filteredCoAuthors.length === 0) return null;
+
+                const total = parseInt(data.totalAuthors) || (filteredCoAuthors.length + 1);
+                const derivedPositions = total > 0
+                    ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
+                    : [];
+
+                return (
+                    <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
+                        <Box sx={{ p: 3, pb: 2 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                <GroupsIcon sx={{ color: "var(--color-primary)" }} />
+                                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Author Details</Typography>
+                                <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
+                                        Total: {filteredCoAuthors.length} Co-Author{filteredCoAuthors.length > 1 ? 's' : ''}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </Box>
+                        <TableContainer>
+                            <Table>
+                                <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                                    <TableRow>
+                                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>POSITION</TableCell>
+                                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
+                                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>TYPE</TableCell>
+                                        <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {filteredCoAuthors.map((ca, i) => {
+                                        const pos = ca.authorPosition || derivedPositions[i] || (i + (applicantPos === 1 ? 2 : 1));
+                                        return (
+                                            <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                                                <TableCell>
+                                                    <Box sx={{
+                                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                        width: 32, height: 32, borderRadius: '50%',
+                                                        bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
+                                                        color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                                    }}>
+                                                        {pos}
+                                                    </Box>
+                                                </TableCell>
+                                                <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{ca.name}</TableCell>
+                                                <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)", textTransform: "capitalize" }}>{ca.CoAuthorType || "-"}</TableCell>
+                                                <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || "-"}</TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    </Card>
+                );
+            })()}
+
+            {/* Attachments Section */}
+            <Card sx={{ ...cardStyle, mb: 3 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
+                    <AttachFileIcon sx={{ color: "var(--color-primary)" }} />
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography>
+                </Box>
+                <Grid container spacing={3}>
+                    {renderFilePreview("1st Page in Conference", data.firstPage, 1)}
+                    {renderFilePreview("Presentation Certificate", data.certificate, 2)}
+                    {renderFilePreview("Complete Document", data.completeDocument, 3)}
+                    {data.flightTicket && renderFilePreview("Flight Ticket", data.flightTicket, 4)}
+                </Grid>
+            </Card>
+
+            {/* Actions */}
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mt: 3 }}>
+                {data.hodComment && <Box sx={{ flex: 1, minWidth: 300 }}><Card sx={{ ...cardStyle, borderLeft: "4px solid #ffc107", height: "100%", mb: 0 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><HistoryIcon sx={{ color: "#ffc107" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>HOD Review</Typography></Box><Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}><Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.hodComment}"</Typography></Box></Card></Box>}
+                
+                <Box sx={{ flex: 1, minWidth: 350 }}>
+                    {((isResearchAdmin && data.status === 'Pending at R&D') || (isHOD && data.status === 'Pending')) ? (
+                        <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", mb: 0 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
+                            
+                            <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3 }}>
+                                Please review the details above and choose an action to proceed with this submission.
+                            </Typography>
+
+                            <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-start" }}>
+                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => setRejectDialogOpen(true)} sx={{ px: 3, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>Reject</Button>
+                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => setApproveDialogOpen(true)} sx={{ px: 4, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
+                            </Box>
+                        </Card>
+                    ) : (
+                        <Card sx={{ ...cardStyle, p: 4, textAlign: "center", mb: 0 }}>
+                            <Typography variant="h6" color="var(--text-secondary)" sx={{ fontWeight: 800 }}>Request already processed</Typography>
+                            <Typography variant="body2" sx={{ mt: 1, fontWeight: 700 }}>Current Status: <span style={{ color: statusStyle.color }}>{data.status}</span></Typography>
+                            {data.rndComment && (
+                                <Box sx={{ mt: 3, textAlign: "left", p: 2, bgcolor: "rgba(16, 185, 129, 0.05)", borderRadius: "10px", border: "1px solid #10b98133" }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 900, color: "#10b981", textTransform: "uppercase" }}>R&D Remarks:</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, mt: 0.5 }}>"{data.rndComment}"</Typography>
+                                    {data.approvedAmount && <Typography variant="h6" sx={{ mt: 2, fontWeight: 900, color: "#10b981" }}>Approved Amount: ₹{data.approvedAmount}</Typography>}
+                                </Box>
+                            )}
+                        </Card>
+                    )}
+                </Box>
+            </Box>
+
+            {/* Approve Dialog */}
+            <Dialog open={approveDialogOpen} onClose={() => setApproveDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>
+                <DialogTitle sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                    {isHOD ? "Approve & Forward Submission" : "Final Approve Submission"}
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 2.5 }}>
+                        Please confirm approval details for this conference submission:
+                    </Typography>
+
+                    {isResearchAdmin && data.applyIncentive === 'Yes' && (
+                        <Box sx={{ mb: 2.5 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--color-primary)", fontSize: "0.8rem" }}>
+                                APPROVED INCENTIVE AMOUNT (₹) *
+                            </Typography>
+                            <TextField 
+                                fullWidth size="small" type="number" 
+                                placeholder="Enter approved incentive amount" 
+                                value={approvedAmount} 
+                                onChange={e => setApprovedAmount(e.target.value)} 
+                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
+                            />
+                        </Box>
+                    )}
+
+                    {isResearchAdmin && (
+                        <Box sx={{ mb: 2.5 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--color-primary)", fontSize: "0.8rem" }}>
+                                ARTICLE ELIGIBILITY FOR APPRAISAL *
+                            </Typography>
+                            <Select fullWidth size="small" value={appraisalEligible} onChange={e => setAppraisalEligible(e.target.value)} displayEmpty sx={{ borderRadius: "10px" }}>
+                                <MenuItem value="" disabled>Select Eligibility</MenuItem>
+                                <MenuItem value="Yes">Yes</MenuItem>
+                                <MenuItem value="No">No</MenuItem>
+                            </Select>
+                        </Box>
+                    )}
+
+                    <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--text-primary)", fontSize: "0.8rem" }}>
+                            REMARKS / COMMENTS (OPTIONAL)
+                        </Typography>
+                        <TextField 
+                            fullWidth multiline rows={3} 
+                            placeholder="Provide review comments..." 
+                            value={remarks} 
+                            onChange={e => setRemarks(e.target.value)} 
+                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={() => setApproveDialogOpen(false)} disabled={actionLoading} sx={{ color: "var(--text-secondary)", textTransform: "none" }}>
+                        Cancel
+                    </Button>
+                    <Button 
+                        variant="contained" color="success" disabled={actionLoading} 
+                        onClick={() => handleAction('Approve')}
+                        sx={{ borderRadius: "8px", px: 3, textTransform: "none", fontWeight: 700 }}
+                    >
+                        {actionLoading ? "Processing..." : "Confirm Approve"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Reject Dialog */}
+            <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>
+                <DialogTitle sx={{ fontWeight: 800, color: "#d32f2f" }}>
+                    Reject Submission
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 2 }}>
+                        Please provide a reason for rejecting this submission:
+                    </Typography>
+                    <TextField 
+                        fullWidth multiline rows={3} 
+                        placeholder="Provide rejection comments (Required)..." 
+                        value={remarks} 
+                        onChange={e => setRemarks(e.target.value)} 
+                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
+                    />
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={() => setRejectDialogOpen(false)} disabled={actionLoading} sx={{ color: "var(--text-secondary)", textTransform: "none" }}>
+                        Cancel
+                    </Button>
+                    <Button 
+                        variant="contained" color="error" disabled={actionLoading} 
+                        onClick={() => handleAction('Reject')}
+                        sx={{ borderRadius: "8px", px: 3, textTransform: "none", fontWeight: 700 }}
+                    >
+                        {actionLoading ? "Processing..." : "Confirm Rejection"}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {isResearchAdmin && (
+                <EditResearchDetailsDialog
+                    open={editOpen}
+                    onClose={() => setEditOpen(false)}
+                    type="Conference"
+                    currentData={data}
+                    onSave={(updated) => {
+                        setData(updated);
+                        if (updated.appraisalEligible) setAppraisalEligible(updated.appraisalEligible);
+                        if (updated.approvedAmount) setApprovedAmount(updated.approvedAmount);
+                    }}
+                />
+            )}
+        </Box>
+    );
+};
+
+export default ConferenceApprovalDetails;

@@ -53,7 +53,8 @@ export default function RndTextbookDataEntry() {
     userAuthorPosition: 1,
     otherAuthors: [],
     appraisalEligible: "",
-    approvedAmount: ""
+    approvedAmount: "",
+    numberOfPages: ""
   };
 
   const [form, setForm] = useState(emptyForm);
@@ -93,6 +94,11 @@ export default function RndTextbookDataEntry() {
         setIsbnFetchedFields({ title: false, publisher: false });
       }
       if (k === "isStudentsInvolved") {
+        if (val === "Yes") {
+          if (parseInt(newForm.totalAuthors) < 2 || isNaN(parseInt(newForm.totalAuthors))) {
+            newForm.totalAuthors = 2;
+          }
+        }
         if (val === "No") {
           newForm.otherAuthors = newForm.otherAuthors.map(a => ({
             ...a,
@@ -346,6 +352,19 @@ export default function RndTextbookDataEntry() {
     setForm((prev) => {
       let newForm = { ...prev, isStudentsInvolved: val };
       
+      // If previous value was "No" and new is "Yes", increment by 1
+      if (prev.isStudentsInvolved === "No" && val === "Yes") {
+        if (parseInt(newForm.totalAuthors) == 1) {
+          newForm.totalAuthors = parseInt(newForm.totalAuthors) + 1;
+        }
+      } 
+      // If previous value was "Yes" and new is "No", decrement by 1
+      else if (prev.isStudentsInvolved === "Yes" && val === "No") {
+        if (parseInt(newForm.totalAuthors) == 2) {
+          newForm.totalAuthors = parseInt(newForm.totalAuthors) - 1;
+        }
+      }
+      
       if (val === "Yes") {
         newForm.applyIncentive = "No";
       } else {
@@ -402,10 +421,7 @@ export default function RndTextbookDataEntry() {
       toast.error("Please select Appraisal Eligible status");
       return;
     }
-    if (!files.coverPage || !files.authorAffiliation || !files.index) {
-      toast.error("Please attach all required documents (Cover Page, Author Affiliation, Index)");
-      return;
-    }
+    // Attachments removed for textbooks
 
     setLoading(true);
     try {
@@ -423,13 +439,33 @@ export default function RndTextbookDataEntry() {
       fd.append("publicationScope", form.scope || "National");
       fd.append("scope", form.scope || "National");
       fd.append("currencySymbol", form.currencySymbol || "₹");
+      fd.append("numberOfPages", form.numberOfPages || "");
 
       // Incentive & Appraisal
+      const isStudentInvolved = form.isStudentsInvolved === "Yes";
+      const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
+      const isPublisherOthers = form.publisher === "Others";
+      const disableIncentive = isStudentInvolved || isPositionGreaterThan5 || isPublisherOthers;
+      const finalApplyIncentive = disableIncentive ? "No" : form.applyIncentive;
+
       fd.append("isStudentsInvolved", form.isStudentsInvolved || "No");
       fd.append("applyingSeedGrant", form.applyingSeedGrant || "No");
-      fd.append("applyIncentive", form.applyIncentive);
-      fd.append("approvedAmount", form.applyIncentive === "Yes" ? form.approvedAmount : "");
+      fd.append("applyIncentive", finalApplyIncentive);
+      fd.append("approvedAmount", finalApplyIncentive === "Yes" ? form.approvedAmount : "");
       fd.append("appraisalEligible", form.appraisalEligible || "Yes");
+
+      let estimatedIncentiveAmount = 0;
+      if (finalApplyIncentive === "Yes") {
+          const pubObj = publishers.find(p => p.name === form.publisher);
+          if (pubObj && pubObj.type) {
+              if (pubObj.type.toLowerCase() === "national") {
+                  estimatedIncentiveAmount = 10000;
+              } else if (pubObj.type.toLowerCase() === "international") {
+                  estimatedIncentiveAmount = 20000;
+              }
+          }
+      }
+      fd.append("estimatedIncentiveAmount", estimatedIncentiveAmount);
 
       // Authors
       fd.append("totalAuthors", form.totalAuthors);
@@ -471,11 +507,7 @@ export default function RndTextbookDataEntry() {
       fd.append("isDirectEntry", "true");
       fd.append("targetFacultyEmpId", targetFacultyEmpId);
 
-      // Mandatory files matching backend expected names
-      if (files.coverPage) fd.append("coverPage", files.coverPage);
-      if (files.authorAffiliation) fd.append("authorAffiliation", files.authorAffiliation);
-      if (files.index) fd.append("index", files.index);
-
+      // Mandatory files removed for textbooks
       await API.post("/api/research/textbook", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Textbook publication record added directly for faculty!");
       setForm(emptyForm);
@@ -570,7 +602,7 @@ export default function RndTextbookDataEntry() {
                   const val = e.target.value;
                   setForm(prev => ({
                     ...prev,
-                    publisher: val,
+                    publisher: "",
                     scope: val,
                     customPublisher: "",
                     currencySymbol: val === "National" ? "₹" : "$"
@@ -643,27 +675,29 @@ export default function RndTextbookDataEntry() {
                   />
                 )}
               />
-              {form.publisher === "Others" && (
+            </Box>
+            {form.publisher === "Others" && (
+              <Box>
+                <Typography sx={labelStyle}>Specify Publisher : *</Typography>
                 <TextField
                   size="small"
                   fullWidth
-                  sx={{ mt: 1.5 }}
                   placeholder="Enter Publisher Name"
                   value={form.customPublisher}
                   onChange={(e) => setForm(p => ({ ...p, customPublisher: e.target.value }))}
                 />
-              )}
-            </Box>
+              </Box>
+            )}
 
             <Box>
               <Typography sx={labelStyle}>Edition :</Typography>
-              <Autocomplete
-                freeSolo
-                options={editions.map(e => typeof e === "string" ? e : e.name)}
+              <TextField
+                fullWidth
+                size="small"
+                type="number"
+                placeholder="Enter Edition"
                 value={form.edition}
-                onChange={(e, newValue) => setForm(p => ({ ...p, edition: newValue || "" }))}
-                onInputChange={(e, newInputValue) => setForm(p => ({ ...p, edition: newInputValue }))}
-                renderInput={(params) => <TextField {...params} size="small" placeholder="Select or type Edition (e.g. 1st Edition)" />}
+                onChange={(e) => setForm(p => ({ ...p, edition: e.target.value }))}
               />
             </Box>
 
@@ -736,6 +770,18 @@ export default function RndTextbookDataEntry() {
                   </Box>
                 </Box>
               </Box>
+            </Box>
+            <Box>
+              <Typography sx={labelStyle}>Number of Pages :</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                type="number"
+                value={form.numberOfPages}
+                onChange={set("numberOfPages")}
+                slotProps={{ htmlInput: { min: 1 } }}
+                placeholder="e.g. 250"
+              />
             </Box>
           </Grid2>
 
@@ -935,27 +981,88 @@ export default function RndTextbookDataEntry() {
                 <MenuItem value="No">No</MenuItem>
               </Select>
             </Box>
-            <Box>
-              <Typography sx={labelStyle}>Apply Incentive? : *</Typography>
-              <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")} disabled={form.isStudentsInvolved === "Yes"} sx={form.isStudentsInvolved === "Yes" ? disabledField : {}}>
-                <MenuItem value="" disabled>Select Option</MenuItem>
-                <MenuItem value="Yes">Yes</MenuItem>
-                <MenuItem value="No">No</MenuItem>
-              </Select>
-            </Box>
-            {form.applyIncentive === "Yes" && (
+        {(() => {
+          const isStudentInvolved = form.isStudentsInvolved === "Yes";
+          const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
+          const isPublisherOthers = form.publisher === "Others";
+          const disableIncentive = isStudentInvolved || isPositionGreaterThan5 || isPublisherOthers;
+          const currentApplyIncentive = disableIncentive ? "No" : form.applyIncentive;
+
+          let estIncentive = "-";
+          if (currentApplyIncentive === "Yes") {
+              const pubObj = publishers.find(p => p.name === form.publisher);
+              if (pubObj && pubObj.type) {
+                  if (pubObj.type.toLowerCase() === "national") {
+                      estIncentive = "₹10,000";
+                  } else if (pubObj.type.toLowerCase() === "international") {
+                      estIncentive = "₹20,000";
+                  } else {
+                      estIncentive = "Research committee decision";
+                  }
+              } else {
+                  estIncentive = "Research committee decision";
+              }
+          } else if (currentApplyIncentive === "No") {
+              estIncentive = "₹0";
+          }
+
+          return (
+            <>
               <Box>
-                <Typography sx={labelStyle}>Approved Incentive Amount (₹) : *</Typography>
-                <TextField
-                  size="small"
-                  fullWidth
-                  type="number"
-                  placeholder="Enter approved incentive amount"
-                  value={form.approvedAmount}
-                  onChange={set("approvedAmount")}
-                />
+                <Typography sx={labelStyle}>Apply Incentive? : *</Typography>
+                <Select size="small" fullWidth displayEmpty value={currentApplyIncentive} onChange={set("applyIncentive")} disabled={disableIncentive} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
+                  <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="Yes">Yes</MenuItem>
+                  <MenuItem value="No">No</MenuItem>
+                </Select>
+                {isPositionGreaterThan5 && (
+                  <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                    * Application for incentive is only for the first 5 author positions.
+                  </Typography>
+                )}
+                {isPublisherOthers && !isPositionGreaterThan5 && (
+                  <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                    * Incentive is not applicable for custom publishers.
+                  </Typography>
+                )}
               </Box>
-            )}
+              {currentApplyIncentive === "Yes" && (
+                <Box sx={{
+                  gridColumn: { sm: "1 / -1" },
+                  p: 2.5,
+                  borderRadius: "12px",
+                  bgcolor: estIncentive !== "Research committee decision" ? "rgba(16, 185, 129, 0.06)" : "rgba(239, 68, 68, 0.05)",
+                  border: `1.5px dashed ${estIncentive !== "Research committee decision" ? "rgba(16, 185, 129, 0.4)" : "rgba(239, 68, 68, 0.3)"}`,
+                  mt: 2
+                }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+                    <Box>
+                      <Typography sx={{ fontSize: "0.8rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: estIncentive !== "Research committee decision" ? "#059669" : "#dc2626" }}>
+                        Estimated Research Incentive Amount
+                      </Typography>
+                      <Typography sx={{ fontSize: estIncentive !== "Research committee decision" ? "1.6rem" : "0.95rem", fontWeight: estIncentive !== "Research committee decision" ? 800 : 700, color: estIncentive !== "Research committee decision" ? "#047857" : "#dc2626", mt: 0.5 }}>
+                        {estIncentive !== "Research committee decision" ? estIncentive : "⚠️ " + estIncentive}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              )}
+              {currentApplyIncentive === "Yes" && (
+                <Box>
+                  <Typography sx={labelStyle}>Approved Incentive Amount (₹) : *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    type="number"
+                    placeholder="Enter approved incentive amount"
+                    value={form.approvedAmount}
+                    onChange={set("approvedAmount")}
+                  />
+                </Box>
+              )}
+            </>
+          );
+        })()}
             <Box>
               <Typography sx={labelStyle}>Article Eligibility for Appraisal : *</Typography>
               <Select size="small" fullWidth displayEmpty value={form.appraisalEligible} onChange={set("appraisalEligible")}>
@@ -967,28 +1074,11 @@ export default function RndTextbookDataEntry() {
           </Grid2>
 
           {/* ── Attachments ── */}
-          <SubLabel text="Upload Required Documents:" />
-          <NoteBox />
-          <Grid2 sx={{ mt: 2 }}>
-            <FileField
-              label="Attach CoverPage *"
-              name="coverPage"
-              onChange={setFile("coverPage")}
-              file={files.coverPage}
-            />
-            <FileField
-              label="Attach Page displaying author affiliation *"
-              name="authorAffiliation"
-              onChange={setFile("authorAffiliation")}
-              file={files.authorAffiliation}
-            />
-            <FileField
-              label="Attach Index *"
-              name="index"
-              onChange={setFile("index")}
-              file={files.index}
-            />
-          </Grid2>
+          <Box sx={{ mt: 3, p: 2, bgcolor: 'rgba(255, 193, 7, 0.1)', border: '1px solid #ffb300', borderRadius: '8px' }}>
+            <Typography sx={{ color: '#b27900', fontWeight: 600, fontSize: '0.9rem' }}>
+              Note: No attachments are needed for textbook applications. Please submit a hard copy to the Dean R&C office.
+            </Typography>
+          </Box>
 
           <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
             <SubmitBtn onClick={handleSubmit} disabled={loading || !isTargetFacultyValid}>

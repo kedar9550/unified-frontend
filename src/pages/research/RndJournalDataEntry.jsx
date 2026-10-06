@@ -83,7 +83,8 @@ const getMatchedSdgBadgeList = (sdgInput) => {
 };
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-const JOURNAL_TYPES = ["SCI", "SCIE", "ESCI", "None"];
+const JOURNAL_TYPES = ["SCIE", "SCI", "ESCI", "SSCI", "AHCI", "None"];
+const JOURNAL_CATEGORIES = ["IEEE", "ASME", "ASCE", "ACM", "OTHERS"];
 const QUARTILE_OPTIONS = ["Q1", "Q2", "Q3", "Q4", "None"];
 const INCENTIVE_OPTIONS = ["National", "International"];
 
@@ -165,12 +166,14 @@ export default function RndJournalDataEntry() {
     paperTitle: "",
     journalName: "",
     journalQuartile: "",
-    journalType: "",
+    journalType: "None",
+    isWos: "No",
+    journalCategory: "",
     vol: "",
     issue: "",
     pageNos: "",
-    hIndex: "",
-    jcrImpactFactor: "",
+    hIndex: "0",
+    jcrImpactFactor: "0",
     numberOfReferencesBelongingToAGEC: 0,
     agecReferencingNumbers: "",
     month: "",
@@ -179,11 +182,11 @@ export default function RndJournalDataEntry() {
     appraisalEligible: "",
     approvedAmount: "",
     applyIncentive: "",
-    publicationScope: "",
     applyingSeedGrant: "",
     completeJournalName: "",
     sdgs: "",
     isStudentsInvolved: "No",
+    correspondingAuthor: "No",
     issn: "",
     eissn: "",
     isScopus: "No",
@@ -229,6 +232,7 @@ export default function RndJournalDataEntry() {
           authorPosition: i,
           CoAuthorType: "faculty",
           studentId: "",
+          studentQualification: "",
           affiliationType: "",
           empId: "",
           authorName: "",
@@ -239,6 +243,51 @@ export default function RndJournalDataEntry() {
     setForm(p => ({ ...p, otherAuthors: newOtherAuthors }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.totalAuthors, form.userAuthorPosition]);
+
+  const [estimatedIncentiveState, setEstimatedIncentiveState] = useState(null);
+  const [incentiveLoading, setIncentiveLoading] = useState(false);
+
+  // Live query backend incentive calculation API
+  useEffect(() => {
+    if (form.applyIncentive !== "Yes") {
+      setEstimatedIncentiveState(null);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        setIncentiveLoading(true);
+        const res = await API.post("/api/research/journal/calculate-incentive", {
+          ...form,
+          coAuthors: form.otherAuthors
+        });
+        setEstimatedIncentiveState(res.data);
+      } catch (err) {
+        setEstimatedIncentiveState({
+          success: false,
+          message: err.response?.data?.message || "Failed to calculate incentive"
+        });
+      } finally {
+        setIncentiveLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [
+    form.applyIncentive,
+    form.journalQuartile,
+    form.journalCategory,
+    form.userAuthorPosition,
+    form.correspondingAuthor,
+    form.numberOfReferencesBelongingToAGEC,
+    form.jcrImpactFactor,
+    form.hIndex,
+    form.isScopus,
+    form.isWos,
+    form.journalType,
+    form.isStudentsInvolved,
+    form.otherAuthors
+  ]);
 
   useEffect(() => {
     API.get("/api/academic-years")
@@ -287,12 +336,14 @@ export default function RndJournalDataEntry() {
         newForm.paperTitle = "";
         newForm.journalName = "";
         newForm.journalQuartile = "";
-        newForm.journalType = "";
+        newForm.journalType = "None";
+        newForm.isWos = "No";
+        newForm.journalCategory = "";
         newForm.vol = "";
         newForm.issue = "";
         newForm.pageNos = "";
-        newForm.hIndex = "";
-        newForm.jcrImpactFactor = "";
+        newForm.hIndex = "0";
+        newForm.jcrImpactFactor = "0";
         newForm.month = "";
         newForm.year = "";
         newForm.sdgs = "";
@@ -304,19 +355,31 @@ export default function RndJournalDataEntry() {
         setDoiFetchedFields({});
         setScannedSdgResults(null);
       }
+      if (k === "journalType") {
+        newForm.isWos = (val && val !== "None") ? "Yes" : "No";
+      }
       if (k === "isStudentsInvolved") {
+        if (val === "Yes") {
+          if (parseInt(newForm.totalAuthors) < 2 || isNaN(parseInt(newForm.totalAuthors))) {
+            newForm.totalAuthors = 2;
+          }
+        }
         if (val === "No") {
-          newForm.otherAuthors = newForm.otherAuthors.map(a => ({
+          newForm.otherAuthors = (newForm.otherAuthors || []).map(a => ({
             ...a,
             CoAuthorType: "faculty",
             studentId: "",
+            studentQualification: "",
             authorName: a.CoAuthorType === "student" ? "" : a.authorName,
             empId: a.CoAuthorType === "student" ? "" : a.empId
           }));
-          newForm.applyIncentive = "";
-          newForm.approvedAmount = "";
-        } else if (val === "Yes") {
+        }
+        const hasPg = val === "Yes" && (newForm.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+        if (hasPg) {
           newForm.applyIncentive = "No";
+          newForm.approvedAmount = "";
+        } else {
+          newForm.applyIncentive = "";
           newForm.approvedAmount = "";
         }
       }
@@ -360,9 +423,9 @@ export default function RndJournalDataEntry() {
 
   const validateFile = (file) => {
     if (!file) return true;
-    const allowed = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
-    if (!allowed.includes(file.type)) { toast.error("Only PDF, JPG, and PNG files are allowed"); return false; }
-    if (file.size > 500 * 1024) { toast.error("File size exceeds 500KB limit"); return false; }
+    const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+    if (!isPdf) { toast.error("Only PDF files are allowed"); return false; }
+    if (file.size > 200 * 1024) { toast.error("File size exceeds 200KB limit"); return false; }
     return true;
   };
 
@@ -504,6 +567,9 @@ export default function RndJournalDataEntry() {
       const fetched = {};
       const patch = {};
 
+      const resolvedJournalType = (data.journalType && ["SCIE", "SCI", "ESCI", "SSCI", "AHCI"].includes(data.journalType)) ? data.journalType : "None";
+      const resolvedIsWos = data.isWos || (resolvedJournalType !== "None" ? "Yes" : "No");
+
       const map = {
         paperTitle: data.title,
         journalName: data.journalName,
@@ -513,11 +579,14 @@ export default function RndJournalDataEntry() {
         month: data.month,
         year: data.year,
         journalQuartile: data.journalQuartile,
-        journalType: data.journalType,
+        journalType: resolvedJournalType,
+        isWos: resolvedIsWos,
         issn: data.issn || "",
         eissn: data.eissn || "",
         isScopus: data.isScopus || "No",
-        citations: data.citations || ""
+        citations: data.citations || "",
+        jcrImpactFactor: data.jcrImpactFactor !== undefined && data.jcrImpactFactor !== null ? String(data.jcrImpactFactor) : "0",
+        hIndex: data.hIndex !== undefined && data.hIndex !== null ? String(data.hIndex) : "0"
       };
 
       Object.entries(map).forEach(([k, v]) => {
@@ -562,46 +631,71 @@ export default function RndJournalDataEntry() {
   };
 
   const handleCoAuthorChange = (pos, field, value) => {
-    const updated = form.otherAuthors.map(a => {
-      if (a.authorPosition !== pos) return a;
-      const newA = { ...a, [field]: value };
+    setForm(p => {
+      const hadPg = p.isStudentsInvolved === "Yes" && (p.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+      const updated = p.otherAuthors.map(a => {
+        if (a.authorPosition !== pos) return a;
+        const newA = { ...a, [field]: value };
 
-      if (field === "CoAuthorType") {
-        if (value === "faculty") {
-          newA.studentId = "";
-          if (a.CoAuthorType === "student") {
+        if (field === "CoAuthorType") {
+          if (value === "faculty") {
+            newA.studentId = "";
+            newA.studentQualification = "";
+            if (a.CoAuthorType === "student") {
+              newA.authorName = "";
+              newA.empId = "";
+            }
+          } else if (value === "student") {
+            newA.empId = "";
+            newA.affiliationType = "Aditya University";
+            newA.affiliationName = "Aditya University";
+            newA.studentQualification = "";
+            if (a.CoAuthorType === "faculty") {
+              newA.authorName = "";
+            }
+          }
+        }
+
+        if (field === "affiliationType") {
+          if (value === "Aditya University") {
+            newA.affiliationName = "Aditya University";
             newA.authorName = "";
             newA.empId = "";
-          }
-        } else if (value === "student") {
-          newA.empId = "";
-          newA.affiliationType = "Aditya University";
-          newA.affiliationName = "Aditya University";
-          if (a.CoAuthorType === "faculty") {
+            newA.studentId = "";
+            newA.studentQualification = "";
+          } else {
+            newA.affiliationName = "";
+            newA.empId = "";
             newA.authorName = "";
+            newA.studentId = "";
+            newA.studentQualification = "";
           }
         }
+        return newA;
+      });
+
+      const hasPg = p.isStudentsInvolved === "Yes" && updated.some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+
+      let newApplyIncentive = p.applyIncentive;
+      let newApprovedAmount = p.approvedAmount;
+      if (hasPg) {
+        newApplyIncentive = "No";
+        newApprovedAmount = "";
+      } else if (field === "studentQualification" || (hadPg && !hasPg) || field === "CoAuthorType") {
+        newApplyIncentive = "";
+        newApprovedAmount = "";
       }
 
-      if (field === "affiliationType") {
-        if (value === "Aditya University") {
-          newA.affiliationName = "Aditya University";
-          newA.authorName = "";
-          newA.empId = "";
-          newA.studentId = "";
-        } else {
-          newA.affiliationName = "";
-          newA.empId = "";
-          newA.authorName = "";
-          newA.studentId = "";
-        }
-      }
-      return newA;
+      return {
+        ...p,
+        otherAuthors: updated,
+        applyIncentive: newApplyIncentive,
+        approvedAmount: newApprovedAmount
+      };
     });
-    setForm(p => ({ ...p, otherAuthors: updated }));
 
     if (field === "empId" && value.length >= 3) {
-      const author = updated.find(a => a.authorPosition === pos);
+      const author = form.otherAuthors.find(a => a.authorPosition === pos);
       if (author?.affiliationType === "Aditya University" && author?.CoAuthorType !== "student") fetchCoAuthorName(pos, value);
     }
   };
@@ -610,16 +704,27 @@ export default function RndJournalDataEntry() {
     const val = e.target.value;
     setForm((prev) => {
       let newForm = { ...prev, isStudentsInvolved: val };
+      
+      // If previous value was "No" and new is "Yes", increment by 1
+      if (prev.isStudentsInvolved === "No" && val === "Yes") {
+        if (parseInt(newForm.totalAuthors) == 1) {
+          newForm.totalAuthors = parseInt(newForm.totalAuthors) + 1;
+        }
+      } 
+      // If previous value was "Yes" and new is "No", decrement by 1
+      else if (prev.isStudentsInvolved === "Yes" && val === "No") {
+        if (parseInt(newForm.totalAuthors) == 2) {
+          newForm.totalAuthors = parseInt(newForm.totalAuthors) - 1;
+        }
+      }
 
-      if (val === "Yes") {
-        newForm.applyIncentive = "No";
-      } else {
-        newForm.applyIncentive = "";
+      if (val === "No") {
         if (newForm.otherAuthors) {
           newForm.otherAuthors = newForm.otherAuthors.map(author => {
             const newAuthor = { ...author };
             delete newAuthor.CoAuthorType;
             delete newAuthor.studentId;
+            delete newAuthor.studentQualification;
             if (author.CoAuthorType === "student" && newAuthor.affiliationType === "Aditya University") {
               newAuthor.affiliationType = "";
               newAuthor.affiliationName = "";
@@ -627,6 +732,17 @@ export default function RndJournalDataEntry() {
             return newAuthor;
           });
         }
+        newForm.applyIncentive = "";
+        newForm.approvedAmount = "";
+      }
+
+      const hasPg = val === "Yes" && (newForm.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+      if (hasPg) {
+        newForm.applyIncentive = "No";
+        newForm.approvedAmount = "";
+      } else if (val === "Yes") {
+        newForm.applyIncentive = "";
+        newForm.approvedAmount = "";
       }
       return newForm;
     });
@@ -642,7 +758,7 @@ export default function RndJournalDataEntry() {
       toast.error("Please enter and verify a valid Target Faculty Employee ID");
       return;
     }
-    if (!form.doi || !form.paperTitle || !form.journalName || !form.month || !form.year || !form.issn || !form.eissn || !form.journalQuartile || !form.journalType || !form.isScopus || !form.jcrImpactFactor) {
+    if (!form.doi || !form.paperTitle || !form.journalName || !form.month || !form.year || !form.issn || !form.eissn || !form.journalQuartile || !form.journalType || !form.journalCategory || !form.isScopus) {
       toast.error("Please fill all mandatory fields (*)");
       return;
     }
@@ -665,8 +781,9 @@ export default function RndJournalDataEntry() {
       toast.error("Please select whether you want to apply for an incentive");
       return;
     }
-    if (!form.publicationScope) {
-      toast.error("Please select National or International for Publication Scope");
+
+    if (form.applyIncentive === "Yes" && estimatedIncentiveState && !estimatedIncentiveState.success) {
+      toast.error(estimatedIncentiveState.message || "Please provide mandatory fields to calculate estimated incentive.");
       return;
     }
 
@@ -682,9 +799,9 @@ export default function RndJournalDataEntry() {
           !a.affiliationType ||
           (a.affiliationType === "Others" && (!a.authorName || !a.affiliationName)) ||
           (a.affiliationType === "Aditya University" && a.CoAuthorType === "faculty" && (!a.empId || !a.authorName)) ||
-          (a.affiliationType === "Aditya University" && a.CoAuthorType === "student" && (!a.studentId || !a.authorName))
+          (a.affiliationType === "Aditya University" && a.CoAuthorType === "student" && (!a.studentId || !a.authorName || !a.studentQualification))
         ) {
-          toast.error(`Please complete details for Author Position ${a.authorPosition}.`);
+          toast.error(`Please complete details and qualification for Author Position ${a.authorPosition}.`);
           return;
         }
       }
@@ -711,18 +828,23 @@ export default function RndJournalDataEntry() {
         affiliation: a.affiliationType === "Aditya University" ? "Aditya University" : (a.affiliationName || ""),
         employeeId: (a.affiliationType === "Aditya University" && a.CoAuthorType !== "student") ? a.empId : null,
         studentId: (a.affiliationType === "Aditya University" && a.CoAuthorType === "student") ? a.studentId : null,
+        studentQualification: (a.affiliationType === "Aditya University" && a.CoAuthorType === "student") ? (a.studentQualification || null) : null,
         CoAuthorType: form.isStudentsInvolved === "Yes" ? (a.CoAuthorType || "faculty") : "faculty",
         authorPosition: a.authorPosition
       })).filter(ca => ca.name && ca.affiliation);
 
       const fields = [
-        "doi", "paperTitle", "journalName", "journalType",
-        "vol", "issue", "agecReferencingNumbers", "applyIncentive", "publicationScope",
+        "doi", "paperTitle", "journalName", "journalType", "journalCategory",
+        "vol", "issue", "agecReferencingNumbers", "applyIncentive",
         "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor", "isStudentsInvolved",
+        "correspondingAuthor",
         "issn", "eissn", "isScopus", "citations", "isInstitutionRecord", "appraisalEligible", "approvedAmount"
       ];
       fields.forEach(k => {
-        fd.append(k, form[k] ?? "");
+        let val = form[k] ?? "";
+        if (k === "hIndex" && (val === "" || val === undefined || val === null)) val = "0";
+        if (k === "jcrImpactFactor" && (val === "" || val === undefined || val === null)) val = "0";
+        fd.append(k, val);
       });
 
       fd.append("numberOfReferencesBelongingToAGEC", form.numberOfReferencesBelongingToAGEC || 0);
@@ -1032,12 +1154,21 @@ export default function RndJournalDataEntry() {
 
             {/* Journal Type */}
             <Box>
-              <Typography sx={labelStyle}>Type of Journal : *</Typography>
-              <Select size="small" fullWidth displayEmpty value={form.journalType || ""} onChange={set("journalType")}>
+              <Typography sx={labelStyle}>Type of Journal (WoS) : *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.journalType || "None"} onChange={set("journalType")}>
                 <MenuItem value="">Select or auto-fill</MenuItem>
-                {(form.journalType && !JOURNAL_TYPES.includes(form.journalType)
-                  ? [...JOURNAL_TYPES, form.journalType]
-                  : JOURNAL_TYPES
+                {JOURNAL_TYPES.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+              </Select>
+            </Box>
+
+            {/* Journal Category */}
+            <Box>
+              <Typography sx={labelStyle}>Journal Category : *</Typography>
+              <Select size="small" fullWidth displayEmpty value={form.journalCategory || ""} onChange={set("journalCategory")}>
+                <MenuItem value="">Select Category</MenuItem>
+                {(form.journalCategory && !JOURNAL_CATEGORIES.includes(form.journalCategory)
+                  ? [...JOURNAL_CATEGORIES, form.journalCategory]
+                  : JOURNAL_CATEGORIES
                 ).map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
               </Select>
             </Box>
@@ -1054,14 +1185,30 @@ export default function RndJournalDataEntry() {
 
             {/* H-Index */}
             <Box>
-              <Typography sx={labelStyle}>H-Index :</Typography>
-              <TextField size="small" fullWidth value={form.hIndex} onChange={handleNumericChange("hIndex", false)} placeholder="e.g. 10" />
+              <Typography sx={labelStyle}>H-Index : *</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                value={form.hIndex === "" || form.hIndex === undefined || form.hIndex === null ? "0" : form.hIndex}
+                onChange={handleNumericChange("hIndex", false)}
+                placeholder="0"
+                helperText="Default is 0, update if applicable"
+                FormHelperTextProps={{ sx: { fontSize: "0.75rem", color: "var(--text-secondary)", mt: 0.5 } }}
+              />
             </Box>
 
             {/* Impact Factor */}
             <Box>
-              <Typography sx={labelStyle}>Impact Factor (JCR) : *</Typography>
-              <TextField size="small" fullWidth value={form.jcrImpactFactor} onChange={handleNumericChange("jcrImpactFactor", true)} placeholder="e.g. 2.5" />
+              <Typography sx={labelStyle}>JCR Impact Factor : *</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                value={form.jcrImpactFactor === "" || form.jcrImpactFactor === undefined || form.jcrImpactFactor === null ? "0" : form.jcrImpactFactor}
+                onChange={handleNumericChange("jcrImpactFactor", true)}
+                placeholder="0"
+                helperText="Auto-fetched / Default is 0, update if applicable"
+                FormHelperTextProps={{ sx: { fontSize: "0.75rem", color: "var(--text-secondary)", mt: 0.5 } }}
+              />
             </Box>
 
             {/* Vol */}
@@ -1121,6 +1268,13 @@ export default function RndJournalDataEntry() {
               <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
                 <Typography sx={{ ...labelStyle, mb: 0 }}>Are students involved in this work as co-authors? *</Typography>
                 <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={handleStudentsInvolvedChange}>
+                  <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+                  <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+                </RadioGroup>
+              </Box>
+              <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                <Typography sx={{ ...labelStyle, mb: 0 }}>Corresponding Author : *</Typography>
+                <RadioGroup row value={form.correspondingAuthor || "No"} onChange={set("correspondingAuthor")}>
                   <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
                   <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
                 </RadioGroup>
@@ -1190,7 +1344,7 @@ export default function RndJournalDataEntry() {
                       {ca.affiliationType === "Aditya University" ? (
                         ca.CoAuthorType === "student" ? (
                           <>
-                            <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
+                            <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "110px" } }}>
                               <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT ROLL NO</Typography>
                               <TextField
                                 size="small"
@@ -1200,7 +1354,7 @@ export default function RndJournalDataEntry() {
                                 placeholder="e.g. 21A91A0501"
                               />
                             </Box>
-                            <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
+                            <Box sx={{ flex: 1.5, minWidth: { xs: "100%", sm: "160px" } }}>
                               <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT NAME</Typography>
                               <TextField
                                 size="small"
@@ -1209,6 +1363,21 @@ export default function RndJournalDataEntry() {
                                 onChange={(e) => handleCoAuthorChange(ca.authorPosition, "authorName", e.target.value)}
                                 placeholder="Full Name"
                               />
+                            </Box>
+                            <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "110px" } }}>
+                              <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>QUALIFICATION</Typography>
+                              <Select
+                                size="small"
+                                fullWidth
+                                displayEmpty
+                                value={ca.studentQualification || ""}
+                                onChange={(e) => handleCoAuthorChange(ca.authorPosition, "studentQualification", e.target.value)}
+                              >
+                                <MenuItem value="" disabled>Select</MenuItem>
+                                <MenuItem value="UG">UG</MenuItem>
+                                <MenuItem value="PG">PG</MenuItem>
+                                <MenuItem value="Ph.D">Ph.D</MenuItem>
+                              </Select>
                             </Box>
                           </>
                         ) : (
@@ -1360,25 +1529,38 @@ export default function RndJournalDataEntry() {
             </Box>
 
             <Box>
-              <Typography sx={labelStyle}>Apply Incentive? : *</Typography>
-              <Select
-                size="small"
-                fullWidth
-                displayEmpty
-                value={form.applyIncentive}
-                onChange={set("applyIncentive")}
-                disabled={form.isInstitutionRecord === "Yes" || form.isStudentsInvolved === "Yes"}
-                sx={(form.isInstitutionRecord === "Yes" || form.isStudentsInvolved === "Yes") ? disabledField : {}}
-              >
-                <MenuItem value="">Select</MenuItem>
-                <MenuItem value="Yes">Yes</MenuItem>
-                <MenuItem value="No">No</MenuItem>
-              </Select>
+              {(() => {
+                const hasPgStudent = form.isStudentsInvolved === "Yes" && (form.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+                const isIncentiveDisabled = form.isInstitutionRecord === "Yes" || hasPgStudent;
+                return (
+                  <>
+                    <Typography sx={labelStyle}>Apply Incentive? : *</Typography>
+                    <Select
+                      size="small"
+                      fullWidth
+                      displayEmpty
+                      value={isIncentiveDisabled ? "No" : form.applyIncentive}
+                      onChange={set("applyIncentive")}
+                      disabled={isIncentiveDisabled}
+                      sx={isIncentiveDisabled ? disabledField : {}}
+                    >
+                      <MenuItem value="">Select</MenuItem>
+                      <MenuItem value="Yes">Yes</MenuItem>
+                      <MenuItem value="No">No</MenuItem>
+                    </Select>
+                    {hasPgStudent && (
+                      <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                        * Incentive is not applicable for publications with PG student co-authors.
+                      </Typography>
+                    )}
+                  </>
+                );
+              })()}
             </Box>
 
             {form.applyIncentive === "Yes" && (
               <Box>
-                <Typography sx={labelStyle}>Incentive Amount :</Typography>
+                <Typography sx={labelStyle}>Approved Incentive Amount (Rs.) :</Typography>
                 <TextField
                   size="small"
                   fullWidth
@@ -1389,13 +1571,46 @@ export default function RndJournalDataEntry() {
               </Box>
             )}
 
-            <Box>
-              <Typography sx={labelStyle}>Publication Scope : *</Typography>
-              <Select size="small" fullWidth displayEmpty value={form.publicationScope} onChange={set("publicationScope")}>
-                <MenuItem value="">Select</MenuItem>
-                {INCENTIVE_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
-              </Select>
-            </Box>
+            {/* Live Estimated Incentive Preview from Backend API */}
+            {form.applyIncentive === "Yes" && (
+              <Box sx={{
+                gridColumn: { sm: "1 / -1" },
+                p: 2.5,
+                borderRadius: "12px",
+                bgcolor: estimatedIncentiveState?.success && estimatedIncentiveState?.isEligible ? "rgba(16, 185, 129, 0.06)" : "rgba(239, 68, 68, 0.05)",
+                border: `1.5px dashed ${estimatedIncentiveState?.success && estimatedIncentiveState?.isEligible ? "rgba(16, 185, 129, 0.4)" : "rgba(239, 68, 68, 0.3)"}`,
+                mt: 1
+              }}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+                  <Box>
+                    <Typography sx={{ fontSize: "0.8rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: estimatedIncentiveState?.success && estimatedIncentiveState?.isEligible ? "#059669" : "#dc2626" }}>
+                      Estimated Research Incentive Amount {incentiveLoading && <Loader size={12} sx={{ display: 'inline-block', ml: 1 }} />}
+                    </Typography>
+                    {estimatedIncentiveState?.success && estimatedIncentiveState?.isEligible ? (
+                      <Typography sx={{ fontSize: "1.6rem", fontWeight: 800, color: "#047857", mt: 0.5 }}>
+                        ₹{estimatedIncentiveState.estimatedIncentiveAmount.toLocaleString('en-IN')}
+                      </Typography>
+                    ) : (
+                      <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, color: "#dc2626", mt: 0.5 }}>
+                        ⚠️ {estimatedIncentiveState?.message || estimatedIncentiveState?.breakdown || "Calculating..."}
+                      </Typography>
+                    )}
+                  </Box>
+                  {estimatedIncentiveState?.success && estimatedIncentiveState?.isEligible && (
+                    <Chip
+                      label={`Author Share: ${estimatedIncentiveState.authorPercentageLabel}`}
+                      sx={{ bgcolor: "rgba(16, 185, 129, 0.15)", color: "#065f46", fontWeight: 700, fontSize: "0.75rem" }}
+                    />
+                  )}
+                </Box>
+
+                {estimatedIncentiveState?.success && estimatedIncentiveState?.isEligible && (
+                  <Typography sx={{ fontSize: "0.8rem", color: "var(--text-secondary)", mt: 1, pt: 1, borderTop: "1px solid rgba(0,0,0,0.06)" }}>
+                    💡 <strong>Calculation Breakdown:</strong> {estimatedIncentiveState.breakdown}
+                  </Typography>
+                )}
+              </Box>
+            )}
           </Grid2>
 
           {/* ── Actions ── */}

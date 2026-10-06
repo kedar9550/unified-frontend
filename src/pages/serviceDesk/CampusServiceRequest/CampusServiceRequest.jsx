@@ -1,0 +1,2681 @@
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Select,
+  MenuItem,
+  Menu,
+  ListItemIcon,
+  FormControl,
+  InputLabel,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Rating,
+  CircularProgress,
+  Alert,
+  Tabs,
+  Tab,
+  IconButton,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  Divider,
+  Stepper,
+  Step,
+  StepLabel,
+  Paper,
+  Tooltip,
+  Avatar,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
+  Grid,
+  ToggleButton,
+  ToggleButtonGroup
+} from "@mui/material";
+import {
+  ConfirmationNumber as TicketIcon,
+  Add as AddIcon,
+  History as HistoryIcon,
+  PhoneIphone as PhoneIcon,
+  CheckCircle as CheckIcon,
+  Schedule as ClockIcon,
+  UploadFile as UploadIcon,
+  Delete as DeleteIcon,
+  ExitToApp as LogoutIcon,
+  Refresh as RefreshIcon,
+  Star as StarIcon,
+  Build as BuildIcon,
+  LocationOn as LocationIcon,
+  PriorityHigh as PriorityIcon,
+  Help as HelpIcon,
+  ArrowForward as ArrowForwardIcon,
+  Person as PersonIcon,
+  School as SchoolIcon,
+  Close as CloseIcon,
+  KeyboardArrowDown,
+  Brightness4,
+  CalendarTodayOutlined as CalendarIcon,
+  PersonOutlineOutlined as AssignedUserIcon,
+  GridViewOutlined as CategoryGridIcon,
+  Check as StepCheckIcon,
+  Send as SendIcon,
+  Chat as ChatIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  FiberManualRecord as DotIcon,
+  Forum as ForumIcon,
+  VisibilityOutlined as ViewIcon,
+  Visibility,
+  Info as InfoIcon,
+  Hotel as HotelIcon,
+  Apartment as ApartmentIcon,
+  ViewList as ViewListIcon,
+  ViewModule as ViewGridIcon
+} from "@mui/icons-material";
+import StepConnector, { stepConnectorClasses } from "@mui/material/StepConnector";
+import { styled } from "@mui/material/styles";
+import axios from "axios";
+import { toast } from "sonner";
+import ThemeToggle from "../../../components/common/Themetoggle";
+import CustomTabs from "../../../components/common/CustomTabs";
+import Loader from "../../../components/common/Loader";
+import { useLoading } from "../../../context/LoadingContext";
+import universityLogoGold from "../../../assets/Aditya University Gold Logo.png";
+import circleLogoWhite from "../../../assets/Circle_logo_white.png";
+import smallLogoWhite from "../../../assets/Small_logo_white.png";
+import logoDarkTheme from "../../../assets/Logo_Dark_theme.svg";
+import CampusServiceRequestLogin from "./CampusServiceRequestLogin";
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:9022";
+
+// Dedicated Axios instance for Student Campus Desk (Session Isolated)
+const createStudentAPI = () => {
+  const token = localStorage.getItem("campus_student_token");
+  return axios.create({
+    baseURL: BACKEND_URL,
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+      "Content-Type": "application/json"
+    }
+  });
+};
+
+const SLA_MAP = {
+  CRITICAL: { label: "Critical (< 2h)", color: "#ef4444", bg: "#fef2f2" },
+  HIGH: { label: "High (< 4h)", color: "#f97316", bg: "#fff7ed" },
+  MEDIUM: { label: "Medium (< 24h)", color: "#3b82f6", bg: "#eff6ff" },
+  LOW: { label: "Low (< 72h)", color: "#10b981", bg: "#f0fdf4" }
+};
+
+const getStatusBadge = (status) => {
+  switch (status) {
+    case "OPEN":
+      return <Chip label="Open (Waiting)" size="small" sx={{ bgcolor: "#e0f2fe", color: "#0369a1", fontWeight: 700 }} />;
+    case "ASSIGNED":
+      return <Chip label="Assigned" size="small" sx={{ bgcolor: "#ede9fe", color: "#6d28d9", fontWeight: 700 }} />;
+    case "IN_PROGRESS":
+      return <Chip label="In Progress" size="small" sx={{ bgcolor: "#fef3c7", color: "#b45309", fontWeight: 700 }} />;
+    case "RESOLVED":
+      return <Chip label="Resolved" size="small" sx={{ bgcolor: "#dcfce7", color: "#15803d", fontWeight: 700 }} />;
+    case "CLOSED":
+      return <Chip label="Closed" size="small" sx={{ bgcolor: "#f1f5f9", color: "#475569", fontWeight: 700 }} />;
+    case "REJECTED":
+      return <Chip label="Rejected" size="small" sx={{ bgcolor: "#fee2e2", color: "#b91c1c", fontWeight: 700 }} />;
+    default:
+      return <Chip label={status} size="small" />;
+  }
+};
+
+const getTimelineStep = (status) => {
+  switch (status) {
+    case "OPEN": return 0;
+    case "ASSIGNED": return 1;
+    case "IN_PROGRESS": return 2;
+    case "RESOLVED": return 3;
+    case "CLOSED": return 4;
+    case "REJECTED": return 0;
+    default: return 0;
+  }
+};
+
+const CustomStepConnector = styled(StepConnector)(() => ({
+  [`&.${stepConnectorClasses.alternativeLabel}`]: {
+    top: 13,
+    left: "calc(-50% + 14px)",
+    right: "calc(50% + 14px)"
+  },
+  [`& .${stepConnectorClasses.line}`]: {
+    height: 3,
+    border: 0,
+    backgroundColor: "var(--border-color, #e2e8f0)",
+    borderRadius: 2
+  },
+  [`&.${stepConnectorClasses.active}`]: {
+    [`& .${stepConnectorClasses.line}`]: {
+      backgroundImage: "linear-gradient(95deg, #16a34a 0%, #2563eb 100%)"
+    }
+  },
+  [`&.${stepConnectorClasses.completed}`]: {
+    [`& .${stepConnectorClasses.line}`]: {
+      backgroundImage: "linear-gradient(95deg, #16a34a 0%, #2563eb 100%)"
+    }
+  }
+}));
+
+function CustomTimelineStepIcon(props) {
+  const { active, completed, icon } = props;
+
+  if (completed) {
+    return (
+      <Box
+        sx={{
+          width: 28,
+          height: 28,
+          borderRadius: "50%",
+          bgcolor: "#16a34a",
+          color: "#ffffff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 2px 6px rgba(22, 163, 74, 0.3)"
+        }}
+      >
+        <StepCheckIcon sx={{ fontSize: 17, stroke: "#ffffff", strokeWidth: 1 }} />
+      </Box>
+    );
+  }
+
+  if (active) {
+    return (
+      <Box
+        sx={{
+          width: 28,
+          height: 28,
+          borderRadius: "50%",
+          bgcolor: "#2563eb",
+          color: "#ffffff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontWeight: 700,
+          fontSize: "0.82rem",
+          boxShadow: "0 2px 8px rgba(37, 99, 235, 0.35)"
+        }}
+      >
+        {icon}
+      </Box>
+    );
+  }
+
+  return (
+    <Box
+      sx={{
+        width: 28,
+        height: 28,
+        borderRadius: "50%",
+        bgcolor: "#cbd5e1",
+        ".dark-mode &": { bgcolor: "#334155" },
+        color: "#ffffff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontWeight: 600,
+        fontSize: "0.8rem"
+      }}
+    >
+      {icon}
+    </Box>
+  );
+}
+
+const formatTimelineStepDate = (dateStr) => {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return null;
+  const day = d.getDate();
+  const month = d.toLocaleString("en-IN", { month: "short" });
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "pm" : "am";
+  hours = hours % 12;
+  hours = hours ? String(hours).padStart(2, "0") : "12";
+  return `${day} ${month}, ${hours}:${minutes} ${ampm}`;
+};
+
+const formatRaisedOnDate = (dateStr) => {
+  if (!dateStr) return "N/A";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "N/A";
+  const day = d.getDate();
+  const month = d.toLocaleString("en-IN", { month: "short" });
+  const year = d.getFullYear();
+  let hours = d.getHours();
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "pm" : "am";
+  hours = hours % 12;
+  hours = hours ? String(hours).padStart(2, "0") : "12";
+  return `${day} ${month} ${year}, ${hours}:${minutes} ${ampm}`;
+};
+
+export default function CampusServiceRequest() {
+  const { startLoading, stopLoading } = useLoading();
+  // Theme state
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return document.body.classList.contains("dark-mode") ||
+      document.documentElement.classList.contains("dark-mode") ||
+      localStorage.getItem("theme") === "dark";
+  });
+
+  useEffect(() => {
+    const updateTheme = () => {
+      const dark = document.body.classList.contains("dark-mode") ||
+        document.documentElement.classList.contains("dark-mode") ||
+        localStorage.getItem("theme") === "dark";
+      setIsDarkMode(dark);
+    };
+
+    updateTheme();
+
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+
+    const handleThemeEvent = (e) => {
+      if (e?.detail?.isDark !== undefined) {
+        setIsDarkMode(e.detail.isDark);
+      } else {
+        updateTheme();
+      }
+    };
+
+    window.addEventListener("themeChanged", handleThemeEvent);
+    window.addEventListener("storage", updateTheme);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("themeChanged", handleThemeEvent);
+      window.removeEventListener("storage", updateTheme);
+    };
+  }, []);
+
+  // Auth state
+  const [student, setStudent] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem("campus_student_token") || "");
+  const [authChecking, setAuthChecking] = useState(true);
+  const [profileAnchorEl, setProfileAnchorEl] = useState(null);
+  const profileOpen = Boolean(profileAnchorEl);
+
+  const handleProfileClose = () => {
+    setProfileAnchorEl(null);
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  };
+
+  const handleProfileClick = (event) => {
+    if (profileAnchorEl) {
+      handleProfileClose();
+    } else {
+      setProfileAnchorEl(event.currentTarget);
+    }
+  };
+
+  // Dashboard states
+  const [activeTab, setActiveTab] = useState(0); // 0 = My Requests, 1 = Raise Ticket
+  const [services, setServices] = useState([]);
+  const [blocks, setBlocks] = useState([]);
+  const [metaLoading, setMetaLoading] = useState(false);
+
+  // Ticket Form States
+  const [selectedService, setSelectedService] = useState("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState("");
+  const [customSubcategory, setCustomSubcategory] = useState("");
+  const [selectedBlock, setSelectedBlock] = useState("");
+  const [priority, setPriority] = useState("MEDIUM");
+  const [description, setDescription] = useState("");
+  const [attachments, setAttachments] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // My Tickets List
+  const [myTickets, setMyTickets] = useState([]);
+  const [loadingTickets, setLoadingTickets] = useState(false);
+  const [ticketFilter, setTicketFilter] = useState("ALL");
+
+  // Feedback Dialog
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [selectedFeedbackTicket, setSelectedFeedbackTicket] = useState(null);
+  const [rating, setRating] = useState(0);
+  const [satisfaction, setSatisfaction] = useState("");
+  const [feedbackComments, setFeedbackComments] = useState("");
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [pendingFeedbackTickets, setPendingFeedbackTickets] = useState([]);
+  const [pendingFeedbackIndex, setPendingFeedbackIndex] = useState(0);
+  const [autoFeedbackPromptShown, setAutoFeedbackPromptShown] = useState(false);
+
+  // Ticket Detail View Dialog, Table Pagination & View Mode
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedTicketDetail, setSelectedTicketDetail] = useState(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [tableSearchQuery, setTableSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState("table"); // "table" | "card"
+
+  const handleOpenTicketDetail = (ticket) => {
+    setSelectedTicketDetail(ticket);
+    setDetailOpen(true);
+    fetchTicketComments(ticket._id);
+  };
+
+  const handleCloseTicketDetail = () => {
+    setDetailOpen(false);
+    setSelectedTicketDetail(null);
+  };
+
+  // Sync loader states
+  useEffect(() => {
+    if (authChecking || metaLoading || loadingTickets) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+    return () => {
+      if (authChecking || metaLoading || loadingTickets) {
+        stopLoading();
+      }
+    };
+  }, [authChecking, metaLoading, loadingTickets, startLoading, stopLoading]);
+
+  // Check saved student session on mount
+  useEffect(() => {
+    const initAuth = async () => {
+      const savedToken = localStorage.getItem("campus_student_token");
+      const savedProfile = localStorage.getItem("campus_student_profile");
+
+      if (savedToken && savedProfile) {
+        try {
+          const parsed = JSON.parse(savedProfile);
+          setStudent(parsed);
+          setToken(savedToken);
+
+          // Verify with backend silently
+          const api = axios.create({
+            baseURL: BACKEND_URL,
+            headers: { Authorization: `Bearer ${savedToken}` }
+          });
+          const res = await api.get("/api/campus-service-request/auth/me");
+          if (res.data.success && res.data.student) {
+            setStudent(res.data.student);
+            localStorage.setItem("campus_student_profile", JSON.stringify(res.data.student));
+          }
+        } catch (e) {
+          console.warn("[Campus Desk] Stored student token invalid or expired");
+          handleLogout();
+        }
+      }
+      setAuthChecking(false);
+    };
+
+    initAuth();
+  }, []);
+
+  // Fetch Services, Blocks & Tickets when student is logged in
+  useEffect(() => {
+    if (student && token) {
+      fetchMeta();
+      fetchMyTickets();
+    }
+  }, [student, token]);
+
+  const fetchMeta = async () => {
+    try {
+      setMetaLoading(true);
+      const api = createStudentAPI();
+      const res = await api.get("/api/campus-service-request/services-and-blocks");
+      if (res.data.success) {
+        setServices(res.data.data.services || []);
+        setBlocks(res.data.data.blocks || []);
+      }
+    } catch (err) {
+      console.error("Error loading services:", err);
+      toast.error("Failed to load available services");
+    } finally {
+      setMetaLoading(false);
+    }
+  };
+
+  const fetchMyTickets = async () => {
+    try {
+      setLoadingTickets(true);
+      const api = createStudentAPI();
+      const res = await api.get("/api/campus-service-request/my-tickets");
+      if (res.data.success) {
+        const tickets = res.data.data || [];
+        setMyTickets(tickets);
+
+        // Auto-popup feedback modal upon login/page load if any ticket is resolved and pending feedback
+        if (!autoFeedbackPromptShown) {
+          const pending = tickets.filter((t) => t.status === "RESOLVED" && !t.feedback);
+          if (pending.length > 0) {
+            setPendingFeedbackTickets(pending);
+            setPendingFeedbackIndex(0);
+            setSelectedFeedbackTicket(pending[0]);
+            setRating(0);
+            setSatisfaction("");
+            setFeedbackComments("");
+            setFeedbackOpen(true);
+            setAutoFeedbackPromptShown(true);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching tickets:", err);
+    } finally {
+      setLoadingTickets(false);
+    }
+  };
+
+  // -------------------------------------------------------------
+  // Ticket Conversation / Comments Handlers
+  // -------------------------------------------------------------
+  const [openChatTickets, setOpenChatTickets] = useState({});
+  const [ticketComments, setTicketComments] = useState({});
+  const [ticketCommentsLoading, setTicketCommentsLoading] = useState({});
+  const [newMessages, setNewMessages] = useState({});
+  const [sendingComment, setSendingComment] = useState({});
+
+  const fetchTicketComments = async (ticketId) => {
+    try {
+      setTicketCommentsLoading((prev) => ({ ...prev, [ticketId]: true }));
+      const api = createStudentAPI();
+      const res = await api.get(`/api/campus-service-request/tickets/${ticketId}/comments`);
+      if (res.data.success) {
+        setTicketComments((prev) => ({ ...prev, [ticketId]: res.data.data || [] }));
+      }
+    } catch (err) {
+      console.error("Error fetching comments for ticket:", ticketId, err);
+    } finally {
+      setTicketCommentsLoading((prev) => ({ ...prev, [ticketId]: false }));
+    }
+  };
+
+  const toggleTicketChat = async (ticketId) => {
+    const willBeOpen = !openChatTickets[ticketId];
+    setOpenChatTickets((prev) => ({ ...prev, [ticketId]: willBeOpen }));
+    if (willBeOpen && !ticketComments[ticketId]) {
+      fetchTicketComments(ticketId);
+    }
+  };
+
+  const handleSendTicketComment = async (ticketId, e) => {
+    if (e) e.preventDefault();
+    const text = (newMessages[ticketId] || "").trim();
+    if (!text) return;
+
+    try {
+      setSendingComment((prev) => ({ ...prev, [ticketId]: true }));
+      const api = createStudentAPI();
+      const res = await api.post(`/api/campus-service-request/tickets/${ticketId}/comments`, {
+        message: text
+      });
+      if (res.data.success) {
+        setTicketComments((prev) => ({
+          ...prev,
+          [ticketId]: [...(prev[ticketId] || []), res.data.data]
+        }));
+        setNewMessages((prev) => ({ ...prev, [ticketId]: "" }));
+        toast.success("Comment sent successfully");
+      }
+    } catch (err) {
+      console.error("Error sending comment:", err);
+      toast.error(err.response?.data?.message || "Failed to send comment");
+    } finally {
+      setSendingComment((prev) => ({ ...prev, [ticketId]: false }));
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const fcmToken = localStorage.getItem("fcmToken");
+      const savedToken = localStorage.getItem("campus_student_token") || token;
+      if (fcmToken || savedToken) {
+        await axios.post(`${BACKEND_URL}/api/campus-service-request/auth/logout`, { fcmToken }, {
+          headers: savedToken ? { Authorization: `Bearer ${savedToken}` } : {}
+        }).catch(() => { });
+      }
+    } catch (err) {
+      console.warn("[Campus Desk] Logout warning:", err);
+    }
+    localStorage.removeItem("campus_student_token");
+    localStorage.removeItem("campus_student_profile");
+    localStorage.removeItem("fcmToken");
+    setStudent(null);
+    setToken("");
+    setStep(1);
+    setRollNoInput("");
+    setOtpInput("");
+    setMyTickets([]);
+  };
+
+  // -------------------------------------------------------------
+  // Ticket Creation Form Handlers
+  // -------------------------------------------------------------
+  const handleFileChange = (e) => {
+    const selectedFiles = Array.from(e.target.files);
+    if (attachments.length + selectedFiles.length > 5) {
+      toast.error("You can upload a maximum of 5 attachments.");
+      return;
+    }
+
+    // Check size limit (15MB each)
+    for (const f of selectedFiles) {
+      if (f.size > 15 * 1024 * 1024) {
+        toast.error(`File ${f.name} exceeds the 15MB limit.`);
+        return;
+      }
+    }
+
+    setAttachments([...attachments, ...selectedFiles]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeAttachment = (index) => {
+    setAttachments(attachments.filter((_, i) => i !== index));
+  };
+
+  const handleCreateTicket = async (e) => {
+    e.preventDefault();
+
+    if (!selectedService) {
+      toast.error("Please select a Service Category");
+      return;
+    }
+
+    const serviceObj = services.find((s) => s._id === selectedService);
+    if (!serviceObj?.isGlobalService && !selectedBlock) {
+      toast.error("Please select your Block / Location for this service");
+      return;
+    }
+
+    if (!description.trim()) {
+      toast.error("Please describe your problem or request");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const formData = new FormData();
+      formData.append("service", selectedService);
+      formData.append("subcategory", selectedSubcategory);
+      if (selectedSubcategory === "Others") {
+        formData.append("customSubcategory", customSubcategory);
+      }
+      if (selectedBlock) {
+        formData.append("block", selectedBlock);
+      }
+      formData.append("priority", priority);
+      formData.append("description", description);
+
+      attachments.forEach((file) => {
+        formData.append("attachments", file);
+      });
+
+      const api = axios.create({
+        baseURL: BACKEND_URL,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data"
+        }
+      });
+
+      const res = await api.post("/api/campus-service-request/tickets", formData);
+      if (res.data.success) {
+        toast.success(`Service Request #${res.data.data.ticketNumber} created successfully!`, { duration: 5000 });
+        // Reset form
+        setSelectedService("");
+        setSelectedSubcategory("");
+        setCustomSubcategory("");
+        setSelectedBlock("");
+        setPriority("MEDIUM");
+        setDescription("");
+        setAttachments([]);
+        // Refresh list and switch to My Requests tab (Tab 0)
+        fetchMyTickets();
+        setActiveTab(0);
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to submit service request";
+      toast.error(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // -------------------------------------------------------------
+  // Feedback Submission
+  const openFeedbackDialog = (ticket) => {
+    setSelectedFeedbackTicket(ticket);
+    setRating(0);
+    setSatisfaction("");
+    setFeedbackComments("");
+    setFeedbackOpen(true);
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!selectedFeedbackTicket) return;
+
+    if (!rating || !satisfaction) {
+      toast.error("Please provide a rating and satisfaction level");
+      return;
+    }
+
+    try {
+      setSubmittingFeedback(true);
+      const api = createStudentAPI();
+      const res = await api.post(`/api/campus-service-request/tickets/${selectedFeedbackTicket._id}/feedback`, {
+        rating,
+        satisfaction,
+        comments: feedbackComments
+      });
+
+      if (res.data.success) {
+        toast.success("Feedback submitted successfully!");
+
+        // Move to next pending feedback ticket if available in queue
+        if (pendingFeedbackTickets.length > 0 && pendingFeedbackIndex < pendingFeedbackTickets.length - 1) {
+          const nextIndex = pendingFeedbackIndex + 1;
+          setPendingFeedbackIndex(nextIndex);
+          const nextTicket = pendingFeedbackTickets[nextIndex];
+          setSelectedFeedbackTicket(nextTicket);
+          setRating(0);
+          setSatisfaction("");
+          setFeedbackComments("");
+        } else {
+          setFeedbackOpen(false);
+          setPendingFeedbackTickets([]);
+          setSelectedFeedbackTicket(null);
+        }
+        fetchMyTickets();
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to submit feedback";
+      toast.error(msg);
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  };
+
+  const selectedServiceObj = services.find((s) => s._id === selectedService);
+
+  // Filter & Search tickets
+  const filteredTickets = myTickets.filter((t) => {
+    // Tab Status Filter
+    if (ticketFilter === "ACTIVE" && !["OPEN", "ASSIGNED", "IN_PROGRESS"].includes(t.status)) return false;
+    if (ticketFilter === "RESOLVED" && t.status !== "RESOLVED") return false;
+    if (ticketFilter === "CLOSED" && t.status !== "CLOSED") return false;
+
+    // Search Query Filter
+    if (tableSearchQuery.trim()) {
+      const q = tableSearchQuery.toLowerCase().trim();
+      const matchTicketNo = t.ticketNumber?.toLowerCase().includes(q);
+      const matchTitle = t.title?.toLowerCase().includes(q);
+      const matchCategory = t.service?.name?.toLowerCase().includes(q);
+      const matchSubcategory = t.subcategory?.toLowerCase().includes(q);
+      const matchAssigned = t.assignedTo?.some((a) => a.employee?.name?.toLowerCase().includes(q));
+      if (!matchTicketNo && !matchTitle && !matchCategory && !matchSubcategory && !matchAssigned) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  const paginatedTickets = filteredTickets.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  if (authChecking) {
+    return null; // The global loader handles this now
+  }
+
+  // =============================================================
+  // SCREEN 1: OTP LOGIN / VERIFICATION VIEW
+  // =============================================================
+  if (!student || !token) {
+    return (
+      <CampusServiceRequestLogin
+        isDarkMode={isDarkMode}
+        backendUrl={BACKEND_URL}
+        onLoginSuccess={(studentData, tokenData) => {
+          setStudent(studentData);
+          setToken(tokenData);
+        }}
+      />
+    );
+  }
+
+  // =============================================================
+  // SCREEN 2: AUTHENTICATED STUDENT SERVICE DESK
+  // =============================================================
+  return (
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", bgcolor: "var(--bg-main, #f8fafc)", color: "var(--text-primary, #1e293b)" }}>
+      {/* Top Banner & Header */}
+      <Box
+        sx={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          width: "100%",
+          zIndex: 1100,
+          background: "var(--gradient-primary, linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%))",
+          color: "#ffffff",
+          py: 1.5,
+          px: { xs: 2, sm: 4 },
+          boxShadow: "0 2px 12px rgba(0, 0, 0, 0.12)",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.1)"
+        }}
+      >
+        <Box
+          sx={{
+            maxWidth: 1200,
+            mx: "auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2
+          }}
+        >
+          {/* Left Section: University Logo + Title */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box
+              component="img"
+              src={isDarkMode ? smallLogoWhite : universityLogoGold}
+              alt="Aditya University Logo"
+              sx={{
+                display: { xs: "none", sm: "block" },
+                height: 48,
+                width: "auto",
+                objectFit: "contain"
+              }}
+            />
+            <Box
+              component="img"
+              src={isDarkMode ? circleLogoWhite : logoDarkTheme}
+              alt="Aditya University Logo"
+              sx={{
+                display: { xs: "block", sm: "none" },
+                height: 38,
+                width: 38,
+                objectFit: "contain"
+              }}
+            />
+            <Divider orientation="vertical" flexItem sx={{ display: { xs: "none", sm: "block" }, borderColor: "rgba(255, 255, 255, 0.2)", my: 0.5 }} />
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.15, color: "#ffffff", fontSize: { xs: "0.95rem", sm: "1.15rem" } }}>
+                Campus Service Desk
+              </Typography>
+              <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.75)", fontWeight: 500, fontSize: "0.75rem" }}>
+                Student Self-Service Portal
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Right Section: Expanding Profile Pill & Menu (Header.jsx style) */}
+          <Box sx={{ display: "flex", alignItems: "center", position: "relative", zIndex: profileOpen ? 1302 : 1 }}>
+            <Box
+              onClick={handleProfileClick}
+              sx={{
+                position: "relative",
+                zIndex: profileOpen ? 1302 : 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end", // Anchor avatar to the right
+                height: 48,
+                borderRadius: "1000px",
+                background: profileOpen
+                  ? "var(--bg-panel, #ffffff)"
+                  : "rgba(255, 255, 255, 0.12)",
+                border: profileOpen ? "2px solid transparent" : "1px solid rgba(255, 255, 255, 0.25)",
+                backdropFilter: "blur(8px)",
+                cursor: "pointer",
+                transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+                boxShadow: profileOpen ? "0 4px 20px rgba(0,0,0,0.2)" : "none",
+                maxWidth: profileOpen ? "400px" : "48px", // Collapsed = perfect circle
+                boxSizing: "border-box",
+                overflow: "hidden",
+                "@media (hover: hover)": {
+                  "&:hover": {
+                    maxWidth: "400px",
+                    background: "var(--bg-panel, #ffffff)",
+                    borderColor: "transparent",
+                    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.22)"
+                  },
+                  "&:hover .profile-text-content": {
+                    opacity: 1,
+                    transform: "translateX(0)"
+                  },
+                  "&:hover .profile-name-text": {
+                    color: "var(--text-primary, #0f172a)"
+                  },
+                  "&:hover .profile-sub-text": {
+                    color: "var(--text-secondary, #64748b)"
+                  },
+                  "&:hover .profile-arrow-icon": {
+                    color: "var(--text-secondary, #64748b)"
+                  }
+                },
+                userSelect: "none",
+                p: 0
+              }}
+            >
+              {/* Expanding Details Section */}
+              <Box
+                className="profile-text-content"
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.2,
+                  opacity: profileOpen ? 1 : 0,
+                  transform: profileOpen ? "translateX(0)" : "translateX(10px)",
+                  transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+                  pl: 2,
+                  pr: 1,
+                  overflow: "hidden",
+                  flex: 1,
+                  minWidth: 0
+                }}
+              >
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", overflow: "hidden", width: "100%", minWidth: 0 }}>
+                  <Typography
+                    className="profile-name-text"
+                    noWrap
+                    sx={{
+                      fontSize: "0.85rem",
+                      fontWeight: 700,
+                      color: profileOpen ? "var(--text-primary, #0f172a)" : "#ffffff",
+                      lineHeight: 1.1,
+                      mb: 0.3,
+                      width: "100%",
+                      transition: "color 0.3s ease"
+                    }}
+                  >
+                    {student?.studentname || "Student"}
+                  </Typography>
+                  <Typography
+                    className="profile-sub-text"
+                    noWrap
+                    sx={{
+                      fontSize: "0.72rem",
+                      fontWeight: 500,
+                      color: profileOpen ? "var(--text-secondary, #64748b)" : "rgba(255, 255, 255, 0.8)",
+                      lineHeight: 1,
+                      width: "100%",
+                      transition: "color 0.3s ease"
+                    }}
+                  >
+                    {student?.branch || student?.coursename || "Student"}
+                  </Typography>
+                </Box>
+                <KeyboardArrowDown
+                  className="profile-arrow-icon"
+                  sx={{
+                    fontSize: 18,
+                    color: profileOpen ? "var(--text-secondary, #64748b)" : "rgba(255, 255, 255, 0.8)",
+                    transition: "transform 0.3s ease, color 0.3s ease",
+                    transform: profileOpen ? "rotate(180deg)" : "none"
+                  }}
+                />
+              </Box>
+
+              {/* Avatar Container */}
+              <Box
+                sx={{
+                  minWidth: 40,
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  overflow: "hidden",
+                  border: "none",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                  background: "var(--gradient-primary, #1e3a8a)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  mr: "3px"
+                }}
+              >
+                <Avatar
+                  src={`https://info.aec.edu.in/adityacentral/StudentPhotos/${student?.rollno}.jpg`}
+                  alt={student?.studentname}
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    bgcolor: "transparent",
+                    color: "#ffffff",
+                    fontWeight: 800,
+                    fontSize: "0.85rem"
+                  }}
+                  slotProps={{
+                    img: {
+                      onError: (e) => {
+                        if (!e.target.dataset.triedFallback) {
+                          e.target.dataset.triedFallback = "true";
+                          e.target.src = `https://info.aec.edu.in/aus/studentphotos/${student?.rollno}.jpg`;
+                        }
+                      }
+                    }
+                  }}
+                >
+                  {student?.studentname?.charAt(0) || "S"}
+                </Avatar>
+              </Box>
+            </Box>
+
+            {/* Profile Dropdown Menu */}
+            <Menu
+              anchorEl={profileAnchorEl}
+              open={profileOpen}
+              onClose={handleProfileClose}
+              anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "right"
+              }}
+              transformOrigin={{
+                vertical: "top",
+                horizontal: "right"
+              }}
+              slotProps={{
+                backdrop: {
+                  sx: {
+                    backgroundColor: "rgba(15, 23, 42, 0.45)",
+                    backdropFilter: "blur(6px)",
+                    WebkitBackdropFilter: "blur(6px)"
+                  }
+                },
+                paper: {
+                  sx: {
+                    zIndex: 1302,
+                    mt: 2,
+                    width: { xs: "calc(100vw - 32px)", sm: 300 },
+                    borderRadius: "20px",
+                    p: 2,
+                    boxShadow: "0 20px 60px rgba(0, 0, 0, 0.25)",
+                    border: "1px solid var(--border-color, #e2e8f0)",
+                    bgcolor: "var(--bg-paper, #ffffff)",
+                    color: "var(--text-primary, #1e293b)"
+                  }
+                }
+              }}
+            >
+              {/* Student Details Card */}
+              <Box sx={{ p: 1.5, mb: 1.5, bgcolor: "var(--bg-panel, #f8fafc)", borderRadius: "14px", border: "1px solid var(--border-color, #e2e8f0)" }}>
+                <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary, #0f172a)" }}>
+                  {student?.studentname}
+                </Typography>
+                <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary, #64748b)", fontWeight: 600, mt: 0.3 }}>
+                  Roll No: <Box component="span" sx={{ color: "#0284c7", fontWeight: 700 }}>{student?.rollno}</Box>
+                </Typography>
+                <Typography sx={{ fontSize: "0.72rem", color: "var(--text-secondary, #64748b)", mt: 0.2 }}>
+                  Course: {student?.coursename || "B.Tech"} ({student?.branch || "N/A"})
+                </Typography>
+              </Box>
+
+              {/* Appearance / Theme Toggle */}
+              <MenuItem
+                disableRipple
+                sx={{
+                  borderRadius: "12px",
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  color: "var(--text-secondary, #64748b)",
+                  py: 1.2,
+                  px: 1.5,
+                  mb: 1.5,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  bgcolor: "var(--bg-panel, #f8fafc)",
+                  border: "1px solid var(--border-color, #e2e8f0)",
+                  "&:hover": { bgcolor: "var(--bg-panel, #f8fafc)", cursor: "default" }
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Brightness4 fontSize="small" sx={{ color: "var(--text-secondary, #64748b)" }} />
+                  <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary, #1e293b)" }}>
+                    Appearance
+                  </Typography>
+                </Box>
+                <ThemeToggle onToggle={handleProfileClose} />
+              </MenuItem>
+
+              {/* Logout Button */}
+              <MenuItem
+                onClick={() => {
+                  handleProfileClose();
+                  handleLogout();
+                }}
+                sx={{
+                  borderRadius: "50px",
+                  fontSize: "0.85rem",
+                  fontWeight: 700,
+                  color: "#ffffff",
+                  py: 1.2,
+                  justifyContent: "center",
+                  boxShadow: "0 4px 12px rgba(0, 78, 146, 0.2)",
+                  transition: "all 0.4s ease",
+                  position: "relative",
+                  background: "transparent",
+                  overflow: "hidden",
+                  zIndex: 1,
+
+                  "& .blue-bg": {
+                    position: "absolute",
+                    inset: 0,
+                    background: "var(--gradient-primary, linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%))",
+                    borderRadius: "50px",
+                    zIndex: -3,
+                    transition: "opacity 0.4s ease",
+                    opacity: 1
+                  },
+
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: "50px",
+                    background: "#fef2f2",
+                    zIndex: -2,
+                    transition: "opacity 0.4s ease",
+                    opacity: 0
+                  },
+
+                  "&::after": {
+                    content: '""',
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: "50px",
+                    padding: "2px",
+                    background: "linear-gradient(90deg, #cb2d3e, #ef473a)",
+                    WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                    WebkitMaskComposite: "xor",
+                    maskComposite: "exclude",
+                    zIndex: -1,
+                    transition: "opacity 0.4s ease",
+                    opacity: 0
+                  },
+
+                  "&:hover": {
+                    color: "#cb2d3e",
+                    boxShadow: "0 8px 20px rgba(203, 45, 62, 0.15)",
+                    transform: "translateY(-1px)",
+                    "& .blue-bg": { opacity: 0 },
+                    "&::before": { opacity: 1 },
+                    "&::after": { opacity: 1 },
+                    "& .MuiListItemIcon-root .MuiSvgIcon-root": { color: "#cb2d3e" }
+                  }
+                }}
+              >
+                <Box className="blue-bg" />
+                <ListItemIcon sx={{ minWidth: 28, zIndex: 2 }}>
+                  <LogoutIcon sx={{ fontSize: 18, color: "#ffffff", transition: "color 0.4s ease" }} />
+                </ListItemIcon>
+                <Box component="span" sx={{ zIndex: 2, position: "relative" }}>
+                  Logout
+                </Box>
+              </MenuItem>
+            </Menu>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Main Container */}
+      <Box sx={{ maxWidth: 1200, width: "100%", mx: "auto", px: { xs: 2, sm: 4 }, pt: "100px", pb: 4, flex: 1 }}>
+        {/* Navigation Tabs */}
+        <CustomTabs
+          value={activeTab}
+          onChange={(e, val) => setActiveTab(val)}
+          sx={{ mb: 4, mt: 0 }}
+          tabs={[
+            {
+              label: `My Requests & Live Tracking (${myTickets.length})`,
+              icon: <HistoryIcon />
+            },
+            {
+              label: "Raise Service Request",
+              icon: <AddIcon />
+            }
+          ]}
+        />
+
+        {/* ----------------------------------------------------------- */}
+        {/* TAB 2: RAISE SERVICE REQUEST FORM                           */}
+        {/* ----------------------------------------------------------- */}
+        {activeTab === 1 && (
+          <Box sx={{ maxWidth: 880, mx: "auto" }}>
+            {/* Form Card */}
+            <Card sx={{ borderRadius: "16px", border: "1px solid var(--border-color, #e2e8f0)", bgcolor: "var(--bg-paper, #ffffff)", color: "var(--text-primary, #1e293b)", boxShadow: "0 4px 12px rgba(0,0,0,0.03)" }}>
+              <CardContent sx={{ p: { xs: 2.5, sm: 4 } }}>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary, #0f172a)", mb: 0.5 }}>
+                  Submit a New Campus Request
+                </Typography>
+                <Typography variant="body2" sx={{ color: "var(--text-secondary, #64748b)", mb: 3 }}>
+                  Select the appropriate category and describe your issue. Our support team will attend to it promptly.
+                </Typography>
+
+                <Box component="form" onSubmit={handleCreateTicket} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                  {/* Service Category */}
+                  <FormControl fullWidth required>
+                    <InputLabel id="service-select-label">Service Category</InputLabel>
+                    <Select
+                      labelId="service-select-label"
+                      label="Service Category"
+                      value={selectedService}
+                      onChange={(e) => {
+                        setSelectedService(e.target.value);
+                        setSelectedSubcategory("");
+                        setCustomSubcategory("");
+                      }}
+                    >
+                      {services.map((s) => (
+                        <MenuItem key={s._id} value={s._id}>
+                          {s.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  {/* Subcategory (if service has subcategories) */}
+                  {selectedServiceObj && selectedServiceObj.subcategories?.length > 0 && (
+                    <FormControl fullWidth>
+                      <InputLabel id="subcategory-label">Subcategory / Issue Type</InputLabel>
+                      <Select
+                        labelId="subcategory-label"
+                        label="Subcategory / Issue Type"
+                        value={selectedSubcategory}
+                        onChange={(e) => setSelectedSubcategory(e.target.value)}
+                      >
+                        {selectedServiceObj.subcategories.map((sub, idx) => (
+                          <MenuItem key={idx} value={sub}>
+                            {sub}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  )}
+
+                  {/* Custom Subcategory when "Others" is selected */}
+                  {selectedSubcategory === "Others" && (
+                    <TextField
+                      fullWidth
+                      label="Please Specify Issue Title"
+                      placeholder="e.g. Broken laboratory stool"
+                      value={customSubcategory}
+                      onChange={(e) => setCustomSubcategory(e.target.value)}
+                      required
+                    />
+                  )}
+
+                  {/* Block / Location Selection */}
+                  {selectedServiceObj && !selectedServiceObj.isGlobalService && (
+                    <FormControl fullWidth required>
+                      <InputLabel id="block-select-label">Campus Block / Hostel / Location</InputLabel>
+                      <Select
+                        labelId="block-select-label"
+                        label="Campus Block / Hostel / Location"
+                        value={selectedBlock}
+                        onChange={(e) => setSelectedBlock(e.target.value)}
+                        renderValue={(val) => {
+                          const b = blocks.find((item) => item._id === val);
+                          if (!b) return "";
+                          if (b.blockType === "HOSTEL") {
+                            const tag = b.genderTag === "GIRLS" ? "Girls Hostel" : b.genderTag === "BOYS" ? "Boys Hostel" : "Hostel";
+                            return `${b.blockName} (${tag}) (${b.blockCode})`;
+                          }
+                          return `${b.blockName} (${b.blockCode})`;
+                        }}
+                      >
+                        {(() => {
+                          const filteredBlocks = blocks.filter((b) => {
+                            if (!selectedServiceObj) return true;
+                            if (selectedServiceObj.applicableBlockType === "HOSTEL") return b.blockType === "HOSTEL";
+                            if (selectedServiceObj.applicableBlockType === "ACADEMIC") return (b.blockType || "ACADEMIC") === "ACADEMIC";
+                            return true;
+                          });
+
+                          if (filteredBlocks.length === 0) {
+                            return (
+                              <MenuItem value="" disabled>
+                                No active {selectedServiceObj?.applicableBlockType === "HOSTEL" ? "hostel" : "academic"} blocks found
+                              </MenuItem>
+                            );
+                          }
+
+                          return filteredBlocks.map((b) => (
+                            <MenuItem
+                              key={b._id}
+                              value={b._id}
+                              sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 1 }}
+                            >
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                {b.blockType === "HOSTEL" ? (
+                                  <HotelIcon fontSize="small" sx={{ color: b.genderTag === "GIRLS" ? "#db2777" : "#0284c7" }} />
+                                ) : (
+                                  <ApartmentIcon fontSize="small" sx={{ color: "#2563eb" }} />
+                                )}
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                  {b.blockName} ({b.blockCode})
+                                </Typography>
+                              </Box>
+                              {b.blockType === "HOSTEL" && (
+                                <Chip
+                                  label={b.genderTag === "GIRLS" ? "Girls Hostel" : "Boys Hostel"}
+                                  size="small"
+                                  sx={{
+                                    height: 20,
+                                    fontSize: "0.7rem",
+                                    bgcolor: b.genderTag === "GIRLS" ? "#fdf2f8" : "#f0f9ff",
+                                    color: b.genderTag === "GIRLS" ? "#db2777" : "#0284c7",
+                                    border: `1px solid ${b.genderTag === "GIRLS" ? "#fbcfe8" : "#bae6fd"}`,
+                                    fontWeight: 600,
+                                    ml: 1
+                                  }}
+                                />
+                              )}
+                            </MenuItem>
+                          ));
+                        })()}
+                      </Select>
+                    </FormControl>
+                  )}
+
+                  {/* Priority Selector */}
+                  <FormControl fullWidth required>
+                    <InputLabel id="priority-label">Urgency / Priority</InputLabel>
+                    <Select
+                      labelId="priority-label"
+                      label="Urgency / Priority"
+                      value={priority}
+                      onChange={(e) => setPriority(e.target.value)}
+                    >
+                      <MenuItem value="CRITICAL">
+                        🔴 Critical <span style={{ fontSize: '0.75em', opacity: 0.7, marginLeft: '6px', fontWeight: 500 }}> - Urgent emergency (Resolution &lt; 2 Hours)</span>
+                      </MenuItem>
+                      <MenuItem value="HIGH">
+                        🟠 High <span style={{ fontSize: '0.75em', opacity: 0.7, marginLeft: '6px', fontWeight: 500 }}> - Immediate attention needed (Resolution &lt; 4 Hours)</span>
+                      </MenuItem>
+                      <MenuItem value="MEDIUM">
+                        🔵 Medium <span style={{ fontSize: '0.75em', opacity: 0.7, marginLeft: '6px', fontWeight: 500 }}> - Standard Request (Resolution &lt; 24 Hours)</span>
+                      </MenuItem>
+                      <MenuItem value="LOW">
+                        🟢 Low <span style={{ fontSize: '0.75em', opacity: 0.7, marginLeft: '6px', fontWeight: 500 }}> - Minor issue (Resolution &lt; 72 Hours)</span>
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  {/* Problem Description */}
+                  <TextField
+                    fullWidth
+                    required
+                    multiline
+                    rows={4}
+                    label="Detailed Description & Room Number"
+                    placeholder="Provide specific details such as Room No, Floor, exact nature of problem, etc."
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
+
+                  {/* File Uploads (Images / Proof) */}
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#334155", mb: 1 }}>
+                      Attach Photos / Screenshots (Optional, max 5)
+                    </Typography>
+
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      style={{ display: "none" }}
+                      multiple
+                      accept="image/*,.pdf"
+                      onChange={handleFileChange}
+                    />
+
+                    <Button
+                      variant="outlined"
+                      startIcon={<UploadIcon />}
+                      onClick={() => fileInputRef.current?.click()}
+                      sx={{
+                        textTransform: "none",
+                        borderRadius: "10px",
+                        borderStyle: "dashed",
+                        borderColor: "var(--color-primary)",
+                        py: 1.5,
+                        px: 3,
+                        color: "var(--color-primary)",
+                        position: "relative",
+                        overflow: "hidden",
+                        transition: "color 0.4s ease, border-color 0.4s ease",
+                        zIndex: 1,
+                        "&::before": {
+                          content: '""',
+                          position: "absolute",
+                          top: "50%",
+                          left: "50%",
+                          width: 0,
+                          height: "100%",
+                          background: "var(--gradient-primary)",
+                          transform: "translate(-50%, -50%)",
+                          transition: "width 0.8s ease-in-out",
+                          zIndex: -1,
+                        },
+                        "&:hover": {
+                          borderColor: "transparent",
+                          color: "#ffffff",
+                          "&::before": {
+                            width: "100%",
+                          }
+                        }
+                      }}
+                    >
+                      Click to Upload Files
+                    </Button>
+
+                    {/* Attachment chips */}
+                    {attachments.length > 0 && (
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 2 }}>
+                        {attachments.map((file, idx) => (
+                          <Chip
+                            key={idx}
+                            label={`${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)`}
+                            onDelete={() => removeAttachment(idx)}
+                            deleteIcon={<DeleteIcon />}
+                            sx={{ bgcolor: isDarkMode ? "rgba(190, 147, 55, 0.1)" : "#eff6ff", color: "var(--color-primary)", fontWeight: 600 }}
+                          />
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
+
+                  {/* Submit Button */}
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    size="large"
+                    disabled={submitting || metaLoading}
+                    sx={{
+                      py: 1.8,
+                      borderRadius: "12px",
+                      fontWeight: 800,
+                      bgcolor: "#2563eb",
+                      fontSize: "1rem",
+                      boxShadow: "0 10px 20px -5px rgba(37, 99, 235, 0.4)",
+                      "&:hover": { bgcolor: "#1d4ed8" }
+                    }}
+                  >
+                    {submitting ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : "Submit Service Request"}
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+        )}
+
+        {/* ----------------------------------------------------------- */}
+        {/* TAB 1: MY REQUESTS & LIVE TRACKING                          */}
+        {/* ----------------------------------------------------------- */}
+        {activeTab === 0 && (
+          <Box>
+            {/* Filter, Search, and Refresh Bar */}
+            <Card
+              elevation={0}
+              sx={{
+                borderRadius: "16px",
+                border: "1px solid var(--border-color, #e2e8f0)",
+                bgcolor: "var(--bg-paper, #ffffff)",
+                mb: 3,
+                boxShadow: "0 4px 20px rgba(0,0,0,0.02)"
+              }}
+            >
+              <CardContent
+                sx={{
+                  p: 2,
+                  "&:last-child": { pb: 2 },
+                  display: "flex",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 2
+                }}
+              >
+                {/* Status Filter Dropdown */}
+                <Box sx={{ minWidth: { xs: "100%", sm: 220 } }}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel id="status-filter-label" sx={{ fontWeight: 600 }}>Filter Status</InputLabel>
+                    <Select
+                      labelId="status-filter-label"
+                      value={ticketFilter}
+                      label="Filter Status"
+                      onChange={(e) => {
+                        setTicketFilter(e.target.value);
+                        setPage(0);
+                      }}
+                      sx={{
+                        borderRadius: "10px",
+                        fontWeight: 600,
+                        bgcolor: "var(--bg-paper, #ffffff)"
+                      }}
+                    >
+                      <MenuItem value="ALL" sx={{ fontWeight: 600 }}>All Requests</MenuItem>
+                      <MenuItem value="ACTIVE" sx={{ fontWeight: 600 }}>Active / In Progress</MenuItem>
+                      <MenuItem value="RESOLVED" sx={{ fontWeight: 600 }}>Resolved</MenuItem>
+                      <MenuItem value="CLOSED" sx={{ fontWeight: 600 }}>Closed</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+
+                {/* Search & View Mode Switcher */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap", width: { xs: "100%", sm: "auto" }, justifyContent: "space-between" }}>
+                  <TextField
+                    size="small"
+                    placeholder="Search Ticket #, Title, Category..."
+                    value={tableSearchQuery}
+                    onChange={(e) => {
+                      setTableSearchQuery(e.target.value);
+                      setPage(0);
+                    }}
+                    sx={{
+                      width: { xs: "100%", sm: 240 },
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "10px",
+                        bgcolor: "var(--bg-paper, #ffffff)"
+                      }
+                    }}
+                  />
+
+                  {/* Toggle View Switcher: Table vs Cards */}
+                  <ToggleButtonGroup
+                    value={viewMode}
+                    exclusive
+                    onChange={(e, newMode) => {
+                      if (newMode !== null) setViewMode(newMode);
+                    }}
+                    size="small"
+                    sx={{
+                      bgcolor: isDarkMode ? "rgba(255,255,255,0.06)" : "#f1f5f9",
+                      p: "3px",
+                      borderRadius: "10px",
+                      border: "1px solid var(--border-color, #e2e8f0)",
+                      "& .MuiToggleButton-root": {
+                        border: "none",
+                        borderRadius: "7px",
+                        px: 1.5,
+                        py: 0.5,
+                        fontWeight: 700,
+                        textTransform: "none",
+                        color: "var(--text-secondary, #64748b)",
+                        transition: "all 0.2s ease",
+                        "&.Mui-selected": {
+                          bgcolor: isDarkMode ? "#2563eb" : "#ffffff",
+                          color: isDarkMode ? "#ffffff" : "#2563eb",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
+                        }
+                      }
+                    }}
+                  >
+                    <ToggleButton value="table">
+                      <Tooltip title="Table View">
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
+                          <ViewListIcon fontSize="small" />
+                          <Typography variant="caption" sx={{ fontWeight: 700, display: { xs: "none", sm: "inline" } }}>
+                            Table
+                          </Typography>
+                        </Box>
+                      </Tooltip>
+                    </ToggleButton>
+                    <ToggleButton value="card">
+                      <Tooltip title="Card View">
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.6 }}>
+                          <ViewGridIcon fontSize="small" />
+                          <Typography variant="caption" sx={{ fontWeight: 700, display: { xs: "none", sm: "inline" } }}>
+                            Cards
+                          </Typography>
+                        </Box>
+                      </Tooltip>
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                </Box>
+              </CardContent>
+            </Card>
+
+            {/* Content: Loading / Empty / Data Table / Data Cards */}
+            {loadingTickets ? (
+              <Box sx={{ py: 8, textAlign: "center" }}>
+                <CircularProgress size={36} sx={{ color: "var(--primary-gradient)" }} />
+                <Typography variant="body2" sx={{ color: "#64748b", mt: 2 }}>
+                  Fetching your tickets...
+                </Typography>
+              </Box>
+            ) : filteredTickets.length === 0 ? (
+              <Card sx={{ borderRadius: "16px", p: 6, textAlign: "center", border: "1px dashed var(--border-color, #cbd5e1)", bgcolor: "var(--bg-paper, #ffffff)" }}>
+                <TicketIcon sx={{ fontSize: 48, color: "#94a3b8", mb: 2 }} />
+                <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primary, #334155)" }}>
+                  No Service Requests Found
+                </Typography>
+                <Typography variant="body2" sx={{ color: "var(--text-secondary, #64748b)", mt: 0.5, mb: 3 }}>
+                  {tableSearchQuery ? "No tickets matched your search query." : "You haven't raised any requests in this category yet."}
+                </Typography>
+                <Button variant="contained" onClick={() => setActiveTab(1)} sx={{ borderRadius: "10px", fontWeight: 700 }}>
+                  Raise a Request
+                </Button>
+              </Card>
+            ) : viewMode === "table" ? (
+              /* TABLE VIEW */
+              <Paper
+                elevation={0}
+                sx={{
+                  borderRadius: "16px",
+                  border: "1px solid var(--border-color, #e2e8f0)",
+                  bgcolor: "var(--bg-paper, #ffffff)",
+                  overflow: "hidden",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.02)"
+                }}
+              >
+                <TableContainer sx={{ overflowX: "auto" }}>
+                  <Table size="medium">
+                    <TableHead sx={{ background: "var(--gradient-primary, linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%))" }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.8, fontSize: "0.82rem", whiteSpace: "nowrap" }}>
+                          TICKET #
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.8, fontSize: "0.82rem", minWidth: 180 }}>
+                          ISSUE TITLE
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.8, fontSize: "0.82rem" }}>
+                          CATEGORY
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.8, fontSize: "0.82rem" }}>
+                          ASSIGNED TO
+                        </TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 700, color: "#ffffff", py: 1.8, fontSize: "0.82rem" }}>
+                          PRIORITY
+                        </TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 700, color: "#ffffff", py: 1.8, fontSize: "0.82rem" }}>
+                          STATUS
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: "#ffffff", py: 1.8, fontSize: "0.82rem", whiteSpace: "nowrap" }}>
+                          RAISED ON
+                        </TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 700, color: "#ffffff", py: 1.8, fontSize: "0.82rem" }}>
+                          ACTION
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {paginatedTickets.map((t) => {
+                        const activeAssignedTo = (t.assignedTo || []).filter((a) => a.status !== "REJECTED");
+                        const activeWorkers = t.assignedWorkers || [];
+                        const assignedName = activeAssignedTo.length > 0
+                          ? activeAssignedTo.map((a) => a.employee?.name).join(", ")
+                          : activeWorkers.length > 0
+                            ? activeWorkers.map((w) => w.worker?.name || "Technician").join(", ")
+                            : (t.status === "OPEN" ? "Pending Assignment" : "Unassigned");
+
+                        return (
+                          <TableRow
+                            key={t._id}
+                            hover
+                            onClick={() => handleOpenTicketDetail(t)}
+                            sx={{
+                              cursor: "pointer",
+                              transition: "background 0.15s ease",
+                              "&:hover": {
+                                bgcolor: "var(--bg-accent-1, rgba(59, 130, 246, 0.05))"
+                              }
+                            }}
+                          >
+                            {/* Ticket Number */}
+                            <TableCell sx={{ fontWeight: 700, color: "#2563eb", fontFamily: "monospace", fontSize: "0.85rem", py: 1.8 }}>
+                              {t.ticketNumber}
+                            </TableCell>
+
+                            {/* Issue Title */}
+                            <TableCell sx={{ py: 1.8 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary, #0f172a)", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {t.title}
+                              </Typography>
+                            </TableCell>
+
+                            {/* Category */}
+                            <TableCell sx={{ py: 1.8 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "0.82rem", color: "var(--text-primary, #0f172a)", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {t.service?.name || "Software"}
+                              </Typography>
+                            </TableCell>
+
+                            {/* Assigned To */}
+                            <TableCell sx={{ py: 1.8 }}>
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontWeight: 600,
+                                  fontSize: "0.82rem",
+                                  color: (t.assignedTo?.filter((a) => a.status !== "REJECTED").length > 0 || (t.assignedWorkers?.length > 0)) ? "#2563eb" : "var(--text-secondary, #64748b)",
+                                  maxWidth: 160,
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap"
+                                }}
+                              >
+                                {assignedName}
+                              </Typography>
+                            </TableCell>
+
+                            {/* Priority */}
+                            <TableCell align="center" sx={{ py: 1.8 }}>
+                              <Chip
+                                label={t.priority}
+                                size="small"
+                                sx={{
+                                  bgcolor: SLA_MAP[t.priority]?.bg || "#f1f5f9",
+                                  color: SLA_MAP[t.priority]?.color || "#334155",
+                                  fontWeight: 700,
+                                  fontSize: "0.7rem",
+                                  height: 24
+                                }}
+                              />
+                            </TableCell>
+
+                            {/* Status */}
+                            <TableCell align="center" sx={{ py: 1.8 }}>
+                              {getStatusBadge(t.status)}
+                            </TableCell>
+
+                            {/* Raised On */}
+                            <TableCell sx={{ color: "var(--text-secondary, #64748b)", fontSize: "0.8rem", whiteSpace: "nowrap", py: 1.8 }}>
+                              {formatRaisedOnDate(t.createdAt)}
+                            </TableCell>
+
+                            {/* Action: Filled View Eye Icon Button */}
+                            <TableCell align="center" sx={{ py: 1.8 }}>
+                              <Tooltip title="View Details">
+                                <IconButton
+                                  size="small"
+                                  color="primary"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenTicketDetail(t);
+                                  }}
+                                  sx={{
+                                    bgcolor: "var(--bg-glass, rgba(37, 99, 235, 0.08))",
+                                    color: "#2563eb",
+                                    "&:hover": {
+                                      bgcolor: "#2563eb",
+                                      color: "#ffffff"
+                                    },
+                                    transition: "all 0.2s ease"
+                                  }}
+                                >
+                                  <Visibility fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+
+                {/* Table Pagination */}
+                <TablePagination
+                  rowsPerPageOptions={[5, 10, 25]}
+                  component="div"
+                  count={filteredTickets.length}
+                  rowsPerPage={rowsPerPage}
+                  page={page}
+                  onPageChange={(e, newPage) => setPage(newPage)}
+                  onRowsPerPageChange={(e) => {
+                    setRowsPerPage(parseInt(e.target.value, 10));
+                    setPage(0);
+                  }}
+                  sx={{
+                    borderTop: "1px solid var(--border-color, #e2e8f0)",
+                    color: "var(--text-secondary, #64748b)"
+                  }}
+                />
+              </Paper>
+            ) : (
+              /* CARD / GRID VIEW */
+              <Box>
+                <Grid container spacing={2.5}>
+                  {paginatedTickets.map((t) => {
+                    const activeAssignedTo = (t.assignedTo || []).filter((a) => a.status !== "REJECTED");
+                    const activeWorkers = t.assignedWorkers || [];
+                    const assignedName = activeAssignedTo.length > 0
+                      ? activeAssignedTo.map((a) => a.employee?.name).join(", ")
+                      : activeWorkers.length > 0
+                        ? activeWorkers.map((w) => w.worker?.name || "Technician").join(", ")
+                        : (t.status === "OPEN" ? "Pending Assignment" : "Unassigned");
+
+                    return (
+                      <Grid item xs={12} sm={6} md={4} key={t._id}>
+                        <Card
+                          onClick={() => handleOpenTicketDetail(t)}
+                          sx={{
+                            height: "100%",
+                            display: "flex",
+                            flexDirection: "column",
+                            borderRadius: "16px",
+                            border: "1px solid var(--border-color, #e2e8f0)",
+                            bgcolor: "var(--bg-paper, #ffffff)",
+                            boxShadow: "0 4px 16px rgba(0,0,0,0.03)",
+                            transition: "all 0.22s ease-in-out",
+                            cursor: "pointer",
+                            "&:hover": {
+                              transform: "translateY(-4px)",
+                              boxShadow: "0 10px 28px rgba(37, 99, 235, 0.14)",
+                              borderColor: "#3b82f6"
+                            }
+                          }}
+                        >
+                          <CardContent sx={{ p: 2.5, flex: 1, display: "flex", flexDirection: "column" }}>
+                            {/* Card Header: Ticket # & Status Badge */}
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#2563eb", fontFamily: "monospace", fontSize: "0.88rem" }}>
+                                {t.ticketNumber}
+                              </Typography>
+                              {getStatusBadge(t.status)}
+                            </Box>
+
+                            {/* Issue Title */}
+                            <Typography
+                              variant="h6"
+                              sx={{
+                                fontWeight: 700,
+                                fontSize: "0.98rem",
+                                color: "var(--text-primary, #0f172a)",
+                                mb: 1.5,
+                                lineHeight: 1.35,
+                                display: "-webkit-box",
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: "vertical",
+                                overflow: "hidden"
+                              }}
+                            >
+                              {t.title}
+                            </Typography>
+
+                            {/* Category & Priority Badges */}
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2, flexWrap: "wrap" }}>
+                              <Chip
+                                label={t.service?.name || "Software"}
+                                size="small"
+                                variant="outlined"
+                                sx={{
+                                  fontWeight: 600,
+                                  fontSize: "0.72rem",
+                                  borderRadius: "6px",
+                                  borderColor: "var(--border-color, #cbd5e1)",
+                                  color: "var(--text-primary, #334155)"
+                                }}
+                              />
+                              <Chip
+                                label={t.priority}
+                                size="small"
+                                sx={{
+                                  bgcolor: SLA_MAP[t.priority]?.bg || "#f1f5f9",
+                                  color: SLA_MAP[t.priority]?.color || "#334155",
+                                  fontWeight: 700,
+                                  fontSize: "0.7rem",
+                                  height: 22
+                                }}
+                              />
+                            </Box>
+
+                            <Divider sx={{ my: 1.5, borderColor: "var(--border-color, rgba(0,0,0,0.06))" }} />
+
+                            {/* Details: Assigned To & Raised On */}
+                            <Box sx={{ mt: "auto", display: "flex", flexDirection: "column", gap: 1 }}>
+                              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <Typography variant="caption" sx={{ color: "var(--text-secondary, #64748b)", fontWeight: 600, display: "flex", alignItems: "center", gap: 0.5 }}>
+                                  <AssignedUserIcon sx={{ fontSize: 15 }} /> Assigned:
+                                </Typography>
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    fontWeight: 700,
+                                    color: (t.assignedTo?.filter((a) => a.status !== "REJECTED").length > 0 || (t.assignedWorkers?.length > 0)) ? "#2563eb" : "var(--text-secondary, #64748b)",
+                                    maxWidth: 140,
+                                    overflow: "hidden",
+                                    textOverflow: "ellipsis",
+                                    whiteSpace: "nowrap"
+                                  }}
+                                >
+                                  {assignedName}
+                                </Typography>
+                              </Box>
+
+                              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                                <Typography variant="caption" sx={{ color: "var(--text-secondary, #64748b)", fontWeight: 600, display: "flex", alignItems: "center", gap: 0.5 }}>
+                                  <CalendarIcon sx={{ fontSize: 15 }} /> Raised:
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: "var(--text-secondary, #64748b)", fontWeight: 600 }}>
+                                  {formatRaisedOnDate(t.createdAt)}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </CardContent>
+
+                          {/* Card Action Footer */}
+                          <Box
+                            sx={{
+                              px: 2.5,
+                              py: 1.2,
+                              bgcolor: isDarkMode ? "rgba(255,255,255,0.03)" : "#f8fafc",
+                              borderTop: "1px solid var(--border-color, #e2e8f0)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              gap: 1.5
+                            }}
+                          >
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: isDarkMode ? "#60a5fa" : "#2563eb",
+                                fontWeight: 700,
+                                fontSize: "0.78rem",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap"
+                              }}
+                            >
+                              View tracking & timeline
+                            </Typography>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              endIcon={<Visibility sx={{ fontSize: 15 }} />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenTicketDetail(t);
+                              }}
+                              sx={{
+                                borderRadius: "8px",
+                                textTransform: "none",
+                                fontWeight: 700,
+                                fontSize: "0.75rem",
+                                py: 0.5,
+                                px: 1.8,
+                                flexShrink: 0,
+                                whiteSpace: "nowrap",
+                                background: "var(--gradient-primary, linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%))",
+                                boxShadow: "0 2px 6px rgba(37, 99, 235, 0.2)"
+                              }}
+                            >
+                              View
+                            </Button>
+                          </Box>
+                        </Card>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+
+                {/* Card Pagination */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    mt: 3,
+                    borderRadius: "12px",
+                    border: "1px solid var(--border-color, #e2e8f0)",
+                    bgcolor: "var(--bg-paper, #ffffff)"
+                  }}
+                >
+                  <TablePagination
+                    rowsPerPageOptions={[6, 10, 25]}
+                    component="div"
+                    count={filteredTickets.length}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    onPageChange={(e, newPage) => setPage(newPage)}
+                    onRowsPerPageChange={(e) => {
+                      setRowsPerPage(parseInt(e.target.value, 10));
+                      setPage(0);
+                    }}
+                    sx={{
+                      color: "var(--text-secondary, #64748b)"
+                    }}
+                  />
+                </Paper>
+              </Box>
+            )}
+          </Box>
+        )}
+      </Box>
+
+      {/* ----------------------------------------------------------- */}
+      {/* TICKET DETAIL VIEW MODAL (DIALOG)                           */}
+      {/* ----------------------------------------------------------- */}
+      <Dialog
+        open={detailOpen}
+        onClose={handleCloseTicketDetail}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "18px",
+            bgcolor: "var(--bg-paper, #ffffff)",
+            border: "1px solid var(--border-color, #e2e8f0)",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
+            p: { xs: 1, sm: 2 }
+          }
+        }}
+      >
+        {selectedTicketDetail && (
+          <>
+            <DialogTitle
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 1.5,
+                pb: 1.5,
+                borderBottom: "1px solid var(--border-color, #e2e8f0)"
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexWrap: "wrap" }}>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: "#2563eb" }}>
+                  {selectedTicketDetail.ticketNumber}
+                </Typography>
+                {getStatusBadge(selectedTicketDetail.status)}
+                <Chip
+                  label={selectedTicketDetail.priority}
+                  size="small"
+                  sx={{
+                    bgcolor: SLA_MAP[selectedTicketDetail.priority]?.bg || "#f1f5f9",
+                    color: SLA_MAP[selectedTicketDetail.priority]?.color || "#334155",
+                    fontWeight: 700
+                  }}
+                />
+                {selectedTicketDetail.block && (
+                  <Chip
+                    icon={<LocationIcon style={{ fontSize: 15 }} />}
+                    label={`${selectedTicketDetail.block.blockName} (${selectedTicketDetail.block.blockCode})`}
+                    size="small"
+                    variant="outlined"
+                    sx={{ fontWeight: 600 }}
+                  />
+                )}
+              </Box>
+
+              <IconButton onClick={handleCloseTicketDetail} size="small" sx={{ color: "var(--text-secondary, #64748b)" }}>
+                <CloseIcon />
+              </IconButton>
+            </DialogTitle>
+
+            <DialogContent sx={{ py: 2.5, px: { xs: 1.5, sm: 2.5 } }}>
+              {/* Ticket Title & Description */}
+              <Typography variant="h6" sx={{ fontWeight: 700, color: "var(--text-primary, #0f172a)", mb: 0.8 }}>
+                {selectedTicketDetail.title}
+              </Typography>
+              <Typography variant="body2" sx={{ color: "var(--text-secondary, #475569)", mb: 2.5, whiteSpace: "pre-line" }}>
+                {selectedTicketDetail.description}
+              </Typography>
+
+              {/* 3-Column Metadata Grid */}
+              {/* 3-Column Metadata Grid */}
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+                  gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+                  p: { xs: 2, sm: 2.2 },
+                  bgcolor: "var(--bg-panel, #f8fafc)",
+                  border: "1px solid var(--border-color, #e2e8f0)",
+                  borderRadius: "14px",
+                  gap: { xs: 2, md: 3 },
+                  gap: { xs: 2, md: 3 },
+                  mb: 3,
+                  alignItems: "center"
+                }}
+              >
+                {/* 1. Raised On */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <CalendarIcon sx={{ fontSize: 26, color: "var(--text-secondary, #64748b)" }} />
+                  </Box>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary, #64748b)", fontSize: "0.75rem", display: "block", mb: 0.2 }}>
+                      Raised On
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary, #1e293b)", fontSize: "0.85rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {formatRaisedOnDate(selectedTicketDetail.createdAt)}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                {/* 2. Assigned To */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <AssignedUserIcon sx={{ fontSize: 28, color: "var(--text-secondary, #64748b)" }} />
+                  </Box>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary, #64748b)", fontSize: "0.75rem", display: "block", mb: 0.2 }}>
+                      Assigned To
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 700,
+                        color: "#2563eb",
+                        fontSize: "0.85rem",
+                        textTransform: "uppercase",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis"
+                      }}
+                    >
+                      {(() => {
+                        const activeAssigned = (selectedTicketDetail.assignedTo || []).filter((a) => a.status !== "REJECTED");
+                        const activeWorkers = selectedTicketDetail.assignedWorkers || [];
+                        if (activeAssigned.length > 0) return activeAssigned.map((a) => a.employee?.name).join(", ");
+                        if (activeWorkers.length > 0) return activeWorkers.map((w) => w.worker?.name || "Technician").join(", ");
+                        return selectedTicketDetail.status === "OPEN" ? "Pending Assignment" : "Unassigned";
+                      })()}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                {/* 3. Category */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <CategoryGridIcon sx={{ fontSize: 26, color: "var(--text-secondary, #64748b)" }} />
+                  </Box>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary, #64748b)", fontSize: "0.75rem", display: "block", mb: 0.2 }}>
+                      Category
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "var(--text-primary, #1e293b)", fontSize: "0.85rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {selectedTicketDetail.service?.name || "Software"}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+
+              {/* PROGRESS TIMELINE */}
+              <Box sx={{ width: "100%", py: 1.5, mb: 2 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 700,
+                    color: "var(--text-secondary, #64748b)",
+                    display: "block",
+                    mb: 2.5,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.8px",
+                    fontSize: "0.75rem"
+                  }}
+                >
+                  PROGRESS TIMELINE
+                </Typography>
+                <Stepper
+                  activeStep={getTimelineStep(selectedTicketDetail.status)}
+                  alternativeLabel
+                  connector={<CustomStepConnector />}
+                  sx={{ width: "100%" }}
+                >
+                  {[
+                    { label: "Submitted" },
+                    { label: "Assigned" },
+                    { label: "In Progress" },
+                    { label: "Resolved" },
+                    { label: "Closed" }
+                  ].map((stepObj, index) => {
+                    const stepIdx = getTimelineStep(selectedTicketDetail.status);
+                    const isCompleted = stepIdx > index || (index === 3 && selectedTicketDetail.status === "CLOSED") || (index === 4 && selectedTicketDetail.status === "CLOSED");
+                    const isActive = stepIdx === index && selectedTicketDetail.status !== "CLOSED";
+
+                    let stepDate = null;
+                    if (index === 0) {
+                      stepDate = formatTimelineStepDate(selectedTicketDetail.createdAt);
+                    } else if (index === 1 && stepIdx >= 1) {
+                      const assignedTime = selectedTicketDetail.assignedTo?.[0]?.assignedAt || selectedTicketDetail.assignedTo?.[0]?.updatedAt || selectedTicketDetail.updatedAt;
+                      stepDate = formatTimelineStepDate(assignedTime);
+                    } else if (index === 2 && stepIdx >= 2) {
+                      const inProgTime = selectedTicketDetail.assignedTo?.[0]?.updatedAt || selectedTicketDetail.updatedAt;
+                      stepDate = formatTimelineStepDate(inProgTime);
+                    } else if (index === 3 && stepIdx >= 3) {
+                      stepDate = formatTimelineStepDate(selectedTicketDetail.updatedAt);
+                    } else if (index === 4 && stepIdx >= 4) {
+                      stepDate = formatTimelineStepDate(selectedTicketDetail.closedAt || selectedTicketDetail.updatedAt);
+                    }
+
+                    return (
+                      <Step key={stepObj.label} completed={isCompleted}>
+                        <StepLabel
+                          StepIconComponent={(iconProps) => (
+                            <CustomTimelineStepIcon
+                              {...iconProps}
+                              completed={isCompleted}
+                              active={isActive}
+                              icon={index + 1}
+                            />
+                          )}
+                        >
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: isCompleted || isActive ? 700 : 500,
+                              color: isCompleted || isActive
+                                ? "var(--text-primary, #0f172a)"
+                                : "var(--text-secondary, #64748b)",
+                              fontSize: "0.82rem",
+                              lineHeight: 1.2
+                            }}
+                          >
+                            {stepObj.label}
+                          </Typography>
+                          {stepDate && (
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                display: "block",
+                                color: "var(--text-secondary, #64748b)",
+                                fontSize: "0.72rem",
+                                mt: 0.4,
+                                fontWeight: 500
+                              }}
+                            >
+                              {stepDate}
+                            </Typography>
+                          )}
+                        </StepLabel>
+                      </Step>
+                    );
+                  })}
+                </Stepper>
+              </Box>
+
+              {/* Live Comments / Discussion in Modal */}
+              {(!["RESOLVED", "REJECTED", "CLOSED"].includes(selectedTicketDetail.status) ||
+                (ticketComments[selectedTicketDetail._id] && ticketComments[selectedTicketDetail._id].length > 0) ||
+                ticketCommentsLoading[selectedTicketDetail._id]) && (
+                  <Box
+                    sx={{
+                      mt: 2,
+                      border: "1px solid var(--border-color, #e2e8f0)",
+                      borderRadius: "14px",
+                      bgcolor: "var(--bg-panel, #f8fafc)",
+                      overflow: "hidden"
+                    }}
+                  >
+                    {/* Chat Header */}
+                    <Box
+                      sx={{
+                        p: 1.6,
+                        px: 2,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        bgcolor: "var(--bg-paper, #ffffff)",
+                        borderBottom: "1px solid var(--border-color, #e2e8f0)"
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
+                        <Box
+                          sx={{
+                            width: 32,
+                            height: 32,
+                            borderRadius: "8px",
+                            bgcolor: selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" && selectedTicketDetail.status !== "RESOLVED" ? "rgba(37, 99, 235, 0.1)" : "rgba(100, 116, 139, 0.1)",
+                            color: selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" && selectedTicketDetail.status !== "RESOLVED" ? "#2563eb" : "#64748b",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center"
+                          }}
+                        >
+                          <ChatIcon sx={{ fontSize: 18 }} />
+                        </Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "var(--text-primary, #0f172a)" }}>
+                          Comments & Live Discussion
+                        </Typography>
+                        {selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" && selectedTicketDetail.status !== "RESOLVED" ? (
+                          <Chip
+                            icon={<DotIcon sx={{ fontSize: "10px !important", color: "#16a34a !important" }} />}
+                            label="Chat Active"
+                            size="small"
+                            sx={{
+                              height: 20,
+                              fontSize: "0.7rem",
+                              fontWeight: 600,
+                              bgcolor: "#dcfce7",
+                              color: "#15803d",
+                              pl: 0.5
+                            }}
+                          />
+                        ) : (
+                          <Chip
+                            label="Archived"
+                            size="small"
+                            sx={{
+                              height: 20,
+                              fontSize: "0.7rem",
+                              fontWeight: 600,
+                              bgcolor: "#f1f5f9",
+                              color: "#64748b"
+                            }}
+                          />
+                        )}
+                      </Box>
+                    </Box>
+
+                    {/* Chat Messages */}
+                    <Box sx={{ p: 2, bgcolor: "var(--bg-paper, #ffffff)" }}>
+                      {ticketCommentsLoading[selectedTicketDetail._id] ? (
+                        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 4, gap: 1.5 }}>
+                          <CircularProgress size={20} />
+                          <Typography variant="caption" sx={{ color: "var(--text-secondary, #64748b)" }}>
+                            Loading conversation...
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <>
+                          <Box
+                            sx={{
+                              maxHeight: 260,
+                              minHeight: 100,
+                              overflowY: "auto",
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 2,
+                              p: 2,
+                              mb: 2,
+                              borderRadius: "10px",
+                              bgcolor: "var(--bg-panel, #f8fafc)",
+                              border: "1px solid var(--border-color, #e2e8f0)"
+                            }}
+                          >
+                            {(!ticketComments[selectedTicketDetail._id] || ticketComments[selectedTicketDetail._id].length === 0) ? (
+                              <Box sx={{ py: 3, textAlign: "center" }}>
+                                <Typography variant="body2" sx={{ color: "var(--text-secondary, #64748b)", fontSize: "0.85rem" }}>
+                                  💬 No comments yet. Have a question or note for the technician? Start the conversation below!
+                                </Typography>
+                              </Box>
+                            ) : (
+                              ticketComments[selectedTicketDetail._id].map((msg, idx) => {
+                                const isStudent = msg.senderType === "STUDENT" || !msg.sender;
+                                const msgDate = new Date(msg.createdAt).toLocaleString("en-IN", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true
+                                });
+
+                                return (
+                                  <Box
+                                    key={msg._id || idx}
+                                    sx={{
+                                      display: "flex",
+                                      flexDirection: isStudent ? "row-reverse" : "row",
+                                      alignItems: "flex-start",
+                                      gap: 1.5
+                                    }}
+                                  >
+                                    <Avatar
+                                      src={isStudent ? `https://info.aec.edu.in/adityacentral/StudentPhotos/${student?.rollno}.jpg` : undefined}
+                                      sx={{
+                                        width: 32,
+                                        height: 32,
+                                        bgcolor: isStudent ? "#2563eb" : "#475569",
+                                        color: "#ffffff",
+                                        fontSize: "0.8rem",
+                                        fontWeight: 700
+                                      }}
+                                    >
+                                      {isStudent
+                                        ? (student?.studentname?.charAt(0) || "S")
+                                        : (msg.sender?.name?.charAt(0) || msg.senderName?.charAt(0) || "T")}
+                                    </Avatar>
+
+                                    <Box
+                                      sx={{
+                                        maxWidth: "80%",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: isStudent ? "flex-end" : "flex-start"
+                                      }}
+                                    >
+                                      <Box
+                                        sx={{
+                                          p: 1.6,
+                                          borderRadius: "12px",
+                                          borderTopRightRadius: isStudent ? 0 : "12px",
+                                          borderTopLeftRadius: !isStudent ? 0 : "12px",
+                                          bgcolor: isStudent ? "#2563eb" : "var(--bg-paper, #ffffff)",
+                                          border: isStudent ? "none" : "1px solid var(--border-color, #e2e8f0)",
+                                          color: isStudent ? "#ffffff" : "var(--text-primary, #0f172a)",
+                                          boxShadow: "0 1px 3px rgba(0,0,0,0.04)"
+                                        }}
+                                      >
+                                        {!isStudent && (
+                                          <Typography
+                                            variant="caption"
+                                            sx={{
+                                              display: "block",
+                                              fontWeight: 800,
+                                              color: "#2563eb",
+                                              fontSize: "0.72rem",
+                                              textTransform: "uppercase",
+                                              letterSpacing: "0.3px",
+                                              mb: 0.5
+                                            }}
+                                          >
+                                            {msg.sender?.name || msg.senderName || "Technician / Support"}
+                                          </Typography>
+                                        )}
+                                        <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.5, fontSize: "0.85rem" }}>
+                                          {msg.message}
+                                        </Typography>
+                                        <Typography
+                                          variant="caption"
+                                          sx={{
+                                            display: "block",
+                                            textAlign: "right",
+                                            mt: 0.6,
+                                            fontSize: "0.65rem",
+                                            color: isStudent ? "rgba(255,255,255,0.75)" : "var(--text-secondary, #64748b)"
+                                          }}
+                                        >
+                                          {msgDate}
+                                        </Typography>
+                                      </Box>
+                                    </Box>
+                                  </Box>
+                                );
+                              })
+                            )}
+                          </Box>
+
+                          {/* Comment Input */}
+                          {selectedTicketDetail.isChatActive && selectedTicketDetail.status !== "CLOSED" && selectedTicketDetail.status !== "REJECTED" && selectedTicketDetail.status !== "RESOLVED" ? (
+                            <Box
+                              component="form"
+                              onSubmit={(e) => handleSendTicketComment(selectedTicketDetail._id, e)}
+                              sx={{ display: "flex", gap: 1.5, alignItems: "center" }}
+                            >
+                              <Avatar
+                                src={`https://info.aec.edu.in/adityacentral/StudentPhotos/${student?.rollno}.jpg`}
+                                sx={{ width: 34, height: 34, bgcolor: "#2563eb", fontSize: "0.8rem", fontWeight: 700 }}
+                              >
+                                {student?.studentname?.charAt(0) || "S"}
+                              </Avatar>
+                              <TextField
+                                size="small"
+                                fullWidth
+                                placeholder="Add a comment or reply to technician..."
+                                value={newMessages[selectedTicketDetail._id] || ""}
+                                onChange={(e) => setNewMessages((prev) => ({ ...prev, [selectedTicketDetail._id]: e.target.value }))}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSendTicketComment(selectedTicketDetail._id, e);
+                                  }
+                                }}
+                                disabled={sendingComment[selectedTicketDetail._id]}
+                                sx={{
+                                  "& .MuiOutlinedInput-root": {
+                                    borderRadius: "10px",
+                                    bgcolor: "var(--bg-panel, #f8fafc)"
+                                  }
+                                }}
+                              />
+                              <Button
+                                type="submit"
+                                variant="contained"
+                                disabled={!newMessages[selectedTicketDetail._id]?.trim() || sendingComment[selectedTicketDetail._id]}
+                                sx={{
+                                  bgcolor: "#2563eb",
+                                  color: "#ffffff",
+                                  minWidth: 42,
+                                  width: 42,
+                                  height: 40,
+                                  p: 0,
+                                  borderRadius: "10px",
+                                  "&:hover": { bgcolor: "#1d4ed8" }
+                                }}
+                              >
+                                {sendingComment[selectedTicketDetail._id] ? <CircularProgress size={18} color="inherit" /> : <SendIcon sx={{ fontSize: 18 }} />}
+                              </Button>
+                            </Box>
+                          ) : null}
+                        </>
+                      )}
+                    </Box>
+                  </Box>
+                )}
+
+              {/* Feedback Section when RESOLVED */}
+              {selectedTicketDetail.status === "RESOLVED" && !selectedTicketDetail.feedback && (
+                <Box sx={{ mt: 3, p: 2, bgcolor: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 2 }}>
+                  <Typography variant="body2" sx={{ color: "#16a34a", fontWeight: 700 }}>
+                    🎉 This issue has been marked resolved. Please verify and submit feedback!
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    startIcon={<StarIcon />}
+                    onClick={() => {
+                      handleCloseTicketDetail();
+                      openFeedbackDialog(selectedTicketDetail);
+                    }}
+                    sx={{ fontWeight: 700, borderRadius: "8px", textTransform: "none" }}
+                  >
+                    Give Feedback & Close
+                  </Button>
+                </Box>
+              )}
+
+              {/* Already Submitted Feedback */}
+              {selectedTicketDetail.feedback && (
+                <Box sx={{ mt: 2.5, p: 2, bgcolor: "#f0fdf4", borderRadius: "12px", border: "1px solid #bbf7d0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <Box>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: "#166534" }}>
+                      Your Rating & Feedback
+                    </Typography>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
+                      <Rating value={selectedTicketDetail.feedback.rating} readOnly size="small" />
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "#15803d" }}>
+                        {selectedTicketDetail.feedback.satisfaction}
+                      </Typography>
+                    </Box>
+                    {selectedTicketDetail.feedback.comments && (
+                      <Typography variant="caption" sx={{ color: "#14532d", display: "block", mt: 0.5 }}>
+                        "{selectedTicketDetail.feedback.comments}"
+                      </Typography>
+                    )}
+                  </Box>
+                  <Chip label="Completed" color="success" size="small" />
+                </Box>
+              )}
+            </DialogContent>
+          </>
+        )}
+      </Dialog>
+
+      {/* ----------------------------------------------------------- */}
+      {/* FEEDBACK & RATING MODAL (Share Your Feedback)               */}
+      {/* ----------------------------------------------------------- */}
+      <Dialog
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: "16px",
+            p: 1
+          }
+        }}
+      >
+        <DialogTitle sx={{ pb: 1, display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <Box>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: "var(--color-primary, #0f172a)", mb: 1 }}>
+              Share Your Feedback
+            </Typography>
+            <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.5 }}>
+              Ticket: <strong>{selectedFeedbackTicket?.ticketNumber}</strong> - {selectedFeedbackTicket?.title}
+            </Typography>
+          </Box>
+          <IconButton onClick={() => setFeedbackOpen(false)} size="small" sx={{ color: "text.secondary" }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 1 }}>
+
+            {/* Rating Section */}
+            <Box>
+              <Typography sx={{ fontWeight: 600, mb: 1, color: "var(--text-primary, #0f172a)" }}>
+                1. How would you rate your overall experience?
+              </Typography>
+              <Rating
+                name="feedback-rating"
+                value={rating}
+                onChange={(e, newValue) => setRating(newValue || 0)}
+                size="large"
+              />
+              <Typography variant="caption" sx={{ display: "block", color: "text.secondary", mt: 0.5 }}>
+                Click on a star to rate
+              </Typography>
+            </Box>
+
+            {/* Satisfaction Section */}
+            <Box>
+              <Typography sx={{ fontWeight: 600, mb: 2, color: "var(--text-primary, #0f172a)" }}>
+                2. How satisfied are you with our service?
+              </Typography>
+              <RadioGroup
+                value={satisfaction}
+                onChange={(e) => setSatisfaction(e.target.value)}
+                sx={{ gap: 1.5 }}
+              >
+                {["Very Satisfied", "Satisfied", "Neutral", "Dissatisfied", "Very Dissatisfied"].map((level) => (
+                  <Box
+                    key={level}
+                    sx={{
+                      border: "1px solid",
+                      borderColor: satisfaction === level ? "primary.main" : "divider",
+                      borderRadius: "8px",
+                      px: 2,
+                      py: 0.5,
+                      transition: "all 0.2s ease",
+                      bgcolor: satisfaction === level ? "rgba(37, 99, 235, 0.05)" : "transparent",
+                      "&:hover": {
+                        borderColor: "primary.main",
+                        bgcolor: "var(--bg-dashboard, #f8fafc)"
+                      }
+                    }}
+                  >
+                    <FormControlLabel
+                      value={level}
+                      control={<Radio size="small" />}
+                      label={level}
+                      sx={{ width: "100%", m: 0 }}
+                    />
+                  </Box>
+                ))}
+              </RadioGroup>
+            </Box>
+
+            {/* Comments Section */}
+            <Box>
+              <Typography sx={{ fontWeight: 600, mb: 1, color: "var(--text-primary, #0f172a)" }}>
+                3. Additional Comments
+              </Typography>
+              <TextField
+                fullWidth
+                multiline
+                rows={4}
+                placeholder="Write your comments here..."
+                value={feedbackComments}
+                onChange={(e) => setFeedbackComments(e.target.value)}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "12px"
+                  }
+                }}
+              />
+            </Box>
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button
+            variant="contained"
+            fullWidth
+            onClick={handleSubmitFeedback}
+            disabled={submittingFeedback}
+            sx={{
+              py: 1.5,
+              borderRadius: "12px",
+              textTransform: "none",
+              fontSize: "1rem",
+              fontWeight: 600,
+              bgcolor: "#002147",
+              "&:hover": { bgcolor: "#001530" }
+            }}
+          >
+            {submittingFeedback ? <CircularProgress size={20} color="inherit" /> : "Submit Feedback"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Professional Footer Bar */}
+      <Box
+        component="footer"
+        sx={{
+          width: "100%",
+          background: "transparent",
+          py: 1.5,
+          px: { xs: 2, sm: 4 },
+        }}
+      >
+        <Box
+          sx={{
+            maxWidth: 1200,
+            mx: "auto",
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 1,
+            textAlign: { xs: "center", sm: "left" }
+          }}
+        >
+
+          <Typography variant="body2" sx={{ fontSize: "0.78rem", color: isDarkMode ? "rgba(255,255,255,0.5)" : "#475569", fontWeight: 500 }}>
+            Designed & Developed by{" "}
+            <Box component="span" sx={{ background: "var(--gradient-primary)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", fontWeight: 700 }}>
+              IT Applications
+            </Box>
+          </Typography>
+        </Box>
+      </Box>
+    </Box>
+  );
+}

@@ -16,6 +16,7 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import PageHeader from "../../components/common/PageHeader";
+import { Alert, AlertTitle } from "@mui/material";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
 import {
   FacultyInfoRow, FormCard, Grid2, SubLabel, NoteBox, FileField, SubmitBtn
@@ -24,6 +25,12 @@ import {
   labelStyle, disabledField, MONTHS, YEARS
 } from "../../components/faculty/publicationConstants";
 import API from "../../api/axios";
+import mammoth from "mammoth";
+import * as pdfjsLib from "pdfjs-dist";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+
+// Configure PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 export default function ConferencePublication() {
   const { user } = useAuth();
@@ -37,17 +44,64 @@ export default function ConferencePublication() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  const [form, setForm] = useState({
+  const emptyForm = {
     doi: "",
-    title: "", conferenceName: "", scope: "", indexing: "",
+    title: "", conferenceName: "", location: "", presentationMode: "", conferenceType: "", scopusIndexed: "",
     month: "", year: "",
     publisher: "", issnIsbn: "",
     applyIncentive: "No", applyingSeedGrant: "",
     isStudentsInvolved: "No",
-    totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
-  });
-  const [files, setFiles] = useState({ certificate: null, proceedings: null });
-  const [existingFiles, setExistingFiles] = useState({ certificate: null, proceedings: null });
+    totalAuthors: 1, userAuthorPosition: 1, otherAuthors: [],
+    sdgs: ""
+  };
+
+  const [form, setForm] = useState(emptyForm);
+  const [files, setFiles] = useState({ firstPage: null, certificate: null, completeDocument: null, flightTicket: null });
+  const [existingFiles, setExistingFiles] = useState({ firstPage: null, certificate: null, completeDocument: null, flightTicket: null });
+  
+  const [scanningSdg, setScanningSdg] = useState(false);
+  const [scannedSdgResults, setScannedSdgResults] = useState(null);
+  const [sdgMap, setSdgMap] = useState({});
+  const [sdgList, setSdgList] = useState([]);
+
+  useEffect(() => {
+    API.get("/api/sdgs").then(res => {
+      if (res.data?.success) {
+        setSdgList(res.data.data);
+        const map = {};
+        res.data.data.forEach(sdg => {
+          const title = sdg.sdgTitle.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+          map[sdg.sdgNumber] = `${sdg.sdgNumber}: ${title}`;
+        });
+        setSdgMap(map);
+      }
+    }).catch(err => console.error("Failed to fetch SDGs", err));
+  }, []);
+
+  const getSdgName = (sdgCode) => {
+    const cleanCode = (sdgCode || "").trim();
+    if (sdgMap[cleanCode]) return sdgMap[cleanCode];
+    if (cleanCode.startsWith("SDG-")) return cleanCode;
+    const key = `SDG-${cleanCode}`;
+    return sdgMap[key] || cleanCode;
+  };
+  
+  const hasPgStudent = form.otherAuthors?.some(ca => ca.CoAuthorType === 'student' && ca.studentQualification === 'PG');
+  const isOtherConferenceType = form.conferenceType === 'Other';
+  const disableIncentive = hasPgStudent || isOtherConferenceType;
+
+  let estimatedAmountStr = "";
+  let estimatedAmountNum = 0;
+  if (form.applyIncentive === "Yes" && !disableIncentive) {
+    if (form.location === "Abroad") {
+      estimatedAmountStr = "The research committee will decide accordingly";
+      estimatedAmountNum = 0;
+    } else {
+      const finalAmount = form.applyingSeedGrant === "Yes" ? 4000 : 8000;
+      estimatedAmountStr = `₹${finalAmount.toLocaleString('en-IN')}`;
+      estimatedAmountNum = finalAmount;
+    }
+  }
   const [loading, setLoading] = useState(false);
   const [doiFetching, setDoiFetching] = useState(false);
   const [doiFetched, setDoiFetched] = useState(false);
@@ -72,19 +126,18 @@ export default function ConferencePublication() {
   const set = (k) => (e) => {
     const val = e.target.value;
     setForm(p => {
-      const newForm = { ...p, [k]: val };
+      let newForm = { ...p, [k]: val };
       if (k === "doi") {
-        newForm.title = "";
-        newForm.publisher = "";
-        newForm.conferenceName = "";
-        newForm.issnIsbn = "";
-        newForm.year = "";
-        newForm.month = "";
-        newForm.indexing = "";
+        newForm = { ...emptyForm, doi: val };
         setDoiFetched(false);
         setDoiFetchedFields({});
       }
       if (k === "isStudentsInvolved") {
+        if (val === "Yes") {
+          if (parseInt(newForm.totalAuthors) < 2 || isNaN(parseInt(newForm.totalAuthors))) {
+            newForm.totalAuthors = 2;
+          }
+        }
         if (val === "No") {
           newForm.otherAuthors = newForm.otherAuthors.map(a => ({
             ...a,
@@ -94,8 +147,6 @@ export default function ConferencePublication() {
             empId: a.CoAuthorType === "student" ? "" : a.empId
           }));
         }
-        // applyIncentive is always "No" — organisation does not provide conference incentives
-        newForm.applyIncentive = "No";
       }
       return newForm;
     });
@@ -135,13 +186,15 @@ export default function ConferencePublication() {
       doi: pub.doi || "",
       title: pub.title || "",
       conferenceName: pub.conferenceName || "",
-      scope: pub.scope || pub.level || "",
-      indexing: pub.indexing || "",
+      location: pub.location || pub.level || "",
+      presentationMode: pub.presentationMode || "",
+      conferenceType: pub.conferenceType || "",
+      scopusIndexed: pub.scopusIndexed || "",
       month: pub.month || "",
       year: pub.year || "",
       publisher: pub.publisher || "",
       issnIsbn: pub.issnIsbn || "",
-      applyIncentive: "No", // Organisation does not provide conference incentives
+      applyIncentive: pub.applyIncentive || "No",
       applyingSeedGrant: pub.applyingSeedGrant || "",
       isStudentsInvolved: pub.isStudentsInvolved || "No",
       totalAuthors: pub.totalAuthors || 1,
@@ -154,13 +207,15 @@ export default function ConferencePublication() {
       publisher: Boolean(pub.publisher),
       issnIsbn: Boolean(pub.issnIsbn),
       conferenceName: Boolean(pub.conferenceName),
-      indexing: Boolean(pub.indexing)
+      scopusIndexed: Boolean(pub.scopusIndexed)
     } : {});
     setExistingFiles({
+      firstPage: pub.firstPage || null,
       certificate: pub.certificate || null,
-      proceedings: pub.proceedings || null
+      completeDocument: pub.completeDocument || null,
+      flightTicket: pub.flightTicket || null
     });
-    setFiles({ certificate: null, proceedings: null });
+    setFiles({ firstPage: null, certificate: null, completeDocument: null, flightTicket: null });
     setViewMode("form");
   };
 
@@ -192,15 +247,17 @@ export default function ConferencePublication() {
         issnIsbn: data.issnIsbn || prev.issnIsbn,
         year: data.year || prev.year,
         month: data.month || prev.month,
-        indexing: "Scopus Indexed",   // confirmed in Scopus as conference paper
+        scopusIndexed: "Yes",   // confirmed in Scopus as conference paper
       }));
 
       const fetchedObj = {};
       if (data.title) fetchedObj.title = true;
       if (data.publisher) fetchedObj.publisher = true;
+      if (data.year) fetchedObj.year = true;
+      if (data.month) fetchedObj.month = true;
       if (data.conferenceName) fetchedObj.conferenceName = true;
       if (data.issnIsbn) fetchedObj.issnIsbn = true;
-      fetchedObj.indexing = true;
+      fetchedObj.scopusIndexed = true;
 
       setDoiFetchedFields(fetchedObj);
       setDoiFetched(true);
@@ -228,7 +285,7 @@ export default function ConferencePublication() {
       } else if (status === 404) {
         // Not in Scopus
         toast.warning(message || "This DOI was not found in Scopus. Please fill details manually.");
-        setForm(prev => ({ ...prev, indexing: prev.indexing || "Not Scopus Indexed" }));
+        setForm(prev => ({ ...prev, scopusIndexed: prev.scopusIndexed || "No" }));
       } else if (status === 401) {
         toast.error("Scopus API key issue. Please contact admin.");
       } else if (status === 429) {
@@ -259,23 +316,126 @@ export default function ConferencePublication() {
     return MONTHS;
   };
 
-  const validateFile = (file) => {
+  const validateFile = (file, k) => {
     if (!file) return true;
-    const allowed = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-    if (!allowed.includes(file.type)) {
-      toast.error("Only PDF, JPG, and PNG files are allowed");
+    if (file.type !== 'application/pdf') {
+      toast.error("Only PDF files are allowed");
       return false;
     }
-    if (file.size > 1024 * 1024) {
-      toast.error("File size exceeds 1MB limit");
+    const isCompleteDoc = k === 'completeDocument';
+    const maxSize = isCompleteDoc ? 5 * 1024 * 1024 : 200 * 1024;
+    if (file.size > maxSize) {
+      toast.error(`File size exceeds ${isCompleteDoc ? "5MB" : "200KB"} limit`);
       return false;
     }
     return true;
   };
 
-  const setFile = (k) => (e) => {
+  const handleCompleteDocumentChange = async (e) => {
     const file = e.target.files[0];
-    if (file && validateFile(file)) {
+    const k = "completeDocument";
+    if (!file) {
+      setFiles(p => ({ ...p, [k]: null }));
+      setForm(p => ({ ...p, sdgs: "" }));
+      setScannedSdgResults(null);
+      return;
+    }
+
+    if (!validateFile(file, k)) {
+      e.target.value = null;
+      return;
+    }
+
+    setFiles(p => ({ ...p, [k]: file }));
+
+    // Dynamic scan client-side for SDGs
+    setScanningSdg(true);
+    setScannedSdgResults(null);
+    try {
+      let sdgData = {};
+      const res = await API.get("/api/sdgs");
+      if (res.data && res.data.success) {
+        res.data.data.forEach(item => {
+          sdgData[item.sdgNumber] = {
+            title: item.sdgTitle,
+            keywords: item.keywords
+          };
+        });
+      }
+
+      if (Object.keys(sdgData).length === 0) {
+        toast.info("SDG keywords are loading. Dynamic scanning skipped.");
+        setScanningSdg(false);
+        return;
+      }
+
+      let text = "";
+      const fileName = file.name.toLowerCase();
+      if (fileName.endsWith('.pdf')) {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          fullText += content.items.map(item => item.str).join(" ") + " ";
+        }
+        text = fullText;
+      } else {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        text = result.value;
+      }
+
+      const normalizeText = (t) => {
+        return t.toLowerCase()
+          .replace(/[\u2018\u2019]/g, "'")
+          .replace(/[\u201C\u201D]/g, '"')
+          .replace(/[^a-z0-9'\s]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      };
+
+      text = normalizeText(text);
+
+      const matchedList = [];
+      Object.entries(sdgData).forEach(([number, data]) => {
+        let matchCount = 0;
+        data.keywords.forEach(keyword => {
+          const kw = normalizeText(keyword);
+          if (kw.length > 2) {
+            const escapedKw = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`\\b${escapedKw}\\b`, "gi");
+            const matches = text.match(regex);
+            if (matches) {
+              matchCount += matches.length;
+            }
+          }
+        });
+        if (matchCount > 0) {
+          matchedList.push(number);
+        }
+      });
+
+      const matchedStr = matchedList.join(", ");
+      setForm(p => ({ ...p, sdgs: matchedStr }));
+      setScannedSdgResults(matchedList);
+      toast.success(`SDG keyword scanning completed! Matched: ${matchedList.length > 0 ? matchedStr : "None"}`);
+    } catch (err) {
+      console.error("SDG scan error:", err);
+      toast.error("Failed to dynamically scan SDG keywords, but file was attached");
+    } finally {
+      setScanningSdg(false);
+    }
+  };
+
+  const setFile = (k) => (e) => {
+    if (k === "completeDocument") {
+      handleCompleteDocumentChange(e);
+      return;
+    }
+    const file = e.target.files[0];
+    if (file && validateFile(file, k)) {
       setFiles((p) => ({ ...p, [k]: file }));
     } else {
       e.target.value = null;
@@ -394,8 +554,19 @@ export default function ConferencePublication() {
     const val = e.target.value;
     setForm((prev) => {
       let newForm = { ...prev, isStudentsInvolved: val };
-      // applyIncentive is always "No" — organisation does not provide conference incentives
-      newForm.applyIncentive = "No";
+      
+      // If previous value was "No" and new is "Yes", increment by 1
+      if (prev.isStudentsInvolved === "No" && val === "Yes") {
+        if (parseInt(newForm.totalAuthors) == 1) {
+          newForm.totalAuthors = parseInt(newForm.totalAuthors) + 1;
+        }
+      } 
+      // If previous value was "Yes" and new is "No", decrement by 1
+      else if (prev.isStudentsInvolved === "Yes" && val === "No") {
+        if (parseInt(newForm.totalAuthors) == 2) {
+          newForm.totalAuthors = parseInt(newForm.totalAuthors) - 1;
+        }
+      }
       if (val === "No") {
         if (newForm.otherAuthors) {
           newForm.otherAuthors = newForm.otherAuthors.map(author => {
@@ -422,7 +593,7 @@ export default function ConferencePublication() {
       toast.error("DOI is mandatory. Please enter the DOI.");
       return;
     }
-    if (!form.title || !form.conferenceName || !form.scope || !form.indexing || !form.publisher || !form.applyingSeedGrant || !form.applyIncentive) {
+    if (!form.title || !form.conferenceName || !form.location || (form.location === "Abroad" && !form.presentationMode) || !form.conferenceType || !form.scopusIndexed || !form.publisher || !form.applyingSeedGrant || !form.applyIncentive) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -470,8 +641,20 @@ export default function ConferencePublication() {
       }
     }
 
+    if (!files.firstPage && !existingFiles.firstPage) {
+      toast.error("Please attach the first page of the published paper");
+      return;
+    }
     if (!files.certificate && !existingFiles.certificate) {
       toast.error("Please attach the presentation certificate");
+      return;
+    }
+    if (!files.completeDocument && !existingFiles.completeDocument) {
+      toast.error("Please attach the complete document");
+      return;
+    }
+    if (form.location === "Abroad" && form.presentationMode === "Offline" && !files.flightTicket && !existingFiles.flightTicket) {
+      toast.error("Please attach the flight ticket bill");
       return;
     }
 
@@ -491,8 +674,10 @@ export default function ConferencePublication() {
       fd.append("doi", form.doi || "");
       fd.append("title", form.title);
       fd.append("conferenceName", form.conferenceName);
-      fd.append("scope", form.scope);
-      fd.append("indexing", form.indexing);
+      fd.append("location", form.location);
+      if (form.presentationMode) fd.append("presentationMode", form.presentationMode);
+      fd.append("conferenceType", form.conferenceType);
+      fd.append("scopusIndexed", form.scopusIndexed);
       fd.append("publisher", form.publisher);
       fd.append("issnIsbn", form.issnIsbn || "");
       fd.append("totalAuthors", String(total));
@@ -501,18 +686,24 @@ export default function ConferencePublication() {
       fd.append("isStudentsInvolved", form.isStudentsInvolved || "No");
       fd.append("month", form.month);
       fd.append("year", form.year);
-      fd.append("applyIncentive", form.applyIncentive);
+      fd.append("applyIncentive", disableIncentive ? "No" : form.applyIncentive);
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
+      fd.append("estimatedIncentiveAmount", estimatedAmountNum);
       fd.append("academicYear", selectedYear);
       fd.append("college", user?.college || "");
       fd.append("panNumber", user?.panNumber || "");
+      fd.append("sdgs", form.sdgs || "");
 
+      if (files.firstPage) fd.append("firstPage", files.firstPage);
       if (files.certificate) fd.append("certificate", files.certificate);
-      if (files.proceedings) fd.append("proceedings", files.proceedings);
+      if (files.completeDocument) fd.append("completeDocument", files.completeDocument);
+      if (files.flightTicket) fd.append("flightTicket", files.flightTicket);
 
       // Tell the backend to delete the old file if user explicitly removed it without replacing
+      if (editMode && !files.firstPage && !existingFiles.firstPage) fd.append("deleteFirstPage", "true");
       if (editMode && !files.certificate && !existingFiles.certificate) fd.append("deleteCertificate", "true");
-      if (editMode && !files.proceedings && !existingFiles.proceedings) fd.append("deleteProceedings", "true");
+      if (editMode && !files.completeDocument && !existingFiles.completeDocument) fd.append("deleteCompleteDocument", "true");
+      if (editMode && !files.flightTicket && !existingFiles.flightTicket) fd.append("deleteFlightTicket", "true");
 
       const url = editMode ? `/api/research/conference/${editId}` : "/api/research/conference";
       const method = editMode ? "put" : "post";
@@ -521,16 +712,17 @@ export default function ConferencePublication() {
       toast.success(editMode ? "Conference paper updated successfully!" : "Conference paper submitted successfully!");
       setForm({
         doi: "",
-        title: "", conferenceName: "", scope: "", indexing: "",
+        title: "", conferenceName: "", location: "", presentationMode: "", conferenceType: "", scopusIndexed: "",
         month: "", year: "",
         publisher: "", issnIsbn: "",
         applyIncentive: "No", applyingSeedGrant: "",
         isStudentsInvolved: "No",
-        totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
+        totalAuthors: 1, userAuthorPosition: 1, otherAuthors: [],
+        sdgs: ""
       });
       setDoiFetched(false);
-      setFiles({ certificate: null, proceedings: null });
-      setExistingFiles({ certificate: null, proceedings: null });
+      setFiles({ firstPage: null, certificate: null, completeDocument: null, flightTicket: null });
+      setExistingFiles({ firstPage: null, certificate: null, completeDocument: null, flightTicket: null });
       setEditMode(false);
       setEditId(null);
       setSelectedYear("");
@@ -608,8 +800,9 @@ export default function ConferencePublication() {
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Paper Title</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Conference Name</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Scope</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Indexing</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Location</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Type/Host</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Scopus Indexed</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Authors</TableCell>
@@ -622,8 +815,9 @@ export default function ConferencePublication() {
                 <TableRow key={pub._id || i} sx={{ "&:hover": { background: "rgba(var(--color-primary-rgb, 99,102,241), 0.04)", transition: "background 0.2s" } }}>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.title || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.conferenceName || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.scope || pub.level || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.indexing || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.location || pub.level || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.conferenceType || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.scopusIndexed || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {pub.facultyId?.name || "N/A"}
@@ -879,15 +1073,15 @@ export default function ConferencePublication() {
           <TextField
             size="small"
             fullWidth
-            placeholder="Auto-filled from DOI"
+            placeholder={doiFetchedFields.issnIsbn ? "Auto-filled from DOI" : "Please Enter ISSN / ISBN Number"}
             value={form.issnIsbn}
             onChange={(e) => {
               const val = e.target.value;
               if (/^[0-9X-]*$/i.test(val)) setForm(p => ({ ...p, issnIsbn: val }));
             }}
             slotProps={{ htmlInput: { inputMode: 'numeric' } }}
-            disabled={true}
-            sx={disabledField}
+            disabled={doiFetched && Boolean(doiFetchedFields.issnIsbn)}
+            sx={(doiFetched && Boolean(doiFetchedFields.issnIsbn)) ? disabledField : {}}
           />
         </Box>
         <Box>
@@ -895,7 +1089,7 @@ export default function ConferencePublication() {
           <Select size="small" fullWidth displayEmpty value={form.year} onChange={(e) => {
             setForm(p => ({ ...p, year: e.target.value, month: "" }));
           }} disabled={true} sx={disabledField}>
-            <MenuItem value="">Auto-filled from DOI</MenuItem>
+            <MenuItem value="" disabled>Auto-filled from DOI</MenuItem>
             {(form.year && !YEARS.includes(String(form.year))
               ? [...YEARS, String(form.year)].sort((a, b) => Number(b) - Number(a))
               : YEARS
@@ -905,7 +1099,7 @@ export default function ConferencePublication() {
         <Box>
           <Typography sx={labelStyle}>Month :</Typography>
           <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={true} sx={disabledField}>
-            <MenuItem value="">Auto-filled from DOI</MenuItem>
+            <MenuItem value="" disabled>Auto-filled from DOI</MenuItem>
             {(form.month && !getAvailableMonths().includes(form.month)
               ? [...getAvailableMonths(), form.month]
               : getAvailableMonths()
@@ -917,19 +1111,57 @@ export default function ConferencePublication() {
           <TextField size="small" fullWidth value={form.conferenceName} onChange={set("conferenceName")} placeholder="Auto-filled from DOI" disabled={true} sx={disabledField} />
         </Box>
         <Box>
-          <Typography sx={labelStyle}>Conference Scope : *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.scope} onChange={set("scope")}>
-            <MenuItem value="" disabled>Select Scope</MenuItem>
-            <MenuItem value="National">National</MenuItem>
-            <MenuItem value="International">International</MenuItem>
+          <Typography sx={labelStyle}>Conference Location : *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.location} onChange={(e) => {
+             set("location")(e);
+             if (e.target.value !== "Abroad") {
+                setForm(p => ({ ...p, location: e.target.value, presentationMode: "" }));
+                setFiles(p => ({ ...p, flightTicket: null }));
+             }
+          }}>
+            <MenuItem value="" disabled>Select Location</MenuItem>
+            <MenuItem value="India">India</MenuItem>
+            <MenuItem value="Abroad">Abroad</MenuItem>
+          </Select>
+        </Box>
+        {form.location === "Abroad" && (
+          <Box>
+            <Typography sx={labelStyle}>Presentation Mode : *</Typography>
+            <Select size="small" fullWidth displayEmpty value={form.presentationMode || ""} onChange={(e) => {
+               set("presentationMode")(e);
+               if (e.target.value !== "Offline") {
+                  setFiles(p => ({ ...p, flightTicket: null }));
+               }
+            }}>
+              <MenuItem value="" disabled>Select Mode</MenuItem>
+              <MenuItem value="Online">Online</MenuItem>
+              <MenuItem value="Offline">Offline</MenuItem>
+            </Select>
+          </Box>
+        )}
+        <Box>
+          <Typography sx={labelStyle}>Conference Type / Host Institute : *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.conferenceType} onChange={(e) => {
+             set("conferenceType")(e);
+             if (e.target.value === "Other") {
+                setForm(p => ({ ...p, applyIncentive: "No" }));
+             }
+          }}>
+            <MenuItem value="" disabled>Select Type</MenuItem>
+            <MenuItem value="IEEE">IEEE</MenuItem>
+            <MenuItem value="IIT">IIT</MenuItem>
+            <MenuItem value="IISc">IISc</MenuItem>
+            <MenuItem value="NIT">NIT</MenuItem>
+            <MenuItem value="IIM">IIM</MenuItem>
+            <MenuItem value="Other">Other</MenuItem>
           </Select>
         </Box>
         <Box>
-          <Typography sx={labelStyle}>Indexing : *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.indexing} onChange={set("indexing")} disabled={true} sx={disabledField}>
+          <Typography sx={labelStyle}>Scopus Indexed : *</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.scopusIndexed} onChange={set("scopusIndexed")} disabled={true} sx={disabledField}>
             <MenuItem value="" disabled>Auto-filled from DOI</MenuItem>
-            <MenuItem value="Scopus Indexed">Scopus Indexed</MenuItem>
-            <MenuItem value="Not Scopus Indexed">Not Scopus Indexed</MenuItem>
+            <MenuItem value="Yes">Yes</MenuItem>
+            <MenuItem value="No">No</MenuItem>
           </Select>
         </Box>
       </Grid2>
@@ -1020,7 +1252,7 @@ export default function ConferencePublication() {
                             placeholder="e.g. 21A91A0501"
                           />
                         </Box>
-                        <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
+                        <Box sx={{ flex: 1.5, minWidth: { xs: "100%", sm: "160px" } }}>
                           <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT NAME</Typography>
                           <TextField
                             size="small"
@@ -1029,6 +1261,21 @@ export default function ConferencePublication() {
                             onChange={(e) => handleCoAuthorChange(ca.authorPosition, "authorName", e.target.value)}
                             placeholder="Full Name"
                           />
+                        </Box>
+                        <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "110px" } }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>QUALIFICATION</Typography>
+                          <Select
+                            size="small"
+                            fullWidth
+                            displayEmpty
+                            value={ca.studentQualification || ""}
+                            onChange={(e) => handleCoAuthorChange(ca.authorPosition, "studentQualification", e.target.value)}
+                          >
+                            <MenuItem value="" disabled>Select</MenuItem>
+                            <MenuItem value="UG">UG</MenuItem>
+                            <MenuItem value="PG">PG</MenuItem>
+                            <MenuItem value="Ph.D">Ph.D</MenuItem>
+                          </Select>
                         </Box>
                       </>
                     ) : (
@@ -1108,31 +1355,101 @@ export default function ConferencePublication() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Apply Incentive? : *</Typography>
-          <Select size="small" fullWidth displayEmpty value="No" disabled sx={disabledField}>
+          <Select 
+            size="small" 
+            fullWidth 
+            displayEmpty 
+            value={disableIncentive ? "No" : form.applyIncentive} 
+            onChange={set("applyIncentive")}
+            disabled={disableIncentive} 
+            sx={disableIncentive ? disabledField : {}}
+          >
+            <MenuItem value="" disabled>Select</MenuItem>
+            <MenuItem value="Yes">Yes</MenuItem>
             <MenuItem value="No">No</MenuItem>
           </Select>
+          {hasPgStudent && (
+            <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+              * Incentive is not applicable for publications with PG student co-authors.
+            </Typography>
+          )}
         </Box>
       </Grid2>
+
+      {estimatedAmountStr && (
+        <Box sx={{
+          p: 2,
+          mt: 2,
+          borderRadius: "8px",
+          bgcolor: "rgba(16, 185, 129, 0.05)",
+          border: "1px dashed rgba(16, 185, 129, 0.4)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
+        }}>
+          <Typography sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
+            Estimated Incentive Amount:
+          </Typography>
+          <Typography sx={{ fontWeight: 700, color: "#10b981", fontSize: "1.05rem" }}>
+            {estimatedAmountStr}
+          </Typography>
+        </Box>
+      )}
 
       <NoteBox />
 
       <Grid2 sx={{ mt: 2 }}>
         <FileField
-          label="Attach Certificate of Presentation * :"
+          label="Published Paper - 1st Page in conference * :"
+          name="firstPage"
+          onChange={setFile("firstPage")}
+          existingFileUrl={!files.firstPage ? (existingFiles.firstPage ? `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000').replace(/\/$/, '')}${existingFiles.firstPage}` : null) : null}
+          existingFileName={existingFiles.firstPage ? existingFiles.firstPage.split('/').pop() : ""}
+          onRemoveExisting={() => setExistingFiles(prev => ({ ...prev, firstPage: null }))}
+        />
+        <FileField
+          label="Certificate of Presentation * :"
           name="certificate"
           onChange={setFile("certificate")}
           existingFileUrl={!files.certificate ? (existingFiles.certificate ? `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000').replace(/\/$/, '')}${existingFiles.certificate}` : null) : null}
           existingFileName={existingFiles.certificate ? existingFiles.certificate.split('/').pop() : ""}
           onRemoveExisting={() => setExistingFiles(prev => ({ ...prev, certificate: null }))}
         />
-        <FileField
-          label="Attach Copy of Proceedings / Abstract Book :"
-          name="proceedings"
-          onChange={setFile("proceedings")}
-          existingFileUrl={!files.proceedings ? (existingFiles.proceedings ? `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000').replace(/\/$/, '')}${existingFiles.proceedings}` : null) : null}
-          existingFileName={existingFiles.proceedings ? existingFiles.proceedings.split('/').pop() : ""}
-          onRemoveExisting={() => setExistingFiles(prev => ({ ...prev, proceedings: null }))}
-        />
+        <Box>
+          <FileField
+            label="Complete Document * :"
+            name="completeDocument"
+            onChange={setFile("completeDocument")}
+            existingFileUrl={!files.completeDocument ? (existingFiles.completeDocument ? `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000').replace(/\/$/, '')}${existingFiles.completeDocument}` : null) : null}
+            existingFileName={existingFiles.completeDocument ? existingFiles.completeDocument.split('/').pop() : ""}
+            onRemoveExisting={() => setExistingFiles(prev => ({ ...prev, completeDocument: null }))}
+          />
+          {scanningSdg && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1, p: 1.5, borderRadius: '8px', bgcolor: 'rgba(25, 118, 210, 0.05)', border: '1px solid rgba(25, 118, 210, 0.2)' }}>
+              <Typography variant="caption" sx={{ fontWeight: 600, color: 'var(--color-primary)' }}>Scanning complete document for SDG keywords...</Typography>
+            </Box>
+          )}
+          {!scanningSdg && form.sdgs && (
+            <Box sx={{ mt: 1.5, p: 2, borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-accent-1)' }}>
+              <Typography variant="caption" sx={{ fontWeight: 800, color: 'var(--color-primary)', textTransform: 'uppercase', display: 'block', mb: 1 }}>Matched SDGs from Scanning:</Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {form.sdgs.split(', ').map((sdg, idx) => (
+                  <Chip key={idx} label={getSdgName(sdg)} size="small" sx={{ bgcolor: 'rgba(76, 175, 80, 0.1)', color: '#4caf50', fontWeight: 800 }} />
+                ))}
+              </Box>
+            </Box>
+          )}
+        </Box>
+        {form.location === "Abroad" && form.presentationMode === "Offline" && (
+          <FileField
+            label="Upload flight ticket bill * :"
+            name="flightTicket"
+            onChange={setFile("flightTicket")}
+            existingFileUrl={!files.flightTicket ? (existingFiles.flightTicket ? `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000').replace(/\/$/, '')}${existingFiles.flightTicket}` : null) : null}
+            existingFileName={existingFiles.flightTicket ? existingFiles.flightTicket.split('/').pop() : ""}
+            onRemoveExisting={() => setExistingFiles(prev => ({ ...prev, flightTicket: null }))}
+          />
+        )}
       </Grid2>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
@@ -1400,7 +1717,7 @@ export default function ConferencePublication() {
                     { label: "Academic Year", value: data.academicYear?.year || "N/A", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "DOI", value: data.doi || "N/A", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Applicant Author Position", value: data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors || 1}` : "1", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    { label: "Indexing", value: data.indexing || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Scopus Indexed", value: data.scopusIndexed || "-", icon: <ShowChartIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Publisher", value: data.publisher || "N/A", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "ISSN/ISBN", value: data.issnIsbn || "N/A", icon: <Article sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Month/Year", value: `${data.month || ""} ${data.year || ""}`.trim() || "-", icon: <CalendarMonthIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
@@ -1437,7 +1754,7 @@ export default function ConferencePublication() {
               </Paper>
             </Box>
 
-            {/* Right Column (Publication Scope & Appraisal) */}
+            {/* Right Column (Publication Location & Appraisal) */}
             <Box sx={{
               minWidth: 0,
               display: "flex",
@@ -1451,11 +1768,11 @@ export default function ConferencePublication() {
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                       <PublicIcon sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
                       <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
-                        Publication Scope
+                        Publication Location
                       </Typography>
                     </Box>
                     <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                      {data.scope || data.level || "National"}
+                      {data.location || data.level || "India"}
                     </Typography>
                   </Box>
 
@@ -1608,12 +1925,14 @@ export default function ConferencePublication() {
               <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography>
             </Box>
             <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }} useFlexGap>
+              {renderDetailFile("First Page", data.firstPage)}
               {renderDetailFile("Presentation Certificate", data.certificate)}
-              {renderDetailFile("Copy of Proceedings / Abstract Book", data.proceedings)}
+              {renderDetailFile("Complete Document", data.completeDocument)}
+              {renderDetailFile("Flight Ticket Bill", data.flightTicket)}
             </Stack>
           </Box>
 
-          {(data.hodComment || data.rndComment) && (
+          {(data.hodComment || data.rndComment || data.approvedAmount) && (
             <Box sx={{ mt: 4, display: "flex", flexDirection: "column", gap: 2 }}>
               {data.hodComment && (
                 <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
@@ -1621,10 +1940,19 @@ export default function ConferencePublication() {
                   <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.hodComment}"</Typography>
                 </Box>
               )}
-              {data.rndComment && (
+              {(data.rndComment || data.approvedAmount) && (
                 <Box sx={{ p: 2, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "10px", border: "1px solid rgba(76, 175, 80, 0.2)" }}>
-                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
-                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
+                  {data.rndComment && (
+                    <>
+                      <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
+                      <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
+                    </>
+                  )}
+                  {data.approvedAmount && (
+                    <Typography variant="h6" sx={{ mt: data.rndComment ? 2 : 0, fontWeight: 900, color: "#10b981" }}>
+                      Approved Amount: ₹{data.approvedAmount}
+                    </Typography>
+                  )}
                 </Box>
               )}
             </Box>
@@ -1644,6 +1972,17 @@ export default function ConferencePublication() {
         subtitle="Manage and submit your conference publications"
         onBack={viewMode !== "list" ? () => setViewMode("list") : undefined}
       />
+      {(!user?.panNumber || !user?.college) && (
+        <Box sx={{ px: 3, mb: 4 }}>
+          <Alert severity="warning" variant="filled" sx={{ borderRadius: "16px" }}>
+            <AlertTitle sx={{ fontWeight: 700 }}>Profile Details Incomplete</AlertTitle>
+            <Typography variant="body2">
+              You must complete the following fields in your profile before you submit:
+              <strong> PAN Number, College</strong>. Please navigate to the Profile settings to update them.
+            </Typography>
+          </Alert>
+        </Box>
+      )}
 
       {viewMode === "list" && renderList()}
       {viewMode === "select-year" && renderSelectYear()}

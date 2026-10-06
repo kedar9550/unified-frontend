@@ -217,8 +217,8 @@ const ServiceEmpDashboard = () => {
       {/* ── Header ─────────────────────────────────────────────────── */}
       <Box sx={{ mb: 3.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
         <Box>
-          <Typography variant="h4" fontWeight={800} sx={{ color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
-            My Work Dashboard 👋
+          <Typography variant="h4" sx={{ fontWeight: "bold", color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>
+            My Work Dashboard
           </Typography>
           <Typography variant="body1" sx={{ color: 'var(--text-secondary)', mt: 0.5 }}>
             Your assigned tasks and activity overview

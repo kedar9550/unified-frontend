@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import {
     Box, Typography, Chip, Button, Tabs, Tab, IconButton, Tooltip
 } from '@mui/material';
-import { Visibility } from '@mui/icons-material';
+import { Visibility, Assignment as AssignmentIcon, Cancel as CancelIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/common/PageHeader';
 import { PageContainer } from '../../components/common/design-system';
@@ -11,6 +11,8 @@ import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
+import { PriorityBadge, DueCountdownBadge } from '../../utils/serviceDeskSla';
+import CustomTabs from "../../components/common/CustomTabs";
 
 const getStatusColor = (status) => {
     switch (status) {
@@ -53,32 +55,15 @@ const AssignedToMe = () => {
         <PageContainer>
             <PageHeader title="Assigned to Me" subtitle="Manage and resolve tickets assigned to you" />
 
-            <Box sx={{ borderBottom: 1, borderColor: 'var(--border-color)', mb: 3 }}>
-                <Tabs 
-                    value={currentTab} 
-                    onChange={(e, newValue) => setCurrentTab(newValue)}
-                    sx={{
-                        '& .MuiTab-root': {
-                            textTransform: 'none',
-                            fontWeight: 600,
-                            fontSize: '0.95rem',
-                            color: 'var(--text-secondary)',
-                            minWidth: 120,
-                            '&.Mui-selected': {
-                                color: 'var(--color-primary)',
-                            }
-                        },
-                        '& .MuiTabs-indicator': {
-                            borderRadius: '2px 2px 0 0',
-                            height: 3,
-                            background: 'var(--gradient-primary)'
-                        }
-                    }}
-                >
-                    <Tab label="Active Assignments" value="active" />
-                    <Tab label="Rejected Assignments" value="rejected" />
-                </Tabs>
-            </Box>
+            <CustomTabs
+                value={currentTab === 'active' ? 0 : 1}
+                onChange={(e, newValue) => setCurrentTab(newValue === 0 ? 'active' : 'rejected')}
+                sx={{ mb: 4, mt: 0, mx: "auto" }}
+                tabs={[
+                    { label: "Active Assignments", icon: <AssignmentIcon /> },
+                    { label: "Rejected Assignments", icon: <CancelIcon /> }
+                ]}
+            />
 
             <Box>
                 {loading ? (
@@ -100,20 +85,32 @@ const AssignedToMe = () => {
                     </Box>
                 ) : (
                     <DataTable 
-                        columns={["Ticket #", "Service", "Title", "Priority", "Due Date", "Status", "Action"]}
-                        alignments={["left", "left", "left", "center", "left", "center", "center"]}
+                        columns={["Ticket #", "Service", "Title", "Priority", "Due Date / SLA", "Status", "Action"]}
+                        alignments={["left", "left", "left", "center", "center", "center", "center"]}
                         nonSortableColumns={[6]}
                         rows={tickets.map((t) => [
                             { value: t.ticketNumber, display: <Typography fontWeight={600} color="primary">#{t.ticketNumber}</Typography> },
                             { value: t.service?.name || 'Unknown', display: t.service?.name || 'Unknown' },
-                            { value: t.title, display: t.title },
-                            { 
-                                value: t.priority, 
-                                display: <Typography fontSize="0.875rem" fontWeight={500} color={t.priority === 'HIGH' ? 'error.main' : t.priority === 'MEDIUM' ? 'warning.main' : 'text.secondary'}>{t.priority}</Typography> 
+                            {
+                                value: t.title,
+                                display: (
+                                    <Box>
+                                        <Typography sx={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t.title}</Typography>
+                                        {t.subcategory && t.subcategory !== t.title && (
+                                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                                {t.subcategory}
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                )
                             },
                             { 
-                                value: t.dueDate, 
-                                display: t.dueDate ? new Date(t.dueDate).toLocaleDateString() : 'N/A' 
+                                value: t.priority, 
+                                display: <PriorityBadge priority={t.priority} />
+                            },
+                            { 
+                                value: t.dueDate || '', 
+                                display: <DueCountdownBadge dueDate={t.dueDate} status={t.status} /> 
                             },
                             { 
                                 value: (() => {
