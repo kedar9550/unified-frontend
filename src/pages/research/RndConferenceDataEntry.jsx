@@ -536,13 +536,15 @@ export default function RndConferenceDataEntry() {
 
       const fields = [
         "doi", "title", "conferenceName", "location", "presentationMode", "conferenceType", "scopusIndexed",
-        "publisher", "issnIsbn", "applyIncentive", "applyingSeedGrant",
+        "publisher", "issnIsbn", "applyingSeedGrant",
         "totalAuthors", "userAuthorPosition", "isStudentsInvolved",
         "appraisalEligible", "approvedAmount"
       ];
       fields.forEach(k => {
         fd.append(k, form[k] ?? "");
       });
+      const computedApplyIncentive = disableIncentive ? "No" : form.applyIncentive;
+      fd.append("applyIncentive", computedApplyIncentive);
 
       fd.append("estimatedIncentiveAmount", estimatedAmountNum);
       fd.append("month", form.month);

@@ -409,7 +409,13 @@ export default function RndTextbookDataEntry() {
       toast.error("Please fill in all required fields marked with *");
       return;
     }
-    if (!form.applyIncentive) {
+    const isStudentInvolved = form.isStudentsInvolved === "Yes";
+    const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
+    const isPublisherOthers = form.publisher === "Others";
+    const disableIncentive = isStudentInvolved || isPositionGreaterThan5 || isPublisherOthers;
+    const computedApplyIncentive = disableIncentive ? "No" : form.applyIncentive;
+
+    if (!computedApplyIncentive) {
       toast.error("Please select whether you want to apply for incentive");
       return;
     }
@@ -442,20 +448,14 @@ export default function RndTextbookDataEntry() {
       fd.append("numberOfPages", form.numberOfPages || "");
 
       // Incentive & Appraisal
-      const isStudentInvolved = form.isStudentsInvolved === "Yes";
-      const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
-      const isPublisherOthers = form.publisher === "Others";
-      const disableIncentive = isStudentInvolved || isPositionGreaterThan5 || isPublisherOthers;
-      const finalApplyIncentive = disableIncentive ? "No" : form.applyIncentive;
-
       fd.append("isStudentsInvolved", form.isStudentsInvolved || "No");
       fd.append("applyingSeedGrant", form.applyingSeedGrant || "No");
-      fd.append("applyIncentive", finalApplyIncentive);
-      fd.append("approvedAmount", finalApplyIncentive === "Yes" ? form.approvedAmount : "");
+      fd.append("applyIncentive", computedApplyIncentive);
+      fd.append("approvedAmount", computedApplyIncentive === "Yes" ? form.approvedAmount : "");
       fd.append("appraisalEligible", form.appraisalEligible || "Yes");
 
       let estimatedIncentiveAmount = 0;
-      if (finalApplyIncentive === "Yes") {
+      if (computedApplyIncentive === "Yes") {
           const pubObj = publishers.find(p => p.name === form.publisher);
           if (pubObj && pubObj.type) {
               if (pubObj.type.toLowerCase() === "national") {

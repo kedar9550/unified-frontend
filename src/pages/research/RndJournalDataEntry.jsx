@@ -777,7 +777,12 @@ export default function RndJournalDataEntry() {
       toast.error("Please select whether applying as a Seed Grant Work");
       return;
     }
-    if (!form.applyIncentive) {
+    const hasPgStudent = form.isStudentsInvolved === "Yes" && (form.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+    const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
+    const disableIncentive = hasPgStudent || isPositionGreaterThan5;
+    const computedApplyIncentive = disableIncentive ? "No" : form.applyIncentive;
+
+    if (!computedApplyIncentive) {
       toast.error("Please select whether you want to apply for an incentive");
       return;
     }
@@ -835,7 +840,7 @@ export default function RndJournalDataEntry() {
 
       const fields = [
         "doi", "paperTitle", "journalName", "journalType", "journalCategory",
-        "vol", "issue", "agecReferencingNumbers", "applyIncentive",
+        "vol", "issue", "agecReferencingNumbers", 
         "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor", "isStudentsInvolved",
         "correspondingAuthor",
         "issn", "eissn", "isScopus", "citations", "isInstitutionRecord", "appraisalEligible", "approvedAmount"
@@ -846,6 +851,7 @@ export default function RndJournalDataEntry() {
         if (k === "jcrImpactFactor" && (val === "" || val === undefined || val === null)) val = "0";
         fd.append(k, val);
       });
+      fd.append("applyIncentive", computedApplyIncentive);
 
       fd.append("numberOfReferencesBelongingToAGEC", form.numberOfReferencesBelongingToAGEC || 0);
 
