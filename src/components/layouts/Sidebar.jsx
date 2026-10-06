@@ -35,7 +35,9 @@ import {
   WorkspacePremium,
   SupervisorAccount,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  EventAvailable,
+  Category
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { ROLE_ROUTES } from "../../config/rolesNav";
@@ -128,6 +130,22 @@ const ITEM_METADATA = {
   "Manage Shorten URL": { color: "rgba(14, 165, 233, 0.12)", iconColor: "#0ea5e9", icon: <Link /> },
   "Manage QR Code": { color: "rgba(168, 85, 247, 0.12)", iconColor: "#a855f7", icon: <QrCode /> },
   "Service Desk": { color: "rgba(236, 72, 153, 0.12)", iconColor: "#ec4899", icon: <SupportAgent /> },
+  "Central Events": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <EventAvailable /> },
+  "Event Types": { color: "rgba(168, 85, 247, 0.12)", iconColor: "#a855f7", icon: <Category /> },
+  "Event Categories": { color: "rgba(236, 72, 153, 0.12)", iconColor: "#ec4899", icon: <Category /> },
+  "All Central Events": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <EventAvailable /> },
+
+
+  "Events Catalog": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <EventAvailable /> },
+  "Create Central Event": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <EventAvailable /> },
+  "VEDA National Tech Fest": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <EventAvailable /> },
+  "COLORS Youth Fest": { color: "rgba(236, 72, 153, 0.12)", iconColor: "#ec4899", icon: <EventAvailable /> },
+  "ALA Literary Fest": { color: "rgba(14, 165, 233, 0.12)", iconColor: "#0ea5e9", icon: <EventAvailable /> },
+  "Club Events": { color: "rgba(245, 158, 11, 0.12)", iconColor: "#f59e0b", icon: <EventAvailable /> },
+  "Departmental Programs": { color: "rgba(22, 101, 52, 0.12)", iconColor: "#22c55e", icon: <EventAvailable /> },
+  "University Programs": { color: "rgba(239, 68, 68, 0.12)", iconColor: "#ef4444", icon: <EventAvailable /> },
+
+
   "Raise Ticket": { color: "rgba(244, 63, 94, 0.12)", iconColor: "#f43f5e", icon: <ConfirmationNumber /> },
   "My Tickets": { color: "rgba(16, 185, 129, 0.12)", iconColor: "#10b981", icon: <ListAlt /> },
   "Manage Services": { color: "rgba(245, 158, 11, 0.12)", iconColor: "#f59e0b", icon: <AccountTree /> },

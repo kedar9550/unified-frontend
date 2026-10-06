@@ -40,6 +40,7 @@ import {
   FlagCircleRounded,
   PersonAdd,
   HourglassEmpty,
+  Category,
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
@@ -47,8 +48,26 @@ import React from "react";
 
 // Configuration for which side navigation items each role should see.
 export const ROLE_ROUTES = {
+  GLOBAL_EVENT_ADMIN: [
+    { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Central Events",
+      icon: <EventAvailable />,
+      nested: [
+        { text: "Event Types", path: "/central-events/types", icon: <Category /> },
+        { text: "Event Categories", path: "/central-events/categories", icon: <Category /> },
+        { text: "All Central Events", path: "/central-events", icon: <EventAvailable /> },
+
+
+        // { text: "Create Central Event", path: "/central-events/create", icon: <EventAvailable /> },
+      ]
+    },
+  ],
+
+
   // Navigation items for the Student default role
   STUDENT: [
+
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
     { text: "Academics", path: "/academics", icon: <MenuBook /> },
   ],

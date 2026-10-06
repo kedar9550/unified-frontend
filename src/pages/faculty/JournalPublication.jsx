@@ -1088,7 +1088,12 @@ export default function JournalPublication() {
       }
     }
 
-    if (!form.applyIncentive) {
+    const hasPgStudent = form.isStudentsInvolved === "Yes" && (form.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
+    const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
+    const disableIncentive = hasPgStudent || isPositionGreaterThan5;
+    const computedApplyIncentive = disableIncentive ? "No" : form.applyIncentive;
+
+    if (!computedApplyIncentive) {
       toast.error("Please select whether you want to apply for an incentive");
       return;
     }
@@ -1146,7 +1151,7 @@ export default function JournalPublication() {
 
       const fields = [
         "doi", "isNoDoi", "paperTitle", "journalName", "journalType", "journalCategory",
-        "vol", "issue", "agecReferencingNumbers", "applyIncentive",
+        "vol", "issue", "agecReferencingNumbers", 
         "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor", "isStudentsInvolved",
         "correspondingAuthor",
         "issn", "eissn", "isScopus", "citations"
@@ -1155,9 +1160,9 @@ export default function JournalPublication() {
         let val = form[k] ?? "";
         if (k === "hIndex" && (val === "" || val === undefined || val === null)) val = "0";
         if (k === "jcrImpactFactor" && (val === "" || val === undefined || val === null)) val = "0";
-        if (k === "applyIncentive" && parseInt(form.userAuthorPosition) > 5) val = "No";
         fd.append(k, val);
       });
+      fd.append("applyIncentive", computedApplyIncentive);
 
       fd.append("numberOfReferencesBelongingToAGEC", form.numberOfReferencesBelongingToAGEC || 0);
 
