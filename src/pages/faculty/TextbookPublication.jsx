@@ -496,11 +496,11 @@ export default function TextbookPublication() {
       // Calculate estimated incentive
       let estimatedIncentiveAmount = null;
       if (computedApplyIncentive === "Yes") {
-          if (submissionForm.publicationScope === "National") {
-              estimatedIncentiveAmount = 10000;
-          } else if (submissionForm.publicationScope === "International") {
-              estimatedIncentiveAmount = 20000;
-          }
+        if (submissionForm.publicationScope === "National") {
+          estimatedIncentiveAmount = 10000;
+        } else if (submissionForm.publicationScope === "International") {
+          estimatedIncentiveAmount = 20000;
+        }
       }
 
       // Append standard fields
@@ -567,7 +567,7 @@ export default function TextbookPublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Textbook Publications</Typography>
-        {/* <Button
+        <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -592,7 +592,7 @@ export default function TextbookPublication() {
           }}
         >
           Apply New
-        </Button> */}
+        </Button>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
