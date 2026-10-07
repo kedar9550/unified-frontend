@@ -61,6 +61,7 @@ export default function BookChapterPublication() {
   const [scopusIndexed, setScopusIndexed] = useState(false);
   const [doiFetching, setDoiFetching] = useState(false);
   const [doiFetched, setDoiFetched] = useState(null);
+  const [isBookChapter, setIsBookChapter] = useState(true);
   const [isbnFetching, setIsbnFetching] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState(null);
@@ -120,6 +121,7 @@ export default function BookChapterPublication() {
     });
     setDeleteFlags({ authorAffiliation: false, totalBookChapter: false });
     setDoiFetched(!!pub.doi);
+    setIsBookChapter(true);
     setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null, totalBookChapter: null });
     setViewMode("form");
   };
@@ -158,6 +160,7 @@ export default function BookChapterPublication() {
         setScopusIndexed(false);
         setDoiFetching(false);
         setDoiFetched(null);
+        setIsBookChapter(true);
         setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null, totalBookChapter: null });
         return emptyForm;
       }
@@ -212,6 +215,7 @@ export default function BookChapterPublication() {
     setDoiFetching(true);
     setDoiFetched(null);
     setScopusIndexed(false);
+    setIsBookChapter(true);
     try {
       const scopusRes = await fetch(
         `https://api.elsevier.com/content/search/scopus?query=DOI(${encodeURIComponent(cleanDoi)})`,
@@ -239,6 +243,10 @@ export default function BookChapterPublication() {
       const publisher = entry["prism:publisher"] || entry["dc:publisher"] || "";
       const dateRaw = entry["prism:coverDisplayDate"] || entry["prism:coverDate"] || "";
       const { year, month } = parseDateStr(dateRaw);
+      const subtype = entry.subtypeDescription || entry["subtypeDescription"] || "";
+      
+      const isBookChapterType = subtype.toLowerCase() === "book chapter";
+      setIsBookChapter(isBookChapterType);
 
       toast.success("Chapter found in Scopus! Details fetched successfully.");
       setDoiFetched(true);
@@ -251,6 +259,7 @@ export default function BookChapterPublication() {
         publisher: publisher || prev.publisher,
         year: year || prev.year,
         month: month || prev.month,
+        applyIncentive: isBookChapterType ? prev.applyIncentive : "No"
       }));
     } catch (err) {
       toast.error("Network error connecting to Scopus.");
@@ -864,6 +873,7 @@ export default function BookChapterPublication() {
       setViewMode("list");
       setScopusIndexed(false);
       setDoiFetched(false);
+      setIsBookChapter(true);
     } catch (err) {
       toast.error(err?.response?.data?.message || "Submission failed");
     } finally {
@@ -1522,7 +1532,8 @@ export default function BookChapterPublication() {
           const isStudentInvolved = form.isStudentsInvolved === "Yes";
           const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
           const isEditor = form.servingAsEditor === "Yes";
-          const disableIncentive = isStudentInvolved || isPositionGreaterThan5 || isEditor;
+          const notBookChapter = !isBookChapter;
+          const disableIncentive = isStudentInvolved || isPositionGreaterThan5 || isEditor || notBookChapter;
           const currentApplyIncentive = disableIncentive ? "No" : form.applyIncentive;
           
           let estIncentive = "₹0";
@@ -1559,6 +1570,11 @@ export default function BookChapterPublication() {
                 {isEditor && !isPositionGreaterThan5 && (
                   <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
                     * Incentive is not applicable when serving as an editor.
+                  </Typography>
+                )}
+                {notBookChapter && !isPositionGreaterThan5 && !isEditor && (
+                  <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                    * Incentive is only applicable for direct submissions.
                   </Typography>
                 )}
               </Box>
