@@ -49,6 +49,18 @@ export default function ResearchReports() {
     const [selectedYear, setSelectedYear] = useState("");
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState({ journals: [], textbooks: [], chapters: [], conferences: [], patents: [], products: [], projects: [], consultancy: [] });
+    const [loadedCategories, setLoadedCategories] = useState({});
+
+    const TAB_CONFIG = [
+        { key: "journals", type: "Journal" },
+        { key: "textbooks", type: "Text Book" },
+        { key: "chapters", type: "Book Chapter" },
+        { key: "conferences", type: "Conference" },
+        { key: "patents", type: "Patent" },
+        { key: "products", type: "Novel Product" },
+        { key: "projects", type: "Funded Project" },
+        { key: "consultancy", type: "Consultancy" }
+    ];
 
     useEffect(() => {
         // Fetch Academic Years
@@ -65,19 +77,50 @@ export default function ResearchReports() {
 
     useEffect(() => {
         if (selectedYear) {
-            fetchReportData();
+            setData({
+                journals: [],
+                textbooks: [],
+                chapters: [],
+                conferences: [],
+                patents: [],
+                products: [],
+                projects: [],
+                consultancy: []
+            });
+            setLoadedCategories({});
+            fetchCategoryData(activeTab, selectedYear);
         }
     }, [selectedYear]);
 
-    const fetchReportData = async () => {
+    const fetchCategoryData = async (tabIndex, year, forceAll = false) => {
+        const tab = TAB_CONFIG[tabIndex];
+        if (!tab && !forceAll) return null;
+
         setLoading(true);
         try {
             const params = {};
-            if (selectedYear !== "All") params.academicYear = selectedYear;
+            if (year !== "All") params.academicYear = year;
+            if (!forceAll && tab) params.type = tab.type;
 
             const res = await API.get("/api/hod/research-requests/reports", { params });
             if (res.data?.success) {
-                setData(res.data.data);
+                if (forceAll) {
+                    setData(res.data.data);
+                    const allKeys = {};
+                    TAB_CONFIG.forEach(t => { allKeys[t.key] = true; });
+                    setLoadedCategories(allKeys);
+                    return res.data.data;
+                } else {
+                    setData(prev => ({
+                        ...prev,
+                        [tab.key]: res.data.data[tab.key] || []
+                    }));
+                    setLoadedCategories(prev => ({
+                        ...prev,
+                        [tab.key]: true
+                    }));
+                    return res.data.data;
+                }
             }
         } catch (error) {
             toast.error("Failed to fetch report data");
@@ -85,10 +128,15 @@ export default function ResearchReports() {
         } finally {
             setLoading(false);
         }
+        return null;
     };
 
     const handleTabChange = (event, newValue) => {
         setActiveTab(newValue);
+        const tab = TAB_CONFIG[newValue];
+        if (tab && !loadedCategories[tab.key]) {
+            fetchCategoryData(newValue, selectedYear);
+        }
     };
 
     const getYearName = () => {
@@ -109,17 +157,44 @@ export default function ResearchReports() {
         let filename = "";
 
         if (type === "journals") {
-            headers = ["S.No", "Emp Id", "Name of Faculty", "Dept", "PAN No", "Name of the Journal", "Paper Title", "Academic Year", "Amount (Rs)", "Status", "Co-Authors"];
+            headers = [
+                "S.No", "Emp Id", "Faculty Name", "College", "PAN No", "Dept",
+                "Is No DOI", "DOI", "Name of the Journal", "Paper Title", "Academic Year",
+                "ISSN", "e-ISSN", "Is Scopus", "Is WoS", "Quartile", "WoS Journal Type", "Journal Category",
+                "Vol", "Issue", "h-Index", "JCR Impact Factor", "Citations", "SDGs",
+                "Corresponding Author", "Apply Incentive", "Approved Incentive Amount",
+                "Appraisal Eligible", "Appraisal Claimant", "Status", "Co-Authors"
+            ];
             rows = (data.journals || []).map((item, i) => [
                 i + 1,
                 item.empId,
                 item.facultyName,
-                item.dept,
+                item.college,
                 item.panNo,
+                item.dept,
+                item.isNoDoi,
+                item.doi,
                 item.journalName,
                 item.paperTitle,
                 item.year,
-                item.amount,
+                item.issn,
+                item.eissn,
+                item.isScopus,
+                item.isWos,
+                item.journalQuartile,
+                item.journalType,
+                item.journalCategory,
+                item.vol,
+                item.issue,
+                item.hIndex,
+                item.jcrImpactFactor,
+                item.citations,
+                item.sdgs,
+                item.correspondingAuthor,
+                item.applyIncentive,
+                item.approvedAmount,
+                item.appraisalEligible,
+                item.appraisalClaimant,
                 item.status,
                 item.coAuthorsText || "N/A"
             ]);
@@ -247,7 +322,15 @@ export default function ResearchReports() {
         triggerDownload(csvContent, filename);
     };
 
-    const handleConsolidatedDownload = () => {
+    const handleConsolidatedDownload = async () => {
+        let currentData = data;
+        const allLoaded = TAB_CONFIG.every(t => loadedCategories[t.key]);
+        if (!allLoaded) {
+            toast.info("Preparing consolidated report export...");
+            const fetched = await fetchCategoryData(activeTab, selectedYear, true);
+            if (fetched) currentData = fetched;
+        }
+
         let lines = [];
 
         const academicYearText =
@@ -258,15 +341,15 @@ export default function ResearchReports() {
         lines.push(`"RESEARCH INCENTIVE REPORT - ${academicYearText}"`);
         lines.push("");
 
-        const q1Journals = data.journals.filter(
+        const q1Journals = (currentData.journals || []).filter(
             j => j.category === "Q1"
         );
 
-        const q2Journals = data.journals.filter(
+        const q2Journals = (currentData.journals || []).filter(
             j => j.category === "Q2"
         );
 
-        const scopusJournals = data.journals.filter(
+        const scopusJournals = (currentData.journals || []).filter(
             j => j.category === "SCOPUS"
         );
 
@@ -277,12 +360,32 @@ export default function ResearchReports() {
                 "S.No",
                 "Emp ID",
                 "Faculty Name",
-                "Serving Department",
+                "College",
                 "PAN Number",
+                "Serving Department",
+                "Is No DOI",
+                "DOI",
                 "Journal Name",
                 "Paper Title",
                 "Academic Year",
-                "Amount",
+                "ISSN",
+                "e-ISSN",
+                "Is Scopus",
+                "Is WoS",
+                "Quartile",
+                "WoS Journal Type",
+                "Journal Category",
+                "Vol",
+                "Issue",
+                "h-Index",
+                "JCR Impact Factor",
+                "Citations",
+                "SDGs",
+                "Corresponding Author",
+                "Apply Incentive",
+                "Approved Incentive Amount",
+                "Appraisal Eligible",
+                "Appraisal Claimant",
                 "Status",
                 "Co-Authors"
             ].join(","));
@@ -292,12 +395,32 @@ export default function ResearchReports() {
                     index + 1,
                     item.empId,
                     item.facultyName,
-                    item.dept,
+                    item.college,
                     item.panNo,
+                    item.dept,
+                    item.isNoDoi,
+                    item.doi,
                     item.journalName,
                     item.paperTitle || "-",
                     item.year,
-                    item.amount,
+                    item.issn,
+                    item.eissn,
+                    item.isScopus,
+                    item.isWos,
+                    item.journalQuartile,
+                    item.journalType,
+                    item.journalCategory,
+                    item.vol,
+                    item.issue,
+                    item.hIndex,
+                    item.jcrImpactFactor,
+                    item.citations,
+                    item.sdgs,
+                    item.correspondingAuthor,
+                    item.applyIncentive,
+                    item.approvedAmount,
+                    item.appraisalEligible,
+                    item.appraisalClaimant,
                     item.status,
                     item.coAuthorsText || "N/A"
                 ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
@@ -625,15 +748,44 @@ export default function ResearchReports() {
     };
 
     const renderJournals = () => {
-        const columns = ["S.No", "Emp Id", "Faculty Name", "Dept", "Journal Name", "Paper Title", "Academic Year", "Status", "Co-Authors"];
+        const columns = [
+            "S.No", "Emp Id", "Faculty Name", "College", "PAN No", "Dept",
+            "Is No DOI", "DOI", "Journal Name", "Paper Title", "Academic Year",
+            "ISSN", "e-ISSN", "Is Scopus", "Is WoS", "Quartile", "WoS Journal Type", "Journal Category",
+            "Vol", "Issue", "h-Index", "JCR Impact Factor", "Citations", "SDGs",
+            "Corresponding Author", "Apply Incentive", "Approved Incentive Amount",
+            "Appraisal Eligible", "Appraisal Claimant", "Status", "Co-Authors"
+        ];
         const rows = (data.journals || []).map((item, i) => [
             i + 1,
             item.empId,
             item.facultyName,
+            item.college,
+            item.panNo,
             item.dept,
+            item.isNoDoi,
+            item.doi,
             item.journalName,
             item.paperTitle,
             item.year,
+            item.issn,
+            item.eissn,
+            item.isScopus,
+            item.isWos,
+            item.journalQuartile,
+            item.journalType,
+            item.journalCategory,
+            item.vol,
+            item.issue,
+            item.hIndex,
+            item.jcrImpactFactor,
+            item.citations,
+            item.sdgs,
+            item.correspondingAuthor,
+            item.applyIncentive,
+            item.approvedAmount,
+            item.appraisalEligible,
+            item.appraisalClaimant,
             item.status,
             item.coAuthorsText || "N/A"
         ]);

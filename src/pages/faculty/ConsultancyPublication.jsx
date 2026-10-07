@@ -1023,8 +1023,8 @@ export default function ConsultancyPublication() {
                 <Chip
                   icon={
                     /approved/i.test(data.status) ? <CheckCircle sx={{ fontSize: "16px !important", color: "inherit" }} /> :
-                    /reject/i.test(data.status) ? <Close sx={{ fontSize: "16px !important", color: "inherit" }} /> :
-                    <AccessTime sx={{ fontSize: "16px !important", color: "inherit" }} />
+                      /reject/i.test(data.status) ? <Close sx={{ fontSize: "16px !important", color: "inherit" }} /> :
+                        <AccessTime sx={{ fontSize: "16px !important", color: "inherit" }} />
                   }
                   label={data.status || "Pending at R&D"}
                   sx={{

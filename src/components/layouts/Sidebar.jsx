@@ -254,7 +254,9 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
     const fetchWeather = async () => {
       try {
         const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&current=temperature_2m,weather_code&hourly=temperature_2m,weather_code&timezone=auto`);
+        if (!res.ok) return;
         const data = await res.json();
+        if (!data || !data.current || !data.hourly) return;
 
         // Current Weather
         const current = data.current;
@@ -262,11 +264,12 @@ const Sidebar = ({ mobileOpen, onDrawerToggle, isCollapsed, onToggleSidebar }) =
         const code = current.weather_code;
 
         // Hourly Weather (next 4 samples)
-        const nowIdx = data.hourly.time.findIndex(t => new Date(t) > new Date()) || 0;
-        const hourlyData = data.hourly.time.slice(nowIdx, nowIdx + 4).map((time, idx) => ({
+        const nowIdx = data.hourly.time?.findIndex(t => new Date(t) > new Date());
+        const safeNowIdx = nowIdx && nowIdx > 0 ? nowIdx : 0;
+        const hourlyData = (data.hourly.time || []).slice(safeNowIdx, safeNowIdx + 4).map((time, idx) => ({
           time: new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          temp: Math.round(data.hourly.temperature_2m[nowIdx + idx]),
-          code: data.hourly.weather_code[nowIdx + idx]
+          temp: Math.round(data.hourly.temperature_2m?.[safeNowIdx + idx] || 0),
+          code: data.hourly.weather_code?.[safeNowIdx + idx] || 0
         }));
 
         let iconUrl = "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Sun.png";

@@ -431,7 +431,7 @@ export default function FundedProject() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Funded Projects</Typography>
-        {/* <Button
+        <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -457,7 +457,7 @@ export default function FundedProject() {
           }}
         >
           Apply New
-        </Button> */}
+        </Button>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -1111,8 +1111,8 @@ export default function FundedProject() {
                 <Chip
                   icon={
                     /approved/i.test(data.status) ? <CheckCircle sx={{ fontSize: "16px !important", color: "inherit" }} /> :
-                    /reject/i.test(data.status) ? <Close sx={{ fontSize: "16px !important", color: "inherit" }} /> :
-                    <AccessTime sx={{ fontSize: "16px !important", color: "inherit" }} />
+                      /reject/i.test(data.status) ? <Close sx={{ fontSize: "16px !important", color: "inherit" }} /> :
+                        <AccessTime sx={{ fontSize: "16px !important", color: "inherit" }} />
                   }
                   label={data.status || "Pending at R&D"}
                   sx={{
