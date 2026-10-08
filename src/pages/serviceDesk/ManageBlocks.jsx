@@ -22,6 +22,8 @@ import { PageContainer } from '../../components/common/design-system';
 import DataTable from '../../components/data/DataTable';
 import API from '../../api/axios';
 import { toast } from 'sonner';
+import CustomTabs from "../../components/common/CustomTabs";
+
 
 const ManageBlocks = () => {
     const [blocks, setBlocks] = useState([]);
@@ -162,6 +164,14 @@ const ManageBlocks = () => {
     const boysHostelCount = blocks.filter(b => b.blockType === 'HOSTEL' && b.genderTag === 'BOYS').length;
     const girlsHostelCount = blocks.filter(b => b.blockType === 'HOSTEL' && b.genderTag === 'GIRLS').length;
 
+    const customTabs = [
+        { label: `All Blocks (${blocks.length})`, key: 'ALL', icon: <ApartmentIcon /> },
+        { label: `Academic Buildings (${academicCount})`, key: 'ACADEMIC', icon: <ApartmentIcon /> },
+        { label: `Boys Hostels (${boysHostelCount})`, key: 'BOYS_HOSTEL', icon: <MaleIcon /> },
+        { label: `Girls Hostels (${girlsHostelCount})`, key: 'GIRLS_HOSTEL', icon: <FemaleIcon /> }
+    ];
+    const activeTabIndex = customTabs.findIndex(t => t.key === activeTab);
+
     return (
         <PageContainer>
             <PageHeader
@@ -187,21 +197,12 @@ const ManageBlocks = () => {
                 }
             />
 
-            <Paper sx={{ mb: 3, borderRadius: '12px', bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)', p: 0.5 }}>
-                <Tabs
-                    value={activeTab}
-                    onChange={(e, val) => setActiveTab(val)}
-                    indicatorColor="primary"
-                    textColor="primary"
-                    variant="scrollable"
-                    scrollButtons="auto"
-                >
-                    <Tab label={`All Blocks (${blocks.length})`} value="ALL" sx={{ fontWeight: 600, textTransform: 'none' }} />
-                    <Tab label={`Academic Buildings (${academicCount})`} value="ACADEMIC" sx={{ fontWeight: 600, textTransform: 'none' }} />
-                    <Tab label={`Boys Hostels (${boysHostelCount})`} value="BOYS_HOSTEL" sx={{ fontWeight: 600, textTransform: 'none' }} />
-                    <Tab label={`Girls Hostels (${girlsHostelCount})`} value="GIRLS_HOSTEL" sx={{ fontWeight: 600, textTransform: 'none' }} />
-                </Tabs>
-            </Paper>
+            <CustomTabs
+                tabs={customTabs}
+                value={activeTabIndex === -1 ? 0 : activeTabIndex}
+                onChange={(e, val) => setActiveTab(customTabs[val].key)}
+                sx={{ mb: 3 }}
+            />
 
             {loading ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
