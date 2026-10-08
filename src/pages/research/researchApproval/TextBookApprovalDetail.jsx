@@ -544,6 +544,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                             { key: "publisher", label: "Publisher", value: data.publisher || "-", editable: true, type: "text" },
                             { key: "isbn", label: "ISBN", value: data.isbn || "-", editable: true, type: "text" },
                             { key: "publicationScope", label: "Publication Scope", value: data.publicationScope || "National", editable: true, type: "select", options: ["National", "International"] },
+                            { key: "scopusIndexed", label: "Is Scopus Indexed?", value: data.scopusIndexed || "No", editable: true, type: "select", options: ["Yes", "No"] },
                             { key: "edition", label: "Edition", value: data.edition || "-", editable: true, type: "number" },
                             { key: "numberOfPages", label: "No. of Pages", value: data.numberOfPages || "-", editable: true, type: "number" },
                             { key: "year", label: "Year", value: data.year || "-", editable: true, type: "text" },

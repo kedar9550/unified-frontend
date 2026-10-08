@@ -5,7 +5,11 @@ import { useAuth } from "../../context/AuthContext";
 
 import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Autocomplete, InputAdornment, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination, Radio, RadioGroup, FormControlLabel } from "@mui/material";
 import { toast } from "sonner";
-import { Delete, Search, CurrencyRupee, Close, Groups, MenuBook, AttachFile, Description, Download, Visibility, Edit, CheckCircle, Cancel, AccessTime } from "@mui/icons-material";
+import {
+  Delete, Search, CurrencyRupee, Close, Groups, MenuBook, AttachFile, Description, Download, Visibility, Edit, CheckCircle, Cancel, AccessTime,
+  School, FormatListBulleted, PersonOutlined as PersonOutline, ShowChart, CalendarMonth, Public, Person, Link, Numbers, Grass as GrassIcon, CardGiftcard, Article
+} from "@mui/icons-material";
+import CheckCircleOutline from "@mui/icons-material/CheckCircleOutlined";
 import PageHeader from "../../components/common/PageHeader";
 import { Alert, AlertTitle } from "@mui/material";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
@@ -38,6 +42,7 @@ export default function TextbookPublication() {
     totalAuthors: 1, userAuthorPosition: 1,
     edition: "", cost: "", month: "", year: "",
     isStudentsInvolved: "No",
+    scopusIndexed: "No",
     applyIncentive: "",
     otherAuthors: [],
     publicationScope: "National",
@@ -368,6 +373,7 @@ export default function TextbookPublication() {
       month: pub.month || "",
       year: pub.year || "",
       isStudentsInvolved: pub.isStudentsInvolved || "No",
+      scopusIndexed: pub.scopusIndexed || "No",
       applyIncentive: pub.applyIncentive || "",
       otherAuthors: pub.authors ? pub.authors.filter(a => parseInt(a.authorPosition) !== parseInt(pub.userAuthorPosition || 1)).map(a => ({
         authorPosition: a.authorPosition,
@@ -941,6 +947,19 @@ export default function TextbookPublication() {
           />
         </Box>
         <Box>
+          <Typography sx={labelStyle}>Scopus Indexed :</Typography>
+          <Select
+            fullWidth
+            size="small"
+            value={form.scopusIndexed || "No"}
+            onChange={(e) => setForm(p => ({ ...p, scopusIndexed: e.target.value }))}
+            MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}
+          >
+            <MenuItem value="Yes">Yes</MenuItem>
+            <MenuItem value="No">No</MenuItem>
+          </Select>
+        </Box>
+        <Box>
           <Typography sx={labelStyle}>Cost:</Typography>
           <Box sx={{
             display: "flex",
@@ -1434,22 +1453,16 @@ export default function TextbookPublication() {
   const renderDetailsDialog = () => {
     if (!selectedPubDetails) return null;
     const data = selectedPubDetails;
-    const statusColor = (() => {
-      const s = data.status || "";
-      if (/Pending/i.test(s)) return "#ff9800";
-      if (/Approved/i.test(s)) return "#4caf50";
-      if (/Rejected/i.test(s)) return "#f44336";
-      return "#666";
-    })();
 
     return (
       <Dialog
         open={!!selectedPubDetails}
         onClose={handleCloseDetails}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
         sx={{
           "& .MuiDialog-paper": {
+            maxWidth: { xs: "95vw", sm: "90vw", md: "85vw", lg: "1150px" },
             borderRadius: "20px",
             background: "var(--bg-paper)",
             border: "1px solid var(--border-color)",
@@ -1465,224 +1478,386 @@ export default function TextbookPublication() {
           }
         }}
       >
-        <DialogTitle component="div" sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--gradient-primary)", color: "#fff", py: 2 }}>
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--gradient-primary)", color: "#fff", py: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <MenuBook sx={{ color: "#fff" }} />
-            <Typography variant="h6" component="div" sx={{ fontWeight: 800 }}>Text Book Details</Typography>
-            {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
-              <Chip label="R&D Direct Entry" size="small" sx={{ bgcolor: "rgba(255, 255, 255, 0.2)", color: "#fff", fontWeight: 800, borderRadius: "6px" }} />
-            )}
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>Text Book Details</Typography>
           </Box>
           <IconButton onClick={handleCloseDetails} sx={{ color: "#fff" }}><Close /></IconButton>
         </DialogTitle>
         <DialogContent sx={{ p: 3, mt: 1 }}>
-          <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>{data.title}</Typography>
-          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Publisher: {data.publisher}</Typography>
-
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2 }}>
-            {/* Status and dates */}
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Academic Year" value={data.academicYear?.year || "N/A"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="ISBN" value={data.isbn} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Role" value={data.visibilityRole || "Applicant"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}>
-              <LabelValueDetails
-                label="Status"
-                chip={
+          {/* Top Banner Header */}
+          <Paper elevation={0} sx={{ p: 3, mb: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-panel)" }}>
+            <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, gap: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
+                <Box sx={{
+                  width: 48, height: 48, borderRadius: "12px", bgcolor: "rgba(0, 78, 146, 0.08)",
+                  color: "var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "center",
+                  border: "1px solid rgba(0, 78, 146, 0.15)", flexShrink: 0, mt: 0.5
+                }}>
+                  <MenuBook sx={{ fontSize: 26 }} />
+                </Box>
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.3 }}>
+                    {data.title}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, mt: 0.5 }}>
+                    Publisher: {data.publisher}
+                  </Typography>
+                </Box>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0, flexWrap: "wrap" }}>
+                {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
                   <Chip
-                    icon={
-                      /approved/i.test(data.status) ? (
-                        <CheckCircle sx={{ fontSize: "16px !important", color: "inherit" }} />
-                      ) : /reject/i.test(data.status) ? (
-                        <Cancel sx={{ fontSize: "16px !important", color: "inherit" }} />
-                      ) : (
-                        <AccessTime sx={{ fontSize: "16px !important", color: "inherit" }} />
-                      )
-                    }
-                    label={data.status}
-                    size="small"
+                    label="R&D Direct Entry"
                     sx={{
-                      bgcolor: `${statusColor}15`,
-                      color: statusColor,
-                      fontWeight: 800,
-                      border: `1px solid ${statusColor}44`,
-                      borderRadius: "6px"
+                      bgcolor: "rgba(124, 58, 237, 0.1)",
+                      color: "#7c3aed",
+                      border: "1px solid rgba(124, 58, 237, 0.3)",
+                      fontWeight: 700,
+                      borderRadius: "20px",
+                      px: 1,
+                      py: 0.5
                     }}
                   />
-                }
-              />
-            </Box>
-
-            {/* Edition, cost, type, month/year, pages */}
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Edition" value={data.edition || "-"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label={`Cost (${data.currencySymbol || '₹'})`} value={data.cost || "-"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="No. of Pages" value={data.numberOfPages || "-"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Publication Scope" value={data.publicationScope || "National"} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Month/Year" value={`${data.month || ""} ${data.year || ""}`} /></Box>
-
-            {/* Author details */}
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Total Authors" value={data.totalAuthors} /></Box>
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}><LabelValueDetails label="Applicant Position" value={data.userAuthorPosition} /></Box>
-
-            {/* Incentive details */}
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
-              <LabelValueDetails
-                label="Incentive details"
-                value={data.applyIncentive === "Yes" ? "Yes" : "No"}
-              />
-            </Box>
-            {data.status === "Approved" && data.approvedAmount && (
-              <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
-                <LabelValueDetails
-                  label="Approved Incentive"
-                  value={`₹${data.approvedAmount}`}
-                  chip={<Chip label={`₹${data.approvedAmount}`} size="small" sx={{ bgcolor: "rgba(76, 175, 80, 0.1)", color: "#4caf50", fontWeight: 800 }} />}
+                )}
+                <Chip
+                  icon={
+                    /approved/i.test(data.status)
+                      ? <CheckCircleOutline sx={{ fontSize: "16px !important", color: "inherit" }} />
+                      : /reject/i.test(data.status)
+                        ? <Close sx={{ fontSize: "16px !important", color: "inherit" }} />
+                        : <AccessTime sx={{ fontSize: "16px !important", color: "inherit" }} />
+                  }
+                  label={data.status || "Pending at R&D"}
+                  sx={{
+                    bgcolor: /approved/i.test(data.status) ? "rgba(46, 125, 50, 0.1)" : /reject/i.test(data.status) ? "rgba(211, 47, 47, 0.1)" : "rgba(237, 108, 2, 0.1)",
+                    color: /approved/i.test(data.status) ? "#2e7d32" : /reject/i.test(data.status) ? "#d32f2f" : "#ed6c02",
+                    border: `1px solid ${/approved/i.test(data.status) ? "rgba(46, 125, 50, 0.3)" : /reject/i.test(data.status) ? "rgba(211, 47, 47, 0.3)" : "rgba(237, 108, 2, 0.3)"}`,
+                    fontWeight: 700,
+                    borderRadius: "20px",
+                    px: 1,
+                    py: 0.5
+                  }}
                 />
               </Box>
-            )}
+            </Box>
+          </Paper>
 
-            {/* Appraisal Claimant Selector */}
-            <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" }, display: "flex", flexDirection: "column" }}>
-              <LabelValueDetails
-                label="Appraisal Claimant"
-                chip={
-                  (() => {
-                    const isApplicant = data.visibilityRole === "Applicant" || (data.facultyId && (data.facultyId === user?.userId || data.facultyId._id === user?.userId));
-                    const eligibleClaimants = [
-                      { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
-                      ...((data.authors || [])
-                        .filter(a => a.employeeId)
-                        .map(a => ({
+          {/* Main Layout Grid */}
+          <Box sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "minmax(0, 1.3fr) minmax(0, 0.9fr)" },
+            gap: 3,
+            mb: 3,
+            width: "100%",
+            alignItems: "flex-start"
+          }}>
+            {/* Left Column (Publication Details List) */}
+            <Box sx={{ minWidth: 0 }}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 0,
+                  overflow: "hidden",
+                  borderRadius: "16px",
+                  border: "1px solid var(--border-color)",
+                  background: "var(--bg-paper)",
+                  display: "flex",
+                  flexDirection: "column"
+                }}
+              >
+                <Box sx={{ p: 3, pb: 2, borderBottom: "1px solid var(--border-color)" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1.5 }}>
+                    <FormatListBulleted sx={{ color: "var(--color-primary)" }} />
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                      Publication Details
+                    </Typography>
+                  </Box>
+                  <Box sx={{ width: 140, height: 3, bgcolor: "var(--color-primary)", borderRadius: "3px" }} />
+                </Box>
+                <Box sx={{ display: "flex", flexDirection: "column" }}>
+                  {[
+                    { label: "Academic Year", value: data.academicYear?.year || data.academicYear || "N/A", icon: <School sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "ISBN", value: data.isbn || "N/A", icon: <Article sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Publication Scope", value: data.publicationScope || "National", icon: <Public sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Edition", value: data.edition || "-", icon: <Numbers sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Scopus Indexed", value: data.scopusIndexed || "No", icon: <ShowChart sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Cost", value: data.cost ? `${data.currencySymbol || '₹'} ${data.cost}` : "-", icon: <CurrencyRupee sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "No. of Pages", value: data.numberOfPages || "-", icon: <Description sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Published Month", value: data.month || "-", icon: <CalendarMonth sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Published Year", value: data.year || "-", icon: <CalendarMonth sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    {
+                      label: "Applicant Author Position",
+                      chip: (
+                        (() => {
+                          const pos = data.userAuthorPosition || 1;
+                          const total = data.totalAuthors || (data.authors ? data.authors.length : 1);
+                          return (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box sx={{
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                width: 32, height: 32, borderRadius: '50%',
+                                bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)',
+                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.9rem'
+                              }}>
+                                {pos}
+                              </Box>
+                              {total && (
+                                <>
+                                  <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem' }}>of</Typography>
+                                  <Box sx={{
+                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                    px: 1.2, height: 28, borderRadius: '8px',
+                                    bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)',
+                                    color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                  }}>
+                                    {total} Authors
+                                  </Box>
+                                </>
+                              )}
+                            </Box>
+                          );
+                        })()
+                      ),
+                      icon: <PersonOutline sx={{ fontSize: 18, color: "var(--text-secondary)" }} />
+                    },
+                    { label: "Students Involved", value: data.isStudentsInvolved || "No", icon: <Groups sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Seed Grant Work", value: data.applyingSeedGrant === "Yes" ? "Yes" : "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Apply For Incentive", value: data.applyIncentive === "Yes" ? "Yes" : "No", icon: <CardGiftcard sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Approved Incentive Amount", value: data.approvedAmount ? `₹${data.approvedAmount}` : "-", icon: <CurrencyRupee sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> }
+                  ].map((item, idx, arr) => (
+                    <Box
+                      key={idx}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        px: 3,
+                        py: 1.6,
+                        borderBottom: idx === arr.length - 1 ? "none" : "1px solid var(--border-color)",
+                        "&:hover": { bgcolor: "rgba(0,0,0,0.015)" },
+                        transition: "background 0.2s"
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                        {item.icon}
+                        <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.875rem" }}>
+                          {item.label}
+                        </Typography>
+                      </Box>
+                      {item.chip ? item.chip : (
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", textAlign: "right", maxWidth: "55%", wordBreak: "break-word" }}>
+                          {item.value}
+                        </Typography>
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+              </Paper>
+            </Box>
+
+            {/* Right Column — single unified panel */}
+            <Box sx={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
+              <Paper
+                elevation={0}
+                sx={{
+                  borderRadius: "16px",
+                  border: "1px solid var(--border-color)",
+                  background: "var(--bg-paper)",
+                  overflow: "hidden"
+                }}
+              >
+                {/* === Appraisal & Role Section Header === */}
+                <Box sx={{ px: 3, py: 1.8, display: "flex", alignItems: "center", gap: 1.5, background: "var(--bg-panel)", borderBottom: "1px solid var(--border-color)" }}>
+                  <CheckCircleOutline sx={{ color: "var(--color-primary)", fontSize: 18 }} />
+                  <Typography sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.9rem" }}>Appraisal & Role</Typography>
+                </Box>
+
+                {/* Row: Role */}
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 1.7, borderBottom: "1px solid var(--border-color)", "&:hover": { bgcolor: "rgba(0,0,0,0.012)" }, transition: "background 0.2s" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Person sx={{ color: "var(--text-secondary)", fontSize: 17 }} />
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.84rem" }}>Role / Designation</Typography>
+                  </Box>
+                  <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{data.visibilityRole || "Applicant"}</Typography>
+                </Box>
+
+                {/* Row: Eligibility */}
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 1.7, borderBottom: "1px solid var(--border-color)", "&:hover": { bgcolor: "rgba(0,0,0,0.012)" }, transition: "background 0.2s" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <CheckCircleOutline sx={{ color: "var(--text-secondary)", fontSize: 17 }} />
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.84rem" }}>Appraisal Eligibility</Typography>
+                  </Box>
+                  {data.status === "Approved" ? (
+                    <Chip
+                      label={data.appraisalEligible || "Yes"}
+                      size="small"
+                      sx={{
+                        height: 22, fontWeight: 800, fontSize: "0.72rem", borderRadius: "8px",
+                        bgcolor: (data.appraisalEligible === "No") ? "rgba(211,47,47,0.1)" : "rgba(46,125,50,0.1)",
+                        color: (data.appraisalEligible === "No") ? "#d32f2f" : "#2e7d32",
+                        border: `1px solid ${(data.appraisalEligible === "No") ? "rgba(211,47,47,0.3)" : "rgba(46,125,50,0.3)"}`
+                      }}
+                    />
+                  ) : (
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)", fontStyle: "italic", fontSize: "0.82rem" }}>Not yet decided</Typography>
+                  )}
+                </Box>
+
+                {/* Row: Claimant */}
+                <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", px: 3, py: 1.7, borderBottom: "2px solid var(--border-color)", "&:hover": { bgcolor: "rgba(0,0,0,0.012)" }, transition: "background 0.2s" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 0.4 }}>
+                    <Person sx={{ color: "var(--text-secondary)", fontSize: 17 }} />
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.84rem" }}>Appraisal Claimant</Typography>
+                  </Box>
+                  <Box sx={{ textAlign: "right", maxWidth: "58%" }}>
+                    {(() => {
+                      const isApplicant = data.visibilityRole === "Applicant" || (data.facultyId && (data.facultyId === user?.userId || data.facultyId._id === user?.userId));
+                      const eligibleClaimants = [
+                        { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
+                        ...((data.authors || []).filter(a => a.employeeId).map(a => ({
                           _id: a.employeeId?._id || a.employeeId,
                           name: a.employeeId?.name || a.authorName,
                           institutionId: a.employeeId?.institutionId || a.employeeId || ""
                         })))
-                    ];
-                    const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
-
-                    const isApproved = data.status === "Approved";
-                    const isAppraisalEligible = data.appraisalEligible === "Yes";
-
-                    if (uniqueClaimants.length <= 1) {
+                      ];
+                      const uniqueClaimants = eligibleClaimants.filter((v, i, a) => {
+                        if (!v.name) return false;
+                        return a.findIndex(t => {
+                          const sameInst = v.institutionId && t.institutionId && v.institutionId.toString() === t.institutionId.toString();
+                          const sameId = v._id && t._id && v._id.toString() === t._id.toString();
+                          const sameName = v.name && t.name && v.name.trim().toLowerCase() === t.name.trim().toLowerCase();
+                          return sameInst || sameId || sameName;
+                        }) === i;
+                      });
+                      if (uniqueClaimants.length <= 1) {
+                        return (
+                          <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", wordBreak: "break-word" }}>
+                            {data.facultyId?.name || user?.name || "-"}
+                            <Typography component="span" variant="caption" sx={{ ml: 0.5, fontWeight: 600, color: "var(--text-secondary)" }}>(Auto)</Typography>
+                          </Typography>
+                        );
+                      }
+                      const currentClaimantObj = uniqueClaimants.find(c =>
+                        (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
+                        (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
+                      );
+                      if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1 && data.status === "Approved" && data.appraisalEligible === "Yes") {
+                        return (
+                          <Select size="small" fullWidth value="" displayEmpty onChange={(e) => handleResolveClaim(data._id, "Textbook", e.target.value)} sx={{ backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}>
+                            <MenuItem value="" disabled>Select Claimant</MenuItem>
+                            {uniqueClaimants.map(c => <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>{c.name} ({c.institutionId})</MenuItem>)}
+                          </Select>
+                        );
+                      }
                       return (
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                          {data.facultyId?.name || "-"} (Auto-assigned)
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", wordBreak: "break-word" }}>
+                          {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : (data.status === "Approved" && data.appraisalEligible === "Yes" ? "Not Yet Designated" : "N/A")}
                         </Typography>
                       );
-                    }
+                    })()}
+                  </Box>
+                </Box>
 
-                    if (!isApproved || !isAppraisalEligible) {
+                {/* === All Authors Section Header === */}
+                <Box sx={{ px: 3, py: 1.8, display: "flex", alignItems: "center", gap: 1.5, background: "var(--bg-panel)", borderBottom: "1px solid var(--border-color)" }}>
+                  <Groups sx={{ color: "var(--color-primary)", fontSize: 18 }} />
+                  <Typography sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.9rem" }}>All Authors</Typography>
+                  {data.authors && data.authors.length > 0 && (
+                    <Chip label={`${data.authors.length}`} size="small" sx={{ ml: "auto", height: 20, fontSize: "0.7rem", fontWeight: 800, bgcolor: "var(--bg-glass)", border: "1px solid var(--border-color)" }} />
+                  )}
+                </Box>
+
+                {/* Authors list */}
+                <Box>
+                  {(() => {
+                    const applicantPos = parseInt(data.userAuthorPosition) || 0;
+                    const allAuthors = data.authors ? [...data.authors] : [];
+                    if (allAuthors.length === 0) {
                       return (
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)", mt: 0.5 }}>
-                          N/A - Not Eligible or Not Approved
-                        </Typography>
+                        <Box sx={{ px: 3, py: 3, textAlign: "center" }}>
+                          <Groups sx={{ color: "var(--text-secondary)", fontSize: 30, opacity: 0.35 }} />
+                          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mt: 1, fontStyle: "italic" }}>No authors registered</Typography>
+                        </Box>
                       );
                     }
-
-                    const currentClaimantObj = uniqueClaimants.find(c =>
-                      (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
-                      (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
-                    );
-
-                    if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1) {
+                    return allAuthors.map((author, idx) => {
+                      const isMe = Boolean(
+                        (author.employeeId && (
+                          (typeof author.employeeId === 'string' && (
+                            author.employeeId === user?.institutionId ||
+                            author.employeeId === user?.employeeId ||
+                            author.employeeId === user?.empId ||
+                            author.employeeId === user?.userId ||
+                            author.employeeId === user?._id
+                          )) ||
+                          (typeof author.employeeId === 'object' && (
+                            author.employeeId._id === user?.userId ||
+                            author.employeeId._id === user?._id ||
+                            (author.employeeId.institutionId && author.employeeId.institutionId === user?.institutionId) ||
+                            (author.employeeId.employeeId && author.employeeId.employeeId === user?.employeeId)
+                          ))
+                        )) ||
+                        (author.authorName && user?.name && author.authorName.trim().toLowerCase() === user.name.trim().toLowerCase()) ||
+                        (author.name && user?.name && author.name.trim().toLowerCase() === user.name.trim().toLowerCase())
+                      );
                       return (
-                        <Select
-                          size="small"
-                          fullWidth
-                          value=""
-                          displayEmpty
-                          onChange={(e) => handleResolveClaim(data._id, "Textbook", e.target.value)}
-                          sx={{ mt: 0.5, backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
+                        <Box
+                          key={idx}
+                          sx={{
+                            display: "flex", alignItems: "center", gap: 2, px: 3, py: 1.4,
+                            borderBottom: idx === allAuthors.length - 1 ? "none" : "1px solid var(--border-color)",
+                            bgcolor: isMe ? "rgba(190, 147, 55, 0.04)" : "transparent",
+                            "&:hover": { bgcolor: isMe ? "rgba(190, 147, 55, 0.07)" : "rgba(0,0,0,0.012)" },
+                            transition: "background 0.2s"
+                          }}
                         >
-                          <MenuItem value="" disabled>Select Claimant</MenuItem>
-                          {uniqueClaimants.map(c => (
-                            <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
-                              {c.name} ({c.institutionId})
-                            </MenuItem>
-                          ))}
-                        </Select>
+                          <Box sx={{
+                            display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                            width: 28, height: 28, borderRadius: "50%",
+                            bgcolor: isMe ? "rgba(190, 147, 55, 0.18)" : "rgba(0, 78, 146, 0.07)",
+                            border: `2px solid ${isMe ? "var(--color-primary)" : "rgba(0,0,0,0.12)"}`,
+                            color: isMe ? "var(--color-primary)" : "var(--text-secondary)",
+                            fontWeight: 900, fontSize: "0.72rem"
+                          }}>
+                            {author.authorPosition || idx + 1}
+                          </Box>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
+                              <Typography variant="body2" sx={{ fontWeight: isMe ? 800 : 700, color: "var(--text-primary)", fontSize: "0.84rem" }} noWrap>
+                                {author.authorName}
+                              </Typography>
+                              {isMe && (
+                                <Chip label="You" size="small" sx={{ height: 16, fontSize: "0.6rem", fontWeight: 800, bgcolor: "rgba(190, 147, 55, 0.15)", color: "var(--color-primary)", border: "1px solid rgba(190, 147, 55, 0.4)", px: 0.3 }} />
+                              )}
+                            </Box>
+                            {author.affiliationName && (
+                              <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontSize: "0.71rem" }} noWrap>{author.affiliationName}</Typography>
+                            )}
+                          </Box>
+                        </Box>
                       );
-                    }
-
-                    return (
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>
-                        {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
-                      </Typography>
-                    );
-                  })()
-                }
-              />
+                    });
+                  })()}
+                </Box>
+              </Paper>
             </Box>
           </Box>
 
-          <Divider sx={{ my: 3 }} />
-
-          {/* Authors table */}
-          {data.authors && data.authors.length > 0 && (
-            <Card sx={{ p: 0, overflow: "hidden", mb: 3, border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)" }}>
-              <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid var(--border-color)" }}>
-                <Groups sx={{ color: "var(--color-primary)" }} />
-                <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Authors & Affiliations</Typography>
-              </Box>
-              <TableContainer>
-                <Table size="small">
-                  <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)", width: 80 }}>AUTHOR NO</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {(() => {
-                      const applicantPos = parseInt(data.userAuthorPosition) || 0;
-                      const coAuthors = data.authors ? data.authors.filter(a => parseInt(a.authorPosition) !== applicantPos) : [];
-                      return coAuthors.map((author, idx) => (
-                        <TableRow key={idx} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
-                          <TableCell>
-                            <Box sx={{
-                              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                              width: 30, height: 30, borderRadius: '50%',
-                              bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
-                              color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.82rem'
-                            }}>
-                              {author.authorPosition}
-                            </Box>
-                          </TableCell>
-                          <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.authorName}</TableCell>
-                          <TableCell sx={{ color: "var(--text-secondary)" }}>{author.affiliationName || "-"}</TableCell>
-                        </TableRow>
-                      ));
-                    })()}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Card>
-          )}
-
-
-
-          {/* Remarks/Comments if available */}
-          {(data.hodComment || data.rndComment || data.approvedAmount) && (
-            <Box sx={{ mt: 4, display: "flex", flexDirection: "column", gap: 2 }}>
+          {/* Remarks/Comments */}
+          {(Boolean(data.hodComment) || Boolean(data.rndComment)) && (
+            <Box sx={{ mt: 3, display: "flex", flexDirection: "column", gap: 2 }}>
               {data.hodComment && (
-                <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
+                <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "12px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
                   <Typography variant="caption" sx={{ fontWeight: 900, color: "#ff9800", textTransform: "uppercase" }}>HOD Remarks</Typography>
                   <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.hodComment}"</Typography>
                 </Box>
               )}
-              {(data.rndComment || data.approvedAmount) && (
-                <Box sx={{ p: 2, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "10px", border: "1px solid rgba(76, 175, 80, 0.2)" }}>
-                  {data.rndComment && (
-                    <>
-                      <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
-                      <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
-                    </>
-                  )}
-                  {data.approvedAmount && (
-                    <Typography variant="h6" sx={{ mt: data.rndComment ? 2 : 0, fontWeight: 900, color: "#10b981" }}>
-                      Approved Amount: ₹{data.approvedAmount}
-                    </Typography>
-                  )}
+              {data.rndComment && (
+                <Box sx={{ p: 2, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "12px", border: "1px solid rgba(76, 175, 80, 0.2)" }}>
+                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
+                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
                 </Box>
               )}
             </Box>

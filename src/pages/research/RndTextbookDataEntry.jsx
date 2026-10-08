@@ -49,6 +49,7 @@ export default function RndTextbookDataEntry() {
     applyIncentive: "",
     applyingSeedGrant: "No",
     isStudentsInvolved: "No",
+    scopusIndexed: "No",
     totalAuthors: 1,
     userAuthorPosition: 1,
     otherAuthors: [],
@@ -699,6 +700,20 @@ export default function RndTextbookDataEntry() {
                 value={form.edition}
                 onChange={(e) => setForm(p => ({ ...p, edition: e.target.value }))}
               />
+            </Box>
+
+            <Box>
+              <Typography sx={labelStyle}>Scopus Indexed :</Typography>
+              <Select
+                fullWidth
+                size="small"
+                value={form.scopusIndexed || "No"}
+                onChange={(e) => setForm(p => ({ ...p, scopusIndexed: e.target.value }))}
+                MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}
+              >
+                <MenuItem value="Yes">Yes</MenuItem>
+                <MenuItem value="No">No</MenuItem>
+              </Select>
             </Box>
 
             <Box>
