@@ -288,14 +288,23 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                             <TextField fullWidth label="ISBN" name="isbn" value={formData.isbn || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" } }}>
                             <TextField fullWidth label="Edition" name="edition" value={formData.edition || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" } }}>
                             <TextField fullWidth label="Cost" name="cost" value={formData.cost || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" } }}>
                             <TextField fullWidth label="Publication Location" name="publicationScope" value={formData.publicationScope || ""} onChange={handleChange} variant="outlined" size="small" />
+                        </Box>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" } }}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Scopus Indexed</InputLabel>
+                                <Select label="Scopus Indexed" name="scopusIndexed" value={formData.scopusIndexed || "No"} onChange={handleChange}>
+                                    <MenuItem value="Yes">Yes</MenuItem>
+                                    <MenuItem value="No">No</MenuItem>
+                                </Select>
+                            </FormControl>
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 3" } }}>
                             <TextField fullWidth label="Total Authors" name="totalAuthors" type="number" value={formData.totalAuthors || ""} onChange={handleChange} variant="outlined" size="small" />

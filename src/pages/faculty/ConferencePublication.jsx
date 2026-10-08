@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "../../context/AuthContext";
 
 import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination, Radio, RadioGroup, FormControlLabel } from "@mui/material";
@@ -32,6 +32,26 @@ import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
+const SDG_COLOR_MAP = {
+  1: { code: "SDG-1", label: "SDG-1: No Poverty", color: "#E5243B" },
+  2: { code: "SDG-2", label: "SDG-2: Zero Hunger", color: "#DDA83A" },
+  3: { code: "SDG-3", label: "SDG-3: Good Health & Well-Being", color: "#4C9F38" },
+  4: { code: "SDG-4", label: "SDG-4: Quality Education", color: "#C5192D" },
+  5: { code: "SDG-5", label: "SDG-5: Gender Equality", color: "#FF3A21" },
+  6: { code: "SDG-6", label: "SDG-6: Clean Water And Sanitation", color: "#26BDE2" },
+  7: { code: "SDG-7", label: "SDG-7: Affordable And Clean Energy", color: "#FCC30B" },
+  8: { code: "SDG-8", label: "SDG-8: Decent Work And Economic Growth", color: "#A21942" },
+  9: { code: "SDG-9", label: "SDG-9: Industry, Innovation And Infrastructure", color: "#FD6925" },
+  10: { code: "SDG-10", label: "SDG-10: Reduced Inequalities", color: "#DD1367" },
+  11: { code: "SDG-11", label: "SDG-11: Sustainable Cities And Communities", color: "#FD9D24" },
+  12: { code: "SDG-12", label: "SDG-12: Responsible Consumption And Production", color: "#BF8B2E" },
+  13: { code: "SDG-13", label: "SDG-13: Climate Action", color: "#3F7E44" },
+  14: { code: "SDG-14", label: "SDG-14: Life Below Water", color: "#0A97D9" },
+  15: { code: "SDG-15", label: "SDG-15: Life On Land", color: "#56C02B" },
+  16: { code: "SDG-16", label: "SDG-16: Peace, Justice And Strong Institutions", color: "#00689D" },
+  17: { code: "SDG-17", label: "SDG-17: Partnerships For The Goals", color: "#19486A" }
+};
+
 export default function ConferencePublication() {
   const { user } = useAuth();
   const [viewMode, setViewMode] = useState("list"); // 'list', 'select-year', 'form'
@@ -43,6 +63,29 @@ export default function ConferencePublication() {
   const [appraisalConfigActive, setAppraisalConfigActive] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const [leftCardHeight, setLeftCardHeight] = useState(null);
+  const observerRef = useRef(null);
+
+  const leftCardRef = useCallback((node) => {
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      observerRef.current = null;
+    }
+    if (node) {
+      const updateHeight = () => {
+        const h = node.getBoundingClientRect().height;
+        if (h > 0) {
+          setLeftCardHeight(h);
+        }
+      };
+      observerRef.current = new ResizeObserver(() => {
+        updateHeight();
+      });
+      observerRef.current.observe(node);
+      updateHeight();
+    }
+  }, []);
 
   const emptyForm = {
     doi: "",
@@ -1695,6 +1738,7 @@ export default function ConferencePublication() {
             {/* Left Column (Publication Details) */}
             <Box sx={{ minWidth: 0 }}>
               <Paper
+                ref={leftCardRef}
                 elevation={0}
                 sx={{
                   p: 0,
@@ -1757,15 +1801,18 @@ export default function ConferencePublication() {
               </Paper>
             </Box>
 
-            {/* Right Column (Publication Location & Appraisal) */}
+            {/* Right Column (Publication Location, Appraisal & SDGs) */}
             <Box sx={{
               minWidth: 0,
+              minHeight: 0,
+              height: { xs: "auto", md: leftCardHeight ? `${leftCardHeight}px` : "auto" },
+              maxHeight: { xs: "none", md: leftCardHeight ? `${leftCardHeight}px` : "none" },
               display: "flex",
               flexDirection: "column",
               gap: 3
             }}>
               {/* Scope, Eligibility, Claimant Card */}
-              <Paper elevation={0} sx={{ p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)" }}>
+              <Paper elevation={0} sx={{ p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", flexShrink: 0 }}>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
                   <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 2, borderBottom: "1px solid var(--border-color)" }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -1854,6 +1901,97 @@ export default function ConferencePublication() {
                       })()}
                     </Box>
                   </Box>
+                </Box>
+              </Paper>
+
+              {/* Bottom Right Card: SDGs Matched with Badges */}
+              <Paper elevation={0} sx={{ p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2, flexShrink: 0 }}>
+                  <Box sx={{ width: 28, height: 28, borderRadius: "50%", background: "conic-gradient(#E5243B 0deg 21deg, #DDA83A 21deg 42deg, #4C9F38 42deg 63deg, #C5192D 63deg 84deg, #FF3A21 84deg 105deg, #26BDE2 105deg 126deg, #FCC30B 126deg 147deg, #A21942 147deg 168deg, #FD6925 168deg 189deg, #DD1367 189deg 210deg, #FD9D24 210deg 231deg, #BF8B2E 231deg 252deg, #3F7E44 252deg 273deg, #0A97D9 273deg 294deg, #56C02B 294deg 315deg, #00689D 315deg 336deg, #19486A 336deg 360deg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: "var(--bg-paper)" }} />
+                  </Box>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                    SDGs Matched
+                  </Typography>
+                </Box>
+
+                <Box sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1.25,
+                  flex: 1,
+                  minHeight: 0,
+                  overflowY: "auto",
+                  pr: 1,
+                  "&::-webkit-scrollbar": { width: "5px" },
+                  "&::-webkit-scrollbar-track": { background: "rgba(0, 0, 0, 0.03)", borderRadius: "10px" },
+                  "&::-webkit-scrollbar-thumb": { background: "rgba(0, 0, 0, 0.15)", borderRadius: "10px", "&:hover": { background: "var(--color-primary)" } }
+                }}>
+                  {(() => {
+                    const numbers = data.sdgs ? String(data.sdgs).match(/\d+/g) : null;
+                    if (!numbers || numbers.length === 0) {
+                      return (
+                        <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontStyle: "italic" }}>
+                          No SDGs matched or specified
+                        </Typography>
+                      );
+                    }
+                    const matchedNumbers = [...new Set(numbers.map(n => parseInt(n, 10)))].sort((a, b) => a - b);
+                    return matchedNumbers.map((num, idx) => {
+                      const dbSdg = sdgList.find(s => {
+                        const sNum = parseInt(String(s.sdgNumber).replace(/\D/g, ''), 10);
+                        return sNum === num;
+                      });
+                      const fallback = SDG_COLOR_MAP[num] || { code: `SDG-${num}`, label: `SDG-${num}`, color: "#000" };
+                      const color = dbSdg?.backgroundColor || fallback.color;
+                      const imageUrl = dbSdg?.imageUrl ? `${API.defaults.baseURL || ''}${dbSdg.imageUrl}` : null;
+                      const label = dbSdg?.sdgTitle ? `SDG-${num}: ${dbSdg.sdgTitle}` : fallback.label;
+
+                      return (
+                        <Box
+                          key={idx}
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                            p: 1.25,
+                            borderRadius: "10px",
+                            background: "var(--bg-panel)",
+                            border: "1px solid var(--border-color)",
+                            transition: "all 0.2s ease",
+                            "&:hover": { transform: "translateX(2px)", borderColor: color }
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: "6px",
+                              bgcolor: color,
+                              color: "#ffffff",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontWeight: 900,
+                              fontSize: "0.75rem",
+                              flexShrink: 0,
+                              boxShadow: `0 2px 8px ${color}44`,
+                              overflow: 'hidden'
+                            }}
+                          >
+                            {imageUrl ? (
+                              <img src={imageUrl} alt={`SDG ${num}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                              <PublicIcon sx={{ fontSize: 18 }} />
+                            )}
+                          </Box>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.85rem" }}>
+                            {label}
+                          </Typography>
+                        </Box>
+                      );
+                    });
+                  })()}
                 </Box>
               </Paper>
             </Box>
