@@ -54,7 +54,7 @@ export default function RndPatentDataEntry() {
   };
 
   const [form, setForm] = useState(initialFormState);
-  const [files, setFiles] = useState({ eFilingReceipt: null, form1: null, grantedCertificate: null });
+  const [files, setFiles] = useState({ cbr: null, form1: null, grantedCertificate: null });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -206,11 +206,20 @@ export default function RndPatentDataEntry() {
       toast.error("Please verify a valid Target Faculty Employee ID first");
       return;
     }
-    if (form.facultyRole === "Inventor / Co-Inventor" && (!form.patentName || !form.applicantAffiliation)) {
+
+    const finalFacultyRole = form.patentFiledInInstitution === "Yes" ? "Inventor / Co-Inventor" : form.facultyRole;
+    const finalPatentName = form.patentFiledInInstitution === "Yes" ? "Aditya University" : (finalFacultyRole === "Applicant" ? (targetFacultyName || "") : form.patentName);
+    const finalApplicantAffiliation = form.patentFiledInInstitution === "Yes" ? "Aditya University" : (finalFacultyRole === "Applicant" ? (targetFacultyDetails?.college || "") : form.applicantAffiliation);
+
+    if (form.patentFiledInInstitution === "No" && !finalFacultyRole) {
+      toast.error("Please select Target Faculty's role in the patent");
+      return;
+    }
+    if (finalFacultyRole === "Inventor / Co-Inventor" && (!finalPatentName || !finalApplicantAffiliation)) {
       toast.error("Please provide the Name of the Applicant and Applicant Affiliation");
       return;
     }
-    if (!form.patentName) {
+    if (!finalPatentName) {
       toast.error("Please provide the Name of the Applicant");
       return;
     }
@@ -284,10 +293,10 @@ export default function RndPatentDataEntry() {
       })).filter(ca => ca.name && ca.affiliation);
 
       fd.append("title", form.title);
-      fd.append("facultyRole", form.facultyRole || "Applicant");
-      fd.append("applicantAffiliation", form.facultyRole === "Applicant" ? (targetFacultyDetails?.college || "") : (form.applicantAffiliation || ""));
+      fd.append("facultyRole", finalFacultyRole || "Applicant");
+      fd.append("applicantAffiliation", finalApplicantAffiliation);
       fd.append("applicantName", targetFacultyName || "");
-      fd.append("patentName", form.patentName);
+      fd.append("patentName", finalPatentName);
       fd.append("patentFiledInInstitution", form.patentFiledInInstitution || "Yes");
       fd.append("isUtilityType", form.isUtilityType || "Yes");
       fd.append("area", form.area);
@@ -297,7 +306,9 @@ export default function RndPatentDataEntry() {
       fd.append("patentFiledCountry", form.patentFiledCountry === 'Others' ? form.customCountryName : form.patentFiledCountry);
       fd.append("coInventors", JSON.stringify(coInventorsList));
       fd.append("isInstitutionRecord", form.isInstitutionRecord || "No");
-      fd.append("applyIncentive", form.applyIncentive);
+      const isUtilityTypeNo = form.isUtilityType === "No";
+      const applyIncentive = isUtilityTypeNo ? "No" : form.applyIncentive;
+      fd.append("applyIncentive", applyIncentive);
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
       fd.append("eligibleForTechTransfer", form.eligibleForTechTransfer);
       fd.append("appraisalEligible", form.appraisalEligible || "Yes");
@@ -308,10 +319,11 @@ export default function RndPatentDataEntry() {
 
       let expectedAmt = form.status === "Published" ? 5000 : (form.status === "Granted" ? 15000 : 0);
       if (form.applyingSeedGrant === "Yes") expectedAmt = expectedAmt / 2;
+      if (isUtilityTypeNo) expectedAmt = 0;
 
       fd.append("publishedstatus", form.status === "Published" ? "yes" : "no");
       fd.append("publisheddate", form.publisheddate || "");
-      fd.append("publishedexpectedamount", (form.applyIncentive === "Yes" && form.status === "Published") ? expectedAmt : "");
+      fd.append("publishedexpectedamount", (applyIncentive === "Yes" && form.status === "Published") ? expectedAmt : "");
       
       fd.append("grantedstatus", form.status === "Granted" ? "yes" : "no");
       fd.append("granteddate", form.granteddate || "");
@@ -323,14 +335,14 @@ export default function RndPatentDataEntry() {
       fd.append("isDirectEntry", "true");
       fd.append("targetFacultyEmpId", targetFacultyEmpId);
 
-      if (files.eFilingReceipt) fd.append("eFilingReceipt", files.eFilingReceipt);
+      if (files.cbr) fd.append("cbr", files.cbr);
       if (files.form1) fd.append("form1", files.form1);
       if (files.grantedCertificate) fd.append("grantedCertificate", files.grantedCertificate);
 
       await API.post("/api/research/patent", fd, { headers: { "Content-Type": "multipart/form-data" } });
       toast.success("Patent record added directly for faculty!");
       setForm(initialFormState);
-      setFiles({ eFilingReceipt: null, form1: null, grantedCertificate: null });
+      setFiles({ cbr: null, form1: null, grantedCertificate: null });
       setTargetFacultyEmpId("");
       setIsTargetFacultyValid(false);
       setTargetFacultyDetails(null);
@@ -364,7 +376,7 @@ export default function RndPatentDataEntry() {
                 setTargetFacultyName("");
                 setTargetFacultyDetails(null);
                 setForm(initialFormState);
-                setFiles({ eFilingReceipt: null, form1: null, grantedCertificate: null });
+                setFiles({ cbr: null, form1: null, grantedCertificate: null });
               }}
             />
             <Button
@@ -569,6 +581,15 @@ export default function RndPatentDataEntry() {
                   <TextField size="small" fullWidth value={form.customCountryName} onChange={set("customCountryName")} placeholder="e.g. USA, UK" />
                 </Box>
               )}
+              {form.status === "Granted" && (
+                <Box>
+                  <Typography sx={labelStyle}>Eligible for Technology Transfer :</Typography>
+                  <Select size="small" fullWidth value={form.eligibleForTechTransfer || "No"} onChange={set("eligibleForTechTransfer")}>
+                    <MenuItem value="No">No</MenuItem>
+                    <MenuItem value="Yes">Yes</MenuItem>
+                  </Select>
+                </Box>
+              )}
               <Box sx={{ gridColumn: { sm: "1 / -1" }, display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
                 <Typography sx={{ ...labelStyle, mb: 0, fontSize: 14 }}>Co-Inventor(s) Details (if any):</Typography>
                 {form.otherInventors.length === 0 && (
@@ -689,7 +710,7 @@ export default function RndPatentDataEntry() {
           {/* Attachments Section */}
           <FormCard title="Attachments & Additional Information" icon={<AttachFile sx={{ color: "var(--color-primary)" }} />}>
             <Grid2>
-              <FileField label="Certificate of Basic Registration (CBR):" onChange={(e) => setFiles(p => ({ ...p, eFilingReceipt: e.target.files[0] }))} />
+              <FileField label="Certificate of Basic Registration (CBR):" onChange={(e) => setFiles(p => ({ ...p, cbr: e.target.files[0] }))} />
               <FileField label="Form-1 Document:" onChange={(e) => setFiles(p => ({ ...p, form1: e.target.files[0] }))} />
               {form.status === "Granted" && (
                 <FileField label="Granted Certificate" onChange={(e) => setFiles(p => ({ ...p, grantedCertificate: e.target.files[0] }))} />
@@ -703,21 +724,15 @@ export default function RndPatentDataEntry() {
                       <MenuItem value="No">No</MenuItem>
                     </Select>
                   </Box>
-                  <Box>
-                    <Typography sx={labelStyle}>Eligible for Technology Transfer?</Typography>
-                    <Select size="small" fullWidth value={form.eligibleForTechTransfer} onChange={set("eligibleForTechTransfer")}>
-                      <MenuItem value="Yes">Yes</MenuItem>
-                      <MenuItem value="No">No</MenuItem>
-                    </Select>
-                  </Box>
+
                   <Box>
                     <Typography sx={labelStyle}>Apply Incentive? : *</Typography>
                     <Select
                       size="small" fullWidth displayEmpty
-                      value={form.applyIncentive}
+                      value={(form.isInstitutionRecord === "Yes" || form.isUtilityType === "No") ? "No" : form.applyIncentive}
                       onChange={set("applyIncentive")}
-                      disabled={form.isInstitutionRecord === "Yes"}
-                      sx={form.isInstitutionRecord === "Yes" ? { opacity: 0.6 } : {}}
+                      disabled={form.isInstitutionRecord === "Yes" || form.isUtilityType === "No"}
+                      sx={(form.isInstitutionRecord === "Yes" || form.isUtilityType === "No") ? { opacity: 0.6 } : {}}
                     >
                       <MenuItem value="" disabled>Select Option</MenuItem>
                       <MenuItem value="Yes">Yes</MenuItem>
@@ -731,8 +746,9 @@ export default function RndPatentDataEntry() {
                 const amount = form.status === "Published" ? 5000 : (form.status === "Granted" ? 15000 : 0);
                 let expectedAmt = amount;
                 if (form.applyingSeedGrant === "Yes") expectedAmt = expectedAmt / 2;
+                if (form.isUtilityType === "No") expectedAmt = 0;
                 
-                if (form.applyIncentive === "Yes" && form.status) {
+                if (form.applyIncentive === "Yes" && form.status && form.isUtilityType !== "No") {
                   return (
                     <Box sx={{
                       gridColumn: { sm: "1 / -1" },
