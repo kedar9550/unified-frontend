@@ -87,6 +87,10 @@ export default function CentralEventCategoriesPage() {
   const [typeId, setTypeId] = useState('');
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
+  const [hasSubcategories, setHasSubcategories] = useState(false);
+  const [subcategories, setSubcategories] = useState([]);
+  const [newSubCode, setNewSubCode] = useState('');
+  const [newSubName, setNewSubName] = useState('');
   const [sortOrder, setSortOrder] = useState('0');
   const [isActive, setIsActive] = useState(true);
 
@@ -178,6 +182,10 @@ export default function CentralEventCategoriesPage() {
     setTypeId(selectedTypeFilter ? (types.find(t => t.code === selectedTypeFilter)?._id || '') : (types[0]?._id || ''));
     setCode('');
     setName('');
+    setHasSubcategories(false);
+    setSubcategories([]);
+    setNewSubCode('');
+    setNewSubName('');
     setSortOrder('0');
     setIsActive(true);
     setBanner(null);
@@ -192,6 +200,10 @@ export default function CentralEventCategoriesPage() {
     setTypeId(item.typeId?._id || item.typeId || '');
     setCode(item.code);
     setName(item.name);
+    setHasSubcategories(!!item.hasSubcategories);
+    setSubcategories(item.subcategories || []);
+    setNewSubCode('');
+    setNewSubName('');
     setSortOrder(String(item.sortOrder || 0));
     setIsActive(item.isActive !== undefined ? item.isActive : true);
     setBanner(item.banner || null);
@@ -205,6 +217,29 @@ export default function CentralEventCategoriesPage() {
     setSearchQuery('');
 
     setOpenModal(true);
+  };
+
+  const handleAddSubcategory = () => {
+    if (!newSubName.trim()) {
+      toast.error('Subcategory Name is required');
+      return;
+    }
+    const codeToUse = (newSubCode.trim() || newSubName.trim().replace(/\s+/g, '_')).toUpperCase();
+    if (subcategories.some(s => s.code === codeToUse)) {
+      toast.error(`Subcategory code "${codeToUse}" already added`);
+      return;
+    }
+    setSubcategories([...subcategories, { code: codeToUse, name: newSubName.trim(), isActive: true }]);
+    setNewSubCode('');
+    setNewSubName('');
+  };
+
+  const handleRemoveSubcategory = (index) => {
+    setSubcategories(subcategories.filter((_, i) => i !== index));
+  };
+
+  const handleToggleSubcategoryStatus = (index) => {
+    setSubcategories(subcategories.map((sub, i) => i === index ? { ...sub, isActive: !sub.isActive } : sub));
   };
 
   const handleBannerUpload = async (e) => {
@@ -234,6 +269,8 @@ export default function CentralEventCategoriesPage() {
         typeId,
         code: code.trim().toUpperCase(),
         name: name.trim(),
+        hasSubcategories,
+        subcategories: hasSubcategories ? subcategories : [],
         sortOrder: parseInt(sortOrder || '0', 10),
         isActive,
         banner,
@@ -360,6 +397,7 @@ export default function CentralEventCategoriesPage() {
                   <TableCell><strong>Event Type</strong></TableCell>
                   <TableCell><strong>Category Code</strong></TableCell>
                   <TableCell><strong>Category Name</strong></TableCell>
+                  <TableCell><strong>Has Subcategories</strong></TableCell>
                   <TableCell><strong>Category Coordinators</strong></TableCell>
                   <TableCell><strong>Sort Order</strong></TableCell>
                   <TableCell><strong>Status</strong></TableCell>
@@ -369,7 +407,7 @@ export default function CentralEventCategoriesPage() {
               <TableBody>
                 {categories.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                    <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
                       No categories found. Click "Add Event Category" to create one.
                     </TableCell>
                   </TableRow>
@@ -422,6 +460,19 @@ export default function CentralEventCategoriesPage() {
                         </TableCell>
                         <TableCell><Typography fontWeight={600}>{row.code}</Typography></TableCell>
                         <TableCell><Typography>{row.name}</Typography></TableCell>
+                        <TableCell>
+                          <Chip
+                            label={row.hasSubcategories ? 'Yes' : 'No'}
+                            color={row.hasSubcategories ? 'success' : 'default'}
+                            size="small"
+                            variant="outlined"
+                          />
+                          {row.hasSubcategories && row.subcategories?.length > 0 && (
+                            <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 0.5 }}>
+                              {row.subcategories.length} subcat{row.subcategories.length === 1 ? 'egory' : 'egories'}
+                            </Typography>
+                          )}
+                        </TableCell>
                         <TableCell>
                           {coordsList.length > 0 ? (
                             <Stack spacing={0.5}>
@@ -559,6 +610,93 @@ export default function CentralEventCategoriesPage() {
                   )}
                 </Stack>
               </Box>
+
+              {/* Has Subcategories Switch & Config */}
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={hasSubcategories}
+                    onChange={(e) => {
+                      setHasSubcategories(e.target.checked);
+                      if (!e.target.checked) setSubcategories([]);
+                    }}
+                    color="primary"
+                  />
+                }
+                label="Has Subcategories (SubCat1..SubCatN)"
+              />
+
+              {hasSubcategories && (
+                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, bgcolor: '#f8fafc', border: '1px solid #cbd5e1' }}>
+                  <Typography variant="subtitle2" fontWeight={600} gutterBottom color="primary.main">
+                    Configure Subcategories
+                  </Typography>
+
+                  <Grid container spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Subcategory Code"
+                        placeholder="e.g. DEBATE_ENG"
+                        value={newSubCode}
+                        onChange={(e) => setNewSubCode(e.target.value)}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={5}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        label="Subcategory Name"
+                        placeholder="e.g. English Debate"
+                        value={newSubName}
+                        onChange={(e) => setNewSubName(e.target.value)}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={3}>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        size="small"
+                        startIcon={<AddIcon />}
+                        onClick={handleAddSubcategory}
+                        sx={{ textTransform: 'none', height: 40, borderRadius: 2 }}
+                      >
+                        Add Subcat
+                      </Button>
+                    </Grid>
+                  </Grid>
+
+                  {subcategories.length === 0 ? (
+                    <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                      No subcategories added yet. Use the fields above to add subcategories for this category.
+                    </Typography>
+                  ) : (
+                    <Stack spacing={1}>
+                      {subcategories.map((sub, idx) => (
+                        <Card key={idx} variant="outlined" sx={{ p: 1.25, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: 2, bgcolor: '#fff' }}>
+                          <Box display="flex" alignItems="center" gap={1.5}>
+                            <Chip label={sub.code} color="primary" size="small" sx={{ fontWeight: 700 }} />
+                            <Typography variant="body2" fontWeight={600}>{sub.name}</Typography>
+                          </Box>
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Chip
+                              label={sub.isActive ? 'Active' : 'Inactive'}
+                              color={sub.isActive ? 'success' : 'error'}
+                              size="small"
+                              onClick={() => handleToggleSubcategoryStatus(idx)}
+                              sx={{ cursor: 'pointer' }}
+                            />
+                            <IconButton size="small" color="error" onClick={() => handleRemoveSubcategory(idx)}>
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Stack>
+                        </Card>
+                      ))}
+                    </Stack>
+                  )}
+                </Paper>
+              )}
 
               {/* Category Coordinators, Status, and Order Number Row (Matching Reference Image Pattern) */}
               <Box

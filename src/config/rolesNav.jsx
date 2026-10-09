@@ -57,6 +57,7 @@ export const ROLE_ROUTES = {
         { text: "Event Types", path: "/central-events/types", icon: <Category /> },
         { text: "Event Categories", path: "/central-events/categories", icon: <Category /> },
         { text: "All Central Events", path: "/central-events", icon: <EventAvailable /> },
+        { text: "University Data", path: "/university-data", icon: <ListAlt /> },
 
 
         // { text: "Create Central Event", path: "/central-events/create", icon: <EventAvailable /> },

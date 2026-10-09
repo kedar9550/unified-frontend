@@ -134,6 +134,7 @@ const ITEM_METADATA = {
   "Event Types": { color: "rgba(168, 85, 247, 0.12)", iconColor: "#a855f7", icon: <Category /> },
   "Event Categories": { color: "rgba(236, 72, 153, 0.12)", iconColor: "#ec4899", icon: <Category /> },
   "All Central Events": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <EventAvailable /> },
+  "University Data": { color: "rgba(16, 185, 129, 0.12)", iconColor: "#10b981", icon: <ListAlt /> },
 
 
   "Events Catalog": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <EventAvailable /> },
