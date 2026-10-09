@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Container,
   Typography,
   Grid,
   Card,
@@ -23,15 +22,17 @@ import {
 import {
   Search as SearchIcon,
   Event as EventIcon,
+  Category as CategoryIcon,
+  Folder as FolderIcon,
   LocationOn as LocationIcon,
   People as PeopleIcon,
-  Add as AddIcon,
-  FilterAlt as FilterIcon,
-  ConfirmationNumber as TicketIcon
+  Add as AddIcon
 } from '@mui/icons-material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getCentralEvents, getEventTypes, getCategoriesByTypeCode } from '../../api/centralEventsApi';
+import { PageHeader, CustomTabs } from '../../components/common';
+import PageContainer from '../../components/common/design-system/PageContainer';
 import { toast } from 'sonner';
 
 const TYPE_COLORS = {
@@ -53,12 +54,11 @@ export default function CentralEventsListPage() {
   const isGlobalAdmin = userRoles.includes('GLOBAL_EVENT_ADMIN') || userRoles.includes('SUPER_ADMIN') || activeRole?.toUpperCase() === 'GLOBAL_EVENT_ADMIN';
 
   const [events, setEvents] = useState([]);
-
   const [types, setTypes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Filters (sync typeCode from URL if present)
+  // Filters
   const urlTypeCode = searchParams.get('typeCode') || '';
   const [selectedType, setSelectedType] = useState(urlTypeCode);
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -67,11 +67,17 @@ export default function CentralEventsListPage() {
   const [selectedMode, setSelectedMode] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Update selectedType when URL query param changes
+  // Module Navigation Tabs
+  const navTabs = [
+    { key: 'all', label: 'All Central Events', icon: <EventIcon />, path: '/central-events' },
+    { key: 'types', label: 'Event Types', icon: <CategoryIcon />, path: '/central-events/types' },
+    { key: 'categories', label: 'Event Categories', icon: <FolderIcon />, path: '/central-events/categories' },
+    ...(isGlobalAdmin ? [{ key: 'create', label: 'Create Event', icon: <AddIcon />, path: '/central-events/create' }] : [])
+  ];
+
   useEffect(() => {
     setSelectedType(searchParams.get('typeCode') || '');
   }, [searchParams]);
-
 
   // Fetch Types on Mount
   useEffect(() => {
@@ -108,9 +114,7 @@ export default function CentralEventsListPage() {
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      const params = {
-        status: 'PUBLISHED'
-      };
+      const params = { status: 'PUBLISHED' };
       if (selectedType) params.typeCode = selectedType;
       if (selectedCategory) params.categoryId = selectedCategory;
       if (selectedLevel) params.level = selectedLevel;
@@ -139,51 +143,56 @@ export default function CentralEventsListPage() {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      {/* Header Banner */}
-      <Paper
-        elevation={0}
-        sx={{
-          p: 4,
-          mb: 4,
-          borderRadius: 3,
-          background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-          color: 'white',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 2
-        }}
-      >
-        <Box>
-          <Typography variant="h3" fontWeight={700} gutterBottom>
-            Central Events Hub
-          </Typography>
-          <Typography variant="h6" sx={{ opacity: 0.9 }}>
-            Explore VEDA, COLORS, ALA, Club, Departmental & University Flagship Events
-          </Typography>
-        </Box>
-        {isGlobalAdmin && (
-          <Stack direction="row" spacing={2}>
+    <PageContainer maxWidth="xl" px={3} py={3}>
+      {/* Standard Page Header */}
+      <PageHeader
+        title="Central Events Hub"
+        subtitle="Explore VEDA, COLORS, ALA, Club, Departmental & University Flagship Events"
+        icon={<EventIcon />}
+        actions={
+          isGlobalAdmin && (
             <Button
               variant="contained"
-              color="secondary"
               startIcon={<AddIcon />}
               onClick={() => navigate('/central-events/create')}
-              sx={{ borderRadius: 2, textTransform: 'none', px: 3, fontWeight: 600 }}
+              sx={{
+                borderRadius: '12px',
+                textTransform: 'none',
+                px: 3,
+                py: 1.2,
+                fontWeight: 700,
+                background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
+                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+              }}
             >
               Create Central Event
             </Button>
-          </Stack>
-        )}
+          )
+        }
+      />
 
-      </Paper>
+      {/* Module Navigation Custom Tabs */}
+      <CustomTabs
+        tabs={navTabs}
+        value={0}
+        onChange={(e, val) => navigate(navTabs[val].path)}
+      />
 
-      {/* Filter Bar */}
-      <Paper elevation={1} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
+      {/* Filter Bar with Standardized MUI Form Fields */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          mb: 4,
+          borderRadius: '16px',
+          border: '1px solid var(--border-color)',
+          background: 'var(--bg-glass)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: 'var(--shadow-premium-soft)'
+        }}
+      >
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <form onSubmit={handleSearchSubmit}>
               <TextField
                 fullWidth
@@ -196,19 +205,22 @@ export default function CentralEventsListPage() {
                     <InputAdornment position="start">
                       <SearchIcon color="action" />
                     </InputAdornment>
-                  )
+                  ),
+                  sx: { borderRadius: '12px', background: 'var(--bg-paper)' }
                 }}
               />
             </form>
           </Grid>
 
-          <Grid item xs={6} sm={3} md={2}>
-            <FormControl fullWidth size="small" sx={{ minWidth: 160 }}>
-              <InputLabel>Event Type</InputLabel>
+          <Grid size={{ xs: 6, sm: 3, md: 2.25 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="type-select-label">Event Type</InputLabel>
               <Select
+                labelId="type-select-label"
                 value={selectedType}
                 label="Event Type"
                 onChange={(e) => setSelectedType(e.target.value)}
+                sx={{ borderRadius: '12px', background: 'var(--bg-paper)' }}
               >
                 <MenuItem value="">All Types</MenuItem>
                 {types.map((t) => (
@@ -219,13 +231,15 @@ export default function CentralEventsListPage() {
           </Grid>
 
           {categories.length > 0 && (
-            <Grid item xs={6} sm={3} md={2}>
-              <FormControl fullWidth size="small" sx={{ minWidth: 160 }}>
-                <InputLabel>Category</InputLabel>
+            <Grid size={{ xs: 6, sm: 3, md: 2.25 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel id="cat-select-label">Category</InputLabel>
                 <Select
+                  labelId="cat-select-label"
                   value={selectedCategory}
                   label="Category"
                   onChange={(e) => setSelectedCategory(e.target.value)}
+                  sx={{ borderRadius: '12px', background: 'var(--bg-paper)' }}
                 >
                   <MenuItem value="">All Categories</MenuItem>
                   {categories.map((c) => (
@@ -236,13 +250,15 @@ export default function CentralEventsListPage() {
             </Grid>
           )}
 
-          <Grid item xs={6} sm={3} md={2}>
-            <FormControl fullWidth size="small" sx={{ minWidth: 140 }}>
-              <InputLabel>Level</InputLabel>
+          <Grid size={{ xs: 6, sm: 3, md: 2.25 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="level-select-label">Level</InputLabel>
               <Select
+                labelId="level-select-label"
                 value={selectedLevel}
                 label="Level"
                 onChange={(e) => setSelectedLevel(e.target.value)}
+                sx={{ borderRadius: '12px', background: 'var(--bg-paper)' }}
               >
                 <MenuItem value="">All Levels</MenuItem>
                 <MenuItem value="STUDENT">Student</MenuItem>
@@ -251,13 +267,15 @@ export default function CentralEventsListPage() {
             </FormControl>
           </Grid>
 
-          <Grid item xs={6} sm={3} md={2}>
-            <FormControl fullWidth size="small" sx={{ minWidth: 140 }}>
-              <InputLabel>Mode</InputLabel>
+          <Grid size={{ xs: 6, sm: 3, md: 2.25 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="mode-select-label">Mode</InputLabel>
               <Select
+                labelId="mode-select-label"
                 value={selectedMode}
                 label="Mode"
                 onChange={(e) => setSelectedMode(e.target.value)}
+                sx={{ borderRadius: '12px', background: 'var(--bg-paper)' }}
               >
                 <MenuItem value="">All Modes</MenuItem>
                 <MenuItem value="OFFLINE">Offline</MenuItem>
@@ -266,7 +284,6 @@ export default function CentralEventsListPage() {
               </Select>
             </FormControl>
           </Grid>
-
         </Grid>
       </Paper>
 
@@ -274,15 +291,15 @@ export default function CentralEventsListPage() {
       {loading ? (
         <Grid container spacing={3}>
           {[1, 2, 3, 4, 5, 6].map((n) => (
-            <Grid item xs={12} sm={6} md={4} key={n}>
-              <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={n}>
+              <Skeleton variant="rectangular" height={200} sx={{ borderRadius: '16px' }} />
               <Skeleton height={30} sx={{ mt: 1 }} />
               <Skeleton height={20} width="60%" />
             </Grid>
           ))}
         </Grid>
       ) : events.length === 0 ? (
-        <Paper sx={{ p: 6, textAlign: 'center', borderRadius: 2 }}>
+        <Paper sx={{ p: 6, textAlign: 'center', borderRadius: '16px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)' }}>
           <Typography variant="h6" color="text.secondary">
             No events found matching your criteria.
           </Typography>
@@ -290,43 +307,49 @@ export default function CentralEventsListPage() {
       ) : (
         <Grid container spacing={3}>
           {events.map((event) => (
-            <Grid item xs={12} sm={6} md={4} key={event._id}>
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={event._id}>
               <Card
+                elevation={0}
                 sx={{
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
-                  borderRadius: 3,
-                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  borderRadius: '18px',
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-paper)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
                   '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: 6
+                    transform: 'translateY(-6px)',
+                    boxShadow: '0 12px 30px rgba(0,0,0,0.12)',
+                    borderColor: 'var(--color-primary)'
                   }
                 }}
               >
                 <CardMedia
                   component="img"
-                  height="180"
+                  height="190"
                   image={event.banner?.url || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop&q=60'}
                   alt={event.title}
+                  sx={{ borderTopLeftRadius: '18px', borderTopRightRadius: '18px' }}
                 />
-                <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                  <Stack direction="row" spacing={1} mb={1.5} flexWrap="wrap">
+                <CardContent sx={{ flexGrow: 1, p: 3, display: 'flex', flexDirection: 'column' }}>
+                  <Stack direction="row" spacing={1} mb={1.5} flexWrap="wrap" gap={0.5}>
                     <Chip
                       label={event.typeCode}
                       color={TYPE_COLORS[event.typeCode] || 'default'}
                       size="small"
-                      sx={{ fontWeight: 700 }}
+                      sx={{ fontWeight: 700, borderRadius: '8px' }}
                     />
                     {event.categoryName && (
-                      <Chip label={event.categoryName} size="small" variant="outlined" />
+                      <Chip label={event.categoryName} size="small" variant="outlined" sx={{ borderRadius: '8px' }} />
                     )}
                     {event.level && (
-                      <Chip label={event.level} size="small" color="primary" variant="outlined" />
+                      <Chip label={event.level} size="small" color="primary" variant="outlined" sx={{ borderRadius: '8px' }} />
                     )}
                   </Stack>
 
-                  <Typography variant="h6" fontWeight={700} gutterBottom lineClamp={2}>
+                  <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: 'var(--text-primary)', lineClamp: 2 }}>
                     {event.title}
                   </Typography>
 
@@ -338,22 +361,22 @@ export default function CentralEventsListPage() {
 
                   <Stack spacing={1} sx={{ color: 'text.secondary', fontSize: '0.875rem', my: 2 }}>
                     <Box display="flex" alignItems="center" gap={1}>
-                      <EventIcon fontSize="small" color="action" />
+                      <EventIcon fontSize="small" color="primary" />
                       <span>{new Date(event.schedule?.fromDate).toLocaleDateString()}</span>
                     </Box>
                     <Box display="flex" alignItems="center" gap={1}>
-                      <LocationIcon fontSize="small" color="action" />
+                      <LocationIcon fontSize="small" color="primary" />
                       <span>{event.venue?.name || event.mode}</span>
                     </Box>
                     <Box display="flex" alignItems="center" gap={1}>
-                      <PeopleIcon fontSize="small" color="action" />
+                      <PeopleIcon fontSize="small" color="primary" />
                       <span>Capacity: {event.registrationCount} / {event.capacity} seats</span>
                     </Box>
                   </Stack>
 
-                  <Divider sx={{ my: 1.5 }} />
+                  <Divider sx={{ my: 1.5, mt: 'auto' }} />
 
-                  <Box display="flex" justifyContent="space-between" alignItems="center" mt="auto">
+                  <Box display="flex" justifyContent="space-between" alignItems="center" pt={1}>
                     <Typography variant="h6" color="primary.main" fontWeight={700}>
                       {event.fee?.amount === 0 ? 'FREE' : `₹${event.fee?.amount / 100}`}
                     </Typography>
@@ -361,7 +384,7 @@ export default function CentralEventsListPage() {
                       variant="contained"
                       disableElevation
                       onClick={() => navigate(`/central-events/${event.slug}`)}
-                      sx={{ borderRadius: 2 }}
+                      sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600, px: 2.5 }}
                     >
                       View & Register
                     </Button>
@@ -372,6 +395,6 @@ export default function CentralEventsListPage() {
           ))}
         </Grid>
       )}
-    </Container>
+    </PageContainer>
   );
 }

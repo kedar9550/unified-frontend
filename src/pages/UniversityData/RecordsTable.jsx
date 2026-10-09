@@ -103,7 +103,17 @@ export default function RecordsTable({ form, onEditRecord, headerState }) {
   return (
     <Box>
       {/* Filters Bar */}
-      <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: 2.5,
+          mb: 3,
+          borderRadius: '16px',
+          border: '1px solid var(--border-color)',
+          background: 'var(--bg-glass)',
+          backdropFilter: 'blur(10px)'
+        }}
+      >
         <Box
           sx={{
             display: 'grid',
@@ -118,6 +128,7 @@ export default function RecordsTable({ form, onEditRecord, headerState }) {
             placeholder="e.g. 2025-26"
             value={academicYear}
             onChange={(e) => setAcademicYear(e.target.value)}
+            InputProps={{ sx: { borderRadius: '12px', background: 'var(--bg-paper)' } }}
           />
 
           <TextField
@@ -126,6 +137,7 @@ export default function RecordsTable({ form, onEditRecord, headerState }) {
             placeholder="e.g. CSE"
             value={department}
             onChange={(e) => setDepartment(e.target.value)}
+            InputProps={{ sx: { borderRadius: '12px', background: 'var(--bg-paper)' } }}
           />
 
           <TextField
@@ -140,6 +152,7 @@ export default function RecordsTable({ form, onEditRecord, headerState }) {
                   <Search size={16} />
                 </InputAdornment>
               ),
+              sx: { borderRadius: '12px', background: 'var(--bg-paper)' }
             }}
           />
 
@@ -148,6 +161,7 @@ export default function RecordsTable({ form, onEditRecord, headerState }) {
             startIcon={<RefreshCw size={16} />}
             onClick={() => fetchRecords(1)}
             disabled={loading}
+            sx={{ borderRadius: '10px', textTransform: 'none', height: 40 }}
           >
             Refresh
           </Button>
@@ -155,7 +169,16 @@ export default function RecordsTable({ form, onEditRecord, headerState }) {
       </Paper>
 
       {/* Data Table */}
-      <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+      <Paper
+        elevation={0}
+        sx={{
+          borderRadius: '18px',
+          overflow: 'hidden',
+          border: '1px solid var(--border-color)',
+          background: 'var(--bg-paper)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.04)'
+        }}
+      >
         <Box sx={{ overflowX: 'auto' }}>
           <Table size="small">
             <TableHead sx={{ bgcolor: 'grey.100' }}>

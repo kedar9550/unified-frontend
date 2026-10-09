@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Container,
   Typography,
   Grid,
-  Card,
-  CardContent,
   CardMedia,
   Button,
   Chip,
@@ -26,15 +23,14 @@ import {
   Event as EventIcon,
   LocationOn as LocationIcon,
   People as PeopleIcon,
-  Download as DownloadIcon,
   Close as CloseIcon,
-  CheckCircle as CheckCircleIcon,
-  QrCode2 as QrIcon,
-  ArrowBack as ArrowBackIcon
+  QrCode2 as QrIcon
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import { getCentralEventBySlug, registerCentralEvent } from '../../api/centralEventsApi';
+import { PageHeader } from '../../components/common';
+import PageContainer from '../../components/common/design-system/PageContainer';
 import { toast } from 'sonner';
 
 export default function CentralEventDetailPage() {
@@ -133,14 +129,15 @@ export default function CentralEventDetailPage() {
 
   if (!event) {
     return (
-      <Container maxWidth="md" sx={{ py: 6, textAlign: 'center' }}>
-        <Typography variant="h5" color="text.secondary">
-          Event not found
-        </Typography>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/central-events')} sx={{ mt: 2 }}>
-          Back to Events List
-        </Button>
-      </Container>
+      <PageContainer maxWidth="md" px={3} py={6}>
+        <PageHeader
+          title="Event Not Found"
+          subtitle="The requested central event could not be found or has been removed."
+          icon={<EventIcon />}
+          showBack
+          backPath="/central-events"
+        />
+      </PageContainer>
     );
   }
 
@@ -149,40 +146,45 @@ export default function CentralEventDetailPage() {
   const isFull = event.registrationCount >= event.capacity;
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/central-events')} sx={{ mb: 2 }}>
-        Back to Central Events
-      </Button>
+    <PageContainer maxWidth="lg" px={3} py={3}>
+      {/* Standard Page Header */}
+      <PageHeader
+        title={event.title}
+        subtitle={event.organizer?.name ? `Organized by ${event.organizer.name}` : `Event Code: ${event.typeCode}`}
+        icon={<EventIcon />}
+        showBack
+        backPath="/central-events"
+      />
 
-      {/* Main Banner */}
-      <Paper elevation={2} sx={{ borderRadius: 3, overflow: 'hidden', mb: 4 }}>
+      {/* Main Banner Card */}
+      <Paper
+        elevation={0}
+        sx={{
+          borderRadius: '18px',
+          overflow: 'hidden',
+          mb: 4,
+          border: '1px solid var(--border-color)',
+          background: 'var(--bg-paper)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
+        }}
+      >
         <CardMedia
           component="img"
-          height="320"
+          height="340"
           image={event.banner?.url || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&auto=format&fit=crop&q=80'}
           alt={event.title}
         />
         <Box sx={{ p: 4 }}>
-          <Stack direction="row" spacing={1} mb={2} flexWrap="wrap">
-            <Chip label={event.typeCode} color="primary" sx={{ fontWeight: 700 }} />
-            {event.categoryName && <Chip label={event.categoryName} variant="outlined" />}
-            {event.level && <Chip label={`Level: ${event.level}`} color="info" />}
-            {event.activityType && <Chip label={event.activityType} color="success" />}
-            <Chip label={event.mode} color="warning" />
+          <Stack direction="row" spacing={1} mb={2} flexWrap="wrap" gap={0.5}>
+            <Chip label={event.typeCode} color="primary" sx={{ fontWeight: 700, borderRadius: '8px' }} />
+            {event.categoryName && <Chip label={event.categoryName} variant="outlined" sx={{ borderRadius: '8px' }} />}
+            {event.level && <Chip label={`Level: ${event.level}`} color="info" sx={{ borderRadius: '8px' }} />}
+            {event.activityType && <Chip label={event.activityType} color="success" sx={{ borderRadius: '8px' }} />}
+            <Chip label={event.mode} color="warning" sx={{ borderRadius: '8px' }} />
           </Stack>
 
-          <Typography variant="h3" fontWeight={700} gutterBottom>
-            {event.title}
-          </Typography>
-
-          {event.organizer?.name && (
-            <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
-              Organized by <strong>{event.organizer.name}</strong>
-            </Typography>
-          )}
-
-          <Grid container spacing={3} sx={{ mt: 2, mb: 3 }}>
-            <Grid item xs={12} sm={4}>
+          <Grid container spacing={3} sx={{ mt: 1, mb: 3 }}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <Box display="flex" alignItems="center" gap={1.5}>
                 <EventIcon color="primary" fontSize="large" />
                 <Box>
@@ -194,7 +196,7 @@ export default function CentralEventDetailPage() {
               </Box>
             </Grid>
 
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <Box display="flex" alignItems="center" gap={1.5}>
                 <LocationIcon color="primary" fontSize="large" />
                 <Box>
@@ -204,7 +206,7 @@ export default function CentralEventDetailPage() {
               </Box>
             </Grid>
 
-            <Grid item xs={12} sm={4}>
+            <Grid size={{ xs: 12, sm: 4 }}>
               <Box display="flex" alignItems="center" gap={1.5}>
                 <PeopleIcon color="primary" fontSize="large" />
                 <Box>
@@ -232,7 +234,16 @@ export default function CentralEventDetailPage() {
               size="large"
               disabled={isDeadlinePassed || isFull || event.status !== 'PUBLISHED'}
               onClick={() => setOpenRegister(true)}
-              sx={{ px: 4, py: 1.5, borderRadius: 3, fontWeight: 700 }}
+              sx={{
+                px: 5,
+                py: 1.5,
+                borderRadius: '12px',
+                fontWeight: 700,
+                fontSize: '1rem',
+                textTransform: 'none',
+                background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
+                boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
+              }}
             >
               {isFull ? 'Event Full' : isDeadlinePassed ? 'Registration Closed' : 'Register Now'}
             </Button>
@@ -242,18 +253,18 @@ export default function CentralEventDetailPage() {
 
       {/* Details Grid */}
       <Grid container spacing={4}>
-        <Grid item xs={12} md={8}>
-          <Paper elevation={1} sx={{ p: 4, borderRadius: 3, mb: 4 }}>
+        <Grid size={{ xs: 12, md: 8 }}>
+          <Paper elevation={0} sx={{ p: 4, borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)', mb: 4 }}>
             <Typography variant="h5" fontWeight={700} gutterBottom>
               Description & Overview
             </Typography>
-            <Typography variant="body1" sx={{ whiteSpace: 'pre-line', lineHeight: 1.8 }}>
+            <Typography variant="body1" sx={{ whiteSpace: 'pre-line', lineHeight: 1.8, color: 'var(--text-primary)' }}>
               {event.description}
             </Typography>
 
             {event.outcomes?.length > 0 && (
               <Box sx={{ mt: 4 }}>
-                <Typography variant="h6" fontWeight={700} gutterBottom>
+                <Typography variant="h6" fontWeight={700} gutterBottom color="primary.main">
                   Key Outcomes
                 </Typography>
                 <ul>
@@ -266,7 +277,7 @@ export default function CentralEventDetailPage() {
 
             {event.rules?.length > 0 && (
               <Box sx={{ mt: 4 }}>
-                <Typography variant="h6" fontWeight={700} gutterBottom>
+                <Typography variant="h6" fontWeight={700} gutterBottom color="primary.main">
                   Rules & Guidelines
                 </Typography>
                 <ol>
@@ -279,11 +290,11 @@ export default function CentralEventDetailPage() {
           </Paper>
         </Grid>
 
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           {/* Resource Persons */}
           {event.resourcePersons?.length > 0 && (
-            <Paper elevation={1} sx={{ p: 3, borderRadius: 3, mb: 4 }}>
-              <Typography variant="h6" fontWeight={700} gutterBottom>
+            <Paper elevation={0} sx={{ p: 3, borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)', mb: 4 }}>
+              <Typography variant="h6" fontWeight={700} gutterBottom color="primary.main">
                 Resource Persons / Speakers
               </Typography>
               <Stack spacing={2} mt={2}>
@@ -304,8 +315,8 @@ export default function CentralEventDetailPage() {
 
           {/* Coordinators */}
           {event.coordinators?.faculty?.length > 0 && (
-            <Paper elevation={1} sx={{ p: 3, borderRadius: 3, mb: 4 }}>
-              <Typography variant="h6" fontWeight={700} gutterBottom>
+            <Paper elevation={0} sx={{ p: 3, borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)', mb: 4 }}>
+              <Typography variant="h6" fontWeight={700} gutterBottom color="primary.main">
                 Event Coordinators
               </Typography>
               <Stack spacing={1.5} mt={2}>
@@ -323,8 +334,8 @@ export default function CentralEventDetailPage() {
       </Grid>
 
       {/* Registration Modal */}
-      <Dialog open={openRegister} onClose={() => setOpenRegister(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Register for Event</DialogTitle>
+      <Dialog open={openRegister} onClose={() => setOpenRegister(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: '18px', p: 1 } }}>
+        <DialogTitle sx={{ fontWeight: 700 }}>Register for Event</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" mb={2}>
             {event.title}
@@ -338,6 +349,7 @@ export default function CentralEventDetailPage() {
               onChange={(e) => setTeamName(e.target.value)}
               margin="normal"
               required
+              InputProps={{ sx: { borderRadius: '12px' } }}
             />
           )}
 
@@ -346,27 +358,27 @@ export default function CentralEventDetailPage() {
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={() => setOpenRegister(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleRegisterSubmit} disabled={registering}>
+          <Button onClick={() => setOpenRegister(false)} sx={{ borderRadius: '10px' }}>Cancel</Button>
+          <Button variant="contained" onClick={handleRegisterSubmit} disabled={registering} sx={{ borderRadius: '10px', px: 3 }}>
             {registering ? <CircularProgress size={24} /> : 'Confirm & Proceed'}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* QR Code & Payment Modal */}
-      <Dialog open={openQrModal} onClose={() => setOpenQrModal(false)} maxWidth="sm" fullWidth>
-        <DialogTitle display="flex" justifyContent="space-between" alignItems="center">
+      <Dialog open={openQrModal} onClose={() => setOpenQrModal(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '18px', p: 1 } }}>
+        <DialogTitle display="flex" justifyContent="space-between" alignItems="center" sx={{ fontWeight: 700 }}>
           Scan QR to Pay via Razorpay
           <IconButton onClick={() => setOpenQrModal(false)}><CloseIcon /></IconButton>
         </DialogTitle>
         <DialogContent sx={{ textAlign: 'center', py: 3 }}>
           {registrationResult?.data?.payUrl && (
-            <Box sx={{ my: 2, p: 2, display: 'inline-block', border: '2px solid #1976d2', borderRadius: 2 }}>
+            <Box sx={{ my: 2, p: 2, display: 'inline-block', border: '2px solid #1976d2', borderRadius: '16px' }}>
               <QRCodeSVG value={registrationResult.data.payUrl} size={220} />
             </Box>
           )}
 
-          <Alert severity="info" sx={{ mt: 2, textAlig: 'left' }}>
+          <Alert severity="info" sx={{ mt: 2, borderRadius: '12px', textAlign: 'left' }}>
             Payment Token Expires in: <strong>{formatTimer(timeLeft)}</strong>
           </Alert>
 
@@ -380,12 +392,12 @@ export default function CentralEventDetailPage() {
             size="large"
             startIcon={<QrIcon />}
             onClick={() => navigate(`/pay/${registrationResult.data.payToken}`)}
-            sx={{ borderRadius: 2, px: 4 }}
+            sx={{ borderRadius: '12px', px: 4, textTransform: 'none', fontWeight: 700 }}
           >
             Open Payment Checkout Page
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </PageContainer>
   );
 }

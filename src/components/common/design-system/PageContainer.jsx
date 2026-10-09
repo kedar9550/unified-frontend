@@ -14,6 +14,12 @@ export default function PageContainer({
   sx = {},
   className = "",
   item,
+  justifyContent,
+  alignItems,
+  minHeight,
+  flexWrap,
+  InputProps,
+  InputLabelProps,
   ...props
 }) {
   return (

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Container,
   Typography,
   Paper,
   Table,
@@ -36,12 +35,14 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  ArrowBack as ArrowBackIcon,
   Category as CategoryIcon,
+  Folder as FolderIcon,
+  Event as EventIcon,
   CloudUpload as UploadIcon,
   Image as ImageIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import {
   getAllCentralEventTypesAdmin,
   createCentralEventType,
@@ -49,6 +50,8 @@ import {
   deleteCentralEventType,
   uploadCentralEventFile
 } from '../../api/centralEventsApi';
+import { PageHeader, CustomTabs } from '../../components/common';
+import PageContainer from '../../components/common/design-system/PageContainer';
 import { toast } from 'sonner';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9022';
@@ -64,6 +67,10 @@ const LEVEL_OPTIONS = ['STUDENT', 'FACULTY'];
 
 export default function CentralEventTypesPage() {
   const navigate = useNavigate();
+  const { user, activeRole } = useAuth();
+
+  const userRoles = (user?.roles || []).map(r => (typeof r === 'string' ? r : (r.role?.key || r.role?.name || r.role || '')).toUpperCase());
+  const isGlobalAdmin = userRoles.includes('GLOBAL_EVENT_ADMIN') || userRoles.includes('SUPER_ADMIN') || activeRole?.toUpperCase() === 'GLOBAL_EVENT_ADMIN';
 
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -92,6 +99,14 @@ export default function CentralEventTypesPage() {
 
   // Delete Confirm Dialog State
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+
+  // Navigation Tabs
+  const navTabs = [
+    { key: 'all', label: 'All Central Events', icon: <EventIcon />, path: '/central-events' },
+    { key: 'types', label: 'Event Types', icon: <CategoryIcon />, path: '/central-events/types' },
+    { key: 'categories', label: 'Event Categories', icon: <FolderIcon />, path: '/central-events/categories' },
+    ...(isGlobalAdmin ? [{ key: 'create', label: 'Create Event', icon: <AddIcon />, path: '/central-events/create' }] : [])
+  ];
 
   const fetchTypes = async () => {
     setLoading(true);
@@ -219,56 +234,60 @@ export default function CentralEventTypesPage() {
   const displayedTypes = types.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/central-events')} sx={{ mb: 2 }}>
-        Back to Central Events Hub
-      </Button>
+    <PageContainer maxWidth="xl" px={3} py={3}>
+      {/* Standard Page Header */}
+      <PageHeader
+        title="Central Event Types Management"
+        subtitle="Define, edit, and configure rules and banner branding for all central event types"
+        icon={<CategoryIcon />}
+        showBack
+        backPath="/central-events"
+        actions={
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpenAdd}
+            sx={{
+              borderRadius: '12px',
+              textTransform: 'none',
+              px: 3,
+              py: 1.2,
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+            }}
+          >
+            Add Event Type
+          </Button>
+        }
+      />
 
-      {/* Header */}
-      <Paper
-        elevation={0}
-        sx={{
-          p: 4,
-          mb: 4,
-          borderRadius: 3,
-          background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-          color: 'white',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 2
-        }}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
-            Central Event Types Management
-          </Typography>
-          <Typography variant="body1" sx={{ opacity: 0.9 }}>
-            Define, edit, and configure rules and banner branding for all central event types
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<AddIcon />}
-          onClick={handleOpenAdd}
-          sx={{ borderRadius: 2, textTransform: 'none', px: 3, py: 1.2, fontWeight: 600 }}
-        >
-          Add Event Type
-        </Button>
-      </Paper>
+      {/* Module Navigation Custom Tabs */}
+      <CustomTabs
+        tabs={navTabs}
+        value={1}
+        onChange={(e, val) => navigate(navTabs[val].path)}
+      />
 
-      {/* Table */}
+      {/* Table Section */}
       {loading ? (
         <Box display="flex" justifyContent="center" py={6}>
           <CircularProgress />
         </Box>
       ) : (
-        <Paper elevation={2} sx={{ borderRadius: 3, overflow: 'hidden' }}>
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: '18px',
+            overflow: 'hidden',
+            border: '1px solid var(--border-color)',
+            background: 'var(--bg-paper)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.04)'
+          }}
+        >
           <TableContainer>
             <Table>
-              <TableHead sx={{ backgroundColor: '#f8fafc' }}>
+              <TableHead sx={{ backgroundColor: 'var(--bg-accent-1, #f8fafc)' }}>
                 <TableRow>
                   <TableCell><strong>S.No</strong></TableCell>
                   <TableCell><strong>Banner</strong></TableCell>
@@ -302,8 +321,8 @@ export default function CentralEventTypesPage() {
                               width: 60,
                               height: 38,
                               objectFit: 'cover',
-                              borderRadius: 6,
-                              border: '1px solid #e2e8f0'
+                              borderRadius: 8,
+                              border: '1px solid var(--border-color)'
                             }}
                           />
                         ) : (
@@ -311,8 +330,8 @@ export default function CentralEventTypesPage() {
                             sx={{
                               width: 60,
                               height: 38,
-                              borderRadius: 6,
-                              backgroundColor: '#f1f5f9',
+                              borderRadius: 2,
+                              backgroundColor: 'var(--bg-accent-2, #f1f5f9)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
@@ -324,7 +343,7 @@ export default function CentralEventTypesPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Chip label={row.code} color="primary" size="small" sx={{ fontWeight: 700 }} />
+                        <Chip label={row.code} color="primary" size="small" sx={{ fontWeight: 700, borderRadius: '8px' }} />
                       </TableCell>
                       <TableCell><Typography fontWeight={600}>{row.name}</Typography></TableCell>
                       <TableCell>
@@ -347,7 +366,7 @@ export default function CentralEventTypesPage() {
                         <Stack direction="row" spacing={0.5}>
                           {row.allowedLevels?.length > 0 ? (
                             row.allowedLevels.map((lvl) => (
-                              <Chip key={lvl} label={lvl} size="small" color="secondary" variant="outlined" />
+                              <Chip key={lvl} label={lvl} size="small" color="secondary" variant="outlined" sx={{ borderRadius: '6px' }} />
                             ))
                           ) : (
                             <Typography variant="caption" color="text.secondary">N/A</Typography>
@@ -389,10 +408,12 @@ export default function CentralEventTypesPage() {
         </Paper>
       )}
 
-      {/* Add / Edit Dialog */}
-      <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="sm" fullWidth>
+      {/* Add / Edit Dialog with Standardized MUI Form Fields */}
+      <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '18px', p: 1 } }}>
         <form onSubmit={handleSubmit}>
-          <DialogTitle>{editingItem ? 'Edit Event Type' : 'Add New Event Type'}</DialogTitle>
+          <DialogTitle sx={{ fontWeight: 700 }}>
+            {editingItem ? 'Edit Event Type' : 'Add New Event Type'}
+          </DialogTitle>
           <DialogContent dividers>
             <Stack spacing={2.5} mt={1}>
               <TextField
@@ -403,6 +424,7 @@ export default function CentralEventTypesPage() {
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 disabled={!!editingItem}
+                InputProps={{ sx: { borderRadius: '12px' } }}
               />
 
               <TextField
@@ -412,10 +434,11 @@ export default function CentralEventTypesPage() {
                 placeholder="e.g. VEDA National Tech Fest"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                InputProps={{ sx: { borderRadius: '12px' } }}
               />
 
               {/* Banner Upload Section */}
-              <Box sx={{ border: '1px border-dashed #cbd5e1', p: 2, borderRadius: 2, bgcolor: '#f8fafc' }}>
+              <Box sx={{ border: '1px dashed var(--border-color)', p: 2, borderRadius: '12px', bgcolor: 'var(--bg-accent-1, #f8fafc)' }}>
                 <Typography variant="subtitle2" fontWeight={600} gutterBottom>
                   Event Type Banner Image
                 </Typography>
@@ -426,18 +449,18 @@ export default function CentralEventTypesPage() {
                     startIcon={<UploadIcon />}
                     disabled={uploadingBanner}
                     size="small"
-                    sx={{ textTransform: 'none', borderRadius: 2 }}
+                    sx={{ textTransform: 'none', borderRadius: '10px' }}
                   >
                     {uploadingBanner ? 'Uploading...' : 'Upload Banner'}
                     <input type="file" hidden accept="image/*" onChange={handleBannerUpload} />
                   </Button>
 
                   {banner && (
-                    <Card variant="outlined" sx={{ display: 'flex', alignItems: 'center', p: 1, borderRadius: 2 }}>
+                    <Card variant="outlined" sx={{ display: 'flex', alignItems: 'center', p: 1, borderRadius: '10px' }}>
                       <img
                         src={getImageUrl(banner)}
                         alt="Banner Preview"
-                        style={{ width: 70, height: 42, objectFit: 'cover', borderRadius: 4, marginRight: 8 }}
+                        style={{ width: 70, height: 42, objectFit: 'cover', borderRadius: 6, marginRight: 8 }}
                       />
                       <Typography variant="caption" fontWeight={600} sx={{ maxWidth: 140 }} noWrap>
                         {banner.name}
@@ -483,7 +506,7 @@ export default function CentralEventTypesPage() {
                     multiple
                     value={allowedLevels}
                     onChange={(e) => setAllowedLevels(e.target.value)}
-                    input={<OutlinedInput label="Allowed Levels" />}
+                    input={<OutlinedInput label="Allowed Levels" sx={{ borderRadius: '12px' }} />}
                     renderValue={(selected) => selected.join(', ')}
                   >
                     {LEVEL_OPTIONS.map((lvl) => (
@@ -502,6 +525,7 @@ export default function CentralEventTypesPage() {
                 label="Sort Order"
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value)}
+                InputProps={{ sx: { borderRadius: '12px' } }}
               />
 
               <FormControlLabel
@@ -517,8 +541,8 @@ export default function CentralEventTypesPage() {
             </Stack>
           </DialogContent>
           <DialogActions sx={{ p: 2.5 }}>
-            <Button onClick={() => setOpenModal(false)}>Cancel</Button>
-            <Button variant="contained" type="submit" disabled={submitting}>
+            <Button onClick={() => setOpenModal(false)} sx={{ borderRadius: '10px' }}>Cancel</Button>
+            <Button variant="contained" type="submit" disabled={submitting} sx={{ borderRadius: '10px', px: 3 }}>
               {submitting ? <CircularProgress size={24} /> : editingItem ? 'Update Type' : 'Create Type'}
             </Button>
           </DialogActions>
@@ -526,20 +550,20 @@ export default function CentralEventTypesPage() {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={!!deleteConfirmId} onClose={() => setDeleteConfirmId(null)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+      <Dialog open={!!deleteConfirmId} onClose={() => setDeleteConfirmId(null)} PaperProps={{ sx: { borderRadius: '16px' } }}>
+        <DialogTitle sx={{ fontWeight: 700 }}>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography variant="body1">
             Are you sure you want to delete this event type? This action cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setDeleteConfirmId(null)}>Cancel</Button>
-          <Button variant="contained" color="error" onClick={handleDelete}>
+          <Button onClick={() => setDeleteConfirmId(null)} sx={{ borderRadius: '10px' }}>Cancel</Button>
+          <Button variant="contained" color="error" onClick={handleDelete} sx={{ borderRadius: '10px' }}>
             Delete
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </PageContainer>
   );
 }

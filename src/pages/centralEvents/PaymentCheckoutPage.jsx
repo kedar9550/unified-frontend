@@ -1,16 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Container,
   Typography,
   Paper,
   Button,
   CircularProgress,
-  Alert,
-  Card,
-  CardContent,
   Divider,
-  Stack,
   Chip
 } from '@mui/material';
 import {
@@ -21,6 +16,8 @@ import {
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getPaymentSession, verifyPaymentSignature, getRegistrationById } from '../../api/centralEventsApi';
+import { PageHeader } from '../../components/common';
+import PageContainer from '../../components/common/design-system/PageContainer';
 import { toast } from 'sonner';
 
 const loadRazorpayScript = () => {
@@ -154,8 +151,8 @@ export default function PaymentCheckoutPage() {
 
   if (isExpired || errorMsg) {
     return (
-      <Container maxWidth="sm" sx={{ py: 8 }}>
-        <Paper elevation={3} sx={{ p: 4, borderRadius: 3, textAlign: 'center' }}>
+      <PageContainer maxWidth="sm" px={3} py={6}>
+        <Paper elevation={0} sx={{ p: 4, borderRadius: '18px', textAlign: 'center', border: '1px solid var(--border-color)', background: 'var(--bg-paper)' }}>
           <ErrorIcon color="error" sx={{ fontSize: 64, mb: 2 }} />
           <Typography variant="h5" fontWeight={700} gutterBottom>
             {isExpired ? 'Payment Link Expired' : 'Unable to Process Payment'}
@@ -167,19 +164,19 @@ export default function PaymentCheckoutPage() {
             variant="contained"
             startIcon={<ArrowBackIcon />}
             onClick={() => navigate('/central-events')}
-            sx={{ mt: 2, borderRadius: 2 }}
+            sx={{ mt: 2, borderRadius: '12px', textTransform: 'none', px: 3 }}
           >
             Return to Central Events
           </Button>
         </Paper>
-      </Container>
+      </PageContainer>
     );
   }
 
   if (isConfirmed) {
     return (
-      <Container maxWidth="sm" sx={{ py: 8 }}>
-        <Paper elevation={3} sx={{ p: 4, borderRadius: 3, textAlign: 'center' }}>
+      <PageContainer maxWidth="sm" px={3} py={6}>
+        <Paper elevation={0} sx={{ p: 4, borderRadius: '18px', textAlign: 'center', border: '1px solid var(--border-color)', background: 'var(--bg-paper)' }}>
           <CheckCircleIcon color="success" sx={{ fontSize: 72, mb: 2 }} />
           <Typography variant="h4" fontWeight={700} color="success.main" gutterBottom>
             Payment Confirmed!
@@ -189,12 +186,12 @@ export default function PaymentCheckoutPage() {
           </Typography>
 
           {registrationDetail && (
-            <Box sx={{ my: 3, p: 3, bg: '#f8f9fa', borderRadius: 2, textAlign: 'left' }}>
+            <Box sx={{ my: 3, p: 3, bgcolor: 'var(--bg-accent-1, #f8fafc)', borderRadius: '14px', textAlign: 'left', border: '1px solid var(--border-color)' }}>
               <Typography variant="subtitle2" color="text.secondary">Event Title</Typography>
               <Typography variant="h6" fontWeight={700} mb={1}>{registrationDetail.centralEventId?.title}</Typography>
 
               <Typography variant="subtitle2" color="text.secondary">Status</Typography>
-              <Chip label="CONFIRMED" color="success" size="small" sx={{ fontWeight: 700, mb: 1 }} />
+              <Chip label="CONFIRMED" color="success" size="small" sx={{ fontWeight: 700, mb: 1, borderRadius: '8px' }} />
 
               <Typography variant="subtitle2" color="text.secondary">Amount Paid</Typography>
               <Typography fontWeight={600}>₹{registrationDetail.payment?.amount / 100}</Typography>
@@ -204,25 +201,33 @@ export default function PaymentCheckoutPage() {
           <Button
             variant="contained"
             onClick={() => navigate('/central-events')}
-            sx={{ mt: 2, borderRadius: 2, px: 4 }}
+            sx={{ mt: 2, borderRadius: '12px', px: 4, textTransform: 'none', fontWeight: 700 }}
           >
             Explore More Events
           </Button>
         </Paper>
-      </Container>
+      </PageContainer>
     );
   }
 
   return (
-    <Container maxWidth="sm" sx={{ py: 8 }}>
-      <Paper elevation={3} sx={{ p: 4, borderRadius: 3, textAlign: 'center' }}>
+    <PageContainer maxWidth="sm" px={3} py={6}>
+      <PageHeader
+        title="Event Registration Checkout"
+        subtitle="Complete your payment securely via Razorpay to confirm your event seat"
+        icon={<CardIcon />}
+        showBack
+        backPath="/central-events"
+      />
+
+      <Paper elevation={0} sx={{ p: 4, borderRadius: '18px', textAlign: 'center', border: '1px solid var(--border-color)', background: 'var(--bg-paper)', boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}>
         <CardIcon color="primary" sx={{ fontSize: 56, mb: 2 }} />
 
-        <Typography variant="h4" fontWeight={700} gutterBottom>
-          Checkout Payment
+        <Typography variant="h5" fontWeight={700} gutterBottom>
+          Registration Checkout
         </Typography>
-        <Typography variant="body1" color="text.secondary" mb={3}>
-          Complete your payment securely via Razorpay to confirm your event seat.
+        <Typography variant="body2" color="text.secondary" mb={3}>
+          Click below to trigger Razorpay secure payment processing.
         </Typography>
 
         <Divider sx={{ my: 2 }} />
@@ -250,12 +255,20 @@ export default function PaymentCheckoutPage() {
             size="large"
             fullWidth
             onClick={handleOpenCheckout}
-            sx={{ py: 1.8, borderRadius: 3, fontSize: '1.1rem', fontWeight: 700 }}
+            sx={{
+              py: 1.8,
+              borderRadius: '12px',
+              fontSize: '1.1rem',
+              fontWeight: 700,
+              textTransform: 'none',
+              background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
+              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
+            }}
           >
             Pay ₹{sessionData.amount / 100} with Razorpay
           </Button>
         )}
       </Paper>
-    </Container>
+    </PageContainer>
   );
 }

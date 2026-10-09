@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Container,
   Typography,
-  Paper,
   Grid,
   TextField,
   MenuItem,
@@ -12,34 +10,38 @@ import {
   InputLabel,
   Select,
   Stack,
-  Divider,
   CircularProgress,
   IconButton,
   Card,
   CardContent,
-  InputAdornment,
-  FormHelperText,
-  Chip
+  InputAdornment
 } from '@mui/material';
 import {
-  ArrowBack as ArrowBackIcon,
   CloudUpload as UploadIcon,
   Delete as DeleteIcon,
   Category as CategoryIcon,
+  Folder as FolderIcon,
   Event as EventIcon,
   Schedule as ScheduleIcon,
   Payments as PaymentsIcon,
   Description as DescriptionIcon,
-  Groups as GroupsIcon,
   LocationOn as LocationIcon,
-  CheckCircle as CheckCircleIcon
+  CheckCircle as CheckCircleIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { getEventTypes, getCategoriesByTypeCode, getOrganizers, createCentralEvent, uploadCentralEventFile } from '../../api/centralEventsApi';
+import { PageHeader, CustomTabs } from '../../components/common';
+import PageContainer from '../../components/common/design-system/PageContainer';
 import { toast } from 'sonner';
 
 export default function CentralEventCreatePage() {
   const navigate = useNavigate();
+  const { user, activeRole } = useAuth();
+
+  const userRoles = (user?.roles || []).map(r => (typeof r === 'string' ? r : (r.role?.key || r.role?.name || r.role || '')).toUpperCase());
+  const isGlobalAdmin = userRoles.includes('GLOBAL_EVENT_ADMIN') || userRoles.includes('SUPER_ADMIN') || activeRole?.toUpperCase() === 'GLOBAL_EVENT_ADMIN';
 
   const [types, setTypes] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -73,6 +75,14 @@ export default function CentralEventCreatePage() {
   // Uploaded Files
   const [banner, setBanner] = useState(null);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+
+  // Navigation Tabs
+  const navTabs = [
+    { key: 'all', label: 'All Central Events', icon: <EventIcon />, path: '/central-events' },
+    { key: 'types', label: 'Event Types', icon: <CategoryIcon />, path: '/central-events/types' },
+    { key: 'categories', label: 'Event Categories', icon: <FolderIcon />, path: '/central-events/categories' },
+    ...(isGlobalAdmin ? [{ key: 'create', label: 'Create Event', icon: <AddIcon />, path: '/central-events/create' }] : [])
+  ];
 
   useEffect(() => {
     const fetchMasterData = async () => {
@@ -193,45 +203,29 @@ export default function CentralEventCreatePage() {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Top Header */}
-      <Box sx={{ mb: 4 }}>
-        <Button
-          startIcon={<ArrowBackIcon />}
-          onClick={() => navigate('/central-events')}
-          sx={{ mb: 2, textTransform: 'none', color: 'text.secondary', fontWeight: 600 }}
-        >
-          Back to Central Events
-        </Button>
+    <PageContainer maxWidth="lg" px={3} py={3}>
+      {/* Standard Page Header */}
+      <PageHeader
+        title="Create New Central Event"
+        subtitle="Configure event hierarchy, target levels, schedule timelines, participation rules, and fee parameters."
+        icon={<EventIcon />}
+        showBack
+        backPath="/central-events"
+      />
 
-        <Paper
-          elevation={0}
-          sx={{
-            p: 4,
-            borderRadius: 3,
-            background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
-            color: 'white',
-            boxShadow: '0 10px 25px -5px rgba(30, 58, 138, 0.3)'
-          }}
-        >
-          <Box display="flex" alignItems="center" gap={2} mb={1}>
-            <EventIcon sx={{ fontSize: 36, opacity: 0.9 }} />
-            <Typography variant="h4" fontWeight={700}>
-              Create New Central Event
-            </Typography>
-          </Box>
-          <Typography variant="body1" sx={{ opacity: 0.9, maxW: '750px' }}>
-            Configure event hierarchy, target levels, schedule timelines, participation rules, and fee parameters.
-          </Typography>
-        </Paper>
-      </Box>
+      {/* Module Navigation Custom Tabs */}
+      <CustomTabs
+        tabs={navTabs}
+        value={navTabs.findIndex(t => t.key === 'create')}
+        onChange={(e, val) => navigate(navTabs[val].path)}
+      />
 
       <form onSubmit={handleSubmit}>
-        <Stack spacing={4}>
+        <Stack spacing={3.5}>
 
           {/* Section 1: Classification & Scope */}
-          <Card elevation={1} sx={{ borderRadius: 3, border: '1px solid #e2e8f0' }}>
-            <CardContent sx={{ p: 3 }}>
+          <Card elevation={0} sx={{ borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)' }}>
+            <CardContent sx={{ p: 3.5 }}>
               <Box display="flex" alignItems="center" gap={1.5} mb={3}>
                 <CategoryIcon color="primary" />
                 <Typography variant="h6" fontWeight={700}>
@@ -242,13 +236,14 @@ export default function CentralEventCreatePage() {
               <Grid container spacing={3}>
                 {/* Event Type */}
                 <Grid item xs={12} md={selectedTypeObj?.hasCategories ? 6 : 12}>
-                  <FormControl fullWidth required sx={{ minWidth: 220 }}>
+                  <FormControl fullWidth required>
                     <InputLabel id="event-type-label">Event Type</InputLabel>
                     <Select
                       labelId="event-type-label"
                       value={typeCode}
                       label="Event Type"
                       onChange={(e) => handleTypeChange(e.target.value)}
+                      sx={{ borderRadius: '12px' }}
                     >
                       {types.map((t) => (
                         <MenuItem key={t.code} value={t.code}>
@@ -262,13 +257,14 @@ export default function CentralEventCreatePage() {
                 {/* Category */}
                 {selectedTypeObj?.hasCategories && (
                   <Grid item xs={12} md={6}>
-                    <FormControl fullWidth required sx={{ minWidth: 220 }}>
+                    <FormControl fullWidth required>
                       <InputLabel id="category-label">Category</InputLabel>
                       <Select
                         labelId="category-label"
                         value={categoryId}
                         label="Category"
                         onChange={(e) => setCategoryId(e.target.value)}
+                        sx={{ borderRadius: '12px' }}
                       >
                         {categories.map((c) => (
                           <MenuItem key={c._id} value={c._id}>
@@ -284,7 +280,7 @@ export default function CentralEventCreatePage() {
                 {selectedTypeObj?.hasLevels && (
                   <>
                     <Grid item xs={12} sm={4}>
-                      <FormControl fullWidth required sx={{ minWidth: 180 }}>
+                      <FormControl fullWidth required>
                         <InputLabel id="target-level-label">Target Level</InputLabel>
                         <Select
                           labelId="target-level-label"
@@ -294,6 +290,7 @@ export default function CentralEventCreatePage() {
                             setLevel(e.target.value);
                             setActivityType('');
                           }}
+                          sx={{ borderRadius: '12px' }}
                         >
                           <MenuItem value="STUDENT">Student Level</MenuItem>
                           <MenuItem value="FACULTY">Faculty Level</MenuItem>
@@ -302,13 +299,14 @@ export default function CentralEventCreatePage() {
                     </Grid>
 
                     <Grid item xs={12} sm={4}>
-                      <FormControl fullWidth required sx={{ minWidth: 180 }}>
+                      <FormControl fullWidth required>
                         <InputLabel id="activity-type-label">Activity Type</InputLabel>
                         <Select
                           labelId="activity-type-label"
                           value={activityType}
                           label="Activity Type"
                           onChange={(e) => setActivityType(e.target.value)}
+                          sx={{ borderRadius: '12px' }}
                         >
                           <MenuItem value="WORKSHOP">Workshop</MenuItem>
                           <MenuItem value="SEMINAR">Seminar / Orientation</MenuItem>
@@ -319,13 +317,14 @@ export default function CentralEventCreatePage() {
                     </Grid>
 
                     <Grid item xs={12} sm={4}>
-                      <FormControl fullWidth required sx={{ minWidth: 180 }}>
+                      <FormControl fullWidth required>
                         <InputLabel id="organizer-label">Organizer</InputLabel>
                         <Select
                           labelId="organizer-label"
                           value={organizerId}
                           label="Organizer"
                           onChange={(e) => setOrganizerId(e.target.value)}
+                          sx={{ borderRadius: '12px' }}
                         >
                           {organizers.map((o) => (
                             <MenuItem key={o._id} value={o._id}>
@@ -342,8 +341,8 @@ export default function CentralEventCreatePage() {
           </Card>
 
           {/* Section 2: General Details & Venue */}
-          <Card elevation={1} sx={{ borderRadius: 3, border: '1px solid #e2e8f0' }}>
-            <CardContent sx={{ p: 3 }}>
+          <Card elevation={0} sx={{ borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)' }}>
+            <CardContent sx={{ p: 3.5 }}>
               <Box display="flex" alignItems="center" gap={1.5} mb={3}>
                 <DescriptionIcon color="primary" />
                 <Typography variant="h6" fontWeight={700}>
@@ -360,6 +359,7 @@ export default function CentralEventCreatePage() {
                     placeholder="e.g. National Level Coding Hackathon 2026"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
+                    InputProps={{ sx: { borderRadius: '12px' } }}
                   />
                 </Grid>
 
@@ -373,17 +373,19 @@ export default function CentralEventCreatePage() {
                     placeholder="Detailed overview of the event, objective, guidelines, and highlights..."
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
+                    InputProps={{ sx: { borderRadius: '12px' } }}
                   />
                 </Grid>
 
                 <Grid item xs={12} sm={5}>
-                  <FormControl fullWidth required sx={{ minWidth: 180 }}>
+                  <FormControl fullWidth required>
                     <InputLabel id="mode-label">Event Mode</InputLabel>
                     <Select
                       labelId="mode-label"
                       value={mode}
                       label="Event Mode"
                       onChange={(e) => setMode(e.target.value)}
+                      sx={{ borderRadius: '12px' }}
                     >
                       <MenuItem value="OFFLINE">Offline (On Campus)</MenuItem>
                       <MenuItem value="ONLINE">Online (Virtual)</MenuItem>
@@ -404,7 +406,8 @@ export default function CentralEventCreatePage() {
                         <InputAdornment position="start">
                           <LocationIcon color="action" />
                         </InputAdornment>
-                      )
+                      ),
+                      sx: { borderRadius: '12px' }
                     }}
                   />
                 </Grid>
@@ -413,8 +416,8 @@ export default function CentralEventCreatePage() {
           </Card>
 
           {/* Section 3: Schedule Timeline */}
-          <Card elevation={1} sx={{ borderRadius: 3, border: '1px solid #e2e8f0' }}>
-            <CardContent sx={{ p: 3 }}>
+          <Card elevation={0} sx={{ borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)' }}>
+            <CardContent sx={{ p: 3.5 }}>
               <Box display="flex" alignItems="center" gap={1.5} mb={3}>
                 <ScheduleIcon color="primary" />
                 <Typography variant="h6" fontWeight={700}>
@@ -433,6 +436,7 @@ export default function CentralEventCreatePage() {
                     value={fromDate}
                     onChange={(e) => setFromDate(e.target.value)}
                     helperText="Event start date & time"
+                    InputProps={{ sx: { borderRadius: '12px' } }}
                   />
                 </Grid>
 
@@ -446,6 +450,7 @@ export default function CentralEventCreatePage() {
                     value={toDate}
                     onChange={(e) => setToDate(e.target.value)}
                     helperText="Event conclusion date & time"
+                    InputProps={{ sx: { borderRadius: '12px' } }}
                   />
                 </Grid>
 
@@ -459,6 +464,7 @@ export default function CentralEventCreatePage() {
                     value={regDeadline}
                     onChange={(e) => setRegDeadline(e.target.value)}
                     helperText="Last date & time for registrations"
+                    InputProps={{ sx: { borderRadius: '12px' } }}
                   />
                 </Grid>
               </Grid>
@@ -466,8 +472,8 @@ export default function CentralEventCreatePage() {
           </Card>
 
           {/* Section 4: Participation, Fee & Capacity */}
-          <Card elevation={1} sx={{ borderRadius: 3, border: '1px solid #e2e8f0' }}>
-            <CardContent sx={{ p: 3 }}>
+          <Card elevation={0} sx={{ borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)' }}>
+            <CardContent sx={{ p: 3.5 }}>
               <Box display="flex" alignItems="center" gap={1.5} mb={3}>
                 <PaymentsIcon color="primary" />
                 <Typography variant="h6" fontWeight={700}>
@@ -485,7 +491,8 @@ export default function CentralEventCreatePage() {
                     value={feeRupees}
                     onChange={(e) => setFeeRupees(e.target.value)}
                     InputProps={{
-                      startAdornment: <InputAdornment position="start">₹</InputAdornment>
+                      startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                      sx: { borderRadius: '12px' }
                     }}
                     helperText="Enter 0 for Free Events"
                   />
@@ -500,6 +507,7 @@ export default function CentralEventCreatePage() {
                     value={capacity}
                     onChange={(e) => setCapacity(e.target.value)}
                     helperText="Max registrations allowed"
+                    InputProps={{ sx: { borderRadius: '12px' } }}
                   />
                 </Grid>
 
@@ -511,6 +519,7 @@ export default function CentralEventCreatePage() {
                       value={participationType}
                       label="Participation Type"
                       onChange={(e) => setParticipationType(e.target.value)}
+                      sx={{ borderRadius: '12px' }}
                     >
                       <MenuItem value="SINGLE">Individual Only</MenuItem>
                       <MenuItem value="TEAM">Team Participation</MenuItem>
@@ -528,6 +537,7 @@ export default function CentralEventCreatePage() {
                         label="Min Team Size"
                         value={minTeamSize}
                         onChange={(e) => setMinTeamSize(e.target.value)}
+                        InputProps={{ sx: { borderRadius: '12px' } }}
                       />
                     </Grid>
                     <Grid item xs={12} sm={6}>
@@ -538,6 +548,7 @@ export default function CentralEventCreatePage() {
                         label="Max Team Size"
                         value={maxTeamSize}
                         onChange={(e) => setMaxTeamSize(e.target.value)}
+                        InputProps={{ sx: { borderRadius: '12px' } }}
                       />
                     </Grid>
                   </>
@@ -547,8 +558,8 @@ export default function CentralEventCreatePage() {
           </Card>
 
           {/* Section 5: Media & Rules */}
-          <Card elevation={1} sx={{ borderRadius: 3, border: '1px solid #e2e8f0' }}>
-            <CardContent sx={{ p: 3 }}>
+          <Card elevation={0} sx={{ borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)' }}>
+            <CardContent sx={{ p: 3.5 }}>
               <Box display="flex" alignItems="center" gap={1.5} mb={3}>
                 <UploadIcon color="primary" />
                 <Typography variant="h6" fontWeight={700}>
@@ -567,6 +578,7 @@ export default function CentralEventCreatePage() {
                     value={rulesText}
                     onChange={(e) => setRulesText(e.target.value)}
                     helperText="Enter each rule on a new line"
+                    InputProps={{ sx: { borderRadius: '12px' } }}
                   />
                 </Grid>
 
@@ -580,6 +592,7 @@ export default function CentralEventCreatePage() {
                     value={outcomesText}
                     onChange={(e) => setOutcomesText(e.target.value)}
                     helperText="Enter each outcome on a new line"
+                    InputProps={{ sx: { borderRadius: '12px' } }}
                   />
                 </Grid>
 
@@ -594,18 +607,18 @@ export default function CentralEventCreatePage() {
                       component="label"
                       startIcon={<UploadIcon />}
                       disabled={uploadingBanner}
-                      sx={{ borderRadius: 2, px: 3, py: 1.2, textTransform: 'none', fontWeight: 600 }}
+                      sx={{ borderRadius: '12px', px: 3, py: 1.2, textTransform: 'none', fontWeight: 600 }}
                     >
                       {uploadingBanner ? 'Uploading...' : 'Upload Banner'}
                       <input type="file" hidden accept="image/*" onChange={handleBannerUpload} />
                     </Button>
 
                     {banner && (
-                      <Card variant="outlined" sx={{ display: 'flex', alignItems: 'center', p: 1, borderRadius: 2 }}>
+                      <Card variant="outlined" sx={{ display: 'flex', alignItems: 'center', p: 1, borderRadius: '12px' }}>
                         <img
                           src={banner.url}
                           alt="Banner Preview"
-                          style={{ width: 100, height: 60, objectFit: 'cover', borderRadius: 6, marginRight: 12 }}
+                          style={{ width: 100, height: 60, objectFit: 'cover', borderRadius: 8, marginRight: 12 }}
                         />
                         <Box mr={2}>
                           <Typography variant="body2" fontWeight={600} noWrap sx={{ maxWidth: 200 }}>
@@ -632,7 +645,7 @@ export default function CentralEventCreatePage() {
               variant="outlined"
               size="large"
               onClick={() => navigate('/central-events')}
-              sx={{ borderRadius: 2.5, px: 4, py: 1.2, textTransform: 'none', fontWeight: 600 }}
+              sx={{ borderRadius: '12px', px: 4, py: 1.2, textTransform: 'none', fontWeight: 600 }}
             >
               Cancel
             </Button>
@@ -643,7 +656,7 @@ export default function CentralEventCreatePage() {
               disabled={submitting}
               startIcon={submitting ? null : <CheckCircleIcon />}
               sx={{
-                borderRadius: 2.5,
+                borderRadius: '12px',
                 px: 5,
                 py: 1.2,
                 textTransform: 'none',
@@ -659,6 +672,6 @@ export default function CentralEventCreatePage() {
 
         </Stack>
       </form>
-    </Container>
+    </PageContainer>
   );
 }
