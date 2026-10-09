@@ -43,8 +43,8 @@ export default function PatentPublication() {
 
   const [form, setForm] = useState({
     facultyRole: "", applicantAffiliation: "",
-    title: "", applicantName: "", patentName: "Aditya University", patentFiledInInstitution: "Yes", isUtilityType: "Yes", area: "", applicationNo: "", dateOfFiling: "",
-    status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "",
+    title: "", applicantName: "", patentName: "Aditya University", patentFiledInInstitution: "Yes", isUtilityType: "Yes", area: "", applicationnumber: "", dateOfFiling: "",
+    status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "", eligibleForTechTransfer: "No",
     patentFiledCountry: "", customCountryName: "",
     totalInventors: 1, otherInventors: [],
     publishedstatus: "no", publishedexpectedamount: "", publishedinsentiveampunt: "", publisheddate: "", publishedinsentiveappllieddate: "",
@@ -95,12 +95,13 @@ export default function PatentPublication() {
       patentFiledInInstitution: pub.patentFiledInInstitution || "Yes",
       isUtilityType: pub.isUtilityType || "Yes",
       area: pub.area || "",
-      applicationNo: pub.applicationNo || "",
+      applicationnumber: pub.applicationnumber || "",
       dateOfFiling: pub.dateOfFiling ? pub.dateOfFiling.split('T')[0] : "",
       status: pub.patentStatus || pub.status || "",
       isStudentsInvolved: pub.isStudentsInvolved || "No",
       applyIncentive: pub.applyIncentive || "",
       applyingSeedGrant: pub.applyingSeedGrant || "",
+      eligibleForTechTransfer: pub.eligibleForTechTransfer || "No",
       patentFiledCountry: pub.patentFiledCountry || "India",
       customCountryName: "",
       totalInventors: pub.totalInventors || 1,
@@ -254,11 +255,11 @@ export default function PatentPublication() {
       toast.error("Please provide the Name of the Applicant and Applicant Affiliation");
       return;
     }
-    if (!form.title || !form.applicationNo || (form.status !== 'Granted' && !form.dateOfFiling)) {
+    if (!form.title || !form.applicationnumber || (form.status !== 'Granted' && !form.dateOfFiling)) {
       toast.error("Please fill all required fields");
       return;
     }
-    if (!/^[A-Za-z0-9\/.-]+$/.test(form.applicationNo)) {
+    if (!/^[A-Za-z0-9\/.-]+$/.test(form.applicationnumber)) {
       toast.error("Patent Application No can only contain letters, numbers, '/', '.', and '-'");
       return;
     }
@@ -342,7 +343,7 @@ export default function PatentPublication() {
       fd.append("patentFiledInInstitution", form.patentFiledInInstitution || "Yes");
       fd.append("isUtilityType", form.isUtilityType || "Yes");
       fd.append("area", form.area);
-      fd.append("applicationNo", form.applicationNo);
+      fd.append("applicationnumber", form.applicationnumber);
       fd.append("dateOfFiling", form.dateOfFiling);
       fd.append("status", form.status);
       fd.append("patentFiledCountry", form.patentFiledCountry === 'Others' ? form.customCountryName : form.patentFiledCountry);
@@ -351,6 +352,7 @@ export default function PatentPublication() {
       const applyIncentive = parseInt(form.userInventorPosition || 1) > 5 ? "No" : form.applyIncentive;
       fd.append("applyIncentive", applyIncentive);
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
+      fd.append("eligibleForTechTransfer", form.eligibleForTechTransfer || "No");
       const total = form.otherInventors.length + 1;
       fd.append("totalInventors", String(total));
 
@@ -386,7 +388,7 @@ export default function PatentPublication() {
         toast.success("Patent submitted successfully!");
       }
 
-      setForm({ facultyRole: "", applicantAffiliation: "", title: "", applicantName: user?.name || "", patentName: "Aditya University", patentFiledInInstitution: "Yes", isUtilityType: "Yes", area: "", applicationNo: "", dateOfFiling: "", status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "", patentFiledCountry: "", customCountryName: "", totalInventors: 1, otherInventors: [], publishedstatus: "no", publishedexpectedamount: "", publishedinsentiveampunt: "", publisheddate: "", publishedinsentiveappllieddate: "", grantedstatus: "no", grantedexpectedamount: "", grantedinsentiveampunt: "", granteddate: "", grantedinsentiveappllieddate: "" });
+      setForm({ facultyRole: "", applicantAffiliation: "", title: "", applicantName: user?.name || "", patentName: "Aditya University", patentFiledInInstitution: "Yes", isUtilityType: "Yes", area: "", applicationnumber: "", dateOfFiling: "", status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "", eligibleForTechTransfer: "No", patentFiledCountry: "", customCountryName: "", totalInventors: 1, otherInventors: [], publishedstatus: "no", publishedexpectedamount: "", publishedinsentiveampunt: "", publisheddate: "", publishedinsentiveappllieddate: "", grantedstatus: "no", grantedexpectedamount: "", grantedinsentiveampunt: "", granteddate: "", grantedinsentiveappllieddate: "" });
       setFiles({ eFilingReceipt: null, form1: null, grantedCertificate: null });
       setExistingFiles({ eFilingReceipt: null, form1: null, grantedCertificate: null });
       setDeleteFlags({ eFilingReceipt: false, form1: false, grantedCertificate: false });
@@ -481,7 +483,7 @@ export default function PatentPublication() {
                 <TableRow key={pub._id || i} sx={{ "&:hover": { background: "rgba(var(--color-primary-rgb, 99,102,241), 0.04)", transition: "background 0.2s" } }}>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.title || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.area || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.applicationNo || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.applicationnumber || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {pub.facultyId?.name || "N/A"}
@@ -537,7 +539,7 @@ export default function PatentPublication() {
                               textOverflow: "ellipsis"
                             }}
                           >
-                            <span>💬</span> "{pub.rndComment || pub.hodComment}"
+                            <span>ð¬</span> "{pub.rndComment || pub.hodComment}"
                           </Typography>
                         </Tooltip>
                       )}
@@ -797,12 +799,12 @@ export default function PatentPublication() {
           <TextField
             size="small"
             fullWidth
-            value={form.applicationNo}
+            value={form.applicationnumber}
             onChange={(e) => {
               const val = e.target.value;
               // Allow only letters, numbers, '/', '.', '-'
               if (val === "" || /^[A-Za-z0-9\/.-]+$/.test(val)) {
-                setForm(p => ({ ...p, applicationNo: val }));
+                setForm(p => ({ ...p, applicationnumber: val }));
               }
             }}
             placeholder="e.g. 202341012345"
@@ -841,30 +843,31 @@ export default function PatentPublication() {
             <TextField size="small" fullWidth value={form.customCountryName} onChange={set("customCountryName")} placeholder="e.g., USA, UK" />
           </Box>
         )}
-        {form.otherInventors.length === 0 && (
-          <Box sx={{ gridColumn: { sm: "1 / -1" }, mt: 1 }}>
-            <Button 
-              variant="outlined" 
-              size="small" 
-              onClick={handleAddInventor} 
-              sx={{ textTransform: "none", fontWeight: 600, borderRadius: "8px", color: "var(--color-primary)", borderColor: "var(--color-primary)", "&:hover": { background: "var(--bg-accent-1)" } }}
+        <Box sx={{ gridColumn: { sm: "1 / -1" }, display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
+          <Typography sx={{ ...labelStyle, mb: 0, fontSize: 14, color: "var(--text-primary)", fontWeight: 700, textTransform: "uppercase" }}>Co-Inventor(s) Details (if any):</Typography>
+          {form.otherInventors.length === 0 && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleAddInventor}
+              sx={{ textTransform: "none", fontWeight: 700, borderRadius: "8px", color: "var(--color-primary)", borderColor: "var(--color-primary)", "&:hover": { background: "var(--bg-accent-1)" } }}
             >
-              + Add inventor/co-inventor details
+              + Add inventor / co-inventor details
             </Button>
-          </Box>
-        )}
+          )}
+        </Box>
 
         {form.otherInventors.length > 0 && (
-          <Box sx={{ gridColumn: { sm: "1 / -1" }, mt: 2, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)" }}>
+          <Box sx={{ gridColumn: { sm: "1 / -1" }, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)" }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-              <Typography sx={{ ...labelStyle, mb: 0, fontWeight: 700 }}>Name & affiliation of Co-Inventor(s) :</Typography>
+              <Typography sx={{ ...labelStyle, mb: 0, fontWeight: 700, color: "var(--text-primary)", fontSize: "12px", textTransform: "uppercase" }}>Name & affiliation of Co-Inventor(s) :</Typography>
               <Button 
                 variant="outlined" 
                 size="small" 
                 onClick={handleAddInventor} 
-                sx={{ textTransform: "none", fontWeight: 600, borderRadius: "8px", color: "var(--color-primary)", borderColor: "var(--color-primary)", "&:hover": { background: "var(--bg-accent-1)" } }}
+                sx={{ textTransform: "none", fontWeight: 700, borderRadius: "8px", color: "var(--color-primary)", borderColor: "var(--color-primary)", "&:hover": { background: "var(--bg-accent-1)" } }}
               >
-                + Add inventor/co-inventor details
+                + Add More
               </Button>
             </Box>
             {form.otherInventors.map((ca) => (
@@ -1008,6 +1011,13 @@ export default function PatentPublication() {
           </Select>
         </Box>
         <Box sx={{ mt: 1 }}>
+          <Typography sx={labelStyle}>Eligible for Technology Transfer?</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.eligibleForTechTransfer} onChange={set("eligibleForTechTransfer")}>
+            <MenuItem value="Yes">Yes</MenuItem>
+            <MenuItem value="No">No</MenuItem>
+          </Select>
+        </Box>
+        <Box sx={{ mt: 1 }}>
           {(() => {
             const isPositionGreaterThan5 = parseInt(form.userInventorPosition || 1) > 5;
             const disableIncentive = isPositionGreaterThan5;
@@ -1055,7 +1065,7 @@ export default function PatentPublication() {
                     Estimated Research Incentive Amount
                   </Typography>
                   <Typography sx={{ fontSize: "1.6rem", fontWeight: 800, color: "#047857", mt: 0.5 }}>
-                    ₹{amount.toLocaleString('en-IN')}
+                    â¹{amount.toLocaleString('en-IN')}
                   </Typography>
                 </Box>
               </Box>
@@ -1333,14 +1343,14 @@ export default function PatentPublication() {
                     { label: "Filed in Institution Name", value: data.patentFiledInInstitution || "Yes", icon: <AccountBalanceIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Name of Applicant in Patent", value: data.patentName || "-", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Area of Patent", value: data.area || "-", icon: <CategoryIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    { label: "Patent Application No", value: data.applicationNo || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Patent Application No", value: data.applicationnumber || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Date of Filing", value: formatDate(data.dateOfFiling), icon: <CalendarTodayIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Patent Application Status", value: data.patentStatus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Filed Country", value: data.patentFiledCountry || "India", icon: <PublicIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Role", value: data.visibilityRole || "Applicant", icon: <PersonIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Seed Grant Work", value: data.applyingSeedGrant === "Yes" ? "Yes" : "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Apply For Incentive", value: data.applyIncentive === "Yes" ? "Yes" : "No", icon: <CardGiftcardIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    ...(data.status === "Approved" && data.approvedAmount ? [{ label: "Approved Incentive Amount", value: `₹${data.approvedAmount}`, icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "#2e7d32" }} /> }] : [])
+                    ...(data.status === "Approved" && data.approvedAmount ? [{ label: "Approved Incentive Amount", value: `â¹${data.approvedAmount}`, icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "#2e7d32" }} /> }] : [])
                   ].map((item, idx, arr) => (
                     <Box
                       key={idx}
@@ -1578,7 +1588,7 @@ export default function PatentPublication() {
                   )}
                   {data.approvedAmount && (
                     <Typography variant="h6" sx={{ mt: data.rndComment ? 2 : 0, fontWeight: 900, color: "#10b981" }}>
-                      Approved Amount: ₹{data.approvedAmount}
+                      Approved Amount: â¹{data.approvedAmount}
                     </Typography>
                   )}
                 </Box>
