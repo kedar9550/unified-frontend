@@ -59,6 +59,11 @@ export function FormInput({
   helperText,
   size = "medium",
   sx = {},
+  item,
+  justifyContent,
+  alignItems,
+  minHeight,
+  flexWrap,
   ...props
 }) {
   return (
@@ -109,6 +114,11 @@ export function FormSelect({
   options = [], // Array of { label, value } or string
   size = "medium",
   sx = {},
+  item,
+  justifyContent,
+  alignItems,
+  minHeight,
+  flexWrap,
   ...props
 }) {
   return (

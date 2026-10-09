@@ -8,6 +8,13 @@ export default function CustomTabs({
   onChange,
   variant,
   sx = {},
+  item,
+  justifyContent,
+  alignItems,
+  minHeight,
+  flexWrap,
+  InputProps,
+  InputLabelProps,
   ...props
 }) {
   return (

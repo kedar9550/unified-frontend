@@ -126,9 +126,11 @@ export default function FieldRenderer({
 
   const isReadOnly = field.readOnly || Boolean(field.calc);
 
+  const inputStyle = { borderRadius: '12px' };
+
   return (
     <Box sx={{ gridColumn: field.fullWidth ? '1 / -1' : 'span 1' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.8 }}>
         <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
           {field.label} {field.required && <span style={{ color: '#d32f2f' }}>*</span>}
         </Typography>
@@ -139,7 +141,7 @@ export default function FieldRenderer({
             size="small"
             color="primary"
             variant="outlined"
-            sx={{ height: 20, fontSize: '0.65rem' }}
+            sx={{ height: 20, fontSize: '0.65rem', borderRadius: '6px' }}
           />
         )}
       </Box>
@@ -154,6 +156,7 @@ export default function FieldRenderer({
           error={Boolean(error)}
           helperText={error}
           disabled={isReadOnly}
+          InputProps={{ sx: inputStyle }}
         >
           <MenuItem value="">
             <em>-- Select {field.label} --</em>
@@ -176,6 +179,7 @@ export default function FieldRenderer({
           error={Boolean(error)}
           helperText={error}
           disabled={isReadOnly}
+          InputProps={{ sx: inputStyle }}
         />
       ) : field.type === 'date' ? (
         <TextField
@@ -188,6 +192,7 @@ export default function FieldRenderer({
           error={Boolean(error)}
           helperText={error}
           disabled={isReadOnly}
+          InputProps={{ sx: inputStyle }}
         />
       ) : field.type === 'month' ? (
         <TextField
@@ -201,6 +206,7 @@ export default function FieldRenderer({
           error={Boolean(error)}
           helperText={error}
           disabled={isReadOnly}
+          InputProps={{ sx: inputStyle }}
         />
       ) : (
         <TextField
@@ -213,6 +219,7 @@ export default function FieldRenderer({
           error={Boolean(error)}
           helperText={error}
           disabled={isReadOnly}
+          InputProps={{ sx: inputStyle }}
           slotProps={{
             htmlInput: {
               min: field.min,

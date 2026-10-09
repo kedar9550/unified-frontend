@@ -183,7 +183,17 @@ export default function FormTypesManagement({ onFormTypesUpdated }) {
   return (
     <Box>
       {/* Overview Cards & Header */}
-      <Paper sx={{ p: 3, mb: 3, borderRadius: 3 }}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          mb: 3,
+          borderRadius: '18px',
+          border: '1px solid var(--border-color)',
+          background: 'var(--bg-paper)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.04)'
+        }}
+      >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
@@ -200,20 +210,27 @@ export default function FormTypesManagement({ onFormTypesUpdated }) {
               label={`${activeCount} Active`}
               color="success"
               variant="outlined"
-              sx={{ fontWeight: 600 }}
+              sx={{ fontWeight: 600, borderRadius: '8px' }}
             />
             <Chip
               icon={<XCircle size={14} />}
               label={`${inactiveCount} Inactive`}
               color="default"
               variant="outlined"
-              sx={{ fontWeight: 600 }}
+              sx={{ fontWeight: 600, borderRadius: '8px' }}
             />
             <Button
               variant="contained"
               startIcon={<Plus size={18} />}
               onClick={handleOpenAddDialog}
-              sx={{ borderRadius: 2, px: 3 }}
+              sx={{
+                borderRadius: '12px',
+                px: 3,
+                textTransform: 'none',
+                fontWeight: 700,
+                background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
+                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+              }}
             >
               Add Form Type
             </Button>
@@ -222,7 +239,17 @@ export default function FormTypesManagement({ onFormTypesUpdated }) {
       </Paper>
 
       {/* Filters Bar */}
-      <Paper sx={{ p: 2, mb: 3, borderRadius: 2 }}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: 2.5,
+          mb: 3,
+          borderRadius: '16px',
+          border: '1px solid var(--border-color)',
+          background: 'var(--bg-glass)',
+          backdropFilter: 'blur(10px)'
+        }}
+      >
         <Box
           sx={{
             display: 'grid',
@@ -243,6 +270,7 @@ export default function FormTypesManagement({ onFormTypesUpdated }) {
                   <Search size={16} />
                 </InputAdornment>
               ),
+              sx: { borderRadius: '12px', background: 'var(--bg-paper)' }
             }}
           />
 
@@ -252,6 +280,7 @@ export default function FormTypesManagement({ onFormTypesUpdated }) {
             label="Status Filter"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
+            InputProps={{ sx: { borderRadius: '12px', background: 'var(--bg-paper)' } }}
           >
             <MenuItem value="ALL">All Statuses ({formTypes.length})</MenuItem>
             <MenuItem value="ACTIVE">Active Only ({activeCount})</MenuItem>
@@ -264,6 +293,7 @@ export default function FormTypesManagement({ onFormTypesUpdated }) {
             label="Group Filter"
             value={groupFilter}
             onChange={(e) => setGroupFilter(e.target.value)}
+            InputProps={{ sx: { borderRadius: '12px', background: 'var(--bg-paper)' } }}
           >
             <MenuItem value="ALL">All Groups</MenuItem>
             {uniqueGroups.map((grp) => (
@@ -278,6 +308,7 @@ export default function FormTypesManagement({ onFormTypesUpdated }) {
             startIcon={<RefreshCw size={16} />}
             onClick={fetchFormTypes}
             disabled={loading}
+            sx={{ borderRadius: '10px', textTransform: 'none', height: 40 }}
           >
             Refresh
           </Button>
@@ -285,10 +316,19 @@ export default function FormTypesManagement({ onFormTypesUpdated }) {
       </Paper>
 
       {/* Table Data */}
-      <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+      <Paper
+        elevation={0}
+        sx={{
+          borderRadius: '18px',
+          overflow: 'hidden',
+          border: '1px solid var(--border-color)',
+          background: 'var(--bg-paper)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.04)'
+        }}
+      >
         <Box sx={{ overflowX: 'auto' }}>
           <Table size="small">
-            <TableHead sx={{ bgcolor: 'grey.100' }}>
+            <TableHead sx={{ bgcolor: 'var(--bg-accent-1, #f8fafc)' }}>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, width: 80 }}>Code</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Form Name</TableCell>
@@ -328,7 +368,7 @@ export default function FormTypesManagement({ onFormTypesUpdated }) {
                         size="small"
                         color={item.kind === 'activity' ? 'info' : 'default'}
                         variant="outlined"
-                        sx={{ textTransform: 'capitalize', fontSize: '0.75rem' }}
+                        sx={{ textTransform: 'capitalize', fontSize: '0.75rem', borderRadius: '6px' }}
                       />
                     </TableCell>
                     <TableCell align="center">
@@ -343,7 +383,7 @@ export default function FormTypesManagement({ onFormTypesUpdated }) {
                           label={item.is_active !== false ? 'Active' : 'Inactive'}
                           size="small"
                           color={item.is_active !== false ? 'success' : 'default'}
-                          sx={{ height: 22, fontSize: '0.7rem', fontWeight: 600 }}
+                          sx={{ height: 22, fontSize: '0.7rem', fontWeight: 600, borderRadius: '6px' }}
                         />
                       </Box>
                     </TableCell>
@@ -377,7 +417,7 @@ export default function FormTypesManagement({ onFormTypesUpdated }) {
       </Paper>
 
       {/* Create / Edit Dialog */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '18px', p: 1 } }}>
         <form onSubmit={handleSaveFormType}>
           <DialogTitle sx={{ fontWeight: 700 }}>
             {editingType ? `Edit Form Type [${editingType.code}]` : 'Add New Form Type'}
@@ -393,6 +433,7 @@ export default function FormTypesManagement({ onFormTypesUpdated }) {
                 onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                 disabled={Boolean(editingType)}
                 placeholder="e.g. 1.5 or 7.1"
+                InputProps={{ sx: { borderRadius: '12px' } }}
               />
 
               <TextField
@@ -403,6 +444,7 @@ export default function FormTypesManagement({ onFormTypesUpdated }) {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g. Special Project Grants"
+                InputProps={{ sx: { borderRadius: '12px' } }}
               />
 
               <TextField
@@ -413,6 +455,7 @@ export default function FormTypesManagement({ onFormTypesUpdated }) {
                 value={formData.group}
                 onChange={(e) => setFormData({ ...formData, group: e.target.value })}
                 placeholder="e.g. Form 1 – Admissions or Form 7 – Special"
+                InputProps={{ sx: { borderRadius: '12px' } }}
               />
 
               <TextField
@@ -423,6 +466,7 @@ export default function FormTypesManagement({ onFormTypesUpdated }) {
                 value={formData.collection}
                 onChange={(e) => setFormData({ ...formData, collection: e.target.value })}
                 placeholder="e.g. special_project_grants or academic_activities"
+                InputProps={{ sx: { borderRadius: '12px' } }}
               />
 
               <TextField
@@ -432,6 +476,7 @@ export default function FormTypesManagement({ onFormTypesUpdated }) {
                 size="small"
                 value={formData.kind}
                 onChange={(e) => setFormData({ ...formData, kind: e.target.value })}
+                InputProps={{ sx: { borderRadius: '12px' } }}
               >
                 <MenuItem value="separate">Separate Collection (Flat Document)</MenuItem>
                 <MenuItem value="activity">Shared Activity Storage (academic_activities)</MenuItem>
@@ -451,10 +496,10 @@ export default function FormTypesManagement({ onFormTypesUpdated }) {
             </Box>
           </DialogContent>
           <DialogActions sx={{ p: 2 }}>
-            <Button onClick={() => setDialogOpen(false)} disabled={saving}>
+            <Button onClick={() => setDialogOpen(false)} disabled={saving} sx={{ borderRadius: '10px' }}>
               Cancel
             </Button>
-            <Button type="submit" variant="contained" disabled={saving}>
+            <Button type="submit" variant="contained" disabled={saving} sx={{ borderRadius: '10px', px: 3 }}>
               {saving ? <CircularProgress size={18} /> : editingType ? 'Update' : 'Create'}
             </Button>
           </DialogActions>

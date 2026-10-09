@@ -193,8 +193,19 @@ export default function DynamicForm({
   const visibleFields = (form.fields || []).filter((f) => evaluateShowIf(f.showIf, formData));
 
   return (
-    <Paper component="form" onSubmit={handleSubmit} sx={{ p: 3, borderRadius: 3, boxShadow: 2 }}>
-      <Box sx={{ mb: 3, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+    <Paper
+      component="form"
+      onSubmit={handleSubmit}
+      elevation={0}
+      sx={{
+        p: 3.5,
+        borderRadius: '18px',
+        border: '1px solid var(--border-color)',
+        background: 'var(--bg-paper)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.04)'
+      }}
+    >
+      <Box sx={{ mb: 3, pb: 2, borderBottom: '1px solid var(--border-color)' }}>
         <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
           [{form.code}] {form.name}
         </Typography>
@@ -204,7 +215,7 @@ export default function DynamicForm({
       </Box>
 
       {apiError && (
-        <Alert severity="error" sx={{ mb: 3 }}>
+        <Alert severity="error" sx={{ mb: 3, borderRadius: '12px' }}>
           {apiError}
         </Alert>
       )}
@@ -229,7 +240,7 @@ export default function DynamicForm({
         ))}
       </Box>
 
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4, pt: 2, borderTop: '1px solid var(--border-color)' }}>
         <Button
           variant="outlined"
           color="inherit"
@@ -246,6 +257,7 @@ export default function DynamicForm({
             setApiError(null);
           }}
           disabled={loading}
+          sx={{ borderRadius: '10px', textTransform: 'none', px: 3 }}
         >
           Reset Form
         </Button>
@@ -255,7 +267,15 @@ export default function DynamicForm({
           variant="contained"
           startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <Save size={18} />}
           disabled={loading}
-          sx={{ px: 4, borderRadius: 2 }}
+          sx={{
+            px: 4,
+            py: 1,
+            borderRadius: '10px',
+            textTransform: 'none',
+            fontWeight: 700,
+            background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
+            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+          }}
         >
           {initialData ? 'Update Record' : 'Save Record'}
         </Button>

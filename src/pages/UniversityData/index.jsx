@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
-  Container,
   Typography,
   Paper,
-  TextField,
   MenuItem,
-  Tabs,
-  Tab,
-  Chip,
+  FormControl,
+  InputLabel,
+  Select,
+  Chip
 } from '@mui/material';
 import { FileText, Table as TableIcon, FileSpreadsheet, Settings } from 'lucide-react';
 import formRegistry from '../../config/form-registry.json';
@@ -16,6 +15,8 @@ import DynamicForm from './DynamicForm';
 import RecordsTable from './RecordsTable';
 import FormTypesManagement from './FormTypesManagement';
 import API from '../../api/axios';
+import { PageHeader, CustomTabs } from '../../components/common';
+import PageContainer from '../../components/common/design-system/PageContainer';
 
 export default function UniversityDataPage() {
   const [activeForms, setActiveForms] = useState(formRegistry.forms);
@@ -77,107 +78,83 @@ export default function UniversityDataPage() {
     }
   };
 
+  // Custom Tabs Config
+  const moduleTabs = [
+    {
+      key: 'entry',
+      label: editingRecord
+        ? `Edit Record (${selectedForm?.code || ''})`
+        : `Data Entry Form (${selectedForm?.code || ''})`,
+      icon: <FileText size={18} />
+    },
+    {
+      key: 'records',
+      label: 'Submitted Records',
+      icon: <TableIcon size={18} />
+    },
+    {
+      key: 'management',
+      label: 'Form Types Management',
+      icon: <Settings size={18} />
+    }
+  ];
+
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      {/* Module Title Header */}
-      <Paper
-        elevation={0}
-        sx={{
-          p: 3,
-          mb: 4,
-          borderRadius: 3,
-          background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-          color: '#fff',
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
-          <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
-              <FileSpreadsheet size={28} style={{ color: '#38bdf8' }} />
-              <Typography variant="h5" sx={{ fontWeight: 700, letterSpacing: -0.5 }}>
-                University Data Entry Module
-              </Typography>
-              <Chip
-                label={`${activeForms.length} Active Forms`}
-                size="small"
-                color="primary"
-                sx={{ fontWeight: 600 }}
-              />
-            </Box>
-            <Typography variant="body2" sx={{ color: '#94a3b8' }}>
-              Centralized single-registry data engine for Aditya University regular data collection
-            </Typography>
-          </Box>
-
-          {/* Active Form Picker Dropdown */}
-          <Box sx={{ minWidth: 320 }}>
-            <TextField
-              select
-              fullWidth
+    <PageContainer maxWidth="xl" px={3} py={3}>
+      {/* Standardized Page Header */}
+      <PageHeader
+        title="University Data Entry Module"
+        subtitle="Centralized single-registry data engine for Aditya University regular data collection"
+        icon={<FileSpreadsheet size={24} />}
+        showBack
+        backPath="/central-events"
+        actions={
+          <Box sx={{ minWidth: 320, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Chip
+              label={`${activeForms.length} Active Forms`}
               size="small"
-              label="Select Active Form Type"
-              value={selectedFormCode}
-              onChange={handleFormChange}
-              sx={{
-                bgcolor: 'rgba(255,255,255,0.08)',
-                borderRadius: 2,
-                '& .MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.2)' },
-                '& .MuiInputBase-input': { color: '#fff', fontWeight: 600 },
-                '& .MuiInputLabel-root': { color: '#94a3b8' },
-              }}
-            >
-              {Object.entries(groups).map(([groupName, formsList]) => [
-                <MenuItem
-                  key={groupName}
-                  disabled
-                  sx={{ fontWeight: 700, opacity: 0.8, color: 'primary.main', bgcolor: 'action.hover' }}
-                >
-                  -- {groupName} --
-                </MenuItem>,
-                ...formsList.map((f) => (
-                  <MenuItem key={f.code} value={f.code} sx={{ pl: 3 }}>
-                    [{f.code}] {f.name}
-                  </MenuItem>
-                )),
-              ])}
-            </TextField>
+              color="primary"
+              sx={{ fontWeight: 700, borderRadius: '8px' }}
+            />
+            <FormControl fullWidth size="small">
+              <InputLabel id="active-form-select-label">Select Active Form Type</InputLabel>
+              <Select
+                labelId="active-form-select-label"
+                value={selectedFormCode}
+                label="Select Active Form Type"
+                onChange={handleFormChange}
+                sx={{
+                  borderRadius: '12px',
+                  background: 'var(--bg-paper)',
+                  fontWeight: 600
+                }}
+              >
+                {Object.entries(groups).map(([groupName, formsList]) => [
+                  <MenuItem
+                    key={groupName}
+                    disabled
+                    sx={{ fontWeight: 700, opacity: 0.85, color: 'primary.main', bgcolor: 'action.hover' }}
+                  >
+                    -- {groupName} --
+                  </MenuItem>,
+                  ...formsList.map((f) => (
+                    <MenuItem key={f.code} value={f.code} sx={{ pl: 3 }}>
+                      [{f.code}] {f.name}
+                    </MenuItem>
+                  )),
+                ])}
+              </Select>
+            </FormControl>
           </Box>
-        </Box>
-      </Paper>
+        }
+      />
 
-      {/* Tabs Bar */}
-      <Paper sx={{ mb: 3, borderRadius: 2 }}>
-        <Tabs
-          value={currentTab}
-          onChange={(_, val) => setCurrentTab(val)}
-          indicatorColor="primary"
-          textColor="primary"
-          sx={{ borderBottom: 1, borderColor: 'divider' }}
-        >
-          <Tab
-            icon={<FileText size={18} />}
-            iconPosition="start"
-            label={
-              editingRecord
-                ? `Edit Record (${selectedForm?.code || ''})`
-                : `Data Entry Form (${selectedForm?.code || ''})`
-            }
-            sx={{ fontWeight: 600 }}
-          />
-          <Tab
-            icon={<TableIcon size={18} />}
-            iconPosition="start"
-            label="Submitted Records"
-            sx={{ fontWeight: 600 }}
-          />
-          <Tab
-            icon={<Settings size={18} />}
-            iconPosition="start"
-            label="Form Types Management"
-            sx={{ fontWeight: 600, ml: 'auto' }}
-          />
-        </Tabs>
-      </Paper>
+      {/* Module Custom Navigation Tabs */}
+      <CustomTabs
+        tabs={moduleTabs}
+        value={currentTab}
+        onChange={(_, val) => setCurrentTab(val)}
+      />
 
       {/* Tab Panels */}
       {currentTab === 0 ? (
@@ -196,6 +173,6 @@ export default function UniversityDataPage() {
       ) : (
         <FormTypesManagement onFormTypesUpdated={fetchActiveForms} />
       )}
-    </Container>
+    </PageContainer>
   );
 }

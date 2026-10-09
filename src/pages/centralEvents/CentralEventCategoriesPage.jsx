@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Container,
   Typography,
   Paper,
   Table,
@@ -36,14 +35,16 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
-  ArrowBack as ArrowBackIcon,
+  Category as CategoryIcon,
+  Folder as FolderIcon,
+  Event as EventIcon,
   CloudUpload as UploadIcon,
   Image as ImageIcon,
-  Person as PersonIcon,
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import {
   getEventTypes,
   getAllCentralEventCategoriesAdmin,
@@ -53,6 +54,8 @@ import {
   uploadCentralEventFile
 } from '../../api/centralEventsApi';
 import API from '../../api/axios';
+import { PageHeader, CustomTabs } from '../../components/common';
+import PageContainer from '../../components/common/design-system/PageContainer';
 import { toast } from 'sonner';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9022';
@@ -66,6 +69,10 @@ const getImageUrl = (img) => {
 
 export default function CentralEventCategoriesPage() {
   const navigate = useNavigate();
+  const { user, activeRole } = useAuth();
+
+  const userRoles = (user?.roles || []).map(r => (typeof r === 'string' ? r : (r.role?.key || r.role?.name || r.role || '')).toUpperCase());
+  const isGlobalAdmin = userRoles.includes('GLOBAL_EVENT_ADMIN') || userRoles.includes('SUPER_ADMIN') || activeRole?.toUpperCase() === 'GLOBAL_EVENT_ADMIN';
 
   const [types, setTypes] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -106,6 +113,14 @@ export default function CentralEventCategoriesPage() {
 
   // Delete Confirm Dialog State
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+
+  // Navigation Tabs
+  const navTabs = [
+    { key: 'all', label: 'All Central Events', icon: <EventIcon />, path: '/central-events' },
+    { key: 'types', label: 'Event Types', icon: <CategoryIcon />, path: '/central-events/types' },
+    { key: 'categories', label: 'Event Categories', icon: <FolderIcon />, path: '/central-events/categories' },
+    ...(isGlobalAdmin ? [{ key: 'create', label: 'Create Event', icon: <AddIcon />, path: '/central-events/create' }] : [])
+  ];
 
   useEffect(() => {
     const fetchTypes = async () => {
@@ -317,49 +332,58 @@ export default function CentralEventCategoriesPage() {
   const displayedCategories = categories.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/central-events')} sx={{ mb: 2 }}>
-        Back to Central Events Hub
-      </Button>
+    <PageContainer maxWidth="xl" px={3} py={3}>
+      {/* Standard Page Header */}
+      <PageHeader
+        title="Central Event Categories Management"
+        subtitle="Manage categories, banners, assigned faculty coordinators, and subcategory features per event type"
+        icon={<FolderIcon />}
+        showBack
+        backPath="/central-events"
+        actions={
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleOpenAdd}
+            sx={{
+              borderRadius: '12px',
+              textTransform: 'none',
+              px: 3,
+              py: 1.2,
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+            }}
+          >
+            Add Event Category
+          </Button>
+        }
+      />
 
-      {/* Header */}
+      {/* Module Navigation Custom Tabs */}
+      <CustomTabs
+        tabs={navTabs}
+        value={2}
+        onChange={(e, val) => navigate(navTabs[val].path)}
+      />
+
+      {/* Filter Bar with Standardized MUI Form Controls */}
       <Paper
         elevation={0}
         sx={{
-          p: 4,
+          p: 2.5,
           mb: 4,
-          borderRadius: 3,
-          background: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-          color: 'white',
+          borderRadius: '16px',
+          border: '1px solid var(--border-color)',
+          background: 'var(--bg-glass)',
+          backdropFilter: 'blur(10px)',
           display: 'flex',
-          justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: 2
         }}
       >
-        <Box>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
-            Central Event Categories Management
-          </Typography>
-          <Typography variant="body1" sx={{ opacity: 0.9 }}>
-            Manage categories, banners, and assigned faculty coordinators per event type
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<AddIcon />}
-          onClick={handleOpenAdd}
-          sx={{ borderRadius: 2, textTransform: 'none', px: 3, py: 1.2, fontWeight: 600 }}
-        >
-          Add Event Category
-        </Button>
-      </Paper>
-
-      {/* Filter Bar */}
-      <Paper elevation={1} sx={{ p: 2.5, mb: 4, borderRadius: 3, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
-        <FormControl sx={{ minWidth: 320, maxWidth: 480 }} size="small" variant="outlined">
+        <FormControl sx={{ minWidth: 320, maxWidth: 480 }} size="small">
           <InputLabel id="event-type-filter-label">Filter by Event Type</InputLabel>
           <Select
             labelId="event-type-filter-label"
@@ -367,7 +391,7 @@ export default function CentralEventCategoriesPage() {
             value={selectedTypeFilter}
             label="Filter by Event Type"
             onChange={(e) => setSelectedTypeFilter(e.target.value)}
-            sx={{ borderRadius: 2, backgroundColor: '#fff' }}
+            sx={{ borderRadius: '12px', backgroundColor: 'var(--bg-paper)' }}
           >
             <MenuItem value="">
               <em>All Event Types</em>
@@ -381,16 +405,25 @@ export default function CentralEventCategoriesPage() {
         </FormControl>
       </Paper>
 
-      {/* Table */}
+      {/* Table Section */}
       {loading ? (
         <Box display="flex" justifyContent="center" py={6}>
           <CircularProgress />
         </Box>
       ) : (
-        <Paper elevation={2} sx={{ borderRadius: 3, overflow: 'hidden' }}>
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: '18px',
+            overflow: 'hidden',
+            border: '1px solid var(--border-color)',
+            background: 'var(--bg-paper)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.04)'
+          }}
+        >
           <TableContainer>
             <Table>
-              <TableHead sx={{ backgroundColor: '#f8fafc' }}>
+              <TableHead sx={{ backgroundColor: 'var(--bg-accent-1, #f8fafc)' }}>
                 <TableRow>
                   <TableCell><strong>S.No</strong></TableCell>
                   <TableCell><strong>Banner</strong></TableCell>
@@ -430,7 +463,7 @@ export default function CentralEventCategoriesPage() {
                                 height: 35,
                                 objectFit: 'cover',
                                 borderRadius: 6,
-                                border: '1px solid #e2e8f0'
+                                border: '1px solid var(--border-color)'
                               }}
                             />
                           ) : (
@@ -438,8 +471,8 @@ export default function CentralEventCategoriesPage() {
                               sx={{
                                 width: 55,
                                 height: 35,
-                                borderRadius: 6,
-                                backgroundColor: '#f1f5f9',
+                                borderRadius: 2,
+                                backgroundColor: 'var(--bg-accent-2, #f1f5f9)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -455,7 +488,7 @@ export default function CentralEventCategoriesPage() {
                             label={row.typeCode || row.typeId?.code}
                             color="primary"
                             size="small"
-                            sx={{ fontWeight: 700 }}
+                            sx={{ fontWeight: 700, borderRadius: '8px' }}
                           />
                         </TableCell>
                         <TableCell><Typography fontWeight={600}>{row.code}</Typography></TableCell>
@@ -527,8 +560,8 @@ export default function CentralEventCategoriesPage() {
         </Paper>
       )}
 
-      {/* Add / Edit Dialog */}
-      <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="md" fullWidth>
+      {/* Add / Edit Dialog with Standardized MUI Form Controls */}
+      <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: '18px', p: 1 } }}>
         <form onSubmit={handleSubmit}>
           <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>
             {editingItem ? 'Edit Category' : 'Add New Category'}
@@ -542,6 +575,7 @@ export default function CentralEventCategoriesPage() {
                   value={typeId}
                   label="Event Type"
                   onChange={(e) => setTypeId(e.target.value)}
+                  sx={{ borderRadius: '12px' }}
                 >
                   {types.map((t) => (
                     <MenuItem key={t._id} value={t._id}>
@@ -560,6 +594,7 @@ export default function CentralEventCategoriesPage() {
                     placeholder="e.g. ROBOTICS, DANCE"
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
+                    InputProps={{ sx: { borderRadius: '12px' } }}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -570,12 +605,13 @@ export default function CentralEventCategoriesPage() {
                     placeholder="e.g. Robotics & Automation"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    InputProps={{ sx: { borderRadius: '12px' } }}
                   />
                 </Grid>
               </Grid>
 
               {/* Optional Category Banner Image */}
-              <Box sx={{ border: '1px dashed #cbd5e1', p: 2, borderRadius: 2, bgcolor: '#f8fafc' }}>
+              <Box sx={{ border: '1px dashed var(--border-color)', p: 2, borderRadius: '12px', bgcolor: 'var(--bg-accent-1, #f8fafc)' }}>
                 <Typography variant="subtitle2" fontWeight={600} gutterBottom display="flex" alignItems="center" gap={0.8}>
                   <ImageIcon fontSize="small" color="primary" /> Category Banner Image (Optional)
                 </Typography>
@@ -587,14 +623,14 @@ export default function CentralEventCategoriesPage() {
                     startIcon={<UploadIcon />}
                     disabled={uploadingBanner}
                     size="small"
-                    sx={{ textTransform: 'none', borderRadius: 2 }}
+                    sx={{ textTransform: 'none', borderRadius: '10px' }}
                   >
                     {uploadingBanner ? 'Uploading...' : 'Upload Banner Image'}
                     <input type="file" hidden accept="image/*" onChange={handleBannerUpload} />
                   </Button>
 
                   {banner && (
-                    <Card variant="outlined" sx={{ display: 'flex', alignItems: 'center', p: 1, borderRadius: 2 }}>
+                    <Card variant="outlined" sx={{ display: 'flex', alignItems: 'center', p: 1, borderRadius: '10px' }}>
                       <img
                         src={getImageUrl(banner)}
                         alt="Banner Preview"
@@ -627,7 +663,7 @@ export default function CentralEventCategoriesPage() {
               />
 
               {hasSubcategories && (
-                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2, bgcolor: '#f8fafc', border: '1px solid #cbd5e1' }}>
+                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: '12px', bgcolor: 'var(--bg-accent-1, #f8fafc)', border: '1px solid var(--border-color)' }}>
                   <Typography variant="subtitle2" fontWeight={600} gutterBottom color="primary.main">
                     Configure Subcategories
                   </Typography>
@@ -641,6 +677,7 @@ export default function CentralEventCategoriesPage() {
                         placeholder="e.g. DEBATE_ENG"
                         value={newSubCode}
                         onChange={(e) => setNewSubCode(e.target.value)}
+                        InputProps={{ sx: { borderRadius: '10px' } }}
                       />
                     </Grid>
                     <Grid item xs={12} sm={5}>
@@ -651,6 +688,7 @@ export default function CentralEventCategoriesPage() {
                         placeholder="e.g. English Debate"
                         value={newSubName}
                         onChange={(e) => setNewSubName(e.target.value)}
+                        InputProps={{ sx: { borderRadius: '10px' } }}
                       />
                     </Grid>
                     <Grid item xs={12} sm={3}>
@@ -660,7 +698,7 @@ export default function CentralEventCategoriesPage() {
                         size="small"
                         startIcon={<AddIcon />}
                         onClick={handleAddSubcategory}
-                        sx={{ textTransform: 'none', height: 40, borderRadius: 2 }}
+                        sx={{ textTransform: 'none', height: 40, borderRadius: '10px' }}
                       >
                         Add Subcat
                       </Button>
@@ -674,7 +712,7 @@ export default function CentralEventCategoriesPage() {
                   ) : (
                     <Stack spacing={1}>
                       {subcategories.map((sub, idx) => (
-                        <Card key={idx} variant="outlined" sx={{ p: 1.25, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: 2, bgcolor: '#fff' }}>
+                        <Card key={idx} variant="outlined" sx={{ p: 1.25, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '10px', bgcolor: '#fff' }}>
                           <Box display="flex" alignItems="center" gap={1.5}>
                             <Chip label={sub.code} color="primary" size="small" sx={{ fontWeight: 700 }} />
                             <Typography variant="body2" fontWeight={600}>{sub.name}</Typography>
@@ -698,7 +736,7 @@ export default function CentralEventCategoriesPage() {
                 </Paper>
               )}
 
-              {/* Category Coordinators, Status, and Order Number Row (Matching Reference Image Pattern) */}
+              {/* Category Coordinators, Status, and Order Number Row */}
               <Box
                 sx={{
                   display: 'grid',
@@ -888,9 +926,7 @@ export default function CentralEventCategoriesPage() {
                     placeholder="e.g. 1"
                     value={sortOrder}
                     onChange={(e) => setSortOrder(e.target.value)}
-                    slotProps={{
-                      input: { sx: { borderRadius: '12px' } }
-                    }}
+                    InputProps={{ sx: { borderRadius: '12px' } }}
                     variant="outlined"
                   />
                 </Box>
@@ -898,8 +934,8 @@ export default function CentralEventCategoriesPage() {
             </Stack>
           </DialogContent>
           <DialogActions sx={{ p: 2.5 }}>
-            <Button onClick={() => setOpenModal(false)}>Cancel</Button>
-            <Button variant="contained" type="submit" disabled={submitting}>
+            <Button onClick={() => setOpenModal(false)} sx={{ borderRadius: '10px' }}>Cancel</Button>
+            <Button variant="contained" type="submit" disabled={submitting} sx={{ borderRadius: '10px', px: 3 }}>
               {submitting ? <CircularProgress size={24} /> : editingItem ? 'Update Category' : 'Create Category'}
             </Button>
           </DialogActions>
@@ -907,20 +943,20 @@ export default function CentralEventCategoriesPage() {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={!!deleteConfirmId} onClose={() => setDeleteConfirmId(null)}>
-        <DialogTitle>Confirm Delete</DialogTitle>
+      <Dialog open={!!deleteConfirmId} onClose={() => setDeleteConfirmId(null)} PaperProps={{ sx: { borderRadius: '16px' } }}>
+        <DialogTitle sx={{ fontWeight: 700 }}>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography variant="body1">
             Are you sure you want to delete this event category? This action cannot be undone.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setDeleteConfirmId(null)}>Cancel</Button>
-          <Button variant="contained" color="error" onClick={handleDelete}>
+          <Button onClick={() => setDeleteConfirmId(null)} sx={{ borderRadius: '10px' }}>Cancel</Button>
+          <Button variant="contained" color="error" onClick={handleDelete} sx={{ borderRadius: '10px' }}>
             Delete
           </Button>
         </DialogActions>
       </Dialog>
-    </Container>
+    </PageContainer>
   );
 }

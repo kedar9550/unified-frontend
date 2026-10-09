@@ -240,7 +240,8 @@ const ShortenUrl = () => {
                                 fullWidth
                                 type="date"
                                 inputProps={{ min: new Date().toLocaleDateString('en-CA') }}
-                                slotProps={{ htmlInput: { min: new Date().toLocaleDateString('en-CA') } }}
+                                slotProps={{ htmlInput: { min: new Date().toLocaleDateString('en-CA') }, inputLabel: { shrink: true } }}
+                                InputLabelProps={{ shrink: true }}
                                 variant="outlined"
                                 value={expiresAt}
                                 onChange={(e) => setExpiresAt(e.target.value)}
