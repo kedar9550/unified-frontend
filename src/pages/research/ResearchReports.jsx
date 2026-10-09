@@ -259,33 +259,65 @@ export default function ResearchReports() {
             ]);
             filename = `Journal_Incentives_Report_${yearName}.csv`;
         } else if (type === "textbooks") {
-            headers = ["S.No", "Dept", "Name of Faculty", "Title of the Book", "Name of the Publisher", "ISBN Number", "Academic Year", "Is Scopus", "Status", "Co-Authors"];
+            headers = [
+                "S.No", "Emp Id", "Faculty Name", "College", "PAN No", "Dept",
+                "Title of the Book", "Publisher", "ISBN Number", "Academic Year",
+                "Is Scopus", "No. of Pages", "Apply Incentive", "Approved Incentive Amount",
+                "Appraisal Eligible", "Appraisal Claimant", "Incentive Claimant",
+                "Status", "Co-Authors", "Applied At"
+            ];
             rows = (data.textbooks || []).map((item, i) => [
                 i + 1,
-                item.dept,
+                item.empId,
                 item.facultyName,
+                item.college,
+                item.panNo,
+                item.dept,
                 item.title,
                 item.publisher,
                 item.isbn,
                 item.year,
                 item.scopusIndexed || "No",
+                item.numberOfPages || "N/A",
+                item.applyIncentive || "No",
+                item.approvedAmount || item.amount || 0,
+                item.appraisalEligible || "N/A",
+                item.appraisalClaimant || "N/A",
+                item.incentiveClaimant || "N/A",
                 item.status,
-                item.coAuthorsText || "N/A"
+                item.coAuthorsText || "N/A",
+                item.appliedAt || "N/A"
             ]);
             filename = `Textbooks_Report_${yearName}.csv`;
         } else if (type === "chapters") {
-            headers = ["S.No", "Dept", "Name of Faculty", "Name of Book Chapter", "Name of the Book", "Name of Publisher", "Academic Year", "Month & Year", "Status", "Co-Authors"];
+            headers = [
+                "S.No", "Emp Id", "Faculty Name", "College", "PAN No", "Dept",
+                "Name of Book Chapter", "Name of the Book", "Publisher", "Academic Year",
+                "Month", "No. of Pages", "Apply Incentive", "Approved Incentive Amount",
+                "Appraisal Eligible", "Appraisal Claimant", "Incentive Claimant",
+                "Status", "Co-Authors", "Applied At"
+            ];
             rows = (data.chapters || []).map((item, i) => [
                 i + 1,
-                item.dept,
+                item.empId,
                 item.facultyName,
+                item.college,
+                item.panNo,
+                item.dept,
                 item.chapterTitle,
                 item.bookName,
                 item.publisher,
                 item.year,
-                item.month,
+                item.month || "N/A",
+                item.numberOfPages || "N/A",
+                item.applyIncentive || "No",
+                item.approvedAmount || item.amount || 0,
+                item.appraisalEligible || "N/A",
+                item.appraisalClaimant || "N/A",
+                item.incentiveClaimant || "N/A",
                 item.status,
-                item.coAuthorsText || "N/A"
+                item.coAuthorsText || "N/A",
+                item.appliedAt || "N/A"
             ]);
             filename = `Book_Chapters_Report_${yearName}.csv`;
         } else if (type === "conferences") {
@@ -533,15 +565,23 @@ export default function ResearchReports() {
             "S.No",
             "Emp ID",
             "Faculty Name",
-            "Serving Department",
+            "College",
             "PAN Number",
+            "Serving Department",
             "Book Title",
             "Publisher",
             "ISBN",
+            "Academic Year",
             "Is Scopus",
-            "Amount",
+            "No. of Pages",
+            "Apply Incentive",
+            "Approved Incentive Amount",
+            "Appraisal Eligible",
+            "Appraisal Claimant",
+            "Incentive Claimant",
             "Status",
-            "Co-Authors"
+            "Co-Authors",
+            "Applied At"
         ].join(","));
 
         (data.textbooks || []).forEach((item, index) => {
@@ -549,15 +589,23 @@ export default function ResearchReports() {
                 index + 1,
                 item.empId,
                 item.facultyName,
-                item.dept,
+                item.college,
                 item.panNo,
+                item.dept,
                 item.title,
                 item.publisher,
                 item.isbn,
+                item.year,
                 item.scopusIndexed || "No",
-                item.amount || "-",
+                item.numberOfPages || "N/A",
+                item.applyIncentive || "No",
+                item.approvedAmount || item.amount || "-",
+                item.appraisalEligible || "N/A",
+                item.appraisalClaimant || "N/A",
+                item.incentiveClaimant || "N/A",
                 item.status,
-                item.coAuthorsText || "N/A"
+                item.coAuthorsText || "N/A",
+                item.appliedAt || "N/A"
             ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
         });
 
@@ -574,14 +622,23 @@ export default function ResearchReports() {
             "S.No",
             "Emp ID",
             "Faculty Name",
-            "Serving Department",
+            "College",
             "PAN Number",
+            "Serving Department",
             "Chapter Title",
             "Book Name",
             "Publisher",
-            "Amount",
+            "Academic Year",
+            "Month",
+            "No. of Pages",
+            "Apply Incentive",
+            "Approved Incentive Amount",
+            "Appraisal Eligible",
+            "Appraisal Claimant",
+            "Incentive Claimant",
             "Status",
-            "Co-Authors"
+            "Co-Authors",
+            "Applied At"
         ].join(","));
 
         (data.chapters || []).forEach((item, index) => {
@@ -589,14 +646,23 @@ export default function ResearchReports() {
                 index + 1,
                 item.empId,
                 item.facultyName,
-                item.dept,
+                item.college,
                 item.panNo,
+                item.dept,
                 item.chapterTitle,
                 item.bookName,
                 item.publisher,
-                item.amount || "-",
+                item.year,
+                item.month || "N/A",
+                item.numberOfPages || "N/A",
+                item.applyIncentive || "No",
+                item.approvedAmount || item.amount || "-",
+                item.appraisalEligible || "N/A",
+                item.appraisalClaimant || "N/A",
+                item.incentiveClaimant || "N/A",
                 item.status,
-                item.coAuthorsText || "N/A"
+                item.coAuthorsText || "N/A",
+                item.appliedAt || "N/A"
             ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
         });
 
@@ -924,18 +990,34 @@ export default function ResearchReports() {
     };
 
     const renderTextbooks = () => {
-        const columns = ["S.No", "Dept", "Faculty Name", "Book Title", "Publisher", "ISBN", "Academic Year", "Is Scopus", "Status", "Co-Authors"];
+        const columns = [
+            "S.No", "Emp Id", "Faculty Name", "College", "PAN No", "Dept",
+            "Book Title", "Publisher", "ISBN", "Academic Year", "Is Scopus",
+            "No. of Pages", "Apply Incentive", "Approved Incentive Amount",
+            "Appraisal Eligible", "Appraisal Claimant", "Incentive Claimant",
+            "Status", "Co-Authors", "Applied At"
+        ];
         const rows = (data.textbooks || []).map((item, i) => [
             i + 1,
-            item.dept,
+            item.empId,
             item.facultyName,
+            item.college,
+            item.panNo,
+            item.dept,
             item.title,
             item.publisher,
             item.isbn,
             item.year,
             item.scopusIndexed || "No",
+            item.numberOfPages || "N/A",
+            item.applyIncentive || "No",
+            item.approvedAmount ? `₹${item.approvedAmount}` : (item.amount ? `₹${item.amount}` : "0"),
+            item.appraisalEligible || "N/A",
+            item.appraisalClaimant || "N/A",
+            item.incentiveClaimant || "N/A",
             item.status,
-            item.coAuthorsText || "N/A"
+            item.coAuthorsText || "N/A",
+            item.appliedAt || "N/A"
         ]);
         const alignments = getAlignments(columns);
         return (
@@ -953,17 +1035,33 @@ export default function ResearchReports() {
     };
 
     const renderChapters = () => {
-        const columns = ["S.No", "Dept", "Faculty Name", "Chapter Title", "Book Name", "Publisher", "Year", "Status", "Co-Authors"];
+        const columns = [
+            "S.No", "Emp Id", "Faculty Name", "College", "PAN No", "Dept",
+            "Chapter Title", "Book Name", "Publisher", "Academic Year",
+            "No. of Pages", "Apply Incentive", "Approved Incentive Amount",
+            "Appraisal Eligible", "Appraisal Claimant", "Incentive Claimant",
+            "Status", "Co-Authors", "Applied At"
+        ];
         const rows = (data.chapters || []).map((item, i) => [
             i + 1,
-            item.dept,
+            item.empId,
             item.facultyName,
+            item.college,
+            item.panNo,
+            item.dept,
             item.chapterTitle,
             item.bookName,
             item.publisher,
             item.year,
+            item.numberOfPages || "N/A",
+            item.applyIncentive || "No",
+            item.approvedAmount ? `₹${item.approvedAmount}` : (item.amount ? `₹${item.amount}` : "0"),
+            item.appraisalEligible || "N/A",
+            item.appraisalClaimant || "N/A",
+            item.incentiveClaimant || "N/A",
             item.status,
-            item.coAuthorsText || "N/A"
+            item.coAuthorsText || "N/A",
+            item.appliedAt || "N/A"
         ]);
         const alignments = getAlignments(columns);
         return (
