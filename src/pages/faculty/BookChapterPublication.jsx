@@ -4,7 +4,18 @@ import { useAuth } from "../../context/AuthContext";
 
 import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination, Radio, RadioGroup, FormControlLabel } from "@mui/material";
 import { toast } from "sonner";
-import { Close, Description, AttachFile, Groups, Book, Visibility, Edit, CheckCircle, Cancel, AccessTime } from "@mui/icons-material";
+import { Close, Description, AttachFile, Groups, Book, Visibility, Edit, CheckCircle, Cancel, AccessTime,
+  Person, CurrencyRupee, CalendarMonth, CardGiftcard, Numbers, Article
+} from "@mui/icons-material";
+import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
+import SchoolIcon from '@mui/icons-material/School';
+import LinkIcon from '@mui/icons-material/Link';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import GrassIcon from '@mui/icons-material/Grass';
+import PublicIcon from '@mui/icons-material/Public';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import PageHeader from "../../components/common/PageHeader";
 import { Alert, AlertTitle } from "@mui/material";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
@@ -13,21 +24,8 @@ import {
 } from "../../components/faculty/PublicationFormFields";
 import {
   labelStyle, disabledField, MONTHS, YEARS
-} from "../../components/faculty/publicationConstants"; import API from "../../api/axios";
-
-import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
-import SchoolIcon from '@mui/icons-material/School';
-import LinkIcon from '@mui/icons-material/Link';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutlined';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import GrassIcon from '@mui/icons-material/Grass';
-import CardGiftcard from '@mui/icons-material/CardGiftcard';
-import CurrencyRupee from '@mui/icons-material/CurrencyRupee';
-import PublicIcon from '@mui/icons-material/Public';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
-import Person from '@mui/icons-material/Person';
-import AccessTimeIcon from '@mui/icons-material/AccessTime';
+} from "../../components/faculty/publicationConstants";
+import API from "../../api/axios";
 
 const ELSEVIER_API_KEY = "0436d4fe788649172354545ceca9e650";
 
@@ -49,18 +47,19 @@ export default function BookChapterPublication() {
     chaptersContributed: "", publisher: "", month: "", year: "",
     isStudentsInvolved: "No",
     applyIncentive: "", publicationScope: "", applyingSeedGrant: "",
-    isbnNumber: "",
+    isbnNumber: "", servingAsEditor: "",
     totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
   });
-  const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
-  const [existingFiles, setExistingFiles] = useState({ authorAffiliation: null });
-  const [deleteFlags, setDeleteFlags] = useState({ authorAffiliation: false });
+  const [files, setFiles] = useState({ coverPage: null, authorAffiliation: null, index: null, softCopy: null, totalBookChapter: null });
+  const [existingFiles, setExistingFiles] = useState({ authorAffiliation: null, totalBookChapter: null });
+  const [deleteFlags, setDeleteFlags] = useState({ authorAffiliation: false, totalBookChapter: false });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
   const [scopusIndexed, setScopusIndexed] = useState(false);
   const [doiFetching, setDoiFetching] = useState(false);
   const [doiFetched, setDoiFetched] = useState(null);
+  const [isBookChapter, setIsBookChapter] = useState(true);
   const [isbnFetching, setIsbnFetching] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState(null);
@@ -108,17 +107,20 @@ export default function BookChapterPublication() {
       publicationScope: pub.publicationScope || pub.level || "",
       applyingSeedGrant: pub.applyingSeedGrant || "",
       isbnNumber: pub.isbnNumber || "",
+      servingAsEditor: pub.servingAsEditor || "",
       totalAuthors: pub.totalAuthors || 1,
       userAuthorPosition: pub.userAuthorPosition || 1,
       otherAuthors: mappedAuthors
     });
     const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:9000";
     setExistingFiles({
-      authorAffiliation: pub.authorAffiliation ? `${backendUrl}${pub.authorAffiliation}` : null
+      authorAffiliation: pub.authorAffiliation ? `${backendUrl}${pub.authorAffiliation}` : null,
+      totalBookChapter: pub.totalBookChapter ? `${backendUrl}${pub.totalBookChapter}` : null
     });
-    setDeleteFlags({ authorAffiliation: false });
+    setDeleteFlags({ authorAffiliation: false, totalBookChapter: false });
     setDoiFetched(!!pub.doi);
-    setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
+    setIsBookChapter(true);
+    setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null, totalBookChapter: null });
     setViewMode("form");
   };
 
@@ -144,15 +146,21 @@ export default function BookChapterPublication() {
         newForm.applyIncentive = "No";
       }
       if (k === "doi") {
-        newForm.textBookName = "";
-        newForm.chapterTitle = "";
-        newForm.publisher = "";
-        newForm.publicationScope = "";
-        newForm.month = "";
-        newForm.year = "";
+        const emptyForm = {
+          doi: val,
+          textBookName: "", chapterTitle: "", yearOfPublication: "",
+          chaptersContributed: "", publisher: "", month: "", year: "",
+          isStudentsInvolved: "No",
+          applyIncentive: "", publicationScope: "", applyingSeedGrant: "",
+          isbnNumber: "", servingAsEditor: "",
+          totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
+        };
         setScopusIndexed(false);
         setDoiFetching(false);
         setDoiFetched(null);
+        setIsBookChapter(true);
+        setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null, totalBookChapter: null });
+        return emptyForm;
       }
       return newForm;
     });
@@ -205,6 +213,7 @@ export default function BookChapterPublication() {
     setDoiFetching(true);
     setDoiFetched(null);
     setScopusIndexed(false);
+    setIsBookChapter(true);
     try {
       const scopusRes = await fetch(
         `https://api.elsevier.com/content/search/scopus?query=DOI(${encodeURIComponent(cleanDoi)})`,
@@ -213,7 +222,7 @@ export default function BookChapterPublication() {
       if (!scopusRes.ok) {
         if (scopusRes.status === 401) toast.error("Scopus API key unauthorized. Please contact admin.");
         else if (scopusRes.status === 429) toast.error("Scopus API rate limit exceeded. Try again later.");
-        else toast.error(`Scopus API error (HTTP ${scopusRes.status}). Please fill manually.`);
+        else toast.error(`Scopus API error (HTTP ${scopusRes.status}).`);
         setDoiFetched(false);
         return;
       }
@@ -221,7 +230,7 @@ export default function BookChapterPublication() {
       const entry = scopusJson?.["search-results"]?.entry?.[0];
 
       if (!entry || entry.error || (!entry["dc:title"] && !entry["prism:publicationName"])) {
-        toast.warning("This DOI was not found in Scopus. Please fill details manually.");
+        toast.warning("This DOI was not found in Scopus.");
         setScopusIndexed(false);
         setDoiFetched(false);
         return;
@@ -232,6 +241,10 @@ export default function BookChapterPublication() {
       const publisher = entry["prism:publisher"] || entry["dc:publisher"] || "";
       const dateRaw = entry["prism:coverDisplayDate"] || entry["prism:coverDate"] || "";
       const { year, month } = parseDateStr(dateRaw);
+      const subtype = entry.subtypeDescription || entry["subtypeDescription"] || "";
+      
+      const isBookChapterType = subtype.toLowerCase() === "book chapter";
+      setIsBookChapter(isBookChapterType);
 
       toast.success("Chapter found in Scopus! Details fetched successfully.");
       setDoiFetched(true);
@@ -244,9 +257,10 @@ export default function BookChapterPublication() {
         publisher: publisher || prev.publisher,
         year: year || prev.year,
         month: month || prev.month,
+        applyIncentive: isBookChapterType ? prev.applyIncentive : "No"
       }));
     } catch (err) {
-      toast.error("Network error connecting to Scopus. Please fill the fields manually.");
+      toast.error("Network error connecting to Scopus.");
       setDoiFetched(false);
     } finally {
       setDoiFetching(false);
@@ -721,12 +735,21 @@ export default function BookChapterPublication() {
     if (!form.publisher) newErrors.publisher = true;
     if (!form.month) newErrors.month = true;
     if (!form.year) newErrors.year = true;
-    if (!form.applyIncentive) newErrors.applyIncentive = true;
     if (!form.applyingSeedGrant) newErrors.applyingSeedGrant = true;
     if (!form.publicationScope) newErrors.publicationScope = true;
     if (!form.isbnNumber) newErrors.isbnNumber = true;
+    if (!form.servingAsEditor) newErrors.servingAsEditor = true;
+
+    const isStudentInvolved = form.isStudentsInvolved === "Yes";
+    const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
+    const isEditor = form.servingAsEditor === "Yes";
+    const disableIncentive = isStudentInvolved || isPositionGreaterThan5 || isEditor;
+    const computedApplyIncentive = disableIncentive ? "No" : form.applyIncentive;
+
+    if (!computedApplyIncentive) newErrors.applyIncentive = true;
 
     if (!files.authorAffiliation && !existingFiles.authorAffiliation) newErrors.authorAffiliation = true;
+    if (!files.totalBookChapter && !existingFiles.totalBookChapter) newErrors.totalBookChapter = true;
 
     setErrors(newErrors);
 
@@ -801,17 +824,25 @@ export default function BookChapterPublication() {
       fd.append("chaptersContributed", form.chaptersContributed || "");
       fd.append("publisher", form.publisher || "");
       fd.append("isbnNumber", form.isbnNumber || "");
+      fd.append("servingAsEditor", form.servingAsEditor || "");
       fd.append("publicationScope", form.publicationScope);
       fd.append("coAuthors", JSON.stringify(coAuthorsList));
       fd.append("isStudentsInvolved", form.isStudentsInvolved || "No");
       fd.append("month", form.month);
       fd.append("year", form.year);
-      fd.append("applyIncentive", parseInt(form.userAuthorPosition) > 5 ? "No" : form.applyIncentive);
+      fd.append("applyIncentive", computedApplyIncentive);
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
       fd.append("scopusIndexed", scopusIndexed ? "Yes" : "No");
 
+      let estimatedIncentiveAmount = 0;
+      if (computedApplyIncentive === "Yes") {
+        estimatedIncentiveAmount = form.applyingSeedGrant === "Yes" ? 3750 : 7500;
+      }
+      fd.append("estimatedIncentiveAmount", estimatedIncentiveAmount.toString());
+
       Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
       if (deleteFlags.authorAffiliation) fd.append("deleteAuthorAffiliation", "true");
+      if (deleteFlags.totalBookChapter) fd.append("deleteTotalBookChapter", "true");
 
       fd.append("academicYear", selectedYear);
       fd.append("college", user?.college || "");
@@ -827,12 +858,12 @@ export default function BookChapterPublication() {
         chaptersContributed: "", publisher: "", month: "", year: "",
         isStudentsInvolved: "No",
         applyIncentive: "", publicationScope: "", applyingSeedGrant: "",
-        isbnNumber: "",
+        isbnNumber: "", servingAsEditor: "",
         totalAuthors: 1, userAuthorPosition: 1, otherAuthors: []
       });
-      setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null });
-      setExistingFiles({ authorAffiliation: null });
-      setDeleteFlags({ authorAffiliation: false });
+      setFiles({ coverPage: null, authorAffiliation: null, index: null, softCopy: null, totalBookChapter: null });
+      setExistingFiles({ authorAffiliation: null, totalBookChapter: null });
+      setDeleteFlags({ authorAffiliation: false, totalBookChapter: false });
       setEditMode(false);
       setEditId(null);
       setErrors({});
@@ -840,6 +871,7 @@ export default function BookChapterPublication() {
       setViewMode("list");
       setScopusIndexed(false);
       setDoiFetched(false);
+      setIsBookChapter(true);
     } catch (err) {
       toast.error(err?.response?.data?.message || "Submission failed");
     } finally {
@@ -858,7 +890,7 @@ export default function BookChapterPublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Book Chapter Publications</Typography>
-        {/* <Button
+        <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -883,7 +915,7 @@ export default function BookChapterPublication() {
           }}
         >
           Apply New
-        </Button> */}
+        </Button>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -1178,9 +1210,10 @@ export default function BookChapterPublication() {
           <TextField
             size="small"
             fullWidth
-            placeholder="Enter the title of the chapter"
+            placeholder="Auto-filled from DOI"
             value={form.chapterTitle}
             onChange={set("chapterTitle")}
+            disabled
             error={!!errors.chapterTitle}
             helperText={errors.chapterTitle ? "Title is required" : ""}
           />
@@ -1197,7 +1230,7 @@ export default function BookChapterPublication() {
               value={form.isbnNumber}
               onChange={(e) => {
                 const val = e.target.value;
-                if (/^[0-9-]*$/.test(val)) setForm(p => ({ ...p, isbnNumber: val }));
+                if (/^[0-9-]*$/.test(val)) setForm(p => ({ ...p, isbnNumber: val, textBookName: "" }));
               }}
               slotProps={{ htmlInput: { inputMode: "numeric" } }}
             />
@@ -1231,6 +1264,33 @@ export default function BookChapterPublication() {
             <MenuItem value="" disabled>Select Scope</MenuItem>
             <MenuItem value="National">National</MenuItem>
             <MenuItem value="International">International</MenuItem>
+          </Select>
+        </Box>
+
+        <Box>
+          <Typography sx={labelStyle}>Scopus Indexed : *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            value={scopusIndexed ? "Yes" : "No"}
+            disabled
+          />
+        </Box>
+
+        <Box>
+          <Typography sx={labelStyle}>Serving as Editor : *</Typography>
+          <Select
+            size="small"
+            fullWidth
+            value={form.servingAsEditor || ""}
+            onChange={set("servingAsEditor")}
+            error={!!errors.servingAsEditor}
+            displayEmpty
+            MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}
+          >
+            <MenuItem value="" disabled>Select</MenuItem>
+            <MenuItem value="Yes">Yes</MenuItem>
+            <MenuItem value="No">No</MenuItem>
           </Select>
         </Box>
 
@@ -1429,7 +1489,7 @@ export default function BookChapterPublication() {
         </Box>
         <Box>
           <Typography sx={labelStyle}>Month: *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} disabled={!form.year} error={!!errors.month} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
+          <Select size="small" fullWidth displayEmpty value={form.month} onChange={set("month")} error={!!errors.month} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
             <MenuItem value="">Select Month</MenuItem>
             {getAvailableMonths().map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
           </Select>
@@ -1442,6 +1502,7 @@ export default function BookChapterPublication() {
         <FileField
           label="Attach Page displaying author affiliation and chapter title"
           name="authorAffiliation"
+          file={files.authorAffiliation}
           onChange={setFile("authorAffiliation")}
           error={!!errors.authorAffiliation}
           onError={(m) => toast.error(m)}
@@ -1451,23 +1512,50 @@ export default function BookChapterPublication() {
             setDeleteFlags(p => ({ ...p, authorAffiliation: true }));
           }}
         />
-        <Box>
-          <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")} error={!!errors.applyingSeedGrant} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
-            <MenuItem value="">Select</MenuItem>
-            <MenuItem value="Yes">Yes</MenuItem>
-            <MenuItem value="No">No</MenuItem>
-          </Select>
-        </Box>
-        <Box>
-          {(() => {
-            const isStudentInvolved = form.isStudentsInvolved === "Yes";
-            const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
-            const disableIncentive = isStudentInvolved || isPositionGreaterThan5;
-            return (
-              <>
+        <FileField
+          label="Total Book Chapter *"
+          file={files.totalBookChapter}
+          name="totalBookChapter"
+          maxSize={5 * 1024 * 1024}
+          onChange={setFile("totalBookChapter")}
+          error={!!errors.totalBookChapter}
+          onError={(m) => toast.error(m)}
+          existingFileUrl={existingFiles.totalBookChapter}
+          onRemoveExisting={() => {
+            setExistingFiles(p => ({ ...p, totalBookChapter: null }));
+            setDeleteFlags(p => ({ ...p, totalBookChapter: true }));
+          }}
+        />
+        {(() => {
+          const isStudentInvolved = form.isStudentsInvolved === "Yes";
+          const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
+          const isEditor = form.servingAsEditor === "Yes";
+          const notBookChapter = !isBookChapter;
+          const disableIncentive = isStudentInvolved || isPositionGreaterThan5 || isEditor || notBookChapter;
+          const currentApplyIncentive = disableIncentive ? "No" : form.applyIncentive;
+          
+          let estIncentive = "₹0";
+          if (currentApplyIncentive === "Yes") {
+              if (form.applyingSeedGrant === "Yes") {
+                  estIncentive = "₹3750";
+              } else {
+                  estIncentive = "₹7500";
+              }
+          }
+          
+          return (
+            <>
+              <Box>
+                <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
+                <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")} error={!!errors.applyingSeedGrant} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
+                  <MenuItem value="">Select</MenuItem>
+                  <MenuItem value="Yes">Yes</MenuItem>
+                  <MenuItem value="No">No</MenuItem>
+                </Select>
+              </Box>
+              <Box>
                 <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
-                <Select size="small" fullWidth displayEmpty value={disableIncentive ? "No" : form.applyIncentive} onChange={set("applyIncentive")} disabled={disableIncentive} error={!!errors.applyIncentive} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
+                <Select size="small" fullWidth displayEmpty value={currentApplyIncentive} onChange={set("applyIncentive")} disabled={disableIncentive} error={!!errors.applyIncentive} MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}>
                   <MenuItem value="">Select</MenuItem>
                   <MenuItem value="Yes">Yes</MenuItem>
                   <MenuItem value="No">No</MenuItem>
@@ -1477,10 +1565,42 @@ export default function BookChapterPublication() {
                     * Application for incentive is only for the first 5 author positions.
                   </Typography>
                 )}
-              </>
-            );
-          })()}
-        </Box>
+                {isEditor && !isPositionGreaterThan5 && (
+                  <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                    * Incentive is not applicable when serving as an editor.
+                  </Typography>
+                )}
+                {notBookChapter && !isPositionGreaterThan5 && !isEditor && (
+                  <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                    * Incentive is only applicable for direct submissions.
+                  </Typography>
+                )}
+              </Box>
+
+              {currentApplyIncentive === "Yes" && (
+                <Box sx={{
+                  gridColumn: { sm: "1 / -1" },
+                  p: 2.5,
+                  borderRadius: "12px",
+                  bgcolor: "rgba(16, 185, 129, 0.06)",
+                  border: "1.5px dashed rgba(16, 185, 129, 0.4)",
+                  mt: 2
+                }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+                    <Box>
+                      <Typography sx={{ fontSize: "0.8rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: "#059669" }}>
+                        Estimated Research Incentive Amount
+                      </Typography>
+                      <Typography sx={{ fontSize: "1.6rem", fontWeight: 800, color: "#047857", mt: 0.5 }}>
+                        {estIncentive}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+              )}
+            </>
+          );
+        })()}
       </Grid2>
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
@@ -1735,12 +1855,49 @@ export default function BookChapterPublication() {
                 </Box>
                 <Box sx={{ display: "flex", flexDirection: "column" }}>
                   {[
-                    { label: "Academic Year", value: data.academicYear?.year || "N/A", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Academic Year", value: data.academicYear?.year || data.academicYear || "N/A", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Book Chapter Title", value: data.chapterTitle || data.title || "N/A", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Book Title", value: data.bookTitle || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "DOI", value: data.doi || "N/A", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    { label: "Applicant Author Position", value: data.userAuthorPosition ? `${data.userAuthorPosition} / ${data.totalAuthors || 1}` : "1", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Publisher", value: data.publisher || "N/A", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Published Month", value: data.month || "-", icon: <CalendarMonthIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Published Year", value: data.year || "-", icon: <CalendarMonthIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    {
+                      label: "Applicant Author Position",
+                      chip: (
+                        (() => {
+                          const pos = data.userAuthorPosition || data.authorPosition || 1;
+                          const total = data.totalAuthors || ((data.coAuthors ? data.coAuthors.length : 0) + 1);
+                          return (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box sx={{
+                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                width: 32, height: 32, borderRadius: '50%',
+                                bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)',
+                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.9rem'
+                              }}>
+                                {pos}
+                              </Box>
+                              {total && (
+                                <>
+                                  <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem' }}>of</Typography>
+                                  <Box sx={{
+                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                    px: 1.2, height: 28, borderRadius: '8px',
+                                    bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)',
+                                    color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.85rem'
+                                  }}>
+                                    {total} Authors
+                                  </Box>
+                                </>
+                              )}
+                            </Box>
+                          );
+                        })()
+                      ),
+                      icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />
+                    },
                     { label: "Role", value: data.visibilityRole || "Applicant", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    { label: "Month/Year", value: `${data.month || ""} ${data.year || ""}`.trim() || "-", icon: <CalendarMonthIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Seed Grant Work", value: data.applyingSeedGrant === "Yes" ? "Yes" : "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Apply For Incentive", value: data.applyIncentive === "Yes" ? "Yes" : "No", icon: <CardGiftcard sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Approved Incentive Amount", value: data.approvedAmount ? `₹${data.approvedAmount}` : "-", icon: <CurrencyRupee sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> }
@@ -1764,177 +1921,201 @@ export default function BookChapterPublication() {
                           {item.label}
                         </Typography>
                       </Box>
-                      <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", textAlign: "right", maxWidth: "55%", wordBreak: "break-word" }}>
-                        {item.value}
-                      </Typography>
+                      {item.chip ? item.chip : (
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", textAlign: "right", maxWidth: "55%", wordBreak: "break-word" }}>
+                          {item.value}
+                        </Typography>
+                      )}
                     </Box>
                   ))}
                 </Box>
               </Paper>
             </Box>
 
-            {/* Right Column (Publication Scope & Appraisal) */}
-            <Box sx={{
-              minWidth: 0,
-              display: "flex",
-              flexDirection: "column",
-              gap: 3
-            }}>
-              {/* Scope, Eligibility, Claimant Card */}
-              <Paper elevation={0} sx={{ p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)" }}>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 2, borderBottom: "1px solid var(--border-color)" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                      <PublicIcon sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
-                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
-                        Publication Scope
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                      {data.publicationScope || data.incentiveApplied || "National"}
-                    </Typography>
+            {/* Right Column — single unified panel */}
+            <Box sx={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
+              <Paper
+                elevation={0}
+                sx={{ borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", overflow: "hidden" }}
+              >
+                {/* === Appraisal & Role Header === */}
+                <Box sx={{ px: 3, py: 1.8, display: "flex", alignItems: "center", gap: 1.5, background: "var(--bg-panel)", borderBottom: "1px solid var(--border-color)" }}>
+                  <CheckCircleOutlineIcon sx={{ color: "var(--color-primary)", fontSize: 18 }} />
+                  <Typography sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.9rem" }}>Appraisal & Role</Typography>
+                </Box>
+
+                {/* Row: Publication Scope */}
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 1.7, borderBottom: "1px solid var(--border-color)", "&:hover": { bgcolor: "rgba(0,0,0,0.012)" }, transition: "background 0.2s" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <PublicIcon sx={{ color: "var(--text-secondary)", fontSize: 17 }} />
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.84rem" }}>Publication Scope</Typography>
                   </Box>
+                  <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{data.publicationScope || "National"}</Typography>
+                </Box>
 
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 2, borderBottom: "1px solid var(--border-color)" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                      <CheckCircleOutlineIcon sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
-                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
-                        Article Eligibility for Appraisal
-                      </Typography>
-                    </Box>
-                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                      {data.status === "Approved" ? (data.appraisalEligible || "No") : "Not yet decided"}
-                    </Typography>
+                {/* Row: Eligibility */}
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 1.7, borderBottom: "1px solid var(--border-color)", "&:hover": { bgcolor: "rgba(0,0,0,0.012)" }, transition: "background 0.2s" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <CheckCircleOutlineIcon sx={{ color: "var(--text-secondary)", fontSize: 17 }} />
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.84rem" }}>Appraisal Eligibility</Typography>
                   </Box>
+                  {data.status === "Approved" ? (
+                    <Chip label={data.appraisalEligible || "No"} size="small" sx={{
+                      height: 22, fontWeight: 800, fontSize: "0.72rem", borderRadius: "8px",
+                      bgcolor: (data.appraisalEligible === "No") ? "rgba(211,47,47,0.1)" : "rgba(46,125,50,0.1)",
+                      color: (data.appraisalEligible === "No") ? "#d32f2f" : "#2e7d32",
+                      border: `1px solid ${(data.appraisalEligible === "No") ? "rgba(211,47,47,0.3)" : "rgba(46,125,50,0.3)"}`
+                    }} />
+                  ) : (
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)", fontStyle: "italic", fontSize: "0.82rem" }}>Not yet decided</Typography>
+                  )}
+                </Box>
 
-                  <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 0.5 }}>
-                      <Person sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
-                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
-                        Appraisal Claimant
-                      </Typography>
-                    </Box>
-                    <Box sx={{ textAlign: "right", maxWidth: "60%" }}>
-                      {(() => {
-                        const isApplicant = data.visibilityRole === "Applicant" || (data.facultyId && (data.facultyId === user?.userId || data.facultyId._id === user?.userId));
-                        const eligibleClaimants = [
-                          { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
-                          ...((data.coAuthors || [])
-                            .filter(ca => ca.employeeId)
-                            .map(ca => ({
-                              _id: ca.employeeId?._id || ca.employeeId,
-                              name: ca.employeeId?.name || ca.name,
-                              institutionId: ca.employeeId?.institutionId || ca.employeeId || ""
-                            })))
-                        ];
-                        const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
-
-                        if (uniqueClaimants.length <= 1) {
-                          return (
-                            <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                              {user?.name || data.facultyId?.name || "AMALAPURAPU KEDARNADH"} <Typography component="span" variant="caption" sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>(Auto-assigned)</Typography>
-                            </Typography>
-                          );
-                        }
-
-                        const currentClaimantObj = uniqueClaimants.find(c =>
-                          (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
-                          (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
-                        );
-
-                        if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1 && data.status === "Approved" && data.appraisalEligible === "Yes") {
-                          return (
-                            <Select
-                              size="small"
-                              fullWidth
-                              value=""
-                              displayEmpty
-                              onChange={(e) => handleResolveClaim(data._id, "BookChapter", e.target.value)}
-                              sx={{ backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
-                            >
-                              <MenuItem value="" disabled>Select Claimant</MenuItem>
-                              {uniqueClaimants.map(c => (
-                                <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
-                                  {c.name} ({c.institutionId})
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          );
-                        }
-
+                {/* Row: Claimant */}
+                <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", px: 3, py: 1.7, borderBottom: "2px solid var(--border-color)", "&:hover": { bgcolor: "rgba(0,0,0,0.012)" }, transition: "background 0.2s" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 0.4 }}>
+                    <Person sx={{ color: "var(--text-secondary)", fontSize: 17 }} />
+                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.84rem" }}>Appraisal Claimant</Typography>
+                  </Box>
+                  <Box sx={{ textAlign: "right", maxWidth: "58%" }}>
+                    {(() => {
+                      const isApplicant = data.visibilityRole === "Applicant" || (data.facultyId && (data.facultyId === user?.userId || data.facultyId._id === user?.userId));
+                      const eligibleClaimants = [
+                        { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
+                        ...((data.coAuthors || []).filter(ca => ca.employeeId).map(ca => ({
+                          _id: ca.employeeId?._id || ca.employeeId,
+                          name: ca.employeeId?.name || ca.name,
+                          institutionId: ca.employeeId?.institutionId || ca.employeeId || ""
+                        })))
+                      ];
+                      const uniqueClaimants = eligibleClaimants.filter((v, i, a) => {
+                        if (!v.name) return false;
+                        return a.findIndex(t => {
+                          const sameInst = v.institutionId && t.institutionId && v.institutionId.toString() === t.institutionId.toString();
+                          const sameId = v._id && t._id && v._id.toString() === t._id.toString();
+                          const sameName = v.name && t.name && v.name.trim().toLowerCase() === t.name.trim().toLowerCase();
+                          return sameInst || sameId || sameName;
+                        }) === i;
+                      });
+                      if (uniqueClaimants.length <= 1) {
                         return (
-                          <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                            {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : (data.status === "Approved" && data.appraisalEligible === "Yes" ? `Not Yet Designated` : `N/A - Not Eligible or Not Approved`)}
+                          <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", wordBreak: "break-word" }}>
+                            {data.facultyId?.name || user?.name || "-"}
+                            <Typography component="span" variant="caption" sx={{ ml: 0.5, fontWeight: 600, color: "var(--text-secondary)" }}>(Auto)</Typography>
                           </Typography>
                         );
-                      })()}
-                    </Box>
+                      }
+                      const currentClaimantObj = uniqueClaimants.find(c =>
+                        (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
+                        (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
+                      );
+                      if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1 && data.status === "Approved" && data.appraisalEligible === "Yes") {
+                        return (
+                          <Select size="small" fullWidth value="" displayEmpty onChange={(e) => handleResolveClaim(data._id, "BookChapter", e.target.value)} sx={{ backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}>
+                            <MenuItem value="" disabled>Select Claimant</MenuItem>
+                            {uniqueClaimants.map(c => <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>{c.name} ({c.institutionId})</MenuItem>)}
+                          </Select>
+                        );
+                      }
+                      return (
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", wordBreak: "break-word" }}>
+                          {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : (data.status === "Approved" && data.appraisalEligible === "Yes" ? "Not Yet Designated" : "N/A")}
+                        </Typography>
+                      );
+                    })()}
                   </Box>
+                </Box>
+
+                {/* === Co-Authors Header === */}
+                <Box sx={{ px: 3, py: 1.8, display: "flex", alignItems: "center", gap: 1.5, background: "var(--bg-panel)", borderBottom: "1px solid var(--border-color)" }}>
+                  <Groups sx={{ color: "var(--color-primary)", fontSize: 18 }} />
+                  <Typography sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.9rem" }}>Co-Authors</Typography>
+                  {data.coAuthors && data.coAuthors.length > 0 && (
+                    <Chip label={`${data.coAuthors.length}`} size="small" sx={{ ml: "auto", height: 20, fontSize: "0.7rem", fontWeight: 800, bgcolor: "var(--bg-glass)", border: "1px solid var(--border-color)" }} />
+                  )}
+                </Box>
+
+                {/* Co-Authors list */}
+                <Box>
+                  {(() => {
+                    const applicantPos = parseInt(data.userAuthorPosition || data.authorPosition) || 0;
+                    const filteredCoAuthors = (data.coAuthors || []).filter(ca => {
+                      const caPos = parseInt(ca.authorPosition);
+                      const isApplicantName = ca.name && user?.name && ca.name.trim().toLowerCase() === user.name.trim().toLowerCase();
+                      return caPos !== applicantPos && !isApplicantName;
+                    });
+                    if (filteredCoAuthors.length === 0) {
+                      return (
+                        <Box sx={{ px: 3, py: 3, textAlign: "center" }}>
+                          <Groups sx={{ color: "var(--text-secondary)", fontSize: 30, opacity: 0.35 }} />
+                          <Typography variant="body2" sx={{ color: "var(--text-secondary)", mt: 1, fontStyle: "italic" }}>No co-authors registered</Typography>
+                        </Box>
+                      );
+                    }
+                    const total = parseInt(data.totalAuthors) || (filteredCoAuthors.length + 1);
+                    const derivedPositions = total > 0 ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos) : [];
+                    return filteredCoAuthors.map((author, idx) => {
+                      const pos = author.authorPosition || derivedPositions[idx] || (idx + 1);
+                      const isMe = Boolean(
+                        (author.employeeId && (
+                          (typeof author.employeeId === 'string' && (
+                            author.employeeId === user?.institutionId ||
+                            author.employeeId === user?.employeeId ||
+                            author.employeeId === user?.empId ||
+                            author.employeeId === user?.userId ||
+                            author.employeeId === user?._id
+                          )) ||
+                          (typeof author.employeeId === 'object' && (
+                            author.employeeId._id === user?.userId ||
+                            author.employeeId._id === user?._id ||
+                            (author.employeeId.institutionId && author.employeeId.institutionId === user?.institutionId) ||
+                            (author.employeeId.employeeId && author.employeeId.employeeId === user?.employeeId)
+                          ))
+                        )) ||
+                        (author.name && user?.name && author.name.trim().toLowerCase() === user.name.trim().toLowerCase())
+                      );
+                      return (
+                        <Box
+                          key={idx}
+                          sx={{
+                            display: "flex", alignItems: "center", gap: 2, px: 3, py: 1.4,
+                            borderBottom: idx === filteredCoAuthors.length - 1 ? "none" : "1px solid var(--border-color)",
+                            bgcolor: isMe ? "rgba(190, 147, 55, 0.04)" : "transparent",
+                            "&:hover": { bgcolor: isMe ? "rgba(190, 147, 55, 0.07)" : "rgba(0,0,0,0.012)" },
+                            transition: "background 0.2s"
+                          }}
+                        >
+                          <Box sx={{
+                            display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                            width: 28, height: 28, borderRadius: "50%",
+                            bgcolor: isMe ? "rgba(190, 147, 55, 0.18)" : "rgba(0, 78, 146, 0.07)",
+                            border: `2px solid ${isMe ? "var(--color-primary)" : "rgba(0,0,0,0.12)"}`,
+                            color: isMe ? "var(--color-primary)" : "var(--text-secondary)",
+                            fontWeight: 900, fontSize: "0.72rem"
+                          }}>
+                            {pos}
+                          </Box>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
+                              <Typography variant="body2" sx={{ fontWeight: isMe ? 800 : 700, color: "var(--text-primary)", fontSize: "0.84rem" }} noWrap>
+                                {author.name}
+                              </Typography>
+                              {isMe && (
+                                <Chip label="You" size="small" sx={{ height: 16, fontSize: "0.6rem", fontWeight: 800, bgcolor: "rgba(190, 147, 55, 0.15)", color: "var(--color-primary)", border: "1px solid rgba(190, 147, 55, 0.4)", px: 0.3 }} />
+                              )}
+                            </Box>
+                            {author.affiliation && (
+                              <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontSize: "0.71rem" }} noWrap>{author.affiliation}</Typography>
+                            )}
+                          </Box>
+                        </Box>
+                      );
+                    });
+                  })()}
                 </Box>
               </Paper>
             </Box>
           </Box>
-
-          <Divider sx={{ my: 3 }} />
-
-          {/* Co-Authors detail list */}
-          {(() => {
-            const applicantPos = parseInt(data.userAuthorPosition || data.authorPosition) || 0;
-            const filteredCoAuthors = (data.coAuthors || []).filter((ca) => {
-              const caPos = parseInt(ca.authorPosition);
-              const isApplicantName = ca.name && user?.name && ca.name.trim().toLowerCase() === user.name.trim().toLowerCase();
-              return caPos !== applicantPos && !isApplicantName;
-            });
-
-            if (filteredCoAuthors.length === 0) return null;
-
-            return (
-              <Card sx={{ p: 0, overflow: "hidden", mb: 3, border: "1px solid var(--border-color)", background: "rgba(255,255,255,0.01)" }}>
-                <Box sx={{ p: 2, display: "flex", alignItems: "center", gap: 1.5, borderBottom: "1px solid var(--border-color)" }}>
-                  <Groups sx={{ color: "var(--color-primary)" }} />
-                  <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Authors & Affiliations</Typography>
-                </Box>
-                <TableContainer>
-                  <Table size="small">
-                    <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)", width: 80 }}>POSITION</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>NAME</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>AFFILIATION</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {(() => {
-                        const total = parseInt(data.totalAuthors) || (filteredCoAuthors.length + 1);
-                        const derivedPositions = total > 0
-                          ? Array.from({ length: total }, (_, i) => i + 1).filter(p => p !== applicantPos)
-                          : [];
-                        return filteredCoAuthors.map((author, idx) => {
-                          const pos = author.authorPosition || derivedPositions[idx] || (idx + 1);
-                          return (
-                            <TableRow key={idx}>
-                              <TableCell>
-                                <Box sx={{
-                                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                  width: 30, height: 30, borderRadius: '50%',
-                                  bgcolor: 'rgba(190, 147, 55, 0.12)', border: '1.5px solid var(--color-primary)',
-                                  color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem'
-                                }}>
-                                  {pos}
-                                </Box>
-                              </TableCell>
-                              <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{author.name}</TableCell>
-                              <TableCell sx={{ color: "var(--text-secondary)" }}>{author.affiliation}</TableCell>
-                            </TableRow>
-                          );
-                        });
-                      })()}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </Card>
-            );
-          })()}
 
           {/* Attached Files previews */}
           <Box sx={{ mt: 3 }}>
@@ -1951,7 +2132,7 @@ export default function BookChapterPublication() {
           </Box>
 
           {/* Remarks/Comments if available */}
-          {(data.hodComment || data.rndComment || data.approvedAmount) && (
+          {(Boolean(data.hodComment) || Boolean(data.rndComment)) && (
             <Box sx={{ mt: 4, display: "flex", flexDirection: "column", gap: 2 }}>
               {data.hodComment && (
                 <Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid rgba(255, 193, 7, 0.2)" }}>
@@ -1959,19 +2140,10 @@ export default function BookChapterPublication() {
                   <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.hodComment}"</Typography>
                 </Box>
               )}
-              {(data.rndComment || data.approvedAmount) && (
+              {data.rndComment && (
                 <Box sx={{ p: 2, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "10px", border: "1px solid rgba(76, 175, 80, 0.2)" }}>
-                  {data.rndComment && (
-                    <>
-                      <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
-                      <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
-                    </>
-                  )}
-                  {data.approvedAmount && (
-                    <Typography variant="h6" sx={{ mt: data.rndComment ? 2 : 0, fontWeight: 900, color: "#10b981" }}>
-                      Approved Amount: ₹{data.approvedAmount}
-                    </Typography>
-                  )}
+                  <Typography variant="caption" sx={{ fontWeight: 900, color: "#4caf50", textTransform: "uppercase" }}>R&D Remarks</Typography>
+                  <Typography variant="body2" sx={{ fontStyle: "italic", mt: 0.5, color: "var(--text-secondary)" }}>"{data.rndComment}"</Typography>
                 </Box>
               )}
             </Box>

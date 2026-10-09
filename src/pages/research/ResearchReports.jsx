@@ -11,13 +11,20 @@ import {
     InputLabel,
     Select,
     MenuItem,
-    Paper
+    Paper,
+    TextField,
+    OutlinedInput,
+    Popover,
+    Chip,
+    IconButton
 } from "@mui/material";
 import {
     Download as DownloadIcon,
     Analytics as AnalyticsIcon,
     MenuBook as BookIcon,
-    Article as JournalIcon
+    Article as JournalIcon,
+    DateRange as DateRangeIcon,
+    Close as CloseIcon
 } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import SectionHeader from "../../components/common/SectionHeader";
@@ -30,8 +37,8 @@ import { toast } from "sonner";
 const getAlignments = (columns) => {
     return columns.map(col => {
         const lowerCol = col.toLowerCase();
-        // Left align names, titles, authors, categories, organizations, agencies
-        if (lowerCol.includes("name") || lowerCol.includes("title") || lowerCol.includes("author") || lowerCol.includes("inventor") || lowerCol.includes("developer") || lowerCol.includes("investigator") || lowerCol.includes("agency") || lowerCol.includes("organisation") || lowerCol.includes("publisher") || lowerCol.includes("category") || lowerCol === "dept") {
+        // Left align names, titles, authors, categories, organizations, agencies, dept, doi
+        if (lowerCol.includes("name") || lowerCol.includes("title") || lowerCol.includes("author") || lowerCol.includes("inventor") || lowerCol.includes("developer") || lowerCol.includes("investigator") || lowerCol.includes("agency") || lowerCol.includes("organisation") || lowerCol.includes("publisher") || lowerCol.includes("category") || lowerCol === "dept" || lowerCol === "doi" || lowerCol.includes("applied")) {
             return "left";
         }
         // Right align amounts/money
@@ -47,8 +54,69 @@ export default function ResearchReports() {
     const [activeTab, setActiveTab] = useState(0);
     const [academicYears, setAcademicYears] = useState([]);
     const [selectedYear, setSelectedYear] = useState("");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+    const [tempStartDate, setTempStartDate] = useState("");
+    const [tempEndDate, setTempEndDate] = useState("");
+    const [datePopoverAnchor, setDatePopoverAnchor] = useState(null);
     const [loading, setLoading] = useState(false);
+
+    const handleOpenDatePopover = (event) => {
+        setTempStartDate(startDate);
+        setTempEndDate(endDate);
+        setDatePopoverAnchor(event.currentTarget);
+    };
+
+    const handleCloseDatePopover = () => {
+        setDatePopoverAnchor(null);
+    };
+
+    const handleApplyDateFilter = () => {
+        const today = new Date().toISOString().split('T')[0];
+        if (tempStartDate && tempStartDate > today) {
+            toast.error("From Date cannot be in the future");
+            return;
+        }
+        if (tempEndDate && tempEndDate > today) {
+            toast.error("To Date cannot be in the future");
+            return;
+        }
+        if (tempStartDate && tempEndDate && tempStartDate > tempEndDate) {
+            toast.error("From Date cannot be after To Date");
+            return;
+        }
+        setStartDate(tempStartDate);
+        setEndDate(tempEndDate);
+        setDatePopoverAnchor(null);
+    };
+
+    const handleClearDateFilter = () => {
+        setTempStartDate("");
+        setTempEndDate("");
+        setStartDate("");
+        setEndDate("");
+        setDatePopoverAnchor(null);
+    };
+
+    const getDateFilterLabel = () => {
+        if (startDate && endDate) return `${startDate} to ${endDate}`;
+        if (startDate) return `From ${startDate}`;
+        if (endDate) return `Up to ${endDate}`;
+        return "Filter by Date";
+    };
     const [data, setData] = useState({ journals: [], textbooks: [], chapters: [], conferences: [], patents: [], products: [], projects: [], consultancy: [] });
+    const [loadedCategories, setLoadedCategories] = useState({});
+
+    const TAB_CONFIG = [
+        { key: "journals", type: "Journal" },
+        { key: "textbooks", type: "Text Book" },
+        { key: "chapters", type: "Book Chapter" },
+        { key: "conferences", type: "Conference" },
+        { key: "patents", type: "Patent" },
+        { key: "products", type: "Novel Product" },
+        { key: "projects", type: "Funded Project" },
+        { key: "consultancy", type: "Consultancy" }
+    ];
 
     useEffect(() => {
         // Fetch Academic Years
@@ -65,19 +133,52 @@ export default function ResearchReports() {
 
     useEffect(() => {
         if (selectedYear) {
-            fetchReportData();
+            setData({
+                journals: [],
+                textbooks: [],
+                chapters: [],
+                conferences: [],
+                patents: [],
+                products: [],
+                projects: [],
+                consultancy: []
+            });
+            setLoadedCategories({});
+            fetchCategoryData(activeTab, selectedYear, false, startDate, endDate);
         }
-    }, [selectedYear]);
+    }, [selectedYear, startDate, endDate]);
 
-    const fetchReportData = async () => {
+    const fetchCategoryData = async (tabIndex, year, forceAll = false, sDate = startDate, eDate = endDate) => {
+        const tab = TAB_CONFIG[tabIndex];
+        if (!tab && !forceAll) return null;
+
         setLoading(true);
         try {
             const params = {};
-            if (selectedYear !== "All") params.academicYear = selectedYear;
+            if (year !== "All") params.academicYear = year;
+            if (!forceAll && tab) params.type = tab.type;
+            if (sDate) params.startDate = sDate;
+            if (eDate) params.endDate = eDate;
 
             const res = await API.get("/api/hod/research-requests/reports", { params });
             if (res.data?.success) {
-                setData(res.data.data);
+                if (forceAll) {
+                    setData(res.data.data);
+                    const allKeys = {};
+                    TAB_CONFIG.forEach(t => { allKeys[t.key] = true; });
+                    setLoadedCategories(allKeys);
+                    return res.data.data;
+                } else {
+                    setData(prev => ({
+                        ...prev,
+                        [tab.key]: res.data.data[tab.key] || []
+                    }));
+                    setLoadedCategories(prev => ({
+                        ...prev,
+                        [tab.key]: true
+                    }));
+                    return res.data.data;
+                }
             }
         } catch (error) {
             toast.error("Failed to fetch report data");
@@ -85,10 +186,15 @@ export default function ResearchReports() {
         } finally {
             setLoading(false);
         }
+        return null;
     };
 
     const handleTabChange = (event, newValue) => {
         setActiveTab(newValue);
+        const tab = TAB_CONFIG[newValue];
+        if (tab && !loadedCategories[tab.key]) {
+            fetchCategoryData(newValue, selectedYear, false, startDate, endDate);
+        }
     };
 
     const getYearName = () => {
@@ -109,23 +215,51 @@ export default function ResearchReports() {
         let filename = "";
 
         if (type === "journals") {
-            headers = ["S.No", "Emp Id", "Name of Faculty", "Dept", "PAN No", "Name of the Journal", "Paper Title", "Academic Year", "Amount (Rs)", "Status", "Co-Authors"];
+            headers = [
+                "S.No", "Emp Id", "Faculty Name", "College", "PAN No", "Dept",
+                "Is No DOI", "DOI", "Name of the Journal", "Paper Title", "Academic Year",
+                "ISSN", "e-ISSN", "Is Scopus", "Is WoS", "Quartile", "WoS Journal Type", "Journal Category",
+                "Vol", "Issue", "h-Index", "JCR Impact Factor", "Citations", "SDGs",
+                "Corresponding Author", "Apply Incentive", "Approved Incentive Amount",
+                "Appraisal Eligible", "Appraisal Claimant", "Status", "Co-Authors", "Applied At"
+            ];
             rows = (data.journals || []).map((item, i) => [
                 i + 1,
                 item.empId,
                 item.facultyName,
-                item.dept,
+                item.college,
                 item.panNo,
+                item.dept,
+                item.isNoDoi,
+                item.doi,
                 item.journalName,
                 item.paperTitle,
                 item.year,
-                item.amount,
+                item.issn,
+                item.eissn,
+                item.isScopus,
+                item.isWos,
+                item.journalQuartile,
+                item.journalType,
+                item.journalCategory,
+                item.vol,
+                item.issue,
+                item.hIndex,
+                item.jcrImpactFactor,
+                item.citations,
+                item.sdgs,
+                item.correspondingAuthor,
+                item.applyIncentive,
+                item.approvedAmount,
+                item.appraisalEligible,
+                item.appraisalClaimant,
                 item.status,
-                item.coAuthorsText || "N/A"
+                item.coAuthorsText || "N/A",
+                item.appliedAt || "N/A"
             ]);
             filename = `Journal_Incentives_Report_${yearName}.csv`;
         } else if (type === "textbooks") {
-            headers = ["S.No", "Dept", "Name of Faculty", "Title of the Book", "Name of the Publisher", "ISBN Number", "Academic Year", "Status", "Co-Authors"];
+            headers = ["S.No", "Dept", "Name of Faculty", "Title of the Book", "Name of the Publisher", "ISBN Number", "Academic Year", "Is Scopus", "Status", "Co-Authors"];
             rows = (data.textbooks || []).map((item, i) => [
                 i + 1,
                 item.dept,
@@ -134,6 +268,7 @@ export default function ResearchReports() {
                 item.publisher,
                 item.isbn,
                 item.year,
+                item.scopusIndexed || "No",
                 item.status,
                 item.coAuthorsText || "N/A"
             ]);
@@ -154,19 +289,41 @@ export default function ResearchReports() {
             ]);
             filename = `Book_Chapters_Report_${yearName}.csv`;
         } else if (type === "conferences") {
-            headers = ["S.No", "Emp Id", "Name of Faculty", "Dept", "PAN No", "Conference Name", "Paper Title", "Academic Year", "Amount (Rs)", "Status", "Co-Authors"];
+            headers = [
+                "S.No", "Emp Id", "Faculty Name", "College", "PAN No", "Dept",
+                "DOI", "Conference Name", "Paper Title", "Academic Year", "Month", "Year",
+                "Location", "Conference Type", "Scopus Indexed", "ISSN/ISBN", "Publisher",
+                "Students Involved", "Seed Grant Work", "Apply Incentive", "Approved Incentive Amount",
+                "Appraisal Eligible", "Appraisal Claimant", "SDGs", "Status", "Co-Authors", "Applied At"
+            ];
             rows = (data.conferences || []).map((item, i) => [
                 i + 1,
                 item.empId,
                 item.facultyName,
-                item.dept,
+                item.college,
                 item.panNo,
+                item.dept,
+                item.doi,
                 item.conferenceName,
                 item.paperTitle,
-                item.year,
-                item.amount,
+                item.academicYear || item.year,
+                item.month,
+                item.publishedYear || item.year,
+                item.location,
+                item.conferenceType,
+                item.scopusIndexed,
+                item.issnIsbn,
+                item.publisher,
+                item.isStudentsInvolved,
+                item.applyingSeedGrant,
+                item.applyIncentive,
+                item.approvedAmount || item.amount || 0,
+                item.appraisalEligible,
+                item.appraisalClaimant,
+                item.sdgs,
                 item.status,
-                item.coAuthorsText || "N/A"
+                item.coAuthorsText || "N/A",
+                item.appliedAt || "N/A"
             ]);
             filename = `Conferences_Report_${yearName}.csv`;
         } else if (type === "patents") {
@@ -247,7 +404,15 @@ export default function ResearchReports() {
         triggerDownload(csvContent, filename);
     };
 
-    const handleConsolidatedDownload = () => {
+    const handleConsolidatedDownload = async () => {
+        let currentData = data;
+        const allLoaded = TAB_CONFIG.every(t => loadedCategories[t.key]);
+        if (!allLoaded) {
+            toast.info("Preparing consolidated report export...");
+            const fetched = await fetchCategoryData(activeTab, selectedYear, true);
+            if (fetched) currentData = fetched;
+        }
+
         let lines = [];
 
         const academicYearText =
@@ -258,15 +423,15 @@ export default function ResearchReports() {
         lines.push(`"RESEARCH INCENTIVE REPORT - ${academicYearText}"`);
         lines.push("");
 
-        const q1Journals = data.journals.filter(
+        const q1Journals = (currentData.journals || []).filter(
             j => j.category === "Q1"
         );
 
-        const q2Journals = data.journals.filter(
+        const q2Journals = (currentData.journals || []).filter(
             j => j.category === "Q2"
         );
 
-        const scopusJournals = data.journals.filter(
+        const scopusJournals = (currentData.journals || []).filter(
             j => j.category === "SCOPUS"
         );
 
@@ -277,14 +442,35 @@ export default function ResearchReports() {
                 "S.No",
                 "Emp ID",
                 "Faculty Name",
-                "Serving Department",
+                "College",
                 "PAN Number",
+                "Serving Department",
+                "Is No DOI",
+                "DOI",
                 "Journal Name",
                 "Paper Title",
                 "Academic Year",
-                "Amount",
+                "ISSN",
+                "e-ISSN",
+                "Is Scopus",
+                "Is WoS",
+                "Quartile",
+                "WoS Journal Type",
+                "Journal Category",
+                "Vol",
+                "Issue",
+                "h-Index",
+                "JCR Impact Factor",
+                "Citations",
+                "SDGs",
+                "Corresponding Author",
+                "Apply Incentive",
+                "Approved Incentive Amount",
+                "Appraisal Eligible",
+                "Appraisal Claimant",
                 "Status",
-                "Co-Authors"
+                "Co-Authors",
+                "Applied At"
             ].join(","));
 
             journals.forEach((item, index) => {
@@ -292,14 +478,35 @@ export default function ResearchReports() {
                     index + 1,
                     item.empId,
                     item.facultyName,
-                    item.dept,
+                    item.college,
                     item.panNo,
+                    item.dept,
+                    item.isNoDoi,
+                    item.doi,
                     item.journalName,
                     item.paperTitle || "-",
                     item.year,
-                    item.amount,
+                    item.issn,
+                    item.eissn,
+                    item.isScopus,
+                    item.isWos,
+                    item.journalQuartile,
+                    item.journalType,
+                    item.journalCategory,
+                    item.vol,
+                    item.issue,
+                    item.hIndex,
+                    item.jcrImpactFactor,
+                    item.citations,
+                    item.sdgs,
+                    item.correspondingAuthor,
+                    item.applyIncentive,
+                    item.approvedAmount,
+                    item.appraisalEligible,
+                    item.appraisalClaimant,
                     item.status,
-                    item.coAuthorsText || "N/A"
+                    item.coAuthorsText || "N/A",
+                    item.appliedAt || "N/A"
                 ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
             });
 
@@ -331,6 +538,7 @@ export default function ResearchReports() {
             "Book Title",
             "Publisher",
             "ISBN",
+            "Is Scopus",
             "Amount",
             "Status",
             "Co-Authors"
@@ -346,6 +554,7 @@ export default function ResearchReports() {
                 item.title,
                 item.publisher,
                 item.isbn,
+                item.scopusIndexed || "No",
                 item.amount || "-",
                 item.status,
                 item.coAuthorsText || "N/A"
@@ -404,14 +613,30 @@ export default function ResearchReports() {
             "S.No",
             "Emp ID",
             "Faculty Name",
-            "Serving Department",
+            "College",
             "PAN Number",
+            "Serving Department",
+            "DOI",
             "Conference Name",
             "Paper Title",
             "Academic Year",
-            "Amount",
+            "Month",
+            "Year",
+            "Location",
+            "Conference Type",
+            "Scopus Indexed",
+            "ISSN/ISBN",
+            "Publisher",
+            "Students Involved",
+            "Seed Grant Work",
+            "Apply Incentive",
+            "Approved Incentive Amount",
+            "Appraisal Eligible",
+            "Appraisal Claimant",
+            "SDGs",
             "Status",
-            "Co-Authors"
+            "Co-Authors",
+            "Applied At"
         ].join(","));
 
         (data.conferences || []).forEach((item, index) => {
@@ -419,14 +644,30 @@ export default function ResearchReports() {
                 index + 1,
                 item.empId,
                 item.facultyName,
-                item.dept,
+                item.college,
                 item.panNo,
+                item.dept,
+                item.doi,
                 item.conferenceName,
                 item.paperTitle || "-",
-                item.year,
-                item.amount || "-",
+                item.academicYear || item.year,
+                item.month,
+                item.publishedYear || item.year,
+                item.location,
+                item.conferenceType,
+                item.scopusIndexed,
+                item.issnIsbn,
+                item.publisher,
+                item.isStudentsInvolved,
+                item.applyingSeedGrant,
+                item.applyIncentive,
+                item.approvedAmount || item.amount || "-",
+                item.appraisalEligible,
+                item.appraisalClaimant,
+                item.sdgs,
                 item.status,
-                item.coAuthorsText || "N/A"
+                item.coAuthorsText || "N/A",
+                item.appliedAt || "N/A"
             ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
         });
 
@@ -625,17 +866,47 @@ export default function ResearchReports() {
     };
 
     const renderJournals = () => {
-        const columns = ["S.No", "Emp Id", "Faculty Name", "Dept", "Journal Name", "Paper Title", "Academic Year", "Status", "Co-Authors"];
+        const columns = [
+            "S.No", "Emp Id", "Faculty Name", "College", "PAN No", "Dept",
+            "Is No DOI", "DOI", "Journal Name", "Paper Title", "Academic Year",
+            "ISSN", "e-ISSN", "Is Scopus", "Is WoS", "Quartile", "WoS Journal Type", "Journal Category",
+            "Vol", "Issue", "h-Index", "JCR Impact Factor", "Citations", "SDGs",
+            "Corresponding Author", "Apply Incentive", "Approved Incentive Amount",
+            "Appraisal Eligible", "Appraisal Claimant", "Status", "Co-Authors", "Applied At"
+        ];
         const rows = (data.journals || []).map((item, i) => [
             i + 1,
             item.empId,
             item.facultyName,
+            item.college,
+            item.panNo,
             item.dept,
+            item.isNoDoi,
+            item.doi,
             item.journalName,
             item.paperTitle,
             item.year,
+            item.issn,
+            item.eissn,
+            item.isScopus,
+            item.isWos,
+            item.journalQuartile,
+            item.journalType,
+            item.journalCategory,
+            item.vol,
+            item.issue,
+            item.hIndex,
+            item.jcrImpactFactor,
+            item.citations,
+            item.sdgs,
+            item.correspondingAuthor,
+            item.applyIncentive,
+            item.approvedAmount,
+            item.appraisalEligible,
+            item.appraisalClaimant,
             item.status,
-            item.coAuthorsText || "N/A"
+            item.coAuthorsText || "N/A",
+            item.appliedAt || "N/A"
         ]);
         const alignments = getAlignments(columns);
         return (
@@ -653,7 +924,7 @@ export default function ResearchReports() {
     };
 
     const renderTextbooks = () => {
-        const columns = ["S.No", "Dept", "Faculty Name", "Book Title", "Publisher", "ISBN", "Year", "Status", "Co-Authors"];
+        const columns = ["S.No", "Dept", "Faculty Name", "Book Title", "Publisher", "ISBN", "Academic Year", "Is Scopus", "Status", "Co-Authors"];
         const rows = (data.textbooks || []).map((item, i) => [
             i + 1,
             item.dept,
@@ -662,6 +933,7 @@ export default function ResearchReports() {
             item.publisher,
             item.isbn,
             item.year,
+            item.scopusIndexed || "No",
             item.status,
             item.coAuthorsText || "N/A"
         ]);
@@ -709,16 +981,41 @@ export default function ResearchReports() {
     };
 
     const renderConferences = () => {
-        const columns = ["S.No", "Emp Id", "Faculty Name", "Dept", "Conference Name", "Academic Year", "Status", "Co-Authors"];
+        const columns = [
+            "S.No", "Emp Id", "Faculty Name", "College", "PAN No", "Dept",
+            "DOI", "Conference Name", "Paper Title", "Academic Year", "Month", "Year",
+            "Location", "Conference Type", "Scopus Indexed", "ISSN/ISBN", "Publisher",
+            "Students Involved", "Seed Grant Work", "Apply Incentive", "Approved Incentive Amount",
+            "Appraisal Eligible", "Appraisal Claimant", "SDGs", "Status", "Co-Authors", "Applied At"
+        ];
         const rows = (data.conferences || []).map((item, i) => [
             i + 1,
             item.empId,
             item.facultyName,
+            item.college,
+            item.panNo,
             item.dept,
+            item.doi,
             item.conferenceName,
-            item.year,
+            item.paperTitle,
+            item.academicYear || item.year,
+            item.month,
+            item.publishedYear || item.year,
+            item.location,
+            item.conferenceType,
+            item.scopusIndexed,
+            item.issnIsbn,
+            item.publisher,
+            item.isStudentsInvolved,
+            item.applyingSeedGrant,
+            item.applyIncentive,
+            item.approvedAmount ? `₹${item.approvedAmount}` : (item.amount ? `₹${item.amount}` : "0"),
+            item.appraisalEligible,
+            item.appraisalClaimant,
+            item.sdgs,
             item.status,
-            item.coAuthorsText || "N/A"
+            item.coAuthorsText || "N/A",
+            item.appliedAt || "N/A"
         ]);
         const alignments = getAlignments(columns);
         return (
@@ -862,73 +1159,119 @@ export default function ResearchReports() {
 
             <Paper elevation={0} sx={{ borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", overflow: "hidden" }}>
                 {/* Toolbar Section */}
-                <Box sx={{ p: 2.5, borderBottom: "1px solid var(--border-color)", background: "var(--bg-glass)" }}>
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ width: "100%", alignItems: { xs: "stretch", sm: "center" } }}>
-                        <Tabs
-                            value={activeTab}
-                            onChange={handleTabChange}
-                            variant="scrollable"
-                            scrollButtons="auto"
-                            allowScrollButtonsMobile
-                            sx={{
-                                width: "100%",
-                                maxWidth: "100%",
-                                minHeight: 48,
-                                "& .MuiTabs-scrollButtons.Mui-disabled": {
-                                    width: 0,
-                                    opacity: 0,
-                                    overflow: "hidden"
-                                },
-                                "& .MuiTabs-indicator": {
-                                    height: 3,
-                                    borderRadius: "3px",
-                                    background: "var(--gradient-primary) !important"
-                                },
-                                "& .MuiTab-root": {
+                <Box sx={{ p: 2, borderBottom: "1px solid var(--border-color)", background: "var(--bg-glass)" }}>
+                    <Box sx={{ display: "flex", flexDirection: { xs: "column", lg: "row" }, justifyContent: "space-between", alignItems: { xs: "stretch", lg: "center" }, gap: 2 }}>
+                        {/* Scrollable Tabs */}
+                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                            <Tabs
+                                value={activeTab}
+                                onChange={handleTabChange}
+                                variant="scrollable"
+                                scrollButtons="auto"
+                                allowScrollButtonsMobile
+                                sx={{
+                                    minHeight: 44,
+                                    "& .MuiTabs-scrollButtons.Mui-disabled": {
+                                        width: 0,
+                                        opacity: 0,
+                                        overflow: "hidden"
+                                    },
+                                    "& .MuiTabs-indicator": {
+                                        height: 3,
+                                        borderRadius: "3px",
+                                        background: "var(--gradient-primary) !important"
+                                    },
+                                    "& .MuiTab-root": {
+                                        textTransform: "none",
+                                        fontWeight: 700,
+                                        fontSize: "0.9rem",
+                                        minHeight: 44,
+                                        py: 1,
+                                        px: 2,
+                                        color: "var(--text-secondary)",
+                                        transition: "all 0.2s ease",
+                                        "&.Mui-selected": {
+                                            color: "var(--color-primary) !important",
+                                        },
+                                        "&.Mui-selected svg": {
+                                            color: "var(--color-primary) !important"
+                                        }
+                                    }
+                                }}
+                            >
+                                <Tab icon={<JournalIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Journals" />
+                                <Tab icon={<BookIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Text Books" />
+                                <Tab icon={<BookIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Book Chapters" />
+                                <Tab icon={<BookIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Conferences" />
+                                <Tab icon={<BookIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Patents" />
+                                <Tab icon={<BookIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Novel Products" />
+                                <Tab icon={<BookIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Funded Projects" />
+                                <Tab icon={<BookIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Consultancy" />
+                            </Tabs>
+                        </Box>
+
+                        {/* Filter Controls */}
+                        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexShrink: 0, flexWrap: "nowrap" }}>
+                            <Button
+                                variant={startDate || endDate ? "contained" : "outlined"}
+                                startIcon={<DateRangeIcon />}
+                                onClick={handleOpenDatePopover}
+                                sx={{
+                                    height: 40,
+                                    borderRadius: "10px",
                                     textTransform: "none",
                                     fontWeight: 700,
-                                    fontSize: "0.95rem",
-                                    minHeight: 48,
-                                    py: 1.5,
-                                    color: "var(--text-secondary)",
-                                    transition: "all 0.2s ease",
-                                    "&.Mui-selected": {
-                                        color: "var(--color-primary) !important",
-                                    },
-                                    "&.Mui-selected svg": {
-                                        color: "var(--color-primary) !important"
+                                    fontSize: "0.875rem",
+                                    whiteSpace: "nowrap",
+                                    px: 2,
+                                    borderColor: "var(--border-color)",
+                                    bgcolor: startDate || endDate ? "var(--color-primary)" : "var(--bg-paper)",
+                                    color: startDate || endDate ? "#fff" : "var(--text-primary)",
+                                    boxShadow: "none",
+                                    "&:hover": {
+                                        bgcolor: startDate || endDate ? "var(--color-primary)" : "rgba(0,0,0,0.04)"
                                     }
-                                }
-                            }}
-                        >
-                            <Tab icon={<JournalIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Journals" />
-                            <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Text Books" />
-                            <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Book Chapters" />
-                            <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Conferences" />
-                            <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Patents" />
-                            <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Novel Products" />
-                            <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Funded Projects" />
-                            <Tab icon={<BookIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Consultancy" />
-                        </Tabs>
-
-                        <Box sx={{ flexGrow: 1 }} />
-
-                        <FormControl size="small" sx={{ width: { xs: "100%", sm: "auto" }, minWidth: { xs: "100%", sm: 220 } }}>
-                            <InputLabel id="academic-year-label">Academic Year</InputLabel>
-                            <Select
-                                labelId="academic-year-label"
-                                value={selectedYear}
-                                label="Academic Year"
-                                onChange={(e) => setSelectedYear(e.target.value)}
-                                sx={{ borderRadius: "12px", background: "var(--bg-glass)", width: "100%" }}
+                                }}
                             >
-                                <MenuItem value="All">All Years</MenuItem>
-                                {academicYears.map(y => (
-                                    <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    </Stack>
+                                {getDateFilterLabel()}
+                            </Button>
+
+                            {(startDate || endDate) && (
+                                <IconButton
+                                    size="small"
+                                    onClick={handleClearDateFilter}
+                                    title="Clear date filter"
+                                    sx={{
+                                        height: 40,
+                                        width: 40,
+                                        borderRadius: "10px",
+                                        border: "1px solid var(--border-color)",
+                                        bgcolor: "var(--bg-paper)",
+                                        color: "var(--text-secondary)",
+                                        "&:hover": { color: "#d32f2f" }
+                                    }}
+                                >
+                                    <CloseIcon fontSize="small" />
+                                </IconButton>
+                            )}
+
+                            <FormControl size="small" sx={{ minWidth: 160 }}>
+                                <InputLabel id="academic-year-label">Academic Year</InputLabel>
+                                <Select
+                                    labelId="academic-year-label"
+                                    value={selectedYear}
+                                    label="Academic Year"
+                                    onChange={(e) => setSelectedYear(e.target.value)}
+                                    sx={{ borderRadius: "10px", height: 40, background: "var(--bg-paper)" }}
+                                >
+                                    <MenuItem value="All">All Years</MenuItem>
+                                    {academicYears.map(y => (
+                                        <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Stack>
+                    </Box>
                 </Box>
 
                 {/* Content Section */}
@@ -945,6 +1288,92 @@ export default function ResearchReports() {
                     </Box>
                 </Box>
             </Paper>
+
+            {/* Date Range Popover */}
+            <Popover
+                open={Boolean(datePopoverAnchor)}
+                anchorEl={datePopoverAnchor}
+                onClose={handleCloseDatePopover}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                }}
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                }}
+                slotProps={{
+                    paper: {
+                        sx: {
+                            p: 2.5,
+                            width: 310,
+                            borderRadius: "16px",
+                            boxShadow: "var(--shadow-premium)",
+                            border: "1px solid var(--border-color)",
+                            background: "var(--bg-paper)",
+                            mt: 1
+                        }
+                    }
+                }}
+            >
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                        Filter by Date Range
+                    </Typography>
+                </Box>
+                <Stack spacing={2}>
+                    <FormControl size="small" fullWidth>
+                        <InputLabel shrink sx={{ bgcolor: "var(--bg-paper)", px: 0.5, color: "var(--text-secondary)" }}>From Date</InputLabel>
+                        <OutlinedInput
+                            type="date"
+                            notched
+                            label="From Date"
+                            value={tempStartDate}
+                            onChange={(e) => setTempStartDate(e.target.value)}
+                            inputProps={{ max: new Date().toISOString().split('T')[0] }}
+                            sx={{ borderRadius: "10px" }}
+                        />
+                    </FormControl>
+                    <FormControl size="small" fullWidth>
+                        <InputLabel shrink sx={{ bgcolor: "var(--bg-paper)", px: 0.5, color: "var(--text-secondary)" }}>To Date</InputLabel>
+                        <OutlinedInput
+                            type="date"
+                            notched
+                            label="To Date"
+                            value={tempEndDate}
+                            onChange={(e) => setTempEndDate(e.target.value)}
+                            inputProps={{
+                                min: tempStartDate || undefined,
+                                max: new Date().toISOString().split('T')[0]
+                            }}
+                            sx={{ borderRadius: "10px" }}
+                        />
+                    </FormControl>
+                    <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, pt: 1 }}>
+                        <Button
+                            size="small"
+                            onClick={handleClearDateFilter}
+                            sx={{ textTransform: "none", color: "var(--text-secondary)", fontWeight: 700 }}
+                        >
+                            Reset
+                        </Button>
+                        <Button
+                            size="small"
+                            variant="contained"
+                            onClick={handleApplyDateFilter}
+                            sx={{
+                                textTransform: "none",
+                                fontWeight: 700,
+                                borderRadius: "10px",
+                                background: "var(--gradient-primary)",
+                                color: "#fff"
+                            }}
+                        >
+                            Apply Filter
+                        </Button>
+                    </Box>
+                </Stack>
+            </Popover>
         </PageContainer>
     );
 }

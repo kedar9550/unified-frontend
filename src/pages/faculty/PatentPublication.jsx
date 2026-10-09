@@ -42,14 +42,17 @@ export default function PatentPublication() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const [form, setForm] = useState({
-    title: "", applicantName: "", patentName: "", patentFiledInInstitution: "Yes", area: "", filingNo: "", dateOfFiling: "",
-    status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "",
+    facultyRole: "", applicantAffiliation: "",
+    title: "", applicantName: "", patentName: "Aditya University", patentFiledInInstitution: "Yes", isUtilityType: "Yes", area: "", applicationnumber: "", dateOfFiling: "",
+    status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "", eligibleForTechTransfer: "No",
     patentFiledCountry: "", customCountryName: "",
-    totalInventors: 1, otherInventors: []
+    totalInventors: 1, otherInventors: [],
+    publishedstatus: "no", publishedexpectedamount: "", publishedinsentiveampunt: "", publisheddate: "", publishedinsentiveappllieddate: "",
+    grantedstatus: "no", grantedexpectedamount: "", grantedinsentiveampunt: "", granteddate: "", grantedinsentiveappllieddate: ""
   });
-  const [files, setFiles] = useState({ eFilingReceipt: null, form1: null });
-  const [existingFiles, setExistingFiles] = useState({ eFilingReceipt: null, form1: null });
-  const [deleteFlags, setDeleteFlags] = useState({ eFilingReceipt: false, form1: false });
+  const [files, setFiles] = useState({ eFilingReceipt: null, form1: null, grantedCertificate: null });
+  const [existingFiles, setExistingFiles] = useState({ eFilingReceipt: null, form1: null, grantedCertificate: null });
+  const [deleteFlags, setDeleteFlags] = useState({ eFilingReceipt: false, form1: false, grantedCertificate: false });
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -84,29 +87,44 @@ export default function PatentPublication() {
     }
 
     setForm({
+      facultyRole: pub.facultyRole || "",
+      applicantAffiliation: pub.applicantAffiliation || "",
       title: pub.title || "",
       applicantName: pub.applicantName || user?.name || "",
       patentName: pub.patentName || "",
       patentFiledInInstitution: pub.patentFiledInInstitution || "Yes",
+      isUtilityType: pub.isUtilityType || "Yes",
       area: pub.area || "",
-      filingNo: pub.filingNo || "",
+      applicationnumber: pub.applicationnumber || "",
       dateOfFiling: pub.dateOfFiling ? pub.dateOfFiling.split('T')[0] : "",
       status: pub.patentStatus || pub.status || "",
       isStudentsInvolved: pub.isStudentsInvolved || "No",
       applyIncentive: pub.applyIncentive || "",
       applyingSeedGrant: pub.applyingSeedGrant || "",
+      eligibleForTechTransfer: pub.eligibleForTechTransfer || "No",
       patentFiledCountry: pub.patentFiledCountry || "India",
       customCountryName: "",
       totalInventors: pub.totalInventors || 1,
-      otherInventors: mappedAuthors
+      otherInventors: mappedAuthors,
+      publishedstatus: pub.published?.publishedstatus || "no",
+      publishedexpectedamount: pub.published?.publishedexpectedamount || "",
+      publishedinsentiveampunt: pub.published?.publishedinsentiveampunt || "",
+      publisheddate: pub.published?.publisheddate ? pub.published.publisheddate.split('T')[0] : "",
+      publishedinsentiveappllieddate: pub.published?.publishedinsentiveappllieddate ? pub.published.publishedinsentiveappllieddate.split('T')[0] : "",
+      grantedstatus: pub.granted?.grantedstatus || "no",
+      grantedexpectedamount: pub.granted?.grantedexpectedamount || "",
+      grantedinsentiveampunt: pub.granted?.grantedinsentiveampunt || "",
+      granteddate: pub.granted?.granteddate ? pub.granted.granteddate.split('T')[0] : "",
+      grantedinsentiveappllieddate: pub.granted?.grantedinsentiveappllieddate ? pub.granted.grantedinsentiveappllieddate.split('T')[0] : ""
     });
     const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:9000";
     setExistingFiles({
       eFilingReceipt: pub.eFilingReceipt ? `${backendUrl}${pub.eFilingReceipt}` : null,
       form1: pub.form1 ? `${backendUrl}${pub.form1}` : null,
+      grantedCertificate: pub.grantedCertificate ? `${backendUrl}${pub.grantedCertificate}` : null,
     });
-    setFiles({ eFilingReceipt: null, form1: null });
-    setDeleteFlags({ eFilingReceipt: false, form1: false });
+    setFiles({ eFilingReceipt: null, form1: null, grantedCertificate: null });
+    setDeleteFlags({ eFilingReceipt: false, form1: false, grantedCertificate: false });
     setViewMode("form");
   };
 
@@ -131,43 +149,48 @@ export default function PatentPublication() {
     const val = e.target.value;
     setForm((p) => {
       const newForm = { ...p, [k]: val };
-      if (k === "isStudentsInvolved" && val === "Yes") {
-        newForm.applyIncentive = "No";
+      if (k === "status") {
+        if (val === "Published") {
+          newForm.publishedstatus = "yes";
+          newForm.grantedstatus = "no";
+          newForm.grantedexpectedamount = "";
+          newForm.grantedinsentiveampunt = "";
+          newForm.granteddate = "";
+          newForm.grantedinsentiveappllieddate = "";
+        } else if (val === "Granted") {
+          newForm.grantedstatus = "yes";
+        }
       }
       return newForm;
     });
   };
   const setFile = (k) => (e) => setFiles((p) => ({ ...p, [k]: e.target.files[0] }));
 
-  // Handle dynamic inventor generation based on total inventors
-  useEffect(() => {
-    let total = parseInt(form.totalInventors);
-    if (isNaN(total) || total < 1) {
-      total = 1;
-      if (form.totalInventors !== "") {
-        setForm(p => ({ ...p, totalInventors: 1 }));
-      }
-    }
+  const handleAddInventor = () => {
+    setForm(p => {
+      const maxPos = p.otherInventors.length > 0 ? Math.max(...p.otherInventors.map(a => a.inventorPosition)) : 1;
+      return {
+        ...p,
+        otherInventors: [
+          ...p.otherInventors,
+          {
+            inventorPosition: maxPos + 1,
+            affiliationType: "",
+            empId: "",
+            name: "",
+            affiliation: ""
+          }
+        ]
+      };
+    });
+  };
 
-    if (total === 1) {
-      setForm(p => ({ ...p, otherInventors: [] }));
-      return;
-    }
-
-    let newOtherInventors = [];
-    for (let i = 2; i <= total; i++) {
-      // Keep existing data if available
-      const existing = form.otherInventors.find(a => a.inventorPosition === i);
-      newOtherInventors.push(existing || {
-        inventorPosition: i,
-        affiliationType: "",
-        empId: "",
-        name: "",
-        affiliation: ""
-      });
-    }
-    setForm(p => ({ ...p, otherInventors: newOtherInventors }));
-  }, [form.totalInventors]);
+  const handleRemoveInventor = (pos) => {
+    setForm(p => ({
+      ...p,
+      otherInventors: p.otherInventors.filter(a => a.inventorPosition !== pos)
+    }));
+  };
 
   const fetchCoInventorName = async (pos, empId) => {
     try {
@@ -196,34 +219,15 @@ export default function PatentPublication() {
       if (a.inventorPosition === pos) {
         const newA = { ...a, [field]: value };
 
-        if (field === "CoInventorType") {
-          if (value === "faculty") {
-            newA.studentId = "";
-            if (a.CoInventorType === "student") {
-              newA.name = "";
-              newA.empId = "";
-            }
-          } else if (value === "student") {
-            newA.empId = "";
-            newA.affiliationType = "Aditya University";
-            newA.affiliation = "Aditya University";
-            if (a.CoInventorType === "faculty") {
-              newA.name = "";
-            }
-          }
-        }
-
         if (field === "affiliationType") {
           if (value === "Aditya University") {
             newA.affiliation = "Aditya University";
             newA.name = ""; // clear name so it can be fetched
             newA.empId = "";
-            newA.studentId = "";
           } else {
             newA.affiliation = "";
             newA.empId = "";
             newA.name = "";
-            newA.studentId = "";
           }
         }
         return newA;
@@ -236,45 +240,27 @@ export default function PatentPublication() {
     // Fetch name if Aditya University and Employee ID is entered (length >= 3)
     if (field === "empId" && value.length >= 3) {
       const inventor = updated.find(a => a.inventorPosition === pos);
-      if (inventor && inventor.affiliationType === "Aditya University" && inventor.CoInventorType !== "student") {
+      if (inventor && inventor.affiliationType === "Aditya University") {
         fetchCoInventorName(pos, value);
       }
     }
   };
 
-  const handleStudentsInvolvedChange = (e) => {
-    const val = e.target.value;
-    setForm((prev) => {
-      let newForm = { ...prev, isStudentsInvolved: val };
-
-      if (val === "Yes") {
-        newForm.applyIncentive = "No";
-      } else {
-        newForm.applyIncentive = "";
-        if (newForm.otherInventors) {
-          newForm.otherInventors = newForm.otherInventors.map(inventor => {
-            const newInventor = { ...inventor };
-            delete newInventor.CoInventorType;
-            delete newInventor.studentId;
-            if (inventor.CoInventorType === "student" && newInventor.affiliationType === "Aditya University") {
-              newInventor.affiliationType = "";
-              newInventor.affiliation = "";
-            }
-            return newInventor;
-          });
-        }
-      }
-      return newForm;
-    });
-  };
-
   const handleSubmit = async () => {
-    if (!form.title || !form.filingNo || !form.dateOfFiling) {
+    if (!form.facultyRole) {
+      toast.error("Please select your role in the patent");
+      return;
+    }
+    if (form.facultyRole === "Inventor / Co-Inventor" && (!form.applicantName || !form.applicantAffiliation)) {
+      toast.error("Please provide the Name of the Applicant and Applicant Affiliation");
+      return;
+    }
+    if (!form.title || !form.applicationnumber || (form.status !== 'Granted' && !form.dateOfFiling)) {
       toast.error("Please fill all required fields");
       return;
     }
-    if (!/^[A-Za-z0-9\/.-]+$/.test(form.filingNo)) {
-      toast.error("Patent Filing No can only contain letters, numbers, '/', '.', and '-'");
+    if (!/^[A-Za-z0-9\/.-]+$/.test(form.applicationnumber)) {
+      toast.error("Patent Application No can only contain letters, numbers, '/', '.', and '-'");
       return;
     }
     if (!form.patentFiledCountry) {
@@ -297,11 +283,13 @@ export default function PatentPublication() {
     // Future date validation
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const selDate = new Date(form.dateOfFiling);
-    selDate.setHours(0, 0, 0, 0);
-    if (selDate > today) {
-      toast.error("Date of filing cannot be in the future");
-      return;
+    if (form.dateOfFiling) {
+      const selDate = new Date(form.dateOfFiling);
+      selDate.setHours(0, 0, 0, 0);
+      if (selDate > today) {
+        toast.error("Date of filing cannot be in the future");
+        return;
+      }
     }
 
     // Validate co-inventors dynamically
@@ -347,24 +335,46 @@ export default function PatentPublication() {
         employeeId: a.affiliationType === "Aditya University" ? a.empId : null
       })).filter(ca => ca.name && ca.affiliation);
 
+      fd.append("facultyRole", form.facultyRole);
+      fd.append("applicantAffiliation", form.facultyRole === "Applicant" ? (user?.college || "") : (form.applicantAffiliation || ""));
       fd.append("title", form.title);
-      fd.append("applicantName", form.applicantName || user?.name || "");
+      fd.append("applicantName", user?.name || "");
       fd.append("patentName", form.patentName);
       fd.append("patentFiledInInstitution", form.patentFiledInInstitution || "Yes");
+      fd.append("isUtilityType", form.isUtilityType || "Yes");
       fd.append("area", form.area);
-      fd.append("filingNo", form.filingNo);
+      fd.append("applicationnumber", form.applicationnumber);
       fd.append("dateOfFiling", form.dateOfFiling);
       fd.append("status", form.status);
       fd.append("patentFiledCountry", form.patentFiledCountry === 'Others' ? form.customCountryName : form.patentFiledCountry);
       fd.append("coInventors", JSON.stringify(coInventorsList));
       fd.append("isStudentsInvolved", form.isStudentsInvolved || "No");
-      fd.append("applyIncentive", parseInt(form.userInventorPosition) > 5 ? "No" : form.applyIncentive);
+      const applyIncentive = parseInt(form.userInventorPosition || 1) > 5 ? "No" : form.applyIncentive;
+      fd.append("applyIncentive", applyIncentive);
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
+      fd.append("eligibleForTechTransfer", form.eligibleForTechTransfer || "No");
+      const total = form.otherInventors.length + 1;
       fd.append("totalInventors", String(total));
+
+      let expectedAmt = form.status === "Published" ? 5000 : (form.status === "Granted" ? 15000 : 0);
+      if (form.applyingSeedGrant === "Yes") expectedAmt = expectedAmt / 2;
+
+      fd.append("publishedstatus", form.publishedstatus);
+      fd.append("publishedexpectedamount", (applyIncentive === "Yes" && form.status === "Published") ? expectedAmt : "");
+      fd.append("publishedinsentiveampunt", form.publishedinsentiveampunt);
+      fd.append("publisheddate", form.publisheddate);
+      fd.append("publishedinsentiveappllieddate", form.publishedinsentiveappllieddate);
+      
+      fd.append("grantedstatus", form.grantedstatus);
+      fd.append("grantedexpectedamount", (applyIncentive === "Yes" && form.status === "Granted") ? expectedAmt : "");
+      fd.append("grantedinsentiveampunt", form.grantedinsentiveampunt);
+      fd.append("granteddate", form.granteddate);
+      fd.append("grantedinsentiveappllieddate", form.grantedinsentiveappllieddate);
 
       Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
       if (deleteFlags.eFilingReceipt) fd.append("deleteEFilingReceipt", "true");
       if (deleteFlags.form1) fd.append("deleteForm1", "true");
+      if (deleteFlags.grantedCertificate) fd.append("deleteGrantedCertificate", "true");
 
       fd.append("academicYear", selectedYear);
       fd.append("college", user?.college || "");
@@ -378,10 +388,10 @@ export default function PatentPublication() {
         toast.success("Patent submitted successfully!");
       }
 
-      setForm({ title: "", applicantName: user?.name || "", patentName: "", patentFiledInInstitution: "Yes", area: "", filingNo: "", dateOfFiling: "", status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "", patentFiledCountry: "", customCountryName: "", totalInventors: 1, otherInventors: [] });
-      setFiles({ eFilingReceipt: null, form1: null });
-      setExistingFiles({ eFilingReceipt: null, form1: null });
-      setDeleteFlags({ eFilingReceipt: false, form1: false });
+      setForm({ facultyRole: "", applicantAffiliation: "", title: "", applicantName: user?.name || "", patentName: "Aditya University", patentFiledInInstitution: "Yes", isUtilityType: "Yes", area: "", applicationnumber: "", dateOfFiling: "", status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "", eligibleForTechTransfer: "No", patentFiledCountry: "", customCountryName: "", totalInventors: 1, otherInventors: [], publishedstatus: "no", publishedexpectedamount: "", publishedinsentiveampunt: "", publisheddate: "", publishedinsentiveappllieddate: "", grantedstatus: "no", grantedexpectedamount: "", grantedinsentiveampunt: "", granteddate: "", grantedinsentiveappllieddate: "" });
+      setFiles({ eFilingReceipt: null, form1: null, grantedCertificate: null });
+      setExistingFiles({ eFilingReceipt: null, form1: null, grantedCertificate: null });
+      setDeleteFlags({ eFilingReceipt: false, form1: false, grantedCertificate: false });
       setEditMode(false);
       setEditId(null);
       setSelectedYear("");
@@ -404,7 +414,7 @@ export default function PatentPublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Patent Publications</Typography>
-        {/* <Button
+        <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -430,7 +440,7 @@ export default function PatentPublication() {
           }}
         >
           Apply New
-        </Button> */}
+        </Button>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -473,7 +483,7 @@ export default function PatentPublication() {
                 <TableRow key={pub._id || i} sx={{ "&:hover": { background: "rgba(var(--color-primary-rgb, 99,102,241), 0.04)", transition: "background 0.2s" } }}>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.title || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.area || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.filingNo || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.applicationnumber || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {pub.facultyId?.name || "N/A"}
@@ -529,7 +539,7 @@ export default function PatentPublication() {
                               textOverflow: "ellipsis"
                             }}
                           >
-                            <span>💬</span> "{pub.rndComment || pub.hodComment}"
+                            <span>ð¬</span> "{pub.rndComment || pub.hodComment}"
                           </Typography>
                         </Tooltip>
                       )}
@@ -681,19 +691,24 @@ export default function PatentPublication() {
 
       <SubLabel text="Details of the Patent:" />
       <Grid2>
-        <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, p: 2, background: "var(--bg-panel)", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
+        <Box sx={{ mb: 1, p: 2, background: "var(--bg-panel)", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-            <Typography sx={{ ...labelStyle, mb: 0, fontWeight: 700, color: "var(--text-primary)" }}>Is Patent filed in Institution Name? *</Typography>
+            <Typography sx={{ ...labelStyle, mb: 0, fontWeight: 700, color: "var(--text-primary)" }}>Is Patent filed in University Name? *</Typography>
             <RadioGroup
               row
               value={form.patentFiledInInstitution || "Yes"}
               onChange={(e) => {
                 const val = e.target.value;
-                setForm(prev => ({
-                  ...prev,
-                  patentFiledInInstitution: val,
-                  patentName: val === "Yes" ? (PATENT_APPLICANTS.includes(prev.patentName) ? prev.patentName : "") : (user?.name || prev.patentName || "")
-                }));
+                setForm(prev => {
+                  const newRole = val === "Yes" ? "Inventor / Co-Inventor" : prev.facultyRole;
+                  return {
+                    ...prev,
+                    patentFiledInInstitution: val,
+                    facultyRole: newRole,
+                    patentName: val === "Yes" ? "Aditya University" : (newRole === "Applicant" ? (user?.name || "") : ""),
+                    applicantAffiliation: val === "Yes" ? "Aditya University" : (newRole === "Applicant" ? (user?.college || "") : "")
+                  };
+                });
               }}
             >
               <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
@@ -701,55 +716,71 @@ export default function PatentPublication() {
             </RadioGroup>
           </Box>
         </Box>
+        
+        <Box sx={{ mb: 1, p: 2, background: "var(--bg-panel)", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+            <Typography sx={{ ...labelStyle, mb: 0, fontWeight: 700, color: "var(--text-primary)" }}>Is the patent utility type? *</Typography>
+            <RadioGroup
+              row
+              value={form.isUtilityType || "Yes"}
+              onChange={set("isUtilityType")}
+            >
+              <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
+              <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+            </RadioGroup>
+          </Box>
+        </Box>
+
+        {form.patentFiledInInstitution === "No" && (
+          <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, p: 2, background: "var(--bg-panel)", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+              <Typography sx={{ ...labelStyle, mb: 0, fontWeight: 700, color: "var(--text-primary)" }}>Your Role in the Patent *</Typography>
+              <RadioGroup
+                row
+                value={form.facultyRole}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setForm(prev => ({
+                    ...prev,
+                    facultyRole: val,
+                    patentName: prev.patentFiledInInstitution === "Yes" ? "Aditya University" : (val === "Applicant" ? (user?.name || "") : ""),
+                    applicantAffiliation: prev.patentFiledInInstitution === "Yes" ? "Aditya University" : (val === "Applicant" ? (user?.college || "") : "")
+                  }));
+                }}
+              >
+                <FormControlLabel value="Applicant" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Applicant</Typography>} />
+                <FormControlLabel value="Inventor / Co-Inventor" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Inventor / Co-Inventor</Typography>} />
+              </RadioGroup>
+            </Box>
+          </Box>
+        )}
 
         <Box>
-          <Typography sx={labelStyle}>Name of the Applicant in Patent : *</Typography>
-          {(form.patentFiledInInstitution || "Yes") === "Yes" ? (
-            <Select size="small" fullWidth displayEmpty value={form.patentName} onChange={set("patentName")}>
-              <MenuItem value="" disabled>--Select--</MenuItem>
-              {PATENT_APPLICANTS.map((option) => (
-                <MenuItem key={option} value={option}>{option}</MenuItem>
-              ))}
-            </Select>
-          ) : (
-            <TextField
-              size="small"
-              fullWidth
-              value={form.patentName}
-              onChange={set("patentName")}
-              placeholder="Enter Applicant Name in Patent"
-            />
-          )}
+          <Typography sx={labelStyle}>Name of the Applicant : *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            value={form.patentName}
+            onChange={set("patentName")}
+            placeholder="Enter Applicant Name"
+            disabled={(form.patentFiledInInstitution || "Yes") === "Yes" || form.facultyRole === "Applicant"}
+          />
+        </Box>
+        <Box>
+          <Typography sx={labelStyle}>Applicant Affiliation : *</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            value={form.applicantAffiliation}
+            onChange={set("applicantAffiliation")}
+            placeholder="Enter Applicant Affiliation"
+            disabled={(form.patentFiledInInstitution || "Yes") === "Yes" || form.facultyRole === "Applicant"}
+          />
         </Box>
 
         <Box>
           <Typography sx={labelStyle}>Title of the Patent : *</Typography>
           <TextField size="small" fullWidth value={form.title} onChange={set("title")} placeholder="Enter Title of the Patent" />
-        </Box>
-
-        <Box>
-          <Typography sx={labelStyle}>Area of Patent :</Typography>
-          <TextField size="small" fullWidth value={form.area} onChange={set("area")} />
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>Patent Filing No :</Typography>
-          <TextField
-            size="small"
-            fullWidth
-            value={form.filingNo}
-            onChange={(e) => {
-              const val = e.target.value;
-              // Allow only letters, numbers, '/', '.', '-'
-              if (val === "" || /^[A-Za-z0-9\/.-]+$/.test(val)) {
-                setForm(p => ({ ...p, filingNo: val }));
-              }
-            }}
-            placeholder="e.g. 202341012345"
-          />
-        </Box>
-        <Box>
-          <Typography sx={labelStyle}>Date of filing :</Typography>
-          <TextField size="small" fullWidth type="date" value={form.dateOfFiling} onChange={set("dateOfFiling")} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: new Date().toISOString().split("T")[0] } }} />
         </Box>
         <Box>
           <Typography sx={labelStyle}>Status of Patent Application :</Typography>
@@ -758,6 +789,46 @@ export default function PatentPublication() {
             {PATENT_STATUSES.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
           </Select>
         </Box>
+
+        <Box>
+          <Typography sx={labelStyle}>Area of Patent :</Typography>
+          <TextField size="small" fullWidth value={form.area} onChange={set("area")} />
+        </Box>
+        <Box>
+          <Typography sx={labelStyle}>Patent Application No :</Typography>
+          <TextField
+            size="small"
+            fullWidth
+            value={form.applicationnumber}
+            onChange={(e) => {
+              const val = e.target.value;
+              // Allow only letters, numbers, '/', '.', '-'
+              if (val === "" || /^[A-Za-z0-9\/.-]+$/.test(val)) {
+                setForm(p => ({ ...p, applicationnumber: val }));
+              }
+            }}
+            placeholder="e.g. 202341012345"
+          />
+        </Box>
+        {form.status !== "Granted" && (
+          <Box>
+            <Typography sx={labelStyle}>Date of filing :</Typography>
+            <TextField size="small" fullWidth type="date" value={form.dateOfFiling} onChange={set("dateOfFiling")} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: new Date().toISOString().split("T")[0] } }} />
+          </Box>
+        )}
+        
+        {(form.status === "Published" || form.status === "Granted") && (
+          <Box>
+            <Typography sx={labelStyle}>Published Date :</Typography>
+            <TextField size="small" fullWidth type="date" value={form.publisheddate} onChange={set("publisheddate")} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: new Date().toISOString().split("T")[0] } }} />
+          </Box>
+        )}
+        {form.status === "Granted" && (
+          <Box>
+            <Typography sx={labelStyle}>Granted Date :</Typography>
+            <TextField size="small" fullWidth type="date" value={form.granteddate} onChange={set("granteddate")} slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: new Date().toISOString().split("T")[0] } }} />
+          </Box>
+        )}
         <Box>
           <Typography sx={labelStyle}>Patent Filed Country : *</Typography>
           <Select size="small" fullWidth displayEmpty value={form.patentFiledCountry} onChange={set("patentFiledCountry")}>
@@ -772,97 +843,56 @@ export default function PatentPublication() {
             <TextField size="small" fullWidth value={form.customCountryName} onChange={set("customCountryName")} placeholder="e.g., USA, UK" />
           </Box>
         )}
-        <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-          <Typography sx={{ ...labelStyle, mb: 0 }}>Are students involved in this work as co-inventors? *</Typography>
-          <RadioGroup row value={form.isStudentsInvolved || "No"} onChange={handleStudentsInvolvedChange}>
-            <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
-            <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
-          </RadioGroup>
+        <Box sx={{ gridColumn: { sm: "1 / -1" }, display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
+          <Typography sx={{ ...labelStyle, mb: 0, fontSize: 14, color: "var(--text-primary)", fontWeight: 700, textTransform: "uppercase" }}>Co-Inventor(s) Details (if any):</Typography>
+          {form.otherInventors.length === 0 && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleAddInventor}
+              sx={{ textTransform: "none", fontWeight: 700, borderRadius: "8px", color: "var(--color-primary)", borderColor: "var(--color-primary)", "&:hover": { background: "var(--bg-accent-1)" } }}
+            >
+              + Add inventor / co-inventor details
+            </Button>
+          )}
         </Box>
-        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-          <Typography sx={labelStyle}>Total Number of Inventors : *</Typography>
-          <TextField
-            size="small"
-            type="number"
-            value={form.totalInventors}
-            onChange={set("totalInventors")}
-            slotProps={{ htmlInput: { min: 1 } }}
-            sx={{ maxWidth: 250 }}
-          />
-        </Box>
-        {parseInt(form.totalInventors) > 1 && (
-          <Box sx={{ gridColumn: { sm: "1 / -1" }, mt: 2, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-            <Typography sx={{ ...labelStyle, mb: 1, fontWeight: 700 }}>Name & affiliation of Co-Inventor(s) :</Typography>
-            {form.otherInventors.map((ca) => (
-              <Box key={ca.inventorPosition} sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)" }}>
-                <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", sm: "nowrap" }, alignItems: "center" }}>
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "30px", height: "30px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, flexShrink: 0 }}>
-                    {ca.inventorPosition}
-                  </Box>
 
-                  {/* Co-Inventor Type (if students are involved) */}
-                  {form.isStudentsInvolved === "Yes" && (
-                    <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "130px" } }}>
-                      <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVENTOR TYPE</Typography>
-                      <Select
-                        size="small"
-                        fullWidth
-                        displayEmpty
-                        value={ca.CoInventorType || "faculty"}
-                        onChange={(e) => handleCoInventorChange(ca.inventorPosition, "CoInventorType", e.target.value)}
-                        MenuProps={{ disableScrollLock: true, disableRestoreFocus: true }}
-                      >
-                        <MenuItem value="faculty">Faculty</MenuItem>
-                        <MenuItem value="student">Student</MenuItem>
-                      </Select>
-                    </Box>
-                  )}
+        {form.otherInventors.length > 0 && (
+          <Box sx={{ gridColumn: { sm: "1 / -1" }, background: "var(--bg-panel)", p: 2, borderRadius: "12px", border: "1px solid var(--border-color)" }}>
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+              <Typography sx={{ ...labelStyle, mb: 0, fontWeight: 700, color: "var(--text-primary)", fontSize: "12px", textTransform: "uppercase" }}>Name & affiliation of Co-Inventor(s) :</Typography>
+              <Button 
+                variant="outlined" 
+                size="small" 
+                onClick={handleAddInventor} 
+                sx={{ textTransform: "none", fontWeight: 700, borderRadius: "8px", color: "var(--color-primary)", borderColor: "var(--color-primary)", "&:hover": { background: "var(--bg-accent-1)" } }}
+              >
+                + Add More
+              </Button>
+            </Box>
+            {form.otherInventors.map((ca) => (
+            <Box key={ca.inventorPosition} sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2, p: 2, borderRadius: "12px", border: "1px dashed var(--border-color)", background: "var(--bg-accent-1)" }}>
+              <Box sx={{ display: "flex", gap: 2, flexWrap: { xs: "wrap", sm: "nowrap" }, alignItems: "center" }}>
+                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: "30px", height: "30px", background: "var(--color-primary)", color: "#fff", borderRadius: "50%", fontWeight: 700, flexShrink: 0 }}>
+                  {ca.inventorPosition}
+                </Box>
 
                   <Box sx={{ flex: 1, minWidth: "150px" }}>
                     <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE</Typography>
                     <Select
                       size="small"
                       fullWidth
-                      value={ca.CoInventorType === "student" ? "Aditya University" : ca.affiliationType}
+                      value={ca.affiliationType}
                       onChange={(e) => handleCoInventorChange(ca.inventorPosition, "affiliationType", e.target.value)}
                       displayEmpty
                     >
                       <MenuItem value="" disabled>Select Affiliation</MenuItem>
                       <MenuItem value="Aditya University">Aditya University</MenuItem>
-                      {ca.CoInventorType !== "student" && (
-                        <MenuItem value="Others">Others</MenuItem>
-                      )}
+                      <MenuItem value="Others">Others</MenuItem>
                     </Select>
                   </Box>
 
                   {ca.affiliationType === "Aditya University" ? (
-                    ca.CoInventorType === "student" ? (
-                      <>
-                        <Box sx={{ flex: 1, minWidth: { xs: "100%", sm: "120px" } }}>
-                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>STUDENT ROLL NO</Typography>
-                          <TextField
-                            size="small"
-                            fullWidth
-                            value={ca.studentId || ""}
-                            onChange={(e) => handleCoInventorChange(ca.inventorPosition, "studentId", e.target.value)}
-                            placeholder="e.g. 21A91A0501"
-                          />
-                        </Box>
-                        <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: "200px" } }}>
-                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVENTOR NAME</Typography>
-                          <TextField
-                            size="small"
-                            fullWidth
-                            value={ca.name}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (!/\d/.test(val)) handleCoInventorChange(ca.inventorPosition, "name", val);
-                            }}
-                            placeholder="Student Name"
-                          />
-                        </Box>
-                      </>
-                    ) : (
                       <>
                         <Box sx={{ flex: 1, minWidth: "120px" }}>
                           <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID</Typography>
@@ -889,7 +919,6 @@ export default function PatentPublication() {
                           />
                         </Box>
                       </>
-                    )
                   ) : (
                     <>
                       <Box sx={{ flex: 1, minWidth: "180px" }}>
@@ -920,6 +949,14 @@ export default function PatentPublication() {
                       </Box>
                     </>
                   )}
+                  <IconButton 
+                    size="small" 
+                    color="error" 
+                    onClick={() => handleRemoveInventor(ca.inventorPosition)}
+                    sx={{ mt: { sm: 2 } }}
+                  >
+                    <Close fontSize="small" />
+                  </IconButton>
                 </Box>
               </Box>
             ))}
@@ -931,7 +968,7 @@ export default function PatentPublication() {
 
       <Grid2 sx={{ mt: 1 }}>
         <FileField
-          label="e-Filing Receipt:"
+          label="Certificate of Basic Registration (CBR):"
           name="eFilingReceipt"
           onChange={setFile("eFilingReceipt")}
           existingFileUrl={existingFiles.eFilingReceipt}
@@ -950,6 +987,21 @@ export default function PatentPublication() {
             setDeleteFlags(p => ({ ...p, form1: true }));
           }}
         />
+        {form.status === "Granted" && (
+          <FileField
+            label="Granted Certificate"
+            name="grantedCertificate"
+            onChange={setFile("grantedCertificate")}
+            existingFileUrl={existingFiles.grantedCertificate}
+            onRemoveExisting={() => {
+              setExistingFiles(p => ({ ...p, grantedCertificate: null }));
+              setDeleteFlags(p => ({ ...p, grantedCertificate: true }));
+            }}
+          />
+        )}
+      </Grid2>
+
+      <Grid2 sx={{ mt: 2 }}>
         <Box sx={{ mt: 1 }}>
           <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
           <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")}>
@@ -959,10 +1011,16 @@ export default function PatentPublication() {
           </Select>
         </Box>
         <Box sx={{ mt: 1 }}>
+          <Typography sx={labelStyle}>Eligible for Technology Transfer?</Typography>
+          <Select size="small" fullWidth displayEmpty value={form.eligibleForTechTransfer} onChange={set("eligibleForTechTransfer")}>
+            <MenuItem value="Yes">Yes</MenuItem>
+            <MenuItem value="No">No</MenuItem>
+          </Select>
+        </Box>
+        <Box sx={{ mt: 1 }}>
           {(() => {
-            const isStudentInvolved = form.isStudentsInvolved === "Yes";
-            const isPositionGreaterThan5 = parseInt(form.userInventorPosition) > 5;
-            const disableIncentive = isStudentInvolved || isPositionGreaterThan5;
+            const isPositionGreaterThan5 = parseInt(form.userInventorPosition || 1) > 5;
+            const disableIncentive = isPositionGreaterThan5;
             return (
               <>
                 <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
@@ -971,11 +1029,7 @@ export default function PatentPublication() {
                   <MenuItem value="Yes">Yes</MenuItem>
                   <MenuItem value="No">No</MenuItem>
                 </Select>
-                {isStudentInvolved && !isPositionGreaterThan5 && (
-                  <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
-                    * Incentive is not applicable for publications with student co-inventors.
-                  </Typography>
-                )}
+
                 {isPositionGreaterThan5 && (
                   <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
                     * Application for incentive is only for the first 5 inventor positions.
@@ -986,6 +1040,40 @@ export default function PatentPublication() {
           })()}
         </Box>
       </Grid2>
+
+      {(() => {
+        const isPositionGreaterThan5 = parseInt(form.userInventorPosition || 1) > 5;
+        const disableIncentive = isPositionGreaterThan5;
+        let amount = form.status === "Published" ? 5000 : (form.status === "Granted" ? 15000 : 0);
+        if (form.applyingSeedGrant === "Yes") {
+          amount = amount / 2;
+        }
+        
+        if (form.applyIncentive === "Yes" && !disableIncentive && form.status) {
+          return (
+            <Box sx={{
+              gridColumn: { sm: "1 / -1" },
+              p: 2.5,
+              borderRadius: "12px",
+              background: "rgba(16, 185, 129, 0.05)",
+              border: "1px dashed rgba(16, 185, 129, 0.3)",
+              mt: 3
+            }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+                <Box>
+                  <Typography sx={{ fontSize: "0.8rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: "#059669" }}>
+                    Estimated Research Incentive Amount
+                  </Typography>
+                  <Typography sx={{ fontSize: "1.6rem", fontWeight: 800, color: "#047857", mt: 0.5 }}>
+                    â¹{amount.toLocaleString('en-IN')}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          );
+        }
+        return null;
+      })()}
 
       <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mt: 4 }}>
         <Button
@@ -1255,14 +1343,14 @@ export default function PatentPublication() {
                     { label: "Filed in Institution Name", value: data.patentFiledInInstitution || "Yes", icon: <AccountBalanceIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Name of Applicant in Patent", value: data.patentName || "-", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Area of Patent", value: data.area || "-", icon: <CategoryIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    { label: "Patent Filing No", value: data.filingNo || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Patent Application No", value: data.applicationnumber || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Date of Filing", value: formatDate(data.dateOfFiling), icon: <CalendarTodayIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Patent Application Status", value: data.patentStatus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Filed Country", value: data.patentFiledCountry || "India", icon: <PublicIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Role", value: data.visibilityRole || "Applicant", icon: <PersonIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Seed Grant Work", value: data.applyingSeedGrant === "Yes" ? "Yes" : "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Apply For Incentive", value: data.applyIncentive === "Yes" ? "Yes" : "No", icon: <CardGiftcardIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    ...(data.status === "Approved" && data.approvedAmount ? [{ label: "Approved Incentive Amount", value: `₹${data.approvedAmount}`, icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "#2e7d32" }} /> }] : [])
+                    ...(data.status === "Approved" && data.approvedAmount ? [{ label: "Approved Incentive Amount", value: `â¹${data.approvedAmount}`, icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "#2e7d32" }} /> }] : [])
                   ].map((item, idx, arr) => (
                     <Box
                       key={idx}
@@ -1500,7 +1588,7 @@ export default function PatentPublication() {
                   )}
                   {data.approvedAmount && (
                     <Typography variant="h6" sx={{ mt: data.rndComment ? 2 : 0, fontWeight: 900, color: "#10b981" }}>
-                      Approved Amount: ₹{data.approvedAmount}
+                      Approved Amount: â¹{data.approvedAmount}
                     </Typography>
                   )}
                 </Box>

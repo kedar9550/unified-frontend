@@ -36,8 +36,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
     const [appraisalEligible, setAppraisalEligible] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
-    const [approveDialogOpen, setApproveDialogOpen] = useState(false);
-    const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+    const [decisionMode, setDecisionMode] = useState(null);
     const [isEditingDetails, setIsEditingDetails] = useState(false);
     const [editableData, setEditableData] = useState({});
     const [detailsSaving, setDetailsSaving] = useState(false);
@@ -109,6 +108,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
             });
             if (res.data?.success) {
                 toast.success(`Request ${action === 'Approve' ? (isHOD ? 'Forwarded to R&D' : 'Approved') : 'Rejected'} successfully`);
+                setDecisionMode(null);
                 onBack(); // Go back to list on success
             }
         } catch (error) {
@@ -544,6 +544,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                             { key: "publisher", label: "Publisher", value: data.publisher || "-", editable: true, type: "text" },
                             { key: "isbn", label: "ISBN", value: data.isbn || "-", editable: true, type: "text" },
                             { key: "publicationScope", label: "Publication Scope", value: data.publicationScope || "National", editable: true, type: "select", options: ["National", "International"] },
+                            { key: "scopusIndexed", label: "Is Scopus Indexed?", value: data.scopusIndexed || "No", editable: true, type: "select", options: ["Yes", "No"] },
                             { key: "edition", label: "Edition", value: data.edition || "-", editable: true, type: "number" },
                             { key: "numberOfPages", label: "No. of Pages", value: data.numberOfPages || "-", editable: true, type: "number" },
                             { key: "year", label: "Year", value: data.year || "-", editable: true, type: "text" },
@@ -619,7 +620,8 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
             </Box>
 
             {/* Authors & Affiliations */}
-            <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
+            {data.authors && data.authors.length > 1 && (
+                <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
                 <Box sx={{ p: 3, pb: 2 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                         <GroupsIcon sx={{ color: "var(--color-primary)" }} />
@@ -671,6 +673,7 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                     </Table>
                 </TableContainer>
             </Card>
+            )}
 
 
 
@@ -693,26 +696,65 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                 <Box sx={{ flex: { xs: "1 1 100%", md: "1 1 0" } }}>
                     {((isResearchAdmin && data.status === 'Pending at R&D') || (isHOD && data.status === 'Pending')) ? (
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--color-primary)", p: 4, mb: 0, height: "100%" }}>
-                            <SectionHeader icon={<GavelIcon />} title="Review Decision" />
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><GavelIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Review Decision</Typography></Box>
 
-                            <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>
-                                Please review the details above and choose an action to proceed with this textbook submission.
-                            </Typography>
+                            {!decisionMode ? (
+                                <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-start" }}>
+                                    <Button variant="outlined" color="error" onClick={() => setDecisionMode('Reject')} sx={{ px: 3, textTransform: "none", fontWeight: 700, borderRadius: "10px" }} startIcon={<CloseIcon />}>Reject Application</Button>
+                                    <Button variant="contained" color="success" onClick={() => setDecisionMode('Approve')} sx={{ px: 4, textTransform: "none", fontWeight: 700, borderRadius: "10px" }} startIcon={<CheckIcon />}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
+                                </Box>
+                            ) : (
+                                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                                    {decisionMode === 'Approve' && isResearchAdmin && (
+                                        <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                                            {data.applyIncentive === 'Yes' && (
+                                                <Box sx={{ flex: "1 1 200px" }}>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED INCENTIVE (₹) *</Typography>
+                                                    <TextField
+                                                        fullWidth size="small" type="number"
+                                                        placeholder="Enter Approved Incentive Amount"
+                                                        value={approvedAmount}
+                                                        onChange={e => setApprovedAmount(e.target.value)}
+                                                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }}
+                                                    />
+                                                </Box>
+                                            )}
+                                            <Box sx={{ flex: "1 1 200px" }}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>ARTICLE ELIGIBILITY FOR APPRAISAL *</Typography>
+                                                <Select 
+                                                    fullWidth size="small" 
+                                                    value={appraisalEligible} 
+                                                    onChange={e => setAppraisalEligible(e.target.value)} 
+                                                    displayEmpty 
+                                                    sx={{ borderRadius: "10px", bgcolor: "var(--bg-panel)" }}
+                                                >
+                                                    <MenuItem value="" disabled>Select Eligibility</MenuItem>
+                                                    <MenuItem value="Yes">Yes</MenuItem>
+                                                    <MenuItem value="No">No</MenuItem>
+                                                </Select>
+                                            </Box>
+                                        </Box>
+                                    )}
 
-                            <Box sx={{ display: "flex", gap: 3, justifyContent: "flex-start" }}>
-                                <Button
-                                    variant="outlined" color="error" disabled={actionLoading} onClick={() => setRejectDialogOpen(true)} startIcon={<CloseIcon />}
-                                    sx={{ textTransform: "none", fontWeight: 700, borderRadius: "10px" }}
-                                >
-                                    Reject Application
-                                </Button>
-                                <Button
-                                    variant="contained" color="success" disabled={actionLoading} onClick={() => setApproveDialogOpen(true)} startIcon={<CheckIcon />}
-                                    sx={{ textTransform: "none", fontWeight: 700, borderRadius: "10px" }}
-                                >
-                                    {isHOD ? "Approve & Forward" : "Final Approve"}
-                                </Button>
-                            </Box>
+                                    <Box>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>REMARKS {decisionMode === 'Reject' ? '*' : ''}</Typography>
+                                        <TextField fullWidth multiline rows={3} placeholder={`Provide your ${decisionMode.toLowerCase()} comments...`} value={remarks} onChange={e => setRemarks(e.target.value)} sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", bgcolor: "var(--bg-panel)" } }} />
+                                    </Box>
+
+                                    <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-start", mt: 1 }}>
+                                        <Button variant="outlined" color="inherit" onClick={() => setDecisionMode(null)} sx={{ px: 3, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>Cancel</Button>
+                                        <Button 
+                                            variant="contained" 
+                                            color={decisionMode === 'Reject' ? "error" : "success"} 
+                                            disabled={actionLoading} 
+                                            onClick={() => handleAction(decisionMode)} 
+                                            sx={{ px: 4, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}
+                                        >
+                                            {decisionMode === 'Reject' ? "Confirm Reject" : "Confirm Approve"}
+                                        </Button>
+                                    </Box>
+                                </Box>
+                            )}
                         </Card>
                     ) : (
                         <Card sx={{ ...cardStyle, borderTop: "4px solid var(--text-secondary)", p: 4, textAlign: "center", mb: 0, height: "100%" }}>
@@ -747,102 +789,6 @@ const TextBookApprovalDetail = ({ id, onBack, role }) => {
                     )}
                 </Box>
             </Box>
-
-            {/* Approve Dialog */}
-            <Dialog open={approveDialogOpen} onClose={() => setApproveDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>
-                <DialogTitle sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                    {isHOD ? "Approve & Forward Submission" : "Final Approve Submission"}
-                </DialogTitle>
-                <DialogContent>
-                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 2.5 }}>
-                        Please confirm approval details for this textbook submission:
-                    </Typography>
-
-                    {isResearchAdmin && data.applyIncentive === 'Yes' && (
-                        <Box sx={{ mb: 2.5 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--color-primary)", fontSize: "0.8rem" }}>
-                                APPROVED INCENTIVE AMOUNT (₹) *
-                            </Typography>
-                            <TextField 
-                                fullWidth size="small" type="number" 
-                                placeholder="Enter approved incentive amount" 
-                                value={approvedAmount} 
-                                onChange={e => setApprovedAmount(e.target.value)} 
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
-                            />
-                        </Box>
-                    )}
-
-                    {isResearchAdmin && (
-                        <Box sx={{ mb: 2.5 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--color-primary)", fontSize: "0.8rem" }}>
-                                ARTICLE ELIGIBILITY FOR APPRAISAL *
-                            </Typography>
-                            <Select fullWidth size="small" value={appraisalEligible} onChange={e => setAppraisalEligible(e.target.value)} displayEmpty sx={{ borderRadius: "10px" }}>
-                                <MenuItem value="" disabled>Select Eligibility</MenuItem>
-                                <MenuItem value="Yes">Yes</MenuItem>
-                                <MenuItem value="No">No</MenuItem>
-                            </Select>
-                        </Box>
-                    )}
-
-                    <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--text-primary)", fontSize: "0.8rem" }}>
-                            REMARKS / COMMENTS (OPTIONAL)
-                        </Typography>
-                        <TextField 
-                            fullWidth multiline rows={3} 
-                            placeholder="Provide review comments..." 
-                            value={remarks} 
-                            onChange={e => setRemarks(e.target.value)} 
-                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
-                        />
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 2 }}>
-                    <Button onClick={() => setApproveDialogOpen(false)} disabled={actionLoading} sx={{ color: "var(--text-secondary)", textTransform: "none" }}>
-                        Cancel
-                    </Button>
-                    <Button 
-                        variant="contained" color="success" disabled={actionLoading} 
-                        onClick={() => handleAction('Approve')}
-                        sx={{ borderRadius: "8px", px: 3, textTransform: "none", fontWeight: 700 }}
-                    >
-                        {actionLoading ? "Processing..." : "Confirm Approve"}
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Reject Dialog */}
-            <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>
-                <DialogTitle sx={{ fontWeight: 800, color: "#d32f2f" }}>
-                    Reject Submission
-                </DialogTitle>
-                <DialogContent>
-                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 2 }}>
-                        Please provide a reason for rejecting this submission:
-                    </Typography>
-                    <TextField 
-                        fullWidth multiline rows={3} 
-                        placeholder="Provide rejection comments (Required)..." 
-                        value={remarks} 
-                        onChange={e => setRemarks(e.target.value)} 
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
-                    />
-                </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 2 }}>
-                    <Button onClick={() => setRejectDialogOpen(false)} disabled={actionLoading} sx={{ color: "var(--text-secondary)", textTransform: "none" }}>
-                        Cancel
-                    </Button>
-                    <Button 
-                        variant="contained" color="error" disabled={actionLoading} 
-                        onClick={() => handleAction('Reject')}
-                        sx={{ borderRadius: "8px", px: 3, textTransform: "none", fontWeight: 700 }}
-                    >
-                        {actionLoading ? "Processing..." : "Confirm Rejection"}
-                    </Button>
-                </DialogActions>
-            </Dialog>
 
             <EditAuthorsDialog
                 open={isAuthorModalOpen}
