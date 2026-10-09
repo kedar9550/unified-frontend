@@ -70,6 +70,7 @@ import RndFundedProjectDataEntry from "./pages/research/RndFundedProjectDataEntr
 import RndConsultancyDataEntry from "./pages/research/RndConsultancyDataEntry";
 import RndPhdScholarDataEntry from "./pages/research/RndPhdScholarDataEntry";
 import RndNovelProductDataEntry from "./pages/research/RndNovelProductDataEntry";
+import UniversityDataPage from "./pages/UniversityData";
 
 
 // Utilities Modules
@@ -236,6 +237,7 @@ function App() {
 
 
         <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
+        <Route path="/university-data" element={<ProtectedRoute element={<UniversityDataPage />} />} />
         <Route path="/teaching" element={<ProtectedRoute element={<Teaching />} />} />
         <Route path="/research/textbook-publication" element={<ProtectedRoute element={<TextbookPublication />} />} />
         <Route path="/research/book-chapter-publication" element={<ProtectedRoute element={<BookChapterPublication />} />} />
