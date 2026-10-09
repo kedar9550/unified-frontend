@@ -118,7 +118,7 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
         const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filepath);
 
         return (
-            <Grid key={index} item xs={12} sm={6} md={6}>
+            <Grid key={index} item xs={12} sm={6} md={4}>
                 <Box sx={{ mb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.75rem", textTransform: "uppercase" }}>
                         {index}. {title}
@@ -177,7 +177,7 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                         <Box sx={{ width: 50, height: 50, borderRadius: "50%", bgcolor: "rgba(190, 147, 55, 0.1)", color: "var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}><DescriptionIcon /></Box>
                         <Box>
                             <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{data.title}</Typography>
-                            <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Filing No: {data.filingNo}</Typography>
+
                         </Box>
                     </Box>
                     <Box sx={{ textAlign: { xs: "center", sm: "right" } }}>
@@ -338,7 +338,7 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                         />
                         <LabelValue label="Name of the Applicant in Patent" value={data.patentName} horizontal />
                         <LabelValue label="Area of Patent" value={data.area} horizontal />
-                        <LabelValue label="Filing No" value={data.filingNo} horizontal />
+
                         <LabelValue label="Date of Filing" value={new Date(data.dateOfFiling).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} horizontal />
                         <LabelValue label="Patent Status" value={data.patentStatus} horizontal />
                         <LabelValue label="Incentive" horizontal chip={<Chip label={data.applyIncentive} size="small" sx={{ bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)", color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)", fontWeight: 800, border: "1px solid", borderColor: data.applyIncentive === 'Yes' ? "#4caf5044" : "var(--border-color)" }} />} />
@@ -428,8 +428,9 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
             <Card sx={cardStyle}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><AttachFileIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography></Box>
                 <Grid container spacing={3}>
-                    {renderFilePreview("e-Filing Receipt", data.eFilingReceipt, 1)}
+                    {renderFilePreview("e-Filing Receipt", data.cbr, 1)}
                     {renderFilePreview("Form - 1", data.form1, 2)}
+                    {data.grantedCertificate && renderFilePreview("Granted Certificate", data.grantedCertificate, 3)}
                 </Grid>
             </Card>
 

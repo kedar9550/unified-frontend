@@ -15,6 +15,7 @@ import GrassIcon from "@mui/icons-material/Grass";
 import CardGiftcardIcon from "@mui/icons-material/CardGiftcard";
 import CurrencyRupeeIcon from "@mui/icons-material/CurrencyRupee";
 import PersonIcon from "@mui/icons-material/Person";
+import HandshakeIcon from "@mui/icons-material/Handshake";
 import PageHeader from "../../components/common/PageHeader";
 import { Alert, AlertTitle } from "@mui/material";
 import NoActiveYearDialog from "../../components/common/NoActiveYearDialog";
@@ -43,20 +44,52 @@ export default function PatentPublication() {
 
   const [form, setForm] = useState({
     facultyRole: "", applicantAffiliation: "",
-    title: "", applicantName: "", patentName: "Aditya University", patentFiledInInstitution: "Yes", isUtilityType: "Yes", area: "", applicationnumber: "", dateOfFiling: "",
+    title: "", applicantName: "", patentName: "Aditya University", patentFiledInInstitution: "Yes", isUtilityType: "Yes", area: "", applicationNo: "", dateOfFiling: "",
     status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "", eligibleForTechTransfer: "No",
     patentFiledCountry: "", customCountryName: "",
     totalInventors: 1, otherInventors: [],
     publishedstatus: "no", publishedexpectedamount: "", publishedinsentiveampunt: "", publisheddate: "", publishedinsentiveappllieddate: "",
     grantedstatus: "no", grantedexpectedamount: "", grantedinsentiveampunt: "", granteddate: "", grantedinsentiveappllieddate: ""
   });
-  const [files, setFiles] = useState({ eFilingReceipt: null, form1: null, grantedCertificate: null });
-  const [existingFiles, setExistingFiles] = useState({ eFilingReceipt: null, form1: null, grantedCertificate: null });
-  const [deleteFlags, setDeleteFlags] = useState({ eFilingReceipt: false, form1: false, grantedCertificate: false });
+  const [files, setFiles] = useState({ cbr: null, form1: null, grantedCertificate: null });
+  const [existingFiles, setExistingFiles] = useState({ cbr: null, form1: null, grantedCertificate: null });
+  const [deleteFlags, setDeleteFlags] = useState({ cbr: false, form1: false, grantedCertificate: false });
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  const [updateStatusExpanded, setUpdateStatusExpanded] = useState(false);
+  const [statusUpdateForm, setStatusUpdateForm] = useState({ granteddate: "", eligibleForTechTransfer: "No" });
+  const [statusUpdateFile, setStatusUpdateFile] = useState(null);
+  const [statusUpdateLoading, setStatusUpdateLoading] = useState(false);
+
+  const handleStatusUpdateSubmit = async () => {
+    if (!statusUpdateForm.granteddate || !statusUpdateFile) {
+      toast.error("Please provide both granted date and granted certificate");
+      return;
+    }
+    setStatusUpdateLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append("granteddate", statusUpdateForm.granteddate);
+      fd.append("eligibleForTechTransfer", statusUpdateForm.eligibleForTechTransfer);
+      fd.append("grantedCertificate", statusUpdateFile);
+      
+      const res = await API.patch(`/api/research/patent/${selectedPubDetails._id}/update-status`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+      
+      toast.success("Patent status updated to Granted!");
+      const updatedPatent = res.data.data;
+      setPublicationsList(prev => prev.map(p => p._id === updatedPatent._id ? updatedPatent : p));
+      setSelectedPubDetails(updatedPatent);
+      setUpdateStatusExpanded(false);
+      setStatusUpdateForm({ granteddate: "", eligibleForTechTransfer: "No" });
+      setStatusUpdateFile(null);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to update patent status");
+    } finally {
+      setStatusUpdateLoading(false);
+    }
+  };
 
   const handleEditClick = (pub) => {
     setEditMode(true);
@@ -95,7 +128,7 @@ export default function PatentPublication() {
       patentFiledInInstitution: pub.patentFiledInInstitution || "Yes",
       isUtilityType: pub.isUtilityType || "Yes",
       area: pub.area || "",
-      applicationnumber: pub.applicationnumber || "",
+      applicationNo: pub.applicationNo || pub.applicationnumber || "",
       dateOfFiling: pub.dateOfFiling ? pub.dateOfFiling.split('T')[0] : "",
       status: pub.patentStatus || pub.status || "",
       isStudentsInvolved: pub.isStudentsInvolved || "No",
@@ -119,12 +152,12 @@ export default function PatentPublication() {
     });
     const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:9000";
     setExistingFiles({
-      eFilingReceipt: pub.eFilingReceipt ? `${backendUrl}${pub.eFilingReceipt}` : null,
+      cbr: pub.cbr ? `${backendUrl}${pub.cbr}` : null,
       form1: pub.form1 ? `${backendUrl}${pub.form1}` : null,
       grantedCertificate: pub.grantedCertificate ? `${backendUrl}${pub.grantedCertificate}` : null,
     });
-    setFiles({ eFilingReceipt: null, form1: null, grantedCertificate: null });
-    setDeleteFlags({ eFilingReceipt: false, form1: false, grantedCertificate: false });
+    setFiles({ cbr: null, form1: null, grantedCertificate: null });
+    setDeleteFlags({ cbr: false, form1: false, grantedCertificate: false });
     setViewMode("form");
   };
 
@@ -247,19 +280,23 @@ export default function PatentPublication() {
   };
 
   const handleSubmit = async () => {
-    if (!form.facultyRole) {
+    const finalFacultyRole = form.patentFiledInInstitution === "Yes" ? "Inventor / Co-Inventor" : form.facultyRole;
+    const finalPatentName = form.patentFiledInInstitution === "Yes" ? "Aditya University" : (finalFacultyRole === "Applicant" ? (user?.name || "") : form.patentName);
+    const finalApplicantAffiliation = form.patentFiledInInstitution === "Yes" ? "Aditya University" : (finalFacultyRole === "Applicant" ? (user?.college || "") : form.applicantAffiliation);
+
+    if (form.patentFiledInInstitution === "No" && !finalFacultyRole) {
       toast.error("Please select your role in the patent");
       return;
     }
-    if (form.facultyRole === "Inventor / Co-Inventor" && (!form.applicantName || !form.applicantAffiliation)) {
+    if (finalFacultyRole === "Inventor / Co-Inventor" && (!finalPatentName || !finalApplicantAffiliation)) {
       toast.error("Please provide the Name of the Applicant and Applicant Affiliation");
       return;
     }
-    if (!form.title || !form.applicationnumber || (form.status !== 'Granted' && !form.dateOfFiling)) {
+    if (!form.title || !form.applicationNo || (form.status !== 'Granted' && !form.dateOfFiling)) {
       toast.error("Please fill all required fields");
       return;
     }
-    if (!/^[A-Za-z0-9\/.-]+$/.test(form.applicationnumber)) {
+    if (!/^[A-Za-z0-9\/.-]+$/.test(form.applicationNo)) {
       toast.error("Patent Application No can only contain letters, numbers, '/', '.', and '-'");
       return;
     }
@@ -335,21 +372,22 @@ export default function PatentPublication() {
         employeeId: a.affiliationType === "Aditya University" ? a.empId : null
       })).filter(ca => ca.name && ca.affiliation);
 
-      fd.append("facultyRole", form.facultyRole);
-      fd.append("applicantAffiliation", form.facultyRole === "Applicant" ? (user?.college || "") : (form.applicantAffiliation || ""));
+      fd.append("facultyRole", finalFacultyRole);
+      fd.append("applicantAffiliation", finalApplicantAffiliation);
       fd.append("title", form.title);
       fd.append("applicantName", user?.name || "");
-      fd.append("patentName", form.patentName);
+      fd.append("patentName", finalPatentName);
       fd.append("patentFiledInInstitution", form.patentFiledInInstitution || "Yes");
       fd.append("isUtilityType", form.isUtilityType || "Yes");
       fd.append("area", form.area);
-      fd.append("applicationnumber", form.applicationnumber);
+      fd.append("applicationNo", form.applicationNo);
       fd.append("dateOfFiling", form.dateOfFiling);
       fd.append("status", form.status);
       fd.append("patentFiledCountry", form.patentFiledCountry === 'Others' ? form.customCountryName : form.patentFiledCountry);
       fd.append("coInventors", JSON.stringify(coInventorsList));
       fd.append("isStudentsInvolved", form.isStudentsInvolved || "No");
-      const applyIncentive = parseInt(form.userInventorPosition || 1) > 5 ? "No" : form.applyIncentive;
+      const isUtilityTypeNo = form.isUtilityType === "No";
+      const applyIncentive = (parseInt(form.userInventorPosition || 1) > 5 || isUtilityTypeNo) ? "No" : form.applyIncentive;
       fd.append("applyIncentive", applyIncentive);
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
       fd.append("eligibleForTechTransfer", form.eligibleForTechTransfer || "No");
@@ -358,6 +396,7 @@ export default function PatentPublication() {
 
       let expectedAmt = form.status === "Published" ? 5000 : (form.status === "Granted" ? 15000 : 0);
       if (form.applyingSeedGrant === "Yes") expectedAmt = expectedAmt / 2;
+      if (isUtilityTypeNo) expectedAmt = 0;
 
       fd.append("publishedstatus", form.publishedstatus);
       fd.append("publishedexpectedamount", (applyIncentive === "Yes" && form.status === "Published") ? expectedAmt : "");
@@ -372,7 +411,7 @@ export default function PatentPublication() {
       fd.append("grantedinsentiveappllieddate", form.grantedinsentiveappllieddate);
 
       Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
-      if (deleteFlags.eFilingReceipt) fd.append("deleteEFilingReceipt", "true");
+      if (deleteFlags.cbr) fd.append("deleteCbr", "true");
       if (deleteFlags.form1) fd.append("deleteForm1", "true");
       if (deleteFlags.grantedCertificate) fd.append("deleteGrantedCertificate", "true");
 
@@ -389,9 +428,9 @@ export default function PatentPublication() {
       }
 
       setForm({ facultyRole: "", applicantAffiliation: "", title: "", applicantName: user?.name || "", patentName: "Aditya University", patentFiledInInstitution: "Yes", isUtilityType: "Yes", area: "", applicationnumber: "", dateOfFiling: "", status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "", eligibleForTechTransfer: "No", patentFiledCountry: "", customCountryName: "", totalInventors: 1, otherInventors: [], publishedstatus: "no", publishedexpectedamount: "", publishedinsentiveampunt: "", publisheddate: "", publishedinsentiveappllieddate: "", grantedstatus: "no", grantedexpectedamount: "", grantedinsentiveampunt: "", granteddate: "", grantedinsentiveappllieddate: "" });
-      setFiles({ eFilingReceipt: null, form1: null, grantedCertificate: null });
-      setExistingFiles({ eFilingReceipt: null, form1: null, grantedCertificate: null });
-      setDeleteFlags({ eFilingReceipt: false, form1: false, grantedCertificate: false });
+      setFiles({ cbr: null, form1: null, grantedCertificate: null });
+      setExistingFiles({ cbr: null, form1: null, grantedCertificate: null });
+      setDeleteFlags({ cbr: false, form1: false, grantedCertificate: false });
       setEditMode(false);
       setEditId(null);
       setSelectedYear("");
@@ -470,7 +509,7 @@ export default function PatentPublication() {
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Title</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Area</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Filing No</TableCell>
+
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Inventors</TableCell>
@@ -483,7 +522,7 @@ export default function PatentPublication() {
                 <TableRow key={pub._id || i} sx={{ "&:hover": { background: "rgba(var(--color-primary-rgb, 99,102,241), 0.04)", transition: "background 0.2s" } }}>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.title || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.area || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.applicationnumber || "N/A"}</TableCell>
+
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {pub.facultyId?.name || "N/A"}
@@ -799,12 +838,12 @@ export default function PatentPublication() {
           <TextField
             size="small"
             fullWidth
-            value={form.applicationnumber}
+            value={form.applicationNo}
             onChange={(e) => {
               const val = e.target.value;
               // Allow only letters, numbers, '/', '.', '-'
               if (val === "" || /^[A-Za-z0-9\/.-]+$/.test(val)) {
-                setForm(p => ({ ...p, applicationnumber: val }));
+                setForm(p => ({ ...p, applicationNo: val }));
               }
             }}
             placeholder="e.g. 202341012345"
@@ -841,6 +880,15 @@ export default function PatentPublication() {
           <Box>
             <Typography sx={labelStyle}>Enter Country Name : *</Typography>
             <TextField size="small" fullWidth value={form.customCountryName} onChange={set("customCountryName")} placeholder="e.g., USA, UK" />
+          </Box>
+        )}
+        {form.status === "Granted" && (
+          <Box>
+            <Typography sx={labelStyle}>Eligible for Technology Transfer :</Typography>
+            <Select size="small" fullWidth value={form.eligibleForTechTransfer || "No"} onChange={set("eligibleForTechTransfer")}>
+              <MenuItem value="No">No</MenuItem>
+              <MenuItem value="Yes">Yes</MenuItem>
+            </Select>
           </Box>
         )}
         <Box sx={{ gridColumn: { sm: "1 / -1" }, display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
@@ -969,12 +1017,12 @@ export default function PatentPublication() {
       <Grid2 sx={{ mt: 1 }}>
         <FileField
           label="Certificate of Basic Registration (CBR):"
-          name="eFilingReceipt"
-          onChange={setFile("eFilingReceipt")}
-          existingFileUrl={existingFiles.eFilingReceipt}
+          name="cbr"
+          onChange={setFile("cbr")}
+          existingFileUrl={existingFiles.cbr}
           onRemoveExisting={() => {
-            setExistingFiles(p => ({ ...p, eFilingReceipt: null }));
-            setDeleteFlags(p => ({ ...p, eFilingReceipt: true }));
+            setExistingFiles(p => ({ ...p, cbr: null }));
+            setDeleteFlags(p => ({ ...p, cbr: true }));
           }}
         />
         <FileField
@@ -1010,17 +1058,12 @@ export default function PatentPublication() {
             <MenuItem value="No">No</MenuItem>
           </Select>
         </Box>
-        <Box sx={{ mt: 1 }}>
-          <Typography sx={labelStyle}>Eligible for Technology Transfer?</Typography>
-          <Select size="small" fullWidth displayEmpty value={form.eligibleForTechTransfer} onChange={set("eligibleForTechTransfer")}>
-            <MenuItem value="Yes">Yes</MenuItem>
-            <MenuItem value="No">No</MenuItem>
-          </Select>
-        </Box>
+
         <Box sx={{ mt: 1 }}>
           {(() => {
             const isPositionGreaterThan5 = parseInt(form.userInventorPosition || 1) > 5;
-            const disableIncentive = isPositionGreaterThan5;
+            const isUtilityTypeNo = form.isUtilityType === "No";
+            const disableIncentive = isPositionGreaterThan5 || isUtilityTypeNo;
             return (
               <>
                 <Typography sx={labelStyle}>Whether you want to apply for incentive? *</Typography>
@@ -1035,6 +1078,11 @@ export default function PatentPublication() {
                     * Application for incentive is only for the first 5 inventor positions.
                   </Typography>
                 )}
+                {isUtilityTypeNo && !isPositionGreaterThan5 && (
+                  <Typography variant="caption" sx={{ color: "#ef4444", fontWeight: 600, mt: 0.5, display: "block" }}>
+                    * Incentive applies only for utility type patents.
+                  </Typography>
+                )}
               </>
             );
           })()}
@@ -1043,10 +1091,14 @@ export default function PatentPublication() {
 
       {(() => {
         const isPositionGreaterThan5 = parseInt(form.userInventorPosition || 1) > 5;
-        const disableIncentive = isPositionGreaterThan5;
+        const isUtilityTypeNo = form.isUtilityType === "No";
+        const disableIncentive = isPositionGreaterThan5 || isUtilityTypeNo;
         let amount = form.status === "Published" ? 5000 : (form.status === "Granted" ? 15000 : 0);
         if (form.applyingSeedGrant === "Yes") {
           amount = amount / 2;
+        }
+        if (isUtilityTypeNo) {
+          amount = 0;
         }
         
         if (form.applyIncentive === "Yes" && !disableIncentive && form.status) {
@@ -1065,7 +1117,7 @@ export default function PatentPublication() {
                     Estimated Research Incentive Amount
                   </Typography>
                   <Typography sx={{ fontSize: "1.6rem", fontWeight: 800, color: "#047857", mt: 0.5 }}>
-                    â¹{amount.toLocaleString('en-IN')}
+                    ₹{amount.toLocaleString('en-IN')}
                   </Typography>
                 </Box>
               </Box>
@@ -1116,7 +1168,12 @@ export default function PatentPublication() {
     }
   };
 
-  const handleCloseDetails = () => setSelectedPubDetails(null);
+  const handleCloseDetails = () => {
+    setSelectedPubDetails(null);
+    setUpdateStatusExpanded(false);
+    setStatusUpdateForm({ granteddate: "", eligibleForTechTransfer: "No" });
+    setStatusUpdateFile(null);
+  };
 
   const handleResolveClaim = async (researchId, researchType, claimantId) => {
     try {
@@ -1224,7 +1281,7 @@ export default function PatentPublication() {
       <Dialog
         open={!!selectedPubDetails}
         onClose={handleCloseDetails}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
         sx={{
           "& .MuiDialog-paper": {
@@ -1347,10 +1404,11 @@ export default function PatentPublication() {
                     { label: "Date of Filing", value: formatDate(data.dateOfFiling), icon: <CalendarTodayIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Patent Application Status", value: data.patentStatus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Filed Country", value: data.patentFiledCountry || "India", icon: <PublicIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    ...(data.patentStatus === "Granted" ? [{ label: "Eligible for Technology Transfer", value: data.eligibleForTechTransfer || "No", icon: <HandshakeIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> }] : []),
                     { label: "Role", value: data.visibilityRole || "Applicant", icon: <PersonIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Seed Grant Work", value: data.applyingSeedGrant === "Yes" ? "Yes" : "No", icon: <GrassIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Apply For Incentive", value: data.applyIncentive === "Yes" ? "Yes" : "No", icon: <CardGiftcardIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    ...(data.status === "Approved" && data.approvedAmount ? [{ label: "Approved Incentive Amount", value: `â¹${data.approvedAmount}`, icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "#2e7d32" }} /> }] : [])
+                    ...(data.status === "Approved" && data.approvedAmount ? [{ label: "Approved Incentive Amount", value: `₹${data.approvedAmount}`, icon: <CurrencyRupeeIcon sx={{ fontSize: 18, color: "#2e7d32" }} /> }] : [])
                   ].map((item, idx, arr) => (
                     <Box
                       key={idx}
@@ -1478,6 +1536,92 @@ export default function PatentPublication() {
                 </Box>
               </Paper>
 
+              {data.patentStatus !== "Granted" && data.status === "Approved" && !updateStatusExpanded && (
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={<Edit />}
+                  sx={{
+                    borderRadius: "12px",
+                    py: 1.5,
+                    border: "2px dashed var(--color-primary)",
+                    color: "var(--color-primary)",
+                    fontWeight: 700,
+                    textTransform: "none",
+                    "&:hover": {
+                      background: "rgba(190,147,55,0.05)",
+                      border: "2px dashed var(--color-primary)"
+                    }
+                  }}
+                  onClick={() => setUpdateStatusExpanded(true)}
+                >
+                  Update Patent Status
+                </Button>
+              )}
+
+              {updateStatusExpanded && (
+                <Paper elevation={0} sx={{ p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-panel)" }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", mb: 2 }}>Update Patent to Granted</Typography>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box>
+                      <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)", mb: 0.5 }}>Granted Date *</Typography>
+                      <TextField 
+                        type="date" 
+                        size="small" 
+                        fullWidth 
+                        value={statusUpdateForm.granteddate}
+                        onChange={e => setStatusUpdateForm(p => ({ ...p, granteddate: e.target.value }))}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </Box>
+                    <Box>
+                      <FileField
+                        label="Granted Certificate * (PDF, max 200KB)"
+                        name="grantedCertificate"
+                        onChange={e => setStatusUpdateFile(e.target.files[0])}
+                      />
+                    </Box>
+                    <Box>
+                      <Typography sx={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)", mb: 0.5 }}>Eligible for Technology Transfer?</Typography>
+                      <Select 
+                        size="small" 
+                        fullWidth 
+                        value={statusUpdateForm.eligibleForTechTransfer}
+                        onChange={e => setStatusUpdateForm(p => ({ ...p, eligibleForTechTransfer: e.target.value }))}
+                      >
+                        <MenuItem value="Yes">Yes</MenuItem>
+                        <MenuItem value="No">No</MenuItem>
+                      </Select>
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+                      <Button 
+                        variant="outlined" 
+                        color="inherit" 
+                        fullWidth 
+                        disabled={statusUpdateLoading}
+                        onClick={() => {
+                          setUpdateStatusExpanded(false);
+                          setStatusUpdateForm({ granteddate: "", eligibleForTechTransfer: "No" });
+                          setStatusUpdateFile(null);
+                        }}
+                        sx={{ borderRadius: "8px", textTransform: "none", fontWeight: 600 }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        variant="contained" 
+                        fullWidth 
+                        disabled={statusUpdateLoading}
+                        onClick={handleStatusUpdateSubmit}
+                        sx={{ borderRadius: "8px", textTransform: "none", fontWeight: 600, bgcolor: "var(--color-primary)", "&:hover": { bgcolor: "var(--color-primary-dark)" } }}
+                      >
+                        {statusUpdateLoading ? "Updating..." : "Submit Update"}
+                      </Button>
+                    </Box>
+                  </Box>
+                </Paper>
+              )}
+
               {/* Card 2: Attached Documents */}
               <Paper elevation={0} sx={{ p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)" }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
@@ -1487,7 +1631,7 @@ export default function PatentPublication() {
                   </Typography>
                 </Box>
                 <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap" }} useFlexGap>
-                  {renderDetailFile("e-Filing Receipt", data.eFilingReceipt)}
+                  {renderDetailFile("e-Filing Receipt", data.cbr)}
                   {renderDetailFile("Form 1", data.form1)}
                 </Stack>
               </Paper>
@@ -1588,7 +1732,7 @@ export default function PatentPublication() {
                   )}
                   {data.approvedAmount && (
                     <Typography variant="h6" sx={{ mt: data.rndComment ? 2 : 0, fontWeight: 900, color: "#10b981" }}>
-                      Approved Amount: â¹{data.approvedAmount}
+                      Approved Amount: ₹{data.approvedAmount}
                     </Typography>
                   )}
                 </Box>

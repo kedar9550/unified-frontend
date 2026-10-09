@@ -278,7 +278,7 @@ content = content.replace('import { IconButton } from "@mui/material";', '')
 if "Close" not in content[:500]:
     content = content.replace('Visibility, Close }', 'Visibility, Close }').replace('Visibility }', 'Visibility, Close }')
 
-# 10. Change eFilingReceipt label
+# 10. Change cbr label
 content = content.replace('label="e-Filing Receipt Document:"', 'label="Certificate of Basic Registration (CBR):"')
 
 # 11. Add Estimated Amount Block + remove disabled logic for applyIncentive

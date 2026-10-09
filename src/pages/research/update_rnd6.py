@@ -23,12 +23,12 @@ new_initial_state = """    applyingSeedGrant: "No",
 content = content.replace(old_initial_state, new_initial_state)
 
 # 2. Add files state update
-old_files_state = """  const [files, setFiles] = useState({ eFilingReceipt: null, form1: null });"""
-new_files_state = """  const [files, setFiles] = useState({ eFilingReceipt: null, form1: null, grantedCertificate: null });"""
+old_files_state = """  const [files, setFiles] = useState({ cbr: null, form1: null });"""
+new_files_state = """  const [files, setFiles] = useState({ cbr: null, form1: null, grantedCertificate: null });"""
 content = content.replace(old_files_state, new_files_state)
 
-old_reset_files = """      setFiles({ eFilingReceipt: null, form1: null });"""
-new_reset_files = """      setFiles({ eFilingReceipt: null, form1: null, grantedCertificate: null });"""
+old_reset_files = """      setFiles({ cbr: null, form1: null });"""
+new_reset_files = """      setFiles({ cbr: null, form1: null, grantedCertificate: null });"""
 content = content.replace(old_reset_files, new_reset_files)
 
 
@@ -74,11 +74,11 @@ new_dates_ui = """              {form.status !== "Granted" && (
 content = content.replace(old_dates_ui, new_dates_ui)
 
 # 4. Add Granted Certificate upload
-old_attachments_ui = """              <FileField label="Certificate of Basic Registration (CBR):" onChange={(e) => setFiles(p => ({ ...p, eFilingReceipt: e.target.files[0] }))} />
+old_attachments_ui = """              <FileField label="Certificate of Basic Registration (CBR):" onChange={(e) => setFiles(p => ({ ...p, cbr: e.target.files[0] }))} />
               <FileField label="Form-1 Document:" onChange={(e) => setFiles(p => ({ ...p, form1: e.target.files[0] }))} />
               <Box>"""
 
-new_attachments_ui = """              <FileField label="Certificate of Basic Registration (CBR):" onChange={(e) => setFiles(p => ({ ...p, eFilingReceipt: e.target.files[0] }))} />
+new_attachments_ui = """              <FileField label="Certificate of Basic Registration (CBR):" onChange={(e) => setFiles(p => ({ ...p, cbr: e.target.files[0] }))} />
               <FileField label="Form-1 Document:" onChange={(e) => setFiles(p => ({ ...p, form1: e.target.files[0] }))} />
               {form.status === "Granted" && (
                 <FileField label="Granted Certificate" onChange={(e) => setFiles(p => ({ ...p, grantedCertificate: e.target.files[0] }))} />
@@ -107,10 +107,10 @@ new_fd_appends_2 = """      fd.append("publishedstatus", form.status === "Publis
 content = content.replace(old_fd_appends_2, new_fd_appends_2)
 
 # 6. Append Granted Certificate in handleSubmit
-old_file_append = """      if (files.eFilingReceipt) fd.append("eFilingReceipt", files.eFilingReceipt);
+old_file_append = """      if (files.cbr) fd.append("cbr", files.cbr);
       if (files.form1) fd.append("form1", files.form1);"""
 
-new_file_append = """      if (files.eFilingReceipt) fd.append("eFilingReceipt", files.eFilingReceipt);
+new_file_append = """      if (files.cbr) fd.append("cbr", files.cbr);
       if (files.form1) fd.append("form1", files.form1);
       if (files.grantedCertificate) fd.append("grantedCertificate", files.grantedCertificate);"""
 
