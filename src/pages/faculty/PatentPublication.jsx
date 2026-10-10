@@ -48,8 +48,8 @@ export default function PatentPublication() {
     status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "", eligibleForTechTransfer: "No",
     patentFiledCountry: "", customCountryName: "",
     totalInventors: 1, otherInventors: [],
-    publishedstatus: "no", publishedexpectedamount: "", publishedinsentiveampunt: "", publisheddate: "", publishedinsentiveappllieddate: "",
-    grantedstatus: "no", grantedexpectedamount: "", grantedinsentiveampunt: "", granteddate: "", grantedinsentiveappllieddate: ""
+    publishedstatus: "no", publishedexpectedamount: "", publishedincentiveamount: "", publisheddate: "", publishedinsentiveappllieddate: "",
+    grantedstatus: "no", grantedexpectedamount: "", grantedincentiveamount: "", granteddate: "", grantedinsentiveappllieddate: ""
   });
   const [files, setFiles] = useState({ cbr: null, form1: null, grantedCertificate: null });
   const [existingFiles, setExistingFiles] = useState({ cbr: null, form1: null, grantedCertificate: null });
@@ -77,10 +77,10 @@ export default function PatentPublication() {
       
       const res = await API.patch(`/api/research/patent/${selectedPubDetails._id}/update-status`, fd, { headers: { "Content-Type": "multipart/form-data" } });
       
-      toast.success("Patent status updated to Granted!");
+      toast.success("Patent status updated to Granted and submitted for approval!");
       const updatedPatent = res.data.data;
       setPublicationsList(prev => prev.map(p => p._id === updatedPatent._id ? updatedPatent : p));
-      setSelectedPubDetails(updatedPatent);
+      setSelectedPubDetails(null);
       setUpdateStatusExpanded(false);
       setStatusUpdateForm({ granteddate: "", eligibleForTechTransfer: "No" });
       setStatusUpdateFile(null);
@@ -141,12 +141,12 @@ export default function PatentPublication() {
       otherInventors: mappedAuthors,
       publishedstatus: pub.published?.publishedstatus || "no",
       publishedexpectedamount: pub.published?.publishedexpectedamount || "",
-      publishedinsentiveampunt: pub.published?.publishedinsentiveampunt || "",
+      publishedincentiveamount: pub.published?.publishedincentiveamount || "",
       publisheddate: pub.published?.publisheddate ? pub.published.publisheddate.split('T')[0] : "",
       publishedinsentiveappllieddate: pub.published?.publishedinsentiveappllieddate ? pub.published.publishedinsentiveappllieddate.split('T')[0] : "",
       grantedstatus: pub.granted?.grantedstatus || "no",
       grantedexpectedamount: pub.granted?.grantedexpectedamount || "",
-      grantedinsentiveampunt: pub.granted?.grantedinsentiveampunt || "",
+      grantedincentiveamount: pub.granted?.grantedincentiveamount || "",
       granteddate: pub.granted?.granteddate ? pub.granted.granteddate.split('T')[0] : "",
       grantedinsentiveappllieddate: pub.granted?.grantedinsentiveappllieddate ? pub.granted.grantedinsentiveappllieddate.split('T')[0] : ""
     });
@@ -187,7 +187,7 @@ export default function PatentPublication() {
           newForm.publishedstatus = "yes";
           newForm.grantedstatus = "no";
           newForm.grantedexpectedamount = "";
-          newForm.grantedinsentiveampunt = "";
+          newForm.grantedincentiveamount = "";
           newForm.granteddate = "";
           newForm.grantedinsentiveappllieddate = "";
         } else if (val === "Granted") {
@@ -400,13 +400,13 @@ export default function PatentPublication() {
 
       fd.append("publishedstatus", form.publishedstatus);
       fd.append("publishedexpectedamount", (applyIncentive === "Yes" && form.status === "Published") ? expectedAmt : "");
-      fd.append("publishedinsentiveampunt", form.publishedinsentiveampunt);
+      fd.append("publishedincentiveamount", form.publishedincentiveamount);
       fd.append("publisheddate", form.publisheddate);
       fd.append("publishedinsentiveappllieddate", form.publishedinsentiveappllieddate);
       
       fd.append("grantedstatus", form.grantedstatus);
       fd.append("grantedexpectedamount", (applyIncentive === "Yes" && form.status === "Granted") ? expectedAmt : "");
-      fd.append("grantedinsentiveampunt", form.grantedinsentiveampunt);
+      fd.append("grantedincentiveamount", form.grantedincentiveamount);
       fd.append("granteddate", form.granteddate);
       fd.append("grantedinsentiveappllieddate", form.grantedinsentiveappllieddate);
 
@@ -427,7 +427,7 @@ export default function PatentPublication() {
         toast.success("Patent submitted successfully!");
       }
 
-      setForm({ facultyRole: "", applicantAffiliation: "", title: "", applicantName: user?.name || "", patentName: "Aditya University", patentFiledInInstitution: "Yes", isUtilityType: "Yes", area: "", applicationnumber: "", dateOfFiling: "", status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "", eligibleForTechTransfer: "No", patentFiledCountry: "", customCountryName: "", totalInventors: 1, otherInventors: [], publishedstatus: "no", publishedexpectedamount: "", publishedinsentiveampunt: "", publisheddate: "", publishedinsentiveappllieddate: "", grantedstatus: "no", grantedexpectedamount: "", grantedinsentiveampunt: "", granteddate: "", grantedinsentiveappllieddate: "" });
+      setForm({ facultyRole: "", applicantAffiliation: "", title: "", applicantName: user?.name || "", patentName: "Aditya University", patentFiledInInstitution: "Yes", isUtilityType: "Yes", area: "", applicationnumber: "", dateOfFiling: "", status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "", eligibleForTechTransfer: "No", patentFiledCountry: "", customCountryName: "", totalInventors: 1, otherInventors: [], publishedstatus: "no", publishedexpectedamount: "", publishedincentiveamount: "", publisheddate: "", publishedinsentiveappllieddate: "", grantedstatus: "no", grantedexpectedamount: "", grantedincentiveamount: "", granteddate: "", grantedinsentiveappllieddate: "" });
       setFiles({ cbr: null, form1: null, grantedCertificate: null });
       setExistingFiles({ cbr: null, form1: null, grantedCertificate: null });
       setDeleteFlags({ cbr: false, form1: false, grantedCertificate: false });
