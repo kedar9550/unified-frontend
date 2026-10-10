@@ -26,13 +26,11 @@ export default function ConsultancyPublication() {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const [form, setForm] = useState({
-    title: "", fundingAgency: "", fundingAdityaUniversity: "", amount: "", duration: "", month: "", year: "",
-    applyingSeedGrant: "",
+    title: "", typeOfConsultancy: "", fundingIndustry: "", amount: "", receivedAmount: "", receivedAmountDate: "", duration: "", month: "", year: "",
     investigatorType: "",
     principalInvestigator: "",
     coPrincipalInvestigator: "",
     applyIncentive: "No",
-    projectStatus: "Sanctioned",
     totalInvestigators: 1,
     otherInvestigatorsList: []
   });
@@ -66,18 +64,18 @@ export default function ConsultancyPublication() {
 
     setForm({
       title: pub.title || "",
-      fundingAgency: pub.fundingAgency || "",
-      fundingAdityaUniversity: pub.fundingAdityaUniversity || "No",
+      typeOfConsultancy: pub.typeOfConsultancy || "",
+      fundingIndustry: pub.fundingIndustry || "",
       amount: pub.amount || "",
+      receivedAmount: pub.receivedAmount || "",
+      receivedAmountDate: pub.receivedAmountDate ? new Date(pub.receivedAmountDate).toISOString().split('T')[0] : "",
       duration: pub.duration || "",
       month: pub.month || "",
       year: pub.year || "",
-      applyingSeedGrant: pub.applyingSeedGrant || "",
       investigatorType: pub.investigatorType || "Principal Investigator (PI)",
       principalInvestigator: pub.principalInvestigator || "",
       coPrincipalInvestigator: pub.coPrincipalInvestigator || "",
       applyIncentive: pub.applyIncentive || "No",
-      projectStatus: pub.projectStatus || "Sanctioned",
       totalInvestigators: pub.totalInvestigators || 1,
       otherInvestigatorsList: mappedInvestigators
     });
@@ -238,13 +236,8 @@ export default function ConsultancyPublication() {
   };
 
   const handleSubmit = async () => {
-    if (!form.title || !form.fundingAdityaUniversity || !form.applyingSeedGrant || !form.amount) {
+    if (!form.title || !form.typeOfConsultancy || !form.fundingIndustry || !form.amount) {
       toast.error("Please fill all required fields");
-      return;
-    }
-
-    if (form.fundingAdityaUniversity === 'No' && (!form.fundingAgency || !form.fundingAgency.trim())) {
-      toast.error("Please specify the Funding Agency");
       return;
     }
 
@@ -281,7 +274,7 @@ export default function ConsultancyPublication() {
       return;
     }
     if (!form.investigatorType) {
-      toast.error("Please select Investigator Type");
+      toast.error("Please select Your Role in Consultancy");
       return;
     }
     if (form.investigatorType === "Co-Principal Investigator (Co-PI)" && total < 2) {
@@ -327,7 +320,7 @@ export default function ConsultancyPublication() {
 
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => {
-        if (k !== 'otherInvestigatorsList') fd.append(k, v);
+        if (k !== 'otherInvestigatorsList' && k !== 'principalInvestigator' && k !== 'coPrincipalInvestigator') fd.append(k, v);
       });
       fd.append("principalInvestigator", isPI ? "Yes" : "No");
       fd.append("coPrincipalInvestigator", isCoPI ? "Yes" : "No");
@@ -350,8 +343,8 @@ export default function ConsultancyPublication() {
       }
 
       setForm({
-        title: "", fundingAgency: "", fundingAdityaUniversity: "", amount: "", duration: "", month: "", year: "", applyingSeedGrant: "",
-        investigatorType: "", principalInvestigator: "", coPrincipalInvestigator: "", applyIncentive: "No", projectStatus: "Sanctioned",
+        title: "", typeOfConsultancy: "", fundingIndustry: "", amount: "", receivedAmount: "", receivedAmountDate: "", duration: "", month: "", year: "",
+        investigatorType: "", principalInvestigator: "", coPrincipalInvestigator: "", applyIncentive: "No",
         totalInvestigators: 1, otherInvestigatorsList: []
       });
       setFiles({ sanctionLetter: null, mou: null });
@@ -378,7 +371,7 @@ export default function ConsultancyPublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Consultancy Work</Typography>
-        {/* <Button
+        <Button
           variant="contained"
           onClick={() => {
             const activeYear = academicYears.length > 0;
@@ -404,7 +397,7 @@ export default function ConsultancyPublication() {
           }}
         >
           Apply New
-        </Button> */}
+        </Button>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -446,7 +439,7 @@ export default function ConsultancyPublication() {
               {publicationsList.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((pub, i) => (
                 <TableRow key={pub._id || i} sx={{ "&:hover": { background: "rgba(var(--color-primary-rgb, 99,102,241), 0.04)", transition: "background 0.2s" } }}>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.title || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.fundingAgency || "N/A"}</TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.fundingIndustry || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.amount || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
@@ -657,28 +650,34 @@ export default function ConsultancyPublication() {
             <TextField size="small" fullWidth value={form.title} onChange={set("title")} />
           </Box>
           <Box>
-            <Typography sx={labelStyle}>Funding Agency : *</Typography>
+            <Typography sx={labelStyle}>Type of Consultancy : *</Typography>
             <Select
               size="small"
               fullWidth
               displayEmpty
-              value={form.fundingAdityaUniversity}
-              onChange={(e) => setForm(p => ({ ...p, fundingAdityaUniversity: e.target.value, fundingAgency: e.target.value === "Yes" ? "Aditya University" : "" }))}
+              value={form.typeOfConsultancy}
+              onChange={set("typeOfConsultancy")}
             >
               <MenuItem value="" disabled>--Select--</MenuItem>
-              <MenuItem value="Yes">Aditya University</MenuItem>
-              <MenuItem value="No">Others</MenuItem>
+              <MenuItem value="testing">Testing</MenuItem>
+              <MenuItem value="design">Design</MenuItem>
             </Select>
           </Box>
-          {form.fundingAdityaUniversity === "No" && (
-            <Box>
-              <Typography sx={labelStyle}>Please Specify Funding Agency : *</Typography>
-              <TextField size="small" fullWidth value={form.fundingAgency} onChange={set("fundingAgency")} />
-            </Box>
-          )}
           <Box>
-            <Typography sx={labelStyle}>Consultancy Amount :</Typography>
+            <Typography sx={labelStyle}>Funding Industry : *</Typography>
+            <TextField size="small" fullWidth value={form.fundingIndustry} onChange={set("fundingIndustry")} placeholder="Specify funding industry name" />
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>Consultancy Amount : *</Typography>
             <TextField size="small" fullWidth value={form.amount} onChange={handleNumericChange("amount")} placeholder="Amount" />
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>Received Amount :</Typography>
+            <TextField size="small" fullWidth value={form.receivedAmount} onChange={handleNumericChange("receivedAmount")} placeholder="Received Amount" />
+          </Box>
+          <Box>
+            <Typography sx={labelStyle}>Received Amount Date :</Typography>
+            <TextField type="date" size="small" fullWidth value={form.receivedAmountDate} onChange={set("receivedAmountDate")} InputLabelProps={{ shrink: true }} />
           </Box>
           <Box>
             <Typography sx={labelStyle}>Duration of Consultancy Work in Years :</Typography>
@@ -696,7 +695,7 @@ export default function ConsultancyPublication() {
           </Box>
 
           <Box>
-            <Typography sx={labelStyle}>Investigator Type : *</Typography>
+            <Typography sx={labelStyle}>Your Role in Consultancy : *</Typography>
             <Select
               size="small"
               fullWidth
@@ -704,7 +703,7 @@ export default function ConsultancyPublication() {
               value={form.investigatorType}
               onChange={(e) => setForm(p => ({ ...p, investigatorType: e.target.value }))}
             >
-              <MenuItem value="" disabled>Select Investigator Type</MenuItem>
+              <MenuItem value="" disabled>Select Your Role in Consultancy</MenuItem>
               <MenuItem value="Principal Investigator (PI)">Principal Investigator (PI)</MenuItem>
               <MenuItem value="Co-Principal Investigator (Co-PI)">Co-Principal Investigator (Co-PI)</MenuItem>
             </Select>
@@ -764,6 +763,17 @@ export default function ConsultancyPublication() {
                             size="small"
                             fullWidth
                             value={ca.name}
+                            disabled
+                            placeholder="Auto-fetched"
+                            sx={{ background: "rgba(0,0,0,0.02)" }}
+                          />
+                        </Box>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                          <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>DEPARTMENT</Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            value={ca.department || ""}
                             disabled
                             placeholder="Auto-fetched"
                             sx={{ background: "rgba(0,0,0,0.02)" }}
@@ -833,26 +843,10 @@ export default function ConsultancyPublication() {
 
         <Grid2 sx={{ mt: 2 }}>
           <Box>
-            <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
-            <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")}>
-              <MenuItem value="">Select</MenuItem>
-              <MenuItem value="Yes">Yes</MenuItem>
-              <MenuItem value="No">No</MenuItem>
-            </Select>
-          </Box>
-          <Box></Box>
-          <Box>
             <Typography sx={labelStyle}>Applying for Incentive? *</Typography>
-            <Select size="small" fullWidth displayEmpty value={form.applyIncentive} disabled>
+            <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>
               <MenuItem value="Yes">Yes</MenuItem>
               <MenuItem value="No">No</MenuItem>
-            </Select>
-          </Box>
-          <Box>
-            <Typography sx={labelStyle}>Project Status *</Typography>
-            <Select size="small" fullWidth displayEmpty value={form.projectStatus} onChange={set("projectStatus")}>
-              <MenuItem value="Shortlisted">Shortlisted</MenuItem>
-              <MenuItem value="Sanctioned">Sanctioned</MenuItem>
             </Select>
           </Box>
         </Grid2>
@@ -1004,8 +998,13 @@ export default function ConsultancyPublication() {
                     {data.title}
                   </Typography>
                   <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, mt: 0.5 }}>
-                    Client / Funding Agency: {data.fundingAgency}
+                    Client / Funding Industry: {data.fundingIndustry}
                   </Typography>
+                  {data.typeOfConsultancy && (
+                  <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, mt: 0.5, textTransform: "capitalize" }}>
+                    Type: {data.typeOfConsultancy}
+                  </Typography>
+                  )}
                 </Box>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0, flexWrap: "wrap" }}>
@@ -1055,13 +1054,14 @@ export default function ConsultancyPublication() {
             <Box sx={{ display: "flex", flexDirection: "column" }}>
               {[
                 { label: "Academic Year", value: data.academicYear?.year || "-" },
-                { label: "Client / Funding Agency", value: data.fundingAgency || "-" },
+                { label: "Type of Consultancy", value: data.typeOfConsultancy ? data.typeOfConsultancy.charAt(0).toUpperCase() + data.typeOfConsultancy.slice(1) : "-" },
+                { label: "Client / Funding Industry", value: data.fundingIndustry || "-" },
                 { label: "Sanctioned Amount", value: data.amount ? `₹${data.amount}` : "-" },
+                { label: "Received Amount", value: data.receivedAmount ? `₹${data.receivedAmount}` : "-" },
+                { label: "Received Amount Date", value: data.receivedAmountDate ? new Date(data.receivedAmountDate).toLocaleDateString() : "-" },
                 { label: "Duration (Months)", value: data.duration || "-" },
                 { label: "Commencement Month / Year", value: `${data.month || ""} ${data.year || ""}`.trim() || "-" },
                 { label: "Investigator Role", value: data.investigatorType || "N/A" },
-                { label: "Project Status", value: data.projectStatus || "Sanctioned" },
-                { label: "Applying Seed Grant?", value: data.applyingSeedGrant || "No" },
                 { label: "Appraisal Eligible?", value: data.status === "Approved" ? (data.appraisalEligible || "No") : "Not yet decided" },
                 { label: "Appraisal Claimant(s)", value: appraisalClaimantsStr },
                 { label: "Approved Incentive Amount", value: data.approvedAmount ? `₹${data.approvedAmount}` : "-" }
@@ -1118,6 +1118,7 @@ export default function ConsultancyPublication() {
                       </Typography>
                       <Typography variant="body2" sx={{ color: "var(--text-secondary)", pr: 2 }}>
                         {co.affiliation || "Aditya University"}
+                        {co.department && <Typography variant="caption" sx={{ display: 'block', color: 'var(--text-secondary)', fontWeight: 600 }}>{co.department}</Typography>}
                       </Typography>
                       <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
                         <Chip
