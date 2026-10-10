@@ -276,11 +276,14 @@ export default function RndPatentDataEntry() {
       }
     }
 
-    if (form.applyIncentive === "Yes" && (!form.approvedAmount || Number(form.approvedAmount) <= 0)) {
+    const computedApplyIncentive = (form.isInstitutionRecord === "Yes" || form.isUtilityType === "No") ? "No" : form.applyIncentive;
+    const computedAppraisalEligible = form.isInstitutionRecord === "Yes" ? "No" : form.appraisalEligible;
+
+    if (computedApplyIncentive === "Yes" && (!form.approvedAmount || Number(form.approvedAmount) <= 0)) {
       toast.error("Please enter a valid Approved Incentive Amount");
       return;
     }
-    if (!form.appraisalEligible) {
+    if (!computedAppraisalEligible) {
       toast.error("Please select Appraisal Eligible status");
       return;
     }
@@ -309,12 +312,10 @@ export default function RndPatentDataEntry() {
       fd.append("patentFiledCountry", form.patentFiledCountry === 'Others' ? form.customCountryName : form.patentFiledCountry);
       fd.append("coInventors", JSON.stringify(coInventorsList));
       fd.append("isInstitutionRecord", form.isInstitutionRecord || "No");
-      const isUtilityTypeNo = form.isUtilityType === "No";
-      const applyIncentive = isUtilityTypeNo ? "No" : form.applyIncentive;
-      fd.append("applyIncentive", applyIncentive);
+      fd.append("applyIncentive", computedApplyIncentive);
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
       fd.append("eligibleForTechTransfer", form.eligibleForTechTransfer);
-      fd.append("appraisalEligible", form.appraisalEligible || "Yes");
+      fd.append("appraisalEligible", computedAppraisalEligible);
       fd.append("approvedAmount", form.approvedAmount || "");
       
       const total = form.otherInventors.length + 1;
@@ -326,11 +327,11 @@ export default function RndPatentDataEntry() {
 
       fd.append("publishedstatus", form.status === "Published" ? "yes" : "no");
       fd.append("publisheddate", form.publisheddate || "");
-      fd.append("publishedexpectedamount", (applyIncentive === "Yes" && form.status === "Published") ? expectedAmt : "");
+      fd.append("publishedexpectedamount", (computedApplyIncentive === "Yes" && form.status === "Published") ? expectedAmt : "");
       
       fd.append("grantedstatus", form.status === "Granted" ? "yes" : "no");
       fd.append("granteddate", form.granteddate || "");
-      fd.append("grantedexpectedamount", (form.applyIncentive === "Yes" && form.status === "Granted") ? expectedAmt : "");
+      fd.append("grantedexpectedamount", (computedApplyIncentive === "Yes" && form.status === "Granted") ? expectedAmt : "");
 
       fd.append("academicYear", selectedYear);
       fd.append("college", targetFacultyDetails?.college || user?.college || "");

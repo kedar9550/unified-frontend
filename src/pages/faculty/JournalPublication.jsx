@@ -98,6 +98,7 @@ export default function JournalPublication() {
   const { startLoading, stopLoading } = useLoading();
   const [viewMode, setViewMode] = useState("list"); // 'list' | 'select-year' | 'form'
   const [isNoDoiMode, setIsNoDoiMode] = useState(false);
+  const [doiPromptOpen, setDoiPromptOpen] = useState(false);
   const [academicYears, setAcademicYears] = useState([]);
   const [selectedYear, setSelectedYear] = useState("");
   const academicYearSelectRef = useRef(null);
@@ -1313,26 +1314,6 @@ export default function JournalPublication() {
 
         <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
           <Button
-            variant="outlined"
-            startIcon={<Edit />}
-            onClick={handleOpenManualEntry}
-            sx={{
-              borderColor: "var(--color-primary)",
-              color: "var(--color-primary)",
-              fontWeight: 700,
-              textTransform: "none",
-              borderRadius: "8px",
-              px: 2,
-              "&:hover": {
-                bgcolor: "rgba(190, 147, 55, 0.08)",
-                borderColor: "var(--color-primary)"
-              }
-            }}
-          >
-            Manual Entry (Without DOI)
-          </Button>
-
-          <Button
             variant="contained"
             onClick={handleOpenApplyNew}
             sx={{ background: "var(--gradient-primary)", px: 3, fontWeight: 700, textTransform: "none", "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }, transition: "all 0.2s ease" }}
@@ -1541,7 +1522,7 @@ export default function JournalPublication() {
           </Select>
           <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
             <Button variant="outlined" onClick={() => setViewMode("list")} sx={{ textTransform: "none", fontWeight: 600, color: "var(--text-primary)", borderColor: "var(--border-color)", "&:hover": { borderColor: "var(--color-primary)", background: "rgba(0,0,0,0.02)" } }}>Cancel</Button>
-            <Button variant="contained" disabled={!selectedYear} onClick={() => setViewMode("form")} sx={{ background: "var(--gradient-primary)", px: 4, fontWeight: 700, textTransform: "none", "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }, "&.Mui-disabled": { background: "var(--bg-panel)", color: "var(--text-secondary)", opacity: 0.5 }, transition: "all 0.2s ease" }}>Proceed</Button>
+            <Button variant="contained" disabled={!selectedYear} onClick={() => setDoiPromptOpen(true)} sx={{ background: "var(--gradient-primary)", px: 4, fontWeight: 700, textTransform: "none", "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }, "&.Mui-disabled": { background: "var(--bg-panel)", color: "var(--text-secondary)", opacity: 0.5 }, transition: "all 0.2s ease" }}>Proceed</Button>
           </Box>
         </FormCard>
       </Box>
@@ -2874,6 +2855,36 @@ export default function JournalPublication() {
         open={noActiveYearAlertOpen}
         onClose={() => setNoActiveYearAlertOpen(false)}
       />
+      <Dialog open={doiPromptOpen} onClose={() => setDoiPromptOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800 }}>DOI Confirmation</DialogTitle>
+        <DialogContent dividers>
+          <Typography>Does the Journal have a DOI?</Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            onClick={() => {
+              setIsNoDoiMode(true);
+              setViewMode("form");
+              setDoiPromptOpen(false);
+            }}
+            sx={{ fontWeight: 700, textTransform: "none" }}
+            color="inherit"
+          >
+            No
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setIsNoDoiMode(false);
+              setViewMode("form");
+              setDoiPromptOpen(false);
+            }}
+            sx={{ background: "var(--gradient-primary)", fontWeight: 700, textTransform: "none" }}
+          >
+            Yes
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
