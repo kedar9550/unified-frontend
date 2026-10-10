@@ -136,9 +136,11 @@ import Transaction from "./pages/RazorpayTransactions/Transaction";
 // Central Events Module
 import CentralEventTypesPage from "./pages/centralEvents/CentralEventTypesPage";
 import CentralEventCategoriesPage from "./pages/centralEvents/CentralEventCategoriesPage";
+import CentralEventSubcategoriesPage from "./pages/centralEvents/CentralEventSubcategoriesPage";
 import CentralEventsListPage from "./pages/centralEvents/CentralEventsListPage";
 import CentralEventDetailPage from "./pages/centralEvents/CentralEventDetailPage";
 import CentralEventCreatePage from "./pages/centralEvents/CentralEventCreatePage";
+import CentralActivitiesPage from "./pages/centralEvents/CentralActivitiesPage";
 import PaymentCheckoutPage from "./pages/centralEvents/PaymentCheckoutPage";
 
 
@@ -412,6 +414,8 @@ function App() {
         {/* Central Events Module Routes */}
         <Route path="/central-events/types" element={<ProtectedRoute element={<CentralEventTypesPage />} />} />
         <Route path="/central-events/categories" element={<ProtectedRoute element={<CentralEventCategoriesPage />} />} />
+        <Route path="/central-events/subcategories" element={<ProtectedRoute element={<CentralEventSubcategoriesPage />} />} />
+        <Route path="/central-events/activities" element={<ProtectedRoute element={<CentralActivitiesPage />} />} />
         <Route path="/central-events" element={<ProtectedRoute element={<CentralEventsListPage />} />} />
         <Route path="/central-events/create" element={<ProtectedRoute element={<CentralEventCreatePage />} />} />
         <Route path="/central-events/:slug" element={<ProtectedRoute element={<CentralEventDetailPage />} />} />

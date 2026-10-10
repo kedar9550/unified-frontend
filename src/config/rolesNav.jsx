@@ -56,11 +56,9 @@ export const ROLE_ROUTES = {
       nested: [
         { text: "Event Types", path: "/central-events/types", icon: <Category /> },
         { text: "Event Categories", path: "/central-events/categories", icon: <Category /> },
+        { text: "Event Subcategories", path: "/central-events/subcategories", icon: <Category /> },
+        { text: "Activities", path: "/central-events/activities", icon: <ListAlt /> },
         { text: "All Central Events", path: "/central-events", icon: <EventAvailable /> },
-        { text: "University Data", path: "/university-data", icon: <ListAlt /> },
-
-
-        // { text: "Create Central Event", path: "/central-events/create", icon: <EventAvailable /> },
       ]
     },
   ],

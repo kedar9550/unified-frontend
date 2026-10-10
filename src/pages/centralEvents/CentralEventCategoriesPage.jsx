@@ -23,6 +23,7 @@ import {
   Stack,
   CircularProgress,
   MenuItem,
+  ListSubheader,
   Select,
   FormControl,
   InputLabel,
@@ -51,7 +52,8 @@ import {
   createCentralEventCategory,
   updateCentralEventCategory,
   deleteCentralEventCategory,
-  uploadCentralEventFile
+  uploadCentralEventFile,
+  getAcademicYears
 } from '../../api/centralEventsApi';
 import API from '../../api/axios';
 import { PageHeader, CustomTabs } from '../../components/common';
@@ -76,10 +78,12 @@ export default function CentralEventCategoriesPage() {
 
   const [types, setTypes] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [academicYears, setAcademicYears] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Selected Type Filter
+  // Selected Filters
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('');
+  const [selectedAcademicYearFilter, setSelectedAcademicYearFilter] = useState('');
 
   // Pagination State
   const [page, setPage] = useState(0);
@@ -94,10 +98,13 @@ export default function CentralEventCategoriesPage() {
   const [typeId, setTypeId] = useState('');
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
+  const [academicYear, setAcademicYear] = useState('');
   const [hasSubcategories, setHasSubcategories] = useState(false);
   const [subcategories, setSubcategories] = useState([]);
   const [newSubCode, setNewSubCode] = useState('');
   const [newSubName, setNewSubName] = useState('');
+  const [newSubBanner, setNewSubBanner] = useState(null);
+  const [uploadingSubBanner, setUploadingSubBanner] = useState(false);
   const [sortOrder, setSortOrder] = useState('0');
   const [isActive, setIsActive] = useState(true);
 
@@ -119,21 +126,33 @@ export default function CentralEventCategoriesPage() {
     { key: 'all', label: 'All Central Events', icon: <EventIcon />, path: '/central-events' },
     { key: 'types', label: 'Event Types', icon: <CategoryIcon />, path: '/central-events/types' },
     { key: 'categories', label: 'Event Categories', icon: <FolderIcon />, path: '/central-events/categories' },
+    { key: 'subcategories', label: 'Event Subcategories', icon: <FolderIcon />, path: '/central-events/subcategories' },
     ...(isGlobalAdmin ? [{ key: 'create', label: 'Create Event', icon: <AddIcon />, path: '/central-events/create' }] : [])
   ];
 
   useEffect(() => {
-    const fetchTypes = async () => {
+    const fetchInitialData = async () => {
       try {
-        const res = await getEventTypes();
-        if (res.success) {
-          setTypes(res.data);
+        const [typesRes, ayRes] = await Promise.all([
+          getEventTypes(),
+          getAcademicYears()
+        ]);
+        if (typesRes.success) {
+          setTypes(typesRes.data);
+        }
+        const ayList = ayRes?.years || ayRes?.data || [];
+        if (Array.isArray(ayList)) {
+          setAcademicYears(ayList);
+          const activeAY = ayList.find(ay => ay.active)?.year || ayList[0]?.year || '';
+          if (activeAY) {
+            setSelectedAcademicYearFilter(activeAY);
+          }
         }
       } catch (err) {
-        toast.error('Failed to load event types');
+        toast.error('Failed to load initial data');
       }
     };
-    fetchTypes();
+    fetchInitialData();
   }, []);
 
   // Employee live search effect
@@ -167,7 +186,7 @@ export default function CentralEventCategoriesPage() {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const res = await getAllCentralEventCategoriesAdmin(selectedTypeFilter);
+      const res = await getAllCentralEventCategoriesAdmin(selectedTypeFilter, selectedAcademicYearFilter);
       if (res.success) {
         setCategories(res.data);
         setPage(0);
@@ -181,7 +200,7 @@ export default function CentralEventCategoriesPage() {
 
   useEffect(() => {
     fetchCategories();
-  }, [selectedTypeFilter]);
+  }, [selectedTypeFilter, selectedAcademicYearFilter]);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -197,10 +216,13 @@ export default function CentralEventCategoriesPage() {
     setTypeId(selectedTypeFilter ? (types.find(t => t.code === selectedTypeFilter)?._id || '') : (types[0]?._id || ''));
     setCode('');
     setName('');
+    const defaultAY = academicYears.find(ay => ay.active)?.year || academicYears[0]?.year || '';
+    setAcademicYear(defaultAY);
     setHasSubcategories(false);
     setSubcategories([]);
     setNewSubCode('');
     setNewSubName('');
+    setNewSubBanner(null);
     setSortOrder('0');
     setIsActive(true);
     setBanner(null);
@@ -215,10 +237,13 @@ export default function CentralEventCategoriesPage() {
     setTypeId(item.typeId?._id || item.typeId || '');
     setCode(item.code);
     setName(item.name);
+    const defaultAY = item.academicYear || (academicYears.find(ay => ay.active)?.year || academicYears[0]?.year || '');
+    setAcademicYear(defaultAY);
     setHasSubcategories(!!item.hasSubcategories);
     setSubcategories(item.subcategories || []);
     setNewSubCode('');
     setNewSubName('');
+    setNewSubBanner(null);
     setSortOrder(String(item.sortOrder || 0));
     setIsActive(item.isActive !== undefined ? item.isActive : true);
     setBanner(item.banner || null);
@@ -234,6 +259,43 @@ export default function CentralEventCategoriesPage() {
     setOpenModal(true);
   };
 
+  const handleNewSubBannerUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploadingSubBanner(true);
+    try {
+      const res = await uploadCentralEventFile(file, { folderType: 'subcategory', academicYear });
+      if (res.success) {
+        setNewSubBanner(res.data);
+        toast.success('Subcategory banner image uploaded');
+      }
+    } catch (err) {
+      toast.error('Failed to upload subcategory banner image');
+    } finally {
+      setUploadingSubBanner(false);
+    }
+  };
+
+  const handleSubcategoryItemBannerUpload = async (index, e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const res = await uploadCentralEventFile(file, { folderType: 'subcategory', academicYear });
+      if (res.success) {
+        setSubcategories(subcategories.map((sub, i) => i === index ? { ...sub, banner: res.data } : sub));
+        toast.success('Subcategory banner updated');
+      }
+    } catch (err) {
+      toast.error('Failed to upload subcategory banner');
+    }
+  };
+
+  const handleRemoveSubcategoryItemBanner = (index) => {
+    setSubcategories(subcategories.map((sub, i) => i === index ? { ...sub, banner: null } : sub));
+  };
+
   const handleAddSubcategory = () => {
     if (!newSubName.trim()) {
       toast.error('Subcategory Name is required');
@@ -244,9 +306,15 @@ export default function CentralEventCategoriesPage() {
       toast.error(`Subcategory code "${codeToUse}" already added`);
       return;
     }
-    setSubcategories([...subcategories, { code: codeToUse, name: newSubName.trim(), isActive: true }]);
+    setSubcategories([...subcategories, {
+      code: codeToUse,
+      name: newSubName.trim(),
+      isActive: true,
+      banner: newSubBanner
+    }]);
     setNewSubCode('');
     setNewSubName('');
+    setNewSubBanner(null);
   };
 
   const handleRemoveSubcategory = (index) => {
@@ -263,7 +331,7 @@ export default function CentralEventCategoriesPage() {
 
     setUploadingBanner(true);
     try {
-      const res = await uploadCentralEventFile(file);
+      const res = await uploadCentralEventFile(file, { folderType: 'category', academicYear });
       if (res.success) {
         setBanner(res.data);
         toast.success('Category banner image uploaded');
@@ -284,6 +352,7 @@ export default function CentralEventCategoriesPage() {
         typeId,
         code: code.trim().toUpperCase(),
         name: name.trim(),
+        academicYear,
         hasSubcategories,
         subcategories: hasSubcategories ? subcategories : [],
         sortOrder: parseInt(sortOrder || '0', 10),
@@ -360,13 +429,6 @@ export default function CentralEventCategoriesPage() {
         }
       />
 
-      {/* Module Navigation Custom Tabs */}
-      <CustomTabs
-        tabs={navTabs}
-        value={2}
-        onChange={(e, val) => navigate(navTabs[val].path)}
-      />
-
       {/* Filter Bar with Standardized MUI Form Controls */}
       <Paper
         elevation={0}
@@ -396,9 +458,43 @@ export default function CentralEventCategoriesPage() {
             <MenuItem value="">
               <em>All Event Types</em>
             </MenuItem>
-            {types.map((t) => (
-              <MenuItem key={t.code} value={t.code}>
+
+            <ListSubheader sx={{ fontWeight: 700, color: 'info.main', lineHeight: '32px', bgcolor: 'var(--bg-paper)' }}>
+              🌐 Global Level Events
+            </ListSubheader>
+            {types.filter(t => (t.levelGroup || 'GLOBAL') === 'GLOBAL' || ['VEDA', 'COLORS', 'ALA'].includes(t.code)).map((t) => (
+              <MenuItem key={t.code} value={t.code} sx={{ pl: 3.5 }}>
                 {t.name}
+              </MenuItem>
+            ))}
+
+            <ListSubheader sx={{ fontWeight: 700, color: 'success.main', lineHeight: '32px', bgcolor: 'var(--bg-paper)' }}>
+              🏫 Institute Level Events
+            </ListSubheader>
+            {types.filter(t => t.levelGroup === 'INSTITUTE' || ['CLUB', 'DEPARTMENTAL', 'UNIVERSITY'].includes(t.code)).map((t) => (
+              <MenuItem key={t.code} value={t.code} sx={{ pl: 3.5 }}>
+                {t.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <FormControl sx={{ minWidth: 240, maxWidth: 320 }} size="small">
+          <InputLabel id="academic-year-filter-label">Academic Year</InputLabel>
+          <Select
+            labelId="academic-year-filter-label"
+            id="academic-year-filter-select"
+            value={selectedAcademicYearFilter}
+            label="Academic Year"
+            onChange={(e) => setSelectedAcademicYearFilter(e.target.value)}
+            sx={{ borderRadius: '12px', backgroundColor: 'var(--bg-paper)' }}
+          >
+            <MenuItem value="">
+              <em>All Academic Years</em>
+            </MenuItem>
+            {academicYears.map((ay) => (
+              <MenuItem key={ay._id || ay.year} value={ay.year}>
+                {ay.year} {ay.active ? '(Active)' : ''}
               </MenuItem>
             ))}
           </Select>
@@ -407,7 +503,7 @@ export default function CentralEventCategoriesPage() {
 
       {/* Table Section */}
       {loading ? (
-        <Box display="flex" justifyContent="center" py={6}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
           <CircularProgress />
         </Box>
       ) : (
@@ -428,6 +524,7 @@ export default function CentralEventCategoriesPage() {
                   <TableCell><strong>S.No</strong></TableCell>
                   <TableCell><strong>Banner</strong></TableCell>
                   <TableCell><strong>Event Type</strong></TableCell>
+                  <TableCell><strong>Academic Year</strong></TableCell>
                   <TableCell><strong>Category Code</strong></TableCell>
                   <TableCell><strong>Category Name</strong></TableCell>
                   <TableCell><strong>Has Subcategories</strong></TableCell>
@@ -440,7 +537,7 @@ export default function CentralEventCategoriesPage() {
               <TableBody>
                 {categories.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
+                    <TableCell colSpan={11} align="center" sx={{ py: 4 }}>
                       No categories found. Click "Add Event Category" to create one.
                     </TableCell>
                   </TableRow>
@@ -490,6 +587,13 @@ export default function CentralEventCategoriesPage() {
                             size="small"
                             sx={{ fontWeight: 700, borderRadius: '8px' }}
                           />
+                        </TableCell>
+                        <TableCell>
+                          {row.academicYear ? (
+                            <Chip label={row.academicYear} size="small" variant="outlined" sx={{ fontWeight: 600, borderRadius: '6px' }} />
+                          ) : (
+                            <Typography variant="caption" color="text.secondary" fontStyle="italic">-</Typography>
+                          )}
                         </TableCell>
                         <TableCell><Typography fontWeight={600}>{row.code}</Typography></TableCell>
                         <TableCell><Typography>{row.name}</Typography></TableCell>
@@ -568,47 +672,62 @@ export default function CentralEventCategoriesPage() {
           </DialogTitle>
           <DialogContent dividers>
             <Stack spacing={3} mt={1}>
-              <FormControl fullWidth required disabled={!!editingItem}>
-                <InputLabel id="dialog-event-type-label">Event Type</InputLabel>
-                <Select
-                  labelId="dialog-event-type-label"
-                  value={typeId}
-                  label="Event Type"
-                  onChange={(e) => setTypeId(e.target.value)}
-                  sx={{ borderRadius: '12px' }}
-                >
-                  {types.map((t) => (
-                    <MenuItem key={t._id} value={t._id}>
-                      {t.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, width: '100%' }}>
+                <FormControl fullWidth required disabled={!!editingItem}>
+                  <InputLabel id="dialog-event-type-label">Event Type</InputLabel>
+                  <Select
+                    labelId="dialog-event-type-label"
+                    value={typeId}
+                    label="Event Type"
+                    onChange={(e) => setTypeId(e.target.value)}
+                    sx={{ borderRadius: '12px' }}
+                  >
+                    {types.map((t) => (
+                      <MenuItem key={t._id} value={t._id}>
+                        {t.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
 
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    required
-                    label="Category Code (Unique per type)"
-                    placeholder="e.g. ROBOTICS, DANCE"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    InputProps={{ sx: { borderRadius: '12px' } }}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    fullWidth
-                    required
-                    label="Category Name"
-                    placeholder="e.g. Robotics & Automation"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    InputProps={{ sx: { borderRadius: '12px' } }}
-                  />
-                </Grid>
-              </Grid>
+                <FormControl fullWidth required>
+                  <InputLabel id="dialog-academic-year-label">Academic Year</InputLabel>
+                  <Select
+                    labelId="dialog-academic-year-label"
+                    value={academicYear}
+                    label="Academic Year"
+                    onChange={(e) => setAcademicYear(e.target.value)}
+                    sx={{ borderRadius: '12px' }}
+                  >
+                    {academicYears.map((ay) => (
+                      <MenuItem key={ay._id || ay.year} value={ay.year}>
+                        {ay.year} {ay.active ? '(Active)' : ''}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, width: '100%' }}>
+                <TextField
+                  fullWidth
+                  required
+                  label="Category Code (Unique per type)"
+                  placeholder="e.g. ROBOTICS, DANCE"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  InputProps={{ sx: { borderRadius: '12px' } }}
+                />
+                <TextField
+                  fullWidth
+                  required
+                  label="Category Name"
+                  placeholder="e.g. Robotics & Automation"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  InputProps={{ sx: { borderRadius: '12px' } }}
+                />
+              </Box>
 
               {/* Optional Category Banner Image */}
               <Box sx={{ border: '1px dashed var(--border-color)', p: 2, borderRadius: '12px', bgcolor: 'var(--bg-accent-1, #f8fafc)' }}>
@@ -647,94 +766,19 @@ export default function CentralEventCategoriesPage() {
                 </Stack>
               </Box>
 
-              {/* Has Subcategories Switch & Config */}
+              {/* Has Subcategories Switch */}
               <FormControlLabel
                 control={
                   <Switch
                     checked={hasSubcategories}
                     onChange={(e) => {
                       setHasSubcategories(e.target.checked);
-                      if (!e.target.checked) setSubcategories([]);
                     }}
                     color="primary"
                   />
                 }
                 label="Has Subcategories (SubCat1..SubCatN)"
               />
-
-              {hasSubcategories && (
-                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: '12px', bgcolor: 'var(--bg-accent-1, #f8fafc)', border: '1px solid var(--border-color)' }}>
-                  <Typography variant="subtitle2" fontWeight={600} gutterBottom color="primary.main">
-                    Configure Subcategories
-                  </Typography>
-
-                  <Grid container spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
-                    <Grid item xs={12} sm={4}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="Subcategory Code"
-                        placeholder="e.g. DEBATE_ENG"
-                        value={newSubCode}
-                        onChange={(e) => setNewSubCode(e.target.value)}
-                        InputProps={{ sx: { borderRadius: '10px' } }}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={5}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        label="Subcategory Name"
-                        placeholder="e.g. English Debate"
-                        value={newSubName}
-                        onChange={(e) => setNewSubName(e.target.value)}
-                        InputProps={{ sx: { borderRadius: '10px' } }}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={3}>
-                      <Button
-                        fullWidth
-                        variant="contained"
-                        size="small"
-                        startIcon={<AddIcon />}
-                        onClick={handleAddSubcategory}
-                        sx={{ textTransform: 'none', height: 40, borderRadius: '10px' }}
-                      >
-                        Add Subcat
-                      </Button>
-                    </Grid>
-                  </Grid>
-
-                  {subcategories.length === 0 ? (
-                    <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                      No subcategories added yet. Use the fields above to add subcategories for this category.
-                    </Typography>
-                  ) : (
-                    <Stack spacing={1}>
-                      {subcategories.map((sub, idx) => (
-                        <Card key={idx} variant="outlined" sx={{ p: 1.25, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: '10px', bgcolor: '#fff' }}>
-                          <Box display="flex" alignItems="center" gap={1.5}>
-                            <Chip label={sub.code} color="primary" size="small" sx={{ fontWeight: 700 }} />
-                            <Typography variant="body2" fontWeight={600}>{sub.name}</Typography>
-                          </Box>
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <Chip
-                              label={sub.isActive ? 'Active' : 'Inactive'}
-                              color={sub.isActive ? 'success' : 'error'}
-                              size="small"
-                              onClick={() => handleToggleSubcategoryStatus(idx)}
-                              sx={{ cursor: 'pointer' }}
-                            />
-                            <IconButton size="small" color="error" onClick={() => handleRemoveSubcategory(idx)}>
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Stack>
-                        </Card>
-                      ))}
-                    </Stack>
-                  )}
-                </Paper>
-              )}
 
               {/* Category Coordinators, Status, and Order Number Row */}
               <Box

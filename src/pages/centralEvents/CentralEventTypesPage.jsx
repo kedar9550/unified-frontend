@@ -10,6 +10,8 @@ import {
   TableHead,
   TableRow,
   TablePagination,
+  Tabs,
+  Tab,
   Button,
   IconButton,
   Chip,
@@ -39,7 +41,9 @@ import {
   Folder as FolderIcon,
   Event as EventIcon,
   CloudUpload as UploadIcon,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Public as PublicIcon,
+  AccountBalance as AccountBalanceIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -87,6 +91,7 @@ export default function CentralEventTypesPage() {
   // Form Fields
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
+  const [levelGroup, setLevelGroup] = useState('GLOBAL');
   const [hasCategories, setHasCategories] = useState(false);
   const [hasLevels, setHasLevels] = useState(false);
   const [allowedLevels, setAllowedLevels] = useState([]);
@@ -105,6 +110,7 @@ export default function CentralEventTypesPage() {
     { key: 'all', label: 'All Central Events', icon: <EventIcon />, path: '/central-events' },
     { key: 'types', label: 'Event Types', icon: <CategoryIcon />, path: '/central-events/types' },
     { key: 'categories', label: 'Event Categories', icon: <FolderIcon />, path: '/central-events/categories' },
+    { key: 'subcategories', label: 'Event Subcategories', icon: <FolderIcon />, path: '/central-events/subcategories' },
     ...(isGlobalAdmin ? [{ key: 'create', label: 'Create Event', icon: <AddIcon />, path: '/central-events/create' }] : [])
   ];
 
@@ -139,6 +145,7 @@ export default function CentralEventTypesPage() {
     setEditingItem(null);
     setCode('');
     setName('');
+    setLevelGroup('GLOBAL');
     setHasCategories(false);
     setHasLevels(false);
     setAllowedLevels([]);
@@ -152,6 +159,7 @@ export default function CentralEventTypesPage() {
     setEditingItem(item);
     setCode(item.code);
     setName(item.name);
+    setLevelGroup(item.levelGroup || 'GLOBAL');
     setHasCategories(!!item.hasCategories);
     setHasLevels(!!item.hasLevels);
     setAllowedLevels(item.allowedLevels || []);
@@ -167,7 +175,7 @@ export default function CentralEventTypesPage() {
 
     setUploadingBanner(true);
     try {
-      const res = await uploadCentralEventFile(file);
+      const res = await uploadCentralEventFile(file, { folderType: 'category' });
       if (res.success) {
         setBanner(res.data);
         toast.success('Banner image uploaded');
@@ -187,6 +195,7 @@ export default function CentralEventTypesPage() {
       const payload = {
         code: code.trim().toUpperCase(),
         name: name.trim(),
+        levelGroup,
         hasCategories,
         hasLevels,
         allowedLevels: hasLevels ? allowedLevels : [],
@@ -231,7 +240,23 @@ export default function CentralEventTypesPage() {
     }
   };
 
-  const displayedTypes = types.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  // Scope Filter Tabs State (ALL, GLOBAL, INSTITUTE)
+  const [scopeTab, setScopeTab] = useState('ALL');
+
+  const globalCount = types.filter(t => (t.levelGroup || 'GLOBAL') === 'GLOBAL' || ['VEDA','COLORS','ALA'].includes(t.code)).length;
+  const instituteCount = types.filter(t => t.levelGroup === 'INSTITUTE' || ['CLUB','DEPARTMENTAL','UNIVERSITY'].includes(t.code)).length;
+
+  const filteredTypes = types.filter(t => {
+    if (scopeTab === 'GLOBAL') {
+      return (t.levelGroup || 'GLOBAL') === 'GLOBAL' || ['VEDA', 'COLORS', 'ALA'].includes(t.code);
+    }
+    if (scopeTab === 'INSTITUTE') {
+      return t.levelGroup === 'INSTITUTE' || ['CLUB', 'DEPARTMENTAL', 'UNIVERSITY'].includes(t.code);
+    }
+    return true;
+  });
+
+  const displayedTypes = filteredTypes.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
     <PageContainer maxWidth="xl" px={3} py={3}>
@@ -262,16 +287,69 @@ export default function CentralEventTypesPage() {
         }
       />
 
-      {/* Module Navigation Custom Tabs */}
-      <CustomTabs
-        tabs={navTabs}
-        value={1}
-        onChange={(e, val) => navigate(navTabs[val].path)}
-      />
+      {/* Scope Sub-Tabs (All, Global Event Types, Institute Level Event Types) */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 1.2,
+          mb: 3,
+          borderRadius: '16px',
+          border: '1px solid var(--border-color)',
+          background: 'var(--bg-glass)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.03)'
+        }}
+      >
+        <Tabs
+          value={scopeTab}
+          onChange={(e, val) => {
+            setScopeTab(val);
+            setPage(0);
+          }}
+          textColor="primary"
+          indicatorColor="primary"
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{
+            '& .MuiTab-root': {
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.925rem',
+              borderRadius: '12px',
+              px: 3,
+              minHeight: 44,
+              transition: 'all 0.2s ease',
+              '&.Mui-selected': {
+                backgroundColor: 'var(--bg-accent-4, rgba(37, 99, 235, 0.1))',
+                color: 'var(--color-primary, #2563eb)'
+              }
+            }
+          }}
+        >
+          <Tab
+            icon={<CategoryIcon fontSize="small" />}
+            iconPosition="start"
+            label={`All Event Types (${types.length})`}
+            value="ALL"
+          />
+          <Tab
+            icon={<PublicIcon fontSize="small" />}
+            iconPosition="start"
+            label={`Global Event Types (${globalCount})`}
+            value="GLOBAL"
+          />
+          <Tab
+            icon={<AccountBalanceIcon fontSize="small" />}
+            iconPosition="start"
+            label={`Institute Level Event Types (${instituteCount})`}
+            value="INSTITUTE"
+          />
+        </Tabs>
+      </Paper>
 
       {/* Table Section */}
       {loading ? (
-        <Box display="flex" justifyContent="center" py={6}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
           <CircularProgress />
         </Box>
       ) : (
@@ -291,6 +369,7 @@ export default function CentralEventTypesPage() {
                 <TableRow>
                   <TableCell><strong>S.No</strong></TableCell>
                   <TableCell><strong>Banner</strong></TableCell>
+                  <TableCell><strong>Level Scope</strong></TableCell>
                   <TableCell><strong>Code</strong></TableCell>
                   <TableCell><strong>Name</strong></TableCell>
                   <TableCell><strong>Has Categories</strong></TableCell>
@@ -304,7 +383,7 @@ export default function CentralEventTypesPage() {
               <TableBody>
                 {types.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
+                    <TableCell colSpan={11} align="center" sx={{ py: 4 }}>
                       No event types found. Click "Add Event Type" to create one.
                     </TableCell>
                   </TableRow>
@@ -341,6 +420,15 @@ export default function CentralEventTypesPage() {
                             <ImageIcon fontSize="small" />
                           </Box>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          icon={row.levelGroup === 'INSTITUTE' ? <AccountBalanceIcon fontSize="small" /> : <PublicIcon fontSize="small" />}
+                          label={row.levelGroup === 'INSTITUTE' ? 'Institute Level' : 'Global Level'}
+                          color={row.levelGroup === 'INSTITUTE' ? 'success' : 'info'}
+                          size="small"
+                          sx={{ fontWeight: 600, borderRadius: '8px' }}
+                        />
                       </TableCell>
                       <TableCell>
                         <Chip label={row.code} color="primary" size="small" sx={{ fontWeight: 700, borderRadius: '8px' }} />
@@ -399,7 +487,7 @@ export default function CentralEventTypesPage() {
           <TablePagination
             rowsPerPageOptions={[5, 10, 25, 50]}
             component="div"
-            count={types.length}
+            count={filteredTypes.length}
             rowsPerPage={rowsPerPage}
             page={page}
             onPageChange={handleChangePage}
@@ -424,7 +512,7 @@ export default function CentralEventTypesPage() {
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 disabled={!!editingItem}
-                InputProps={{ sx: { borderRadius: '12px' } }}
+                slotProps={{ input: { sx: { borderRadius: '12px' } } }}
               />
 
               <TextField
@@ -434,8 +522,32 @@ export default function CentralEventTypesPage() {
                 placeholder="e.g. VEDA National Tech Fest"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                InputProps={{ sx: { borderRadius: '12px' } }}
+                slotProps={{ input: { sx: { borderRadius: '12px' } } }}
               />
+
+              <FormControl fullWidth required>
+                <InputLabel id="level-group-select-label">Level Scope Group</InputLabel>
+                <Select
+                  labelId="level-group-select-label"
+                  value={levelGroup}
+                  label="Level Scope Group"
+                  onChange={(e) => setLevelGroup(e.target.value)}
+                  sx={{ borderRadius: '12px' }}
+                >
+                  <MenuItem value="GLOBAL">
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <PublicIcon color="info" fontSize="small" />
+                      <Typography fontWeight={600}>Global Level Events</Typography>
+                    </Stack>
+                  </MenuItem>
+                  <MenuItem value="INSTITUTE">
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <AccountBalanceIcon color="success" fontSize="small" />
+                      <Typography fontWeight={600}>Institute Level Events</Typography>
+                    </Stack>
+                  </MenuItem>
+                </Select>
+              </FormControl>
 
               {/* Banner Upload Section */}
               <Box sx={{ border: '1px dashed var(--border-color)', p: 2, borderRadius: '12px', bgcolor: 'var(--bg-accent-1, #f8fafc)' }}>
@@ -525,7 +637,7 @@ export default function CentralEventTypesPage() {
                 label="Sort Order"
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value)}
-                InputProps={{ sx: { borderRadius: '12px' } }}
+                slotProps={{ input: { sx: { borderRadius: '12px' } } }}
               />
 
               <FormControlLabel
