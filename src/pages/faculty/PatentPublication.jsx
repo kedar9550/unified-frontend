@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination, FormControl, Radio, RadioGroup, FormControlLabel } from "@mui/material";
 import { toast } from "sonner";
-import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, Visibility, Edit, CheckCircle, Cancel, AccessTime } from "@mui/icons-material";
+import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, Visibility, Edit, CheckCircle, Cancel, AccessTime, Settings } from "@mui/icons-material";
 import SchoolIcon from "@mui/icons-material/School";
 import PublicIcon from "@mui/icons-material/Public";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
@@ -1537,26 +1537,51 @@ export default function PatentPublication() {
               </Paper>
 
               {data.patentStatus !== "Granted" && data.status === "Approved" && !updateStatusExpanded && (
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<Edit />}
+                <Box
                   sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    p: 2,
                     borderRadius: "12px",
-                    py: 1.5,
-                    border: "2px dashed var(--color-primary)",
-                    color: "var(--color-primary)",
-                    fontWeight: 700,
-                    textTransform: "none",
-                    "&:hover": {
-                      background: "rgba(190,147,55,0.05)",
-                      border: "2px dashed var(--color-primary)"
-                    }
+                    background: "#eef6fd",
+                    flexWrap: "wrap",
+                    gap: 2
                   }}
-                  onClick={() => setUpdateStatusExpanded(true)}
                 >
-                  Update Patent Status
-                </Button>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Settings sx={{ fontSize: 28, color: "#004085" }} />
+                    <Box>
+                      <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.2 }}>
+                        Patent Status
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                        Current status: <span style={{ color: "#f59e0b" }}>{data.patentStatus || "Published"}</span>
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Button
+                    variant="contained"
+                    startIcon={<Edit />}
+                    sx={{
+                      borderRadius: "8px",
+                      px: 3,
+                      py: 1,
+                      bgcolor: "#003b73",
+                      color: "#fff",
+                      fontWeight: 700,
+                      textTransform: "none",
+                      boxShadow: "none",
+                      "&:hover": {
+                        bgcolor: "#002a54",
+                        boxShadow: "none"
+                      }
+                    }}
+                    onClick={() => setUpdateStatusExpanded(true)}
+                  >
+                    Update Patent Status
+                  </Button>
+                </Box>
               )}
 
               {updateStatusExpanded && (
