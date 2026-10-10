@@ -33,6 +33,18 @@ import { PageHeader } from '../../components/common';
 import PageContainer from '../../components/common/design-system/PageContainer';
 import { toast } from 'sonner';
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9022';
+
+const getImageUrl = (img) => {
+  if (!img) return '';
+  const pathStr = typeof img === 'string' ? img : img.url;
+  if (!pathStr) return '';
+  if (pathStr.startsWith('http://') || pathStr.startsWith('https://') || pathStr.startsWith('blob:')) {
+    return pathStr;
+  }
+  return `${BACKEND_URL}${pathStr.startsWith('/') ? '' : '/'}${pathStr}`;
+};
+
 export default function CentralEventDetailPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -171,7 +183,7 @@ export default function CentralEventDetailPage() {
         <CardMedia
           component="img"
           height="340"
-          image={event.banner?.url || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&auto=format&fit=crop&q=80'}
+          image={getImageUrl(event.banner)}
           alt={event.title}
         />
         <Box sx={{ p: 4 }}>

@@ -31,8 +31,12 @@ export const getCategoriesByTypeCode = async (typeCode) => {
   return response.data;
 };
 
-export const getAllCentralEventCategoriesAdmin = async (typeCode = '') => {
-  const response = await API.get(`/api/central-event-categories/admin${typeCode ? `?typeCode=${typeCode}` : ''}`);
+export const getAllCentralEventCategoriesAdmin = async (typeCode = '', academicYear = '') => {
+  const params = new URLSearchParams();
+  if (typeCode) params.append('typeCode', typeCode);
+  if (academicYear) params.append('academicYear', academicYear);
+  const queryString = params.toString();
+  const response = await API.get(`/api/central-event-categories/admin${queryString ? `?${queryString}` : ''}`);
   return response.data;
 };
 
@@ -48,6 +52,35 @@ export const updateCentralEventCategory = async (id, catData) => {
 
 export const deleteCentralEventCategory = async (id) => {
   const response = await API.delete(`/api/central-event-categories/${id}`);
+  return response.data;
+};
+
+export const getAllCentralEventSubcategoriesAdmin = async (typeCode = '', academicYear = '', categoryId = '') => {
+  const params = {};
+  if (typeCode) params.typeCode = typeCode;
+  if (academicYear) params.academicYear = academicYear;
+  if (categoryId) params.categoryId = categoryId;
+  const response = await API.get('/api/central-event-subcategories/admin', { params });
+  return response.data;
+};
+
+export const createCentralEventSubcategory = async (subData) => {
+  const response = await API.post('/api/central-event-subcategories', subData);
+  return response.data;
+};
+
+export const updateCentralEventSubcategory = async (id, subData) => {
+  const response = await API.put(`/api/central-event-subcategories/${id}`, subData);
+  return response.data;
+};
+
+export const deleteCentralEventSubcategory = async (id) => {
+  const response = await API.delete(`/api/central-event-subcategories/${id}`);
+  return response.data;
+};
+
+export const getAcademicYears = async () => {
+  const response = await API.get('/api/academic-years');
   return response.data;
 };
 
@@ -87,10 +120,20 @@ export const cancelCentralEvent = async (id) => {
   return response.data;
 };
 
-export const uploadCentralEventFile = async (file) => {
+export const uploadCentralEventFile = async (file, options = {}) => {
   const formData = new FormData();
   formData.append('file', file);
-  const response = await API.post('/api/central-events/upload', formData);
+
+  const params = {};
+  if (typeof options === 'string') {
+    params.folderType = options;
+  } else if (options && typeof options === 'object') {
+    if (options.folderType) params.folderType = options.folderType;
+    if (options.type) params.folderType = options.type;
+    if (options.academicYear) params.academicYear = options.academicYear;
+  }
+
+  const response = await API.post('/api/central-events/upload', formData, { params });
   return response.data;
 };
 
