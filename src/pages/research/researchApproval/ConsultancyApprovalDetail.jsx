@@ -151,7 +151,7 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                         <Box sx={{ width: 50, height: 50, borderRadius: "50%", bgcolor: "rgba(190, 147, 55, 0.1)", color: "var(--color-primary)", display: "flex", alignItems: "center", justifyContent: "center" }}><BusinessCenterIcon /></Box>
                         <Box>
                             <Typography variant="h5" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{data.title}</Typography>
-                            <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Funding Agency: {data.fundingAgency}</Typography>
+                            <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Funding Industry: {data.fundingIndustry}</Typography>
                         </Box>
                     </Box>
                     <Box sx={{ textAlign: { xs: "center", sm: "right" }, display: "flex", flexDirection: "column", alignItems: { xs: "center", sm: "flex-end" }, gap: 0.5 }}>
@@ -232,12 +232,15 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><BusinessCenterIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Consultancy Details</Typography></Box>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
                         <LabelValue label="Title of Work" value={data.title} horizontal />
-                        <LabelValue label="Funding Agency" value={data.fundingAgency} horizontal />
+                        <LabelValue label="Type of Consultancy" value={data.typeOfConsultancy ? data.typeOfConsultancy.charAt(0).toUpperCase() + data.typeOfConsultancy.slice(1) : '-'} horizontal />
+                        <LabelValue label="Funding Industry" value={data.fundingIndustry} horizontal />
                         <LabelValue label="Consultancy Amount" value={`₹${data.amount}`} horizontal />
+                        <LabelValue label="Received Amount" value={data.receivedAmount ? `₹${data.receivedAmount}` : '-'} horizontal />
+                        <LabelValue label="Received Amount Date" value={data.receivedAmountDate ? new Date(data.receivedAmountDate).toLocaleDateString() : '-'} horizontal />
                         <LabelValue label="Duration" value={data.duration} horizontal />
                         <LabelValue label="Commencement Month" value={data.month} horizontal />
                         <LabelValue label="Commencement Year" value={data.year} horizontal />
-                        <LabelValue label="Investigator Type" value={data.investigatorType || (data.principalInvestigator === 'Yes' ? 'Principal Investigator (PI)' : 'Co-Principal Investigator (Co-PI)')} horizontal />
+                        <LabelValue label="Your Role in Consultancy" value={data.investigatorType || (data.principalInvestigator === 'Yes' ? 'Principal Investigator (PI)' : 'Co-Principal Investigator (Co-PI)')} horizontal />
                         {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
                             <LabelValue label="Entry Type" value="R&D Direct Entry" horizontal />
                         )}
@@ -285,7 +288,10 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                                         <TableCell>
                                             <Chip label={roleLabel} size="small" color={roleLabel === 'Principal Investigator' ? 'primary' : 'secondary'} variant="outlined" sx={{ fontWeight: 700, borderRadius: '6px', fontSize: '0.7rem' }} />
                                         </TableCell>
-                                        <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>{ca.affiliation || 'Aditya University'}</TableCell>
+                                        <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>
+                                            {ca.affiliation || 'Aditya University'}
+                                            {ca.department && <Typography variant="caption" sx={{ display: 'block', color: 'var(--text-secondary)', fontWeight: 600 }}>{ca.department}</Typography>}
+                                        </TableCell>
                                     </TableRow>
                                 );
                             })}

@@ -26,17 +26,17 @@ export default function RndConsultancyDataEntry() {
 
   const initialFormState = {
     title: "",
-    fundingAgency: "",
-    fundingAdityaUniversity: "",
+    typeOfConsultancy: "",
+    fundingIndustry: "",
     amount: "",
+    receivedAmount: "",
+    receivedAmountDate: "",
     duration: "",
     month: "",
     year: "",
-    applyingSeedGrant: "",
     investigatorType: "",
     applyIncentive: "No",
     appraisalEligible: "Yes",
-    projectStatus: "Sanctioned",
     totalInvestigators: 1,
     otherInvestigatorsList: []
   };
@@ -166,12 +166,13 @@ export default function RndConsultancyDataEntry() {
       const res = await API.get(`/api/employees/staff/${empId}`);
       if (res.data && res.data.success) {
         const staff = res.data.data;
-        const name = staff.employeename || staff.EmployeeName || staff.name || "";
+        const name = staff.employeename || staff.EmployeeName || staff.employeeName || staff.name || staff.Name || "";
+        const dept = staff.departmentname || staff.DepartmentName || staff.departmentName || staff.department || "";
 
         setForm(prev => {
           const updated = prev.otherInvestigatorsList.map(a => {
             if (a.investigatorPosition === pos) {
-              return { ...a, name: name, affiliation: "Aditya University" };
+              return { ...a, name: name, department: dept, affiliation: "Aditya University" };
             }
             return a;
           });
@@ -219,16 +220,12 @@ export default function RndConsultancyDataEntry() {
       toast.error("Please select an Academic Year");
       return;
     }
-    if (!form.title || !form.fundingAdityaUniversity || !form.applyingSeedGrant || !form.amount) {
+    if (!form.title || !form.typeOfConsultancy || !form.fundingIndustry || !form.amount) {
       toast.error("Please fill all required fields");
       return;
     }
-    if (form.fundingAdityaUniversity === "No" && (!form.fundingAgency || !form.fundingAgency.trim())) {
-      toast.error("Please specify the Funding Agency");
-      return;
-    }
     if (!form.investigatorType) {
-      toast.error("Please select Investigator Type");
+      toast.error("Please select Your Role in Consultancy");
       return;
     }
     if (!form.appraisalEligible) {
@@ -285,7 +282,7 @@ export default function RndConsultancyDataEntry() {
 
       const fd = new FormData();
       Object.entries(form).forEach(([k, v]) => {
-        if (k !== "otherInvestigatorsList") fd.append(k, v);
+        if (k !== "otherInvestigatorsList" && k !== "principalInvestigator" && k !== "coPrincipalInvestigator") fd.append(k, v);
       });
 
       fd.append("principalInvestigator", isPI ? "Yes" : "No");
@@ -389,32 +386,34 @@ export default function RndConsultancyDataEntry() {
                 <TextField size="small" fullWidth value={form.title} onChange={set("title")} placeholder="Title of consultancy" />
               </Box>
               <Box>
-                <Typography sx={labelStyle}>Funding Agency : *</Typography>
+                <Typography sx={labelStyle}>Type of Consultancy : *</Typography>
                 <Select
                   size="small"
                   fullWidth
                   displayEmpty
-                  value={form.fundingAdityaUniversity}
-                  onChange={(e) => setForm(p => ({
-                    ...p,
-                    fundingAdityaUniversity: e.target.value,
-                    fundingAgency: e.target.value === "Yes" ? "Aditya University" : ""
-                  }))}
+                  value={form.typeOfConsultancy}
+                  onChange={set("typeOfConsultancy")}
                 >
                   <MenuItem value="" disabled>--Select--</MenuItem>
-                  <MenuItem value="Yes">Aditya University</MenuItem>
-                  <MenuItem value="No">Others</MenuItem>
+                  <MenuItem value="testing">Testing</MenuItem>
+                  <MenuItem value="design">Design</MenuItem>
                 </Select>
               </Box>
-              {form.fundingAdityaUniversity === "No" && (
-                <Box>
-                  <Typography sx={labelStyle}>Please Specify Funding Agency : *</Typography>
-                  <TextField size="small" fullWidth value={form.fundingAgency} onChange={set("fundingAgency")} placeholder="Specify funding agency name" />
-                </Box>
-              )}
+              <Box>
+                <Typography sx={labelStyle}>Funding Industry : *</Typography>
+                <TextField size="small" fullWidth value={form.fundingIndustry} onChange={set("fundingIndustry")} placeholder="Specify funding industry name" />
+              </Box>
               <Box>
                 <Typography sx={labelStyle}>Consultancy Amount : *</Typography>
                 <TextField size="small" fullWidth value={form.amount} onChange={handleNumericChange("amount")} placeholder="Amount in INR" />
+              </Box>
+              <Box>
+                <Typography sx={labelStyle}>Received Amount :</Typography>
+                <TextField size="small" fullWidth value={form.receivedAmount} onChange={handleNumericChange("receivedAmount")} placeholder="Received Amount" />
+              </Box>
+              <Box>
+                <Typography sx={labelStyle}>Received Amount Date :</Typography>
+                <TextField type="date" size="small" fullWidth value={form.receivedAmountDate} onChange={set("receivedAmountDate")} InputLabelProps={{ shrink: true }} />
               </Box>
               <Box>
                 <Typography sx={labelStyle}>Duration of Consultancy Work in Years :</Typography>
@@ -432,7 +431,7 @@ export default function RndConsultancyDataEntry() {
               </Box>
 
               <Box>
-                <Typography sx={labelStyle}>Investigator Type : *</Typography>
+                <Typography sx={labelStyle}>Your Role in Consultancy : *</Typography>
                 <Select
                   size="small"
                   fullWidth
@@ -440,7 +439,7 @@ export default function RndConsultancyDataEntry() {
                   value={form.investigatorType}
                   onChange={(e) => setForm(p => ({ ...p, investigatorType: e.target.value }))}
                 >
-                  <MenuItem value="" disabled>Select Investigator Type</MenuItem>
+                  <MenuItem value="" disabled>Select Your Role in Consultancy</MenuItem>
                   <MenuItem value="Principal Investigator (PI)">Principal Investigator (PI)</MenuItem>
                   <MenuItem value="Co-Principal Investigator (Co-PI)">Co-Principal Investigator (Co-PI)</MenuItem>
                 </Select>
@@ -499,6 +498,17 @@ export default function RndConsultancyDataEntry() {
                               size="small"
                               fullWidth
                               value={ca.name}
+                              disabled
+                              placeholder="Auto-fetched"
+                              sx={{ background: "rgba(0,0,0,0.02)" }}
+                            />
+                          </Box>
+                          <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>DEPARTMENT</Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              value={ca.department || ""}
                               disabled
                               placeholder="Auto-fetched"
                               sx={{ background: "rgba(0,0,0,0.02)" }}
@@ -573,16 +583,8 @@ export default function RndConsultancyDataEntry() {
 
             <Grid2 sx={{ mt: 2 }}>
               <Box>
-                <Typography sx={labelStyle}>Applying as a Seed Grant Work? *</Typography>
-                <Select size="small" fullWidth displayEmpty value={form.applyingSeedGrant} onChange={set("applyingSeedGrant")}>
-                  <MenuItem value="" disabled>Select</MenuItem>
-                  <MenuItem value="Yes">Yes</MenuItem>
-                  <MenuItem value="No">No</MenuItem>
-                </Select>
-              </Box>
-              <Box>
                 <Typography sx={labelStyle}>Applying for Incentive? *</Typography>
-                <Select size="small" fullWidth displayEmpty value={form.applyIncentive} disabled>
+                <Select size="small" fullWidth displayEmpty value={form.applyIncentive} onChange={set("applyIncentive")}>
                   <MenuItem value="Yes">Yes</MenuItem>
                   <MenuItem value="No">No</MenuItem>
                 </Select>
@@ -592,13 +594,6 @@ export default function RndConsultancyDataEntry() {
                 <Select size="small" fullWidth value={form.appraisalEligible} onChange={set("appraisalEligible")}>
                   <MenuItem value="Yes">Yes</MenuItem>
                   <MenuItem value="No">No</MenuItem>
-                </Select>
-              </Box>
-              <Box>
-                <Typography sx={labelStyle}>Project Status *</Typography>
-                <Select size="small" fullWidth displayEmpty value={form.projectStatus} onChange={set("projectStatus")}>
-                  <MenuItem value="Shortlisted">Shortlisted</MenuItem>
-                  <MenuItem value="Sanctioned">Sanctioned</MenuItem>
                 </Select>
               </Box>
             </Grid2>
