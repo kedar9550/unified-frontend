@@ -758,7 +758,19 @@ export default function RndJournalDataEntry() {
       toast.error("Please enter and verify a valid Target Faculty Employee ID");
       return;
     }
-    if (!form.doi || !form.paperTitle || !form.journalName || !form.month || !form.year || !form.issn || !form.eissn || !form.journalQuartile || !form.journalType || !form.journalCategory || !form.isScopus) {
+    const isMissingDoi = isDoiAvailable !== "No" && !form.doi;
+    if (
+      isMissingDoi ||
+      !form.paperTitle ||
+      !form.journalName ||
+      !form.month ||
+      !form.year ||
+      (!form.issn && !form.eissn) ||
+      !form.journalQuartile ||
+      !form.journalType ||
+      !form.journalCategory ||
+      !form.isScopus
+    ) {
       toast.error("Please fill all mandatory fields (*)");
       return;
     }
@@ -779,11 +791,17 @@ export default function RndJournalDataEntry() {
     }
     const hasPgStudent = form.isStudentsInvolved === "Yes" && (form.otherAuthors || []).some(a => a.CoAuthorType === "student" && a.studentQualification === "PG");
     const isPositionGreaterThan5 = parseInt(form.userAuthorPosition) > 5;
-    const disableIncentive = hasPgStudent || isPositionGreaterThan5;
+    const disableIncentive = form.isInstitutionRecord === "Yes" || hasPgStudent || isPositionGreaterThan5;
     const computedApplyIncentive = disableIncentive ? "No" : form.applyIncentive;
+    const computedAppraisalEligible = form.isInstitutionRecord === "Yes" ? "No" : form.appraisalEligible;
 
     if (!computedApplyIncentive) {
       toast.error("Please select whether you want to apply for an incentive");
+      return;
+    }
+
+    if (!computedAppraisalEligible) {
+      toast.error("Please select whether the article is eligible for appraisal");
       return;
     }
 
@@ -843,7 +861,7 @@ export default function RndJournalDataEntry() {
         "vol", "issue", "agecReferencingNumbers", 
         "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor", "isStudentsInvolved",
         "correspondingAuthor",
-        "issn", "eissn", "isScopus", "citations", "isInstitutionRecord", "appraisalEligible", "approvedAmount"
+        "issn", "eissn", "isScopus", "citations", "isInstitutionRecord", "approvedAmount"
       ];
       fields.forEach(k => {
         let val = form[k] ?? "";
@@ -852,6 +870,7 @@ export default function RndJournalDataEntry() {
         fd.append(k, val);
       });
       fd.append("applyIncentive", computedApplyIncentive);
+      fd.append("appraisalEligible", computedAppraisalEligible);
 
       fd.append("numberOfReferencesBelongingToAGEC", form.numberOfReferencesBelongingToAGEC || 0);
 
@@ -1139,13 +1158,13 @@ export default function RndJournalDataEntry() {
 
             {/* ISSN */}
             <Box>
-              <Typography sx={labelStyle}>ISSN : *</Typography>
+              <Typography sx={labelStyle}>ISSN : {form.eissn ? "" : "*"}</Typography>
               <TextField size="small" fullWidth value={form.issn || ""} onChange={set("issn")} placeholder="e.g. 23644176" />
             </Box>
 
             {/* e-ISSN */}
             <Box>
-              <Typography sx={labelStyle}>e-ISSN : *</Typography>
+              <Typography sx={labelStyle}>e-ISSN : {form.issn ? "" : "*"}</Typography>
               <TextField size="small" fullWidth value={form.eissn || ""} onChange={set("eissn")} placeholder="e.g. 23644184" />
             </Box>
 
@@ -1523,7 +1542,7 @@ export default function RndJournalDataEntry() {
                 size="small"
                 fullWidth
                 displayEmpty
-                value={form.appraisalEligible}
+                value={form.isInstitutionRecord === "Yes" ? "No" : form.appraisalEligible}
                 onChange={set("appraisalEligible")}
                 disabled={form.isInstitutionRecord === "Yes"}
                 sx={form.isInstitutionRecord === "Yes" ? disabledField : {}}

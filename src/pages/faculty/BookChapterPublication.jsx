@@ -271,9 +271,6 @@ export default function BookChapterPublication() {
   const fetchISBNData = async () => {
     const isbn = form.isbnNumber.trim().replace(/-/g, "");
     if (!isbn) { toast.error("Please enter an ISBN"); return; }
-    if (isbn.length !== 10 && isbn.length !== 13) {
-      toast.error("ISBN must be 10 or 13 digits"); return;
-    }
     setIsbnFetching(true);
     try {
       // Try Open Library first
@@ -308,267 +305,6 @@ export default function BookChapterPublication() {
       toast.error("Error fetching book title. Please enter it manually.");
     } finally {
       setIsbnFetching(false);
-    }
-  };
-
-  // ── Old title-based Scopus fetch (kept stub to prevent breaking)
-  const fetchScopusDetails = async () => {
-    if (!form.chapterTitle.trim()) {
-      toast.error("Please enter the Title of the Chapter first");
-      return;
-    }
-    setScopusFetching(true);
-    try {
-      const headers = {
-        "X-ELS-APIKey": ELSEVIER_API_KEY,
-        Accept: "application/json",
-      };
-
-      // 1. Call Scopus Search API
-      const searchUrl = `https://api.elsevier.com/content/search/scopus?query=TITLE-ABS-KEY("${encodeURIComponent(form.chapterTitle)}")&count=10`;
-      const searchRes = await fetch(searchUrl, { method: "GET", headers });
-      if (!searchRes.ok) {
-        if (searchRes.status === 429) {
-          throw new Error("Elsevier/Scopus API rate limit exceeded (HTTP 429). Please try again later.");
-        } else if (searchRes.status === 401) {
-          throw new Error("Invalid or unauthorized Elsevier API key. Please check your configuration.");
-        } else {
-          throw new Error("Failed to search chapter in Scopus database.");
-        }
-      }
-
-      const searchJson = await searchRes.json();
-      const entries = searchJson?.["search-results"]?.entry || [];
-
-      if (entries.length === 0 || entries[0]?.error) {
-        setScopusIndexed(false);
-        toast.error("This book chapter is not indexed in Scopus");
-        return;
-      }
-
-      // Title matching helper to find the most accurate chapter entry in the returned search results
-      const cleanTitle = (t) => {
-        if (!t) return "";
-        return t.toLowerCase()
-          .replace(/&/g, "and")
-          .replace(/[^a-z0-9]/g, "");
-      };
-      const userClean = cleanTitle(form.chapterTitle);
-      let bestEntry = null;
-
-      // STRICT exact normalized match ONLY
-      for (const ent of entries) {
-        const entClean = cleanTitle(ent["dc:title"]);
-        if (entClean === userClean) {
-          bestEntry = ent;
-          break;
-        }
-      }
-
-      // If still not matched, block to prevent matching wrong generic articles
-      if (!bestEntry) {
-        setScopusIndexed(false);
-        toast.error("This book chapter is not indexed in Scopus. (No exact title match was found)");
-        return;
-      }
-
-      // Extract SCOPUS_ID & DOI from the best matched entry
-      const dcIdentifier = bestEntry["dc:identifier"] || "";
-      let scopusId = "";
-      if (dcIdentifier.includes("SCOPUS_ID:")) {
-        scopusId = dcIdentifier.replace("SCOPUS_ID:", "");
-      } else {
-        const match = dcIdentifier.match(/\d+/);
-        if (match) scopusId = match[0];
-      }
-
-      const scopusDoi = bestEntry["prism:doi"] || "";
-
-      if (!scopusId) {
-        setScopusIndexed(false);
-        toast.error("Could not parse Scopus ID for this chapter");
-        return;
-      }
-
-      // Initialize auto-filled metadata holders
-      let scopusBookTitle = "";
-      let scopusPublisher = "";
-      let scopusMonth = "";
-      let scopusYear = "";
-
-      // 1.5. Call Scopus Abstract Retrieval API for richer, accurate metadata
-      try {
-        const abstractUrl = `https://api.elsevier.com/content/abstract/scopus_id/${scopusId}`;
-        const absRes = await fetch(abstractUrl, { method: "GET", headers });
-        if (absRes.ok) {
-          const absJson = await absRes.json();
-          const coredata = absJson?.["abstracts-retrieval-response"]?.coredata || {};
-
-          scopusBookTitle = coredata["prism:publicationName"] || "";
-          scopusPublisher = coredata["dc:publisher"] || "";
-
-          const coverDate = coredata["prism:coverDate"] || ""; // "YYYY-MM-DD"
-          if (coverDate) {
-            const parts = coverDate.split("-");
-            if (parts[0]) scopusYear = parts[0];
-            if (parts[1]) {
-              const monthNum = parseInt(parts[1], 10);
-              const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-              scopusMonth = monthNames[monthNum - 1] || "";
-            }
-          }
-        }
-      } catch (absErr) {
-        console.error("Failed to retrieve Scopus Abstract details:", absErr);
-      }
-
-      // Fallback to Search API entry fields if Abstract Retrieval fields are blank
-      if (!scopusBookTitle) {
-        scopusBookTitle = bestEntry["prism:publicationName"] || "";
-      }
-      if (!scopusYear || !scopusMonth) {
-        const coverDate = bestEntry["prism:coverDate"] || "";
-        if (coverDate) {
-          const parts = coverDate.split("-");
-          if (!scopusYear && parts[0]) scopusYear = parts[0];
-          if (!scopusMonth && parts[1]) {
-            const monthNum = parseInt(parts[1], 10);
-            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            scopusMonth = monthNames[monthNum - 1] || "";
-          }
-        }
-      }
-
-      // 2. Call Crossref API using DOI as secondary fallback
-      let crossrefBookTitle = "";
-      let crossrefPublisher = "";
-      let crossrefMonth = "";
-      let crossrefYear = "";
-
-      if (scopusDoi) {
-        try {
-          const crossrefUrl = `https://api.crossref.org/works/${encodeURIComponent(scopusDoi)}`;
-          const crossrefRes = await fetch(crossrefUrl);
-          if (crossrefRes.ok) {
-            const crossrefJson = await crossrefRes.json();
-            const msg = crossrefJson?.message || {};
-
-            const containerTitleArray = msg["container-title"] || [];
-            crossrefBookTitle = containerTitleArray.length > 0 ? containerTitleArray[containerTitleArray.length - 1] : "";
-            crossrefPublisher = msg.publisher || "";
-
-            // Month & Year parsing logic from Crossref
-            const assertions = msg.assertion || [];
-            const dateAssertion = assertions.find(a => a.value && typeof a.value === "string" && /\b(19|20)\d{2}\b/.test(a.value));
-            if (dateAssertion) {
-              const val = dateAssertion.value;
-              const yearMatch = val.match(/\b(19|20)\d{2}\b/);
-              if (yearMatch) crossrefYear = yearMatch[0];
-              const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-              const shortMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-              for (let i = 0; i < 12; i++) {
-                if (val.toLowerCase().includes(monthNames[i].toLowerCase()) || val.toLowerCase().includes(shortMonths[i].toLowerCase())) {
-                  crossrefMonth = monthNames[i];
-                  break;
-                }
-              }
-            }
-
-            if (!crossrefMonth || !crossrefYear) {
-              const dateSource = msg["published-online"] || msg["published-print"] || msg["published"] || {};
-              const dateParts = dateSource["date-parts"]?.[0] || [];
-              if (dateParts.length > 0) {
-                if (!crossrefYear) crossrefYear = String(dateParts[0]);
-                if (!crossrefMonth && dateParts.length > 1) {
-                  const monthNum = parseInt(dateParts[1], 10);
-                  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-                  crossrefMonth = monthNames[monthNum - 1] || "";
-                }
-              }
-            }
-          }
-        } catch (crErr) {
-          console.error("Failed to retrieve Crossref details:", crErr);
-        }
-      }
-
-      // Prioritize Crossref for book chapter parents (exact Book Title) and clean publishers, falling back to Scopus series titles
-      const bookTitle = crossrefBookTitle || scopusBookTitle;
-      const rawPublisher = (crossrefPublisher || scopusPublisher || "").trim();
-      const extractedMonth = crossrefMonth || scopusMonth;
-      const extractedYear = crossrefYear || scopusYear;
-
-      // Match rawPublisher to local database publishers list with normalized substring matches
-      let matchedPublisher = null;
-      if (rawPublisher) {
-        const cleanRaw = rawPublisher.toLowerCase().replace(/[^a-z0-9]/g, "");
-
-        // Try exact match first
-        matchedPublisher = publishers.find(p => p.name?.toLowerCase() === rawPublisher.toLowerCase());
-
-        // Try substring match next
-        if (!matchedPublisher) {
-          matchedPublisher = publishers.find(p => {
-            const cleanDbName = p.name.toLowerCase().replace(/[^a-z0-9]/g, "");
-            return cleanRaw.includes(cleanDbName) || cleanDbName.includes(cleanRaw);
-          });
-        }
-
-        // Try major publisher alias mappings
-        if (!matchedPublisher) {
-          const lowerRaw = rawPublisher.toLowerCase();
-          let alias = "";
-          if (lowerRaw.includes("springer")) alias = "Springer";
-          else if (lowerRaw.includes("wiley")) alias = "Wiley";
-          else if (lowerRaw.includes("elsevier") || lowerRaw.includes("academic press")) alias = "Elsevier";
-          else if (lowerRaw.includes("crc") || lowerRaw.includes("taylor")) alias = "CRC Press";
-          else if (lowerRaw.includes("oxford")) alias = "Oxford University Press";
-          else if (lowerRaw.includes("cambridge")) alias = "Cambridge University Press";
-          else if (lowerRaw.includes("ieee")) alias = "IEEE";
-          else if (lowerRaw.includes("apress")) alias = "Apress";
-          else if (lowerRaw.includes("macmillan")) alias = "Macmillan Publishers";
-          else if (lowerRaw.includes("mcgraw")) alias = "McGraw Hill Education";
-          else if (lowerRaw.includes("pearson")) alias = "Pearson";
-          else if (lowerRaw.includes("sage")) alias = "SAGE Publishing";
-          else if (lowerRaw.includes("nova")) alias = "Nova Science Publishers";
-
-          if (alias) {
-            matchedPublisher = publishers.find(p => p.name?.toLowerCase() === alias.toLowerCase());
-          }
-        }
-      }
-
-      // Populate Form State
-      setForm(prev => {
-        const newState = {
-          ...prev,
-          textBookName: bookTitle || prev.textBookName,
-          month: extractedMonth || prev.month,
-          year: extractedYear || prev.year
-        };
-
-        if (matchedPublisher) {
-          newState.publisher = matchedPublisher.name;
-          newState.publicationScope = matchedPublisher.type;
-        } else if (rawPublisher) {
-          newState.publisher = "Others";
-          newState.customPublisher = rawPublisher;
-          newState.publicationScope = "International";
-        } else {
-          newState.publisher = prev.publisher;
-        }
-
-        return newState;
-      });
-
-      setScopusIndexed(true);
-      toast.success("✓ Scopus indexing validated & metadata auto-filled!");
-    } catch (err) {
-      console.error(err);
-      setScopusIndexed(false);
-      toast.error(err.message || "An error occurred during verification.");
-    } finally {
-      setScopusFetching(false);
     }
   };
 
@@ -1736,10 +1472,11 @@ export default function BookChapterPublication() {
       <Dialog
         open={!!selectedPubDetails}
         onClose={handleCloseDetails}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
         sx={{
           "& .MuiDialog-paper": {
+            maxWidth: { xs: "95vw", sm: "90vw", md: "85vw", lg: "1150px" },
             borderRadius: "20px",
             background: "var(--bg-paper)",
             border: "1px solid var(--border-color)",
@@ -1856,45 +1593,15 @@ export default function BookChapterPublication() {
                 <Box sx={{ display: "flex", flexDirection: "column" }}>
                   {[
                     { label: "Academic Year", value: data.academicYear?.year || data.academicYear || "N/A", icon: <SchoolIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    { label: "Book Chapter Title", value: data.chapterTitle || data.title || "N/A", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    { label: "Book Title", value: data.bookTitle || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Book Chapter Title", value: data.chapterTitle || data.title || "N/A", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, isLongText: true },
+                    { label: "Book Title", value: data.bookTitle || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, isLongText: true },
                     { label: "DOI", value: data.doi || "N/A", icon: <LinkIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Publisher", value: data.publisher || "N/A", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Published Month", value: data.month || "-", icon: <CalendarMonthIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Published Year", value: data.year || "-", icon: <CalendarMonthIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     {
                       label: "Applicant Author Position",
-                      chip: (
-                        (() => {
-                          const pos = data.userAuthorPosition || data.authorPosition || 1;
-                          const total = data.totalAuthors || ((data.coAuthors ? data.coAuthors.length : 0) + 1);
-                          return (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Box sx={{
-                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                width: 32, height: 32, borderRadius: '50%',
-                                bgcolor: 'rgba(190, 147, 55, 0.15)', border: '2px solid var(--color-primary)',
-                                color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.9rem'
-                              }}>
-                                {pos}
-                              </Box>
-                              {total && (
-                                <>
-                                  <Typography sx={{ color: 'var(--text-secondary)', fontWeight: 700, fontSize: '0.85rem' }}>of</Typography>
-                                  <Box sx={{
-                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                    px: 1.2, height: 28, borderRadius: '8px',
-                                    bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)',
-                                    color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.85rem'
-                                  }}>
-                                    {total} Authors
-                                  </Box>
-                                </>
-                              )}
-                            </Box>
-                          );
-                        })()
-                      ),
+                      value: `${data.userAuthorPosition || data.authorPosition || 1} / ${data.totalAuthors || ((data.coAuthors ? data.coAuthors.length : 0) + 1)}`,
                       icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />
                     },
                     { label: "Role", value: data.visibilityRole || "Applicant", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
@@ -1906,8 +1613,10 @@ export default function BookChapterPublication() {
                       key={idx}
                       sx={{
                         display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
+                        flexDirection: item.isLongText ? "column" : "row",
+                        alignItems: item.isLongText ? "flex-start" : "center",
+                        justifyContent: item.isLongText ? "flex-start" : "space-between",
+                        gap: item.isLongText ? 1.5 : 2,
                         px: 3,
                         py: 1.6,
                         borderBottom: idx === arr.length - 1 ? "none" : "1px solid var(--border-color)",
@@ -1922,7 +1631,7 @@ export default function BookChapterPublication() {
                         </Typography>
                       </Box>
                       {item.chip ? item.chip : (
-                        <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", textAlign: "right", maxWidth: "55%", wordBreak: "break-word" }}>
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", textAlign: item.isLongText ? "left" : "right", maxWidth: item.isLongText ? "100%" : "60%", wordBreak: "break-word", lineHeight: 1.4 }}>
                           {item.value}
                         </Typography>
                       )}
@@ -1932,108 +1641,117 @@ export default function BookChapterPublication() {
               </Paper>
             </Box>
 
-            {/* Right Column — single unified panel */}
-            <Box sx={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
-              <Paper
-                elevation={0}
-                sx={{ borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", overflow: "hidden" }}
-              >
-                {/* === Appraisal & Role Header === */}
-                <Box sx={{ px: 3, py: 1.8, display: "flex", alignItems: "center", gap: 1.5, background: "var(--bg-panel)", borderBottom: "1px solid var(--border-color)" }}>
-                  <CheckCircleOutlineIcon sx={{ color: "var(--color-primary)", fontSize: 18 }} />
-                  <Typography sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.9rem" }}>Appraisal & Role</Typography>
-                </Box>
-
-                {/* Row: Publication Scope */}
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 1.7, borderBottom: "1px solid var(--border-color)", "&:hover": { bgcolor: "rgba(0,0,0,0.012)" }, transition: "background 0.2s" }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <PublicIcon sx={{ color: "var(--text-secondary)", fontSize: 17 }} />
-                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.84rem" }}>Publication Scope</Typography>
+            {/* Right Column (Appraisal & Co-Authors) */}
+            <Box sx={{
+              minWidth: 0,
+              display: "flex",
+              flexDirection: "column",
+              gap: 3
+            }}>
+              {/* Scope, Eligibility, Claimant Card */}
+              <Paper elevation={0} sx={{ p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", flexShrink: 0 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 2, borderBottom: "1px solid var(--border-color)" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                      <PublicIcon sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
+                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                        Publication Scope
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                      {data.publicationScope || "National"}
+                    </Typography>
                   </Box>
-                  <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{data.publicationScope || "National"}</Typography>
-                </Box>
 
-                {/* Row: Eligibility */}
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 3, py: 1.7, borderBottom: "1px solid var(--border-color)", "&:hover": { bgcolor: "rgba(0,0,0,0.012)" }, transition: "background 0.2s" }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                    <CheckCircleOutlineIcon sx={{ color: "var(--text-secondary)", fontSize: 17 }} />
-                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.84rem" }}>Appraisal Eligibility</Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 2, borderBottom: "1px solid var(--border-color)" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                      <CheckCircleOutlineIcon sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
+                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                        Appraisal Eligibility
+                      </Typography>
+                    </Box>
+                    {data.status === "Approved" ? (
+                      <Chip label={data.appraisalEligible || "No"} size="small" sx={{
+                        height: 22, fontWeight: 800, fontSize: "0.72rem", borderRadius: "8px",
+                        bgcolor: (data.appraisalEligible === "No") ? "rgba(211,47,47,0.1)" : "rgba(46,125,50,0.1)",
+                        color: (data.appraisalEligible === "No") ? "#d32f2f" : "#2e7d32",
+                        border: `1px solid ${(data.appraisalEligible === "No") ? "rgba(211,47,47,0.3)" : "rgba(46,125,50,0.3)"}`
+                      }} />
+                    ) : (
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)", fontStyle: "italic", fontSize: "0.82rem" }}>Not yet decided</Typography>
+                    )}
                   </Box>
-                  {data.status === "Approved" ? (
-                    <Chip label={data.appraisalEligible || "No"} size="small" sx={{
-                      height: 22, fontWeight: 800, fontSize: "0.72rem", borderRadius: "8px",
-                      bgcolor: (data.appraisalEligible === "No") ? "rgba(211,47,47,0.1)" : "rgba(46,125,50,0.1)",
-                      color: (data.appraisalEligible === "No") ? "#d32f2f" : "#2e7d32",
-                      border: `1px solid ${(data.appraisalEligible === "No") ? "rgba(211,47,47,0.3)" : "rgba(46,125,50,0.3)"}`
-                    }} />
-                  ) : (
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)", fontStyle: "italic", fontSize: "0.82rem" }}>Not yet decided</Typography>
-                  )}
-                </Box>
 
-                {/* Row: Claimant */}
-                <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", px: 3, py: 1.7, borderBottom: "2px solid var(--border-color)", "&:hover": { bgcolor: "rgba(0,0,0,0.012)" }, transition: "background 0.2s" }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 0.4 }}>
-                    <Person sx={{ color: "var(--text-secondary)", fontSize: 17 }} />
-                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.84rem" }}>Appraisal Claimant</Typography>
-                  </Box>
-                  <Box sx={{ textAlign: "right", maxWidth: "58%" }}>
-                    {(() => {
-                      const isApplicant = data.visibilityRole === "Applicant" || (data.facultyId && (data.facultyId === user?.userId || data.facultyId._id === user?.userId));
-                      const eligibleClaimants = [
-                        { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
-                        ...((data.coAuthors || []).filter(ca => ca.employeeId).map(ca => ({
-                          _id: ca.employeeId?._id || ca.employeeId,
-                          name: ca.employeeId?.name || ca.name,
-                          institutionId: ca.employeeId?.institutionId || ca.employeeId || ""
-                        })))
-                      ];
-                      const uniqueClaimants = eligibleClaimants.filter((v, i, a) => {
-                        if (!v.name) return false;
-                        return a.findIndex(t => {
-                          const sameInst = v.institutionId && t.institutionId && v.institutionId.toString() === t.institutionId.toString();
-                          const sameId = v._id && t._id && v._id.toString() === t._id.toString();
-                          const sameName = v.name && t.name && v.name.trim().toLowerCase() === t.name.trim().toLowerCase();
-                          return sameInst || sameId || sameName;
-                        }) === i;
-                      });
-                      if (uniqueClaimants.length <= 1) {
+                  <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 0.5 }}>
+                      <Person sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
+                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                        Appraisal Claimant
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: "right", maxWidth: "75%" }}>
+                      {(() => {
+                        const isApplicant = data.visibilityRole === "Applicant" || (data.facultyId && (data.facultyId === user?.userId || data.facultyId._id === user?.userId));
+                        const eligibleClaimants = [
+                          { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
+                          ...((data.coAuthors || []).filter(ca => ca.employeeId).map(ca => ({
+                            _id: ca.employeeId?._id || ca.employeeId,
+                            name: ca.employeeId?.name || ca.name,
+                            institutionId: ca.employeeId?.institutionId || ca.employeeId || ""
+                          })))
+                        ];
+                        const uniqueClaimants = eligibleClaimants.filter((v, i, a) => {
+                          if (!v.name) return false;
+                          return a.findIndex(t => {
+                            const sameInst = v.institutionId && t.institutionId && v.institutionId.toString() === t.institutionId.toString();
+                            const sameId = v._id && t._id && v._id.toString() === t._id.toString();
+                            const sameName = v.name && t.name && v.name.trim().toLowerCase() === t.name.trim().toLowerCase();
+                            return sameInst || sameId || sameName;
+                          }) === i;
+                        });
+                        if (uniqueClaimants.length <= 1) {
+                          return (
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", wordBreak: "break-word" }}>
+                              {data.facultyId?.name || user?.name || "-"}
+                              <Typography component="span" variant="caption" sx={{ ml: 0.5, fontWeight: 600, color: "var(--text-secondary)" }}>(Auto-assigned)</Typography>
+                            </Typography>
+                          );
+                        }
+                        const currentClaimantObj = uniqueClaimants.find(c =>
+                          (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
+                          (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
+                        );
+                        if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1 && data.status === "Approved" && data.appraisalEligible === "Yes") {
+                          return (
+                            <Select size="small" fullWidth value="" displayEmpty onChange={(e) => handleResolveClaim(data._id, "BookChapter", e.target.value)} sx={{ backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}>
+                              <MenuItem value="" disabled>Select Claimant</MenuItem>
+                              {uniqueClaimants.map(c => <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>{c.name} ({c.institutionId})</MenuItem>)}
+                            </Select>
+                          );
+                        }
                         return (
                           <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", wordBreak: "break-word" }}>
-                            {data.facultyId?.name || user?.name || "-"}
-                            <Typography component="span" variant="caption" sx={{ ml: 0.5, fontWeight: 600, color: "var(--text-secondary)" }}>(Auto)</Typography>
+                            {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : (data.status === "Approved" && data.appraisalEligible === "Yes" ? "Not Yet Designated" : "N/A")}
                           </Typography>
                         );
-                      }
-                      const currentClaimantObj = uniqueClaimants.find(c =>
-                        (c.institutionId && c.institutionId === (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString()) ||
-                        (c._id && c._id.toString() === (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString())
-                      );
-                      if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1 && data.status === "Approved" && data.appraisalEligible === "Yes") {
-                        return (
-                          <Select size="small" fullWidth value="" displayEmpty onChange={(e) => handleResolveClaim(data._id, "BookChapter", e.target.value)} sx={{ backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}>
-                            <MenuItem value="" disabled>Select Claimant</MenuItem>
-                            {uniqueClaimants.map(c => <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>{c.name} ({c.institutionId})</MenuItem>)}
-                          </Select>
-                        );
-                      }
-                      return (
-                        <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)", wordBreak: "break-word" }}>
-                          {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : (data.status === "Approved" && data.appraisalEligible === "Yes" ? "Not Yet Designated" : "N/A")}
-                        </Typography>
-                      );
-                    })()}
+                      })()}
+                    </Box>
                   </Box>
                 </Box>
+              </Paper>
 
-                {/* === Co-Authors Header === */}
-                <Box sx={{ px: 3, py: 1.8, display: "flex", alignItems: "center", gap: 1.5, background: "var(--bg-panel)", borderBottom: "1px solid var(--border-color)" }}>
-                  <Groups sx={{ color: "var(--color-primary)", fontSize: 18 }} />
-                  <Typography sx={{ fontWeight: 800, color: "var(--text-primary)", fontSize: "0.9rem" }}>Co-Authors</Typography>
+              {/* Bottom Right Card: Co-Authors */}
+              <Paper elevation={0} sx={{ p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)", flex: 1, minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2, flexShrink: 0 }}>
+                  <Groups sx={{ color: "var(--text-primary)", fontSize: 24 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                    Co-Authors
+                  </Typography>
                   {data.coAuthors && data.coAuthors.length > 0 && (
                     <Chip label={`${data.coAuthors.length}`} size="small" sx={{ ml: "auto", height: 20, fontSize: "0.7rem", fontWeight: 800, bgcolor: "var(--bg-glass)", border: "1px solid var(--border-color)" }} />
                   )}
                 </Box>
+
 
                 {/* Co-Authors list */}
                 <Box>

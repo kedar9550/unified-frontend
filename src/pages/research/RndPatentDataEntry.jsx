@@ -76,6 +76,9 @@ export default function RndPatentDataEntry() {
           newForm.applyIncentive = "No";
           newForm.appraisalEligible = "No";
           newForm.approvedAmount = "";
+          newForm.patentFiledInInstitution = "Yes";
+          newForm.patentName = "Aditya University";
+          newForm.applicantAffiliation = "Aditya University";
         } else {
           newForm.applyIncentive = "";
           newForm.appraisalEligible = "";
@@ -273,11 +276,14 @@ export default function RndPatentDataEntry() {
       }
     }
 
-    if (form.applyIncentive === "Yes" && (!form.approvedAmount || Number(form.approvedAmount) <= 0)) {
+    const computedApplyIncentive = (form.isInstitutionRecord === "Yes" || form.isUtilityType === "No") ? "No" : form.applyIncentive;
+    const computedAppraisalEligible = form.isInstitutionRecord === "Yes" ? "No" : form.appraisalEligible;
+
+    if (computedApplyIncentive === "Yes" && (!form.approvedAmount || Number(form.approvedAmount) <= 0)) {
       toast.error("Please enter a valid Approved Incentive Amount");
       return;
     }
-    if (!form.appraisalEligible) {
+    if (!computedAppraisalEligible) {
       toast.error("Please select Appraisal Eligible status");
       return;
     }
@@ -306,12 +312,10 @@ export default function RndPatentDataEntry() {
       fd.append("patentFiledCountry", form.patentFiledCountry === 'Others' ? form.customCountryName : form.patentFiledCountry);
       fd.append("coInventors", JSON.stringify(coInventorsList));
       fd.append("isInstitutionRecord", form.isInstitutionRecord || "No");
-      const isUtilityTypeNo = form.isUtilityType === "No";
-      const applyIncentive = isUtilityTypeNo ? "No" : form.applyIncentive;
-      fd.append("applyIncentive", applyIncentive);
+      fd.append("applyIncentive", computedApplyIncentive);
       fd.append("applyingSeedGrant", form.applyingSeedGrant);
       fd.append("eligibleForTechTransfer", form.eligibleForTechTransfer);
-      fd.append("appraisalEligible", form.appraisalEligible || "Yes");
+      fd.append("appraisalEligible", computedAppraisalEligible);
       fd.append("approvedAmount", form.approvedAmount || "");
       
       const total = form.otherInventors.length + 1;
@@ -323,11 +327,11 @@ export default function RndPatentDataEntry() {
 
       fd.append("publishedstatus", form.status === "Published" ? "yes" : "no");
       fd.append("publisheddate", form.publisheddate || "");
-      fd.append("publishedexpectedamount", (applyIncentive === "Yes" && form.status === "Published") ? expectedAmt : "");
+      fd.append("publishedexpectedamount", (computedApplyIncentive === "Yes" && form.status === "Published") ? expectedAmt : "");
       
       fd.append("grantedstatus", form.status === "Granted" ? "yes" : "no");
       fd.append("granteddate", form.granteddate || "");
-      fd.append("grantedexpectedamount", (form.applyIncentive === "Yes" && form.status === "Granted") ? expectedAmt : "");
+      fd.append("grantedexpectedamount", (computedApplyIncentive === "Yes" && form.status === "Granted") ? expectedAmt : "");
 
       fd.append("academicYear", selectedYear);
       fd.append("college", targetFacultyDetails?.college || user?.college || "");
@@ -412,7 +416,7 @@ export default function RndPatentDataEntry() {
               {/* Row 0.5: Institution Record */}
               <Box sx={{ gridColumn: { sm: "1 / -1" }, mb: 1, p: 2, background: "var(--bg-panel)", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-                  <Typography sx={{ ...labelStyle, mb: 0, fontWeight: 700, color: "var(--text-primary)" }}>Is this an Institution Record? *</Typography>
+                  <Typography sx={{ ...labelStyle, mb: 0, fontWeight: 700, color: "var(--text-primary)" }}>Is this University Contributed Record? *</Typography>
                   <RadioGroup row value={form.isInstitutionRecord} onChange={set("isInstitutionRecord")}>
                     <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
                     <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
@@ -420,7 +424,7 @@ export default function RndPatentDataEntry() {
                 </Box>
                 {form.isInstitutionRecord === "Yes" && (
                   <Typography variant="caption" sx={{ color: "var(--color-warning, #f59e0b)", fontWeight: 600, mt: 1, display: "block" }}>
-                    ⚠ Institution Record: Apply Incentive and Appraisal Eligibility are Not Applicable
+                    ⚠ University Contributed Record: Apply Incentive and Appraisal Eligibility are Not Applicable
                   </Typography>
                 )}
               </Box>
@@ -446,7 +450,7 @@ export default function RndPatentDataEntry() {
                     }}
                   >
                     <FormControlLabel value="Yes" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>Yes</Typography>} />
-                    <FormControlLabel value="No" control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
+                    <FormControlLabel value="No" disabled={form.isInstitutionRecord === "Yes"} control={<Radio size="small" sx={{ color: "var(--color-primary)", "&.Mui-checked": { color: "var(--color-primary)" } }} />} label={<Typography variant="body2" sx={{ fontWeight: 600 }}>No</Typography>} />
                   </RadioGroup>
                 </Box>
               </Box>
@@ -687,7 +691,32 @@ export default function RndPatentDataEntry() {
                               />
                             </Box>
                           </>
-                        ) : null}
+                        ) : (
+                          <>
+                            <Box sx={{ flex: 1, minWidth: "180px" }}>
+                              <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>CO-INVENTOR NAME</Typography>
+                              <TextField
+                                size="small"
+                                fullWidth
+                                value=""
+                                disabled
+                                placeholder="Full Name"
+                                sx={{ background: "rgba(0,0,0,0.02)" }}
+                              />
+                            </Box>
+                            <Box sx={{ flex: 2, minWidth: "200px" }}>
+                              <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION</Typography>
+                              <TextField
+                                size="small"
+                                fullWidth
+                                value=""
+                                disabled
+                                placeholder="College / Organization"
+                                sx={{ background: "rgba(0,0,0,0.02)" }}
+                              />
+                            </Box>
+                          </>
+                        )}
 
                         
                         
@@ -732,7 +761,13 @@ export default function RndPatentDataEntry() {
                       value={(form.isInstitutionRecord === "Yes" || form.isUtilityType === "No") ? "No" : form.applyIncentive}
                       onChange={set("applyIncentive")}
                       disabled={form.isInstitutionRecord === "Yes" || form.isUtilityType === "No"}
-                      sx={(form.isInstitutionRecord === "Yes" || form.isUtilityType === "No") ? { opacity: 0.6 } : {}}
+                      sx={(form.isInstitutionRecord === "Yes" || form.isUtilityType === "No") ? { opacity: 0.8 } : {}}
+                      renderValue={(selected) => {
+                        if (form.isInstitutionRecord === "Yes" || form.isUtilityType === "No") {
+                          return <Typography sx={{ color: "var(--color-error, #ef4444)", fontWeight: 700, fontSize: "14px" }}>Not Applicable</Typography>;
+                        }
+                        return selected || <Typography sx={{ color: "text.secondary", fontSize: "14px" }}>Select Option</Typography>;
+                      }}
                     >
                       <MenuItem value="" disabled>Select Option</MenuItem>
                       <MenuItem value="Yes">Yes</MenuItem>
@@ -791,10 +826,16 @@ export default function RndPatentDataEntry() {
                 <Typography sx={labelStyle}>Article Eligibility for Appraisal : *</Typography>
                 <Select
                   size="small" fullWidth displayEmpty
-                  value={form.appraisalEligible}
+                  value={form.isInstitutionRecord === "Yes" ? "No" : form.appraisalEligible}
                   onChange={set("appraisalEligible")}
                   disabled={form.isInstitutionRecord === "Yes"}
-                  sx={form.isInstitutionRecord === "Yes" ? { opacity: 0.6 } : {}}
+                  sx={form.isInstitutionRecord === "Yes" ? { opacity: 0.8 } : {}}
+                  renderValue={(selected) => {
+                    if (form.isInstitutionRecord === "Yes") {
+                      return <Typography sx={{ color: "var(--color-error, #ef4444)", fontWeight: 700, fontSize: "14px" }}>Not Applicable</Typography>;
+                    }
+                    return selected || <Typography sx={{ color: "text.secondary", fontSize: "14px" }}>Select Option</Typography>;
+                  }}
                 >
                   <MenuItem value="" disabled>Select Option</MenuItem>
                   <MenuItem value="Yes">Yes</MenuItem>

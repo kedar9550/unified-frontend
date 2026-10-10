@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination, FormControl, Radio, RadioGroup, FormControlLabel } from "@mui/material";
 import { toast } from "sonner";
-import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, Visibility, Edit, CheckCircle, Cancel, AccessTime } from "@mui/icons-material";
+import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, Visibility, Edit, CheckCircle, Cancel, AccessTime, Settings } from "@mui/icons-material";
 import SchoolIcon from "@mui/icons-material/School";
 import PublicIcon from "@mui/icons-material/Public";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
@@ -48,8 +48,8 @@ export default function PatentPublication() {
     status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "", eligibleForTechTransfer: "No",
     patentFiledCountry: "", customCountryName: "",
     totalInventors: 1, otherInventors: [],
-    publishedstatus: "no", publishedexpectedamount: "", publishedinsentiveampunt: "", publisheddate: "", publishedinsentiveappllieddate: "",
-    grantedstatus: "no", grantedexpectedamount: "", grantedinsentiveampunt: "", granteddate: "", grantedinsentiveappllieddate: ""
+    publishedstatus: "no", publishedexpectedamount: "", publishedincentiveamount: "", publisheddate: "", publishedinsentiveappllieddate: "",
+    grantedstatus: "no", grantedexpectedamount: "", grantedincentiveamount: "", granteddate: "", grantedinsentiveappllieddate: ""
   });
   const [files, setFiles] = useState({ cbr: null, form1: null, grantedCertificate: null });
   const [existingFiles, setExistingFiles] = useState({ cbr: null, form1: null, grantedCertificate: null });
@@ -77,10 +77,10 @@ export default function PatentPublication() {
       
       const res = await API.patch(`/api/research/patent/${selectedPubDetails._id}/update-status`, fd, { headers: { "Content-Type": "multipart/form-data" } });
       
-      toast.success("Patent status updated to Granted!");
+      toast.success("Patent status updated to Granted and submitted for approval!");
       const updatedPatent = res.data.data;
       setPublicationsList(prev => prev.map(p => p._id === updatedPatent._id ? updatedPatent : p));
-      setSelectedPubDetails(updatedPatent);
+      setSelectedPubDetails(null);
       setUpdateStatusExpanded(false);
       setStatusUpdateForm({ granteddate: "", eligibleForTechTransfer: "No" });
       setStatusUpdateFile(null);
@@ -141,12 +141,12 @@ export default function PatentPublication() {
       otherInventors: mappedAuthors,
       publishedstatus: pub.published?.publishedstatus || "no",
       publishedexpectedamount: pub.published?.publishedexpectedamount || "",
-      publishedinsentiveampunt: pub.published?.publishedinsentiveampunt || "",
+      publishedincentiveamount: pub.published?.publishedincentiveamount || "",
       publisheddate: pub.published?.publisheddate ? pub.published.publisheddate.split('T')[0] : "",
       publishedinsentiveappllieddate: pub.published?.publishedinsentiveappllieddate ? pub.published.publishedinsentiveappllieddate.split('T')[0] : "",
       grantedstatus: pub.granted?.grantedstatus || "no",
       grantedexpectedamount: pub.granted?.grantedexpectedamount || "",
-      grantedinsentiveampunt: pub.granted?.grantedinsentiveampunt || "",
+      grantedincentiveamount: pub.granted?.grantedincentiveamount || "",
       granteddate: pub.granted?.granteddate ? pub.granted.granteddate.split('T')[0] : "",
       grantedinsentiveappllieddate: pub.granted?.grantedinsentiveappllieddate ? pub.granted.grantedinsentiveappllieddate.split('T')[0] : ""
     });
@@ -187,7 +187,7 @@ export default function PatentPublication() {
           newForm.publishedstatus = "yes";
           newForm.grantedstatus = "no";
           newForm.grantedexpectedamount = "";
-          newForm.grantedinsentiveampunt = "";
+          newForm.grantedincentiveamount = "";
           newForm.granteddate = "";
           newForm.grantedinsentiveappllieddate = "";
         } else if (val === "Granted") {
@@ -400,13 +400,13 @@ export default function PatentPublication() {
 
       fd.append("publishedstatus", form.publishedstatus);
       fd.append("publishedexpectedamount", (applyIncentive === "Yes" && form.status === "Published") ? expectedAmt : "");
-      fd.append("publishedinsentiveampunt", form.publishedinsentiveampunt);
+      fd.append("publishedincentiveamount", form.publishedincentiveamount);
       fd.append("publisheddate", form.publisheddate);
       fd.append("publishedinsentiveappllieddate", form.publishedinsentiveappllieddate);
       
       fd.append("grantedstatus", form.grantedstatus);
       fd.append("grantedexpectedamount", (applyIncentive === "Yes" && form.status === "Granted") ? expectedAmt : "");
-      fd.append("grantedinsentiveampunt", form.grantedinsentiveampunt);
+      fd.append("grantedincentiveamount", form.grantedincentiveamount);
       fd.append("granteddate", form.granteddate);
       fd.append("grantedinsentiveappllieddate", form.grantedinsentiveappllieddate);
 
@@ -427,7 +427,7 @@ export default function PatentPublication() {
         toast.success("Patent submitted successfully!");
       }
 
-      setForm({ facultyRole: "", applicantAffiliation: "", title: "", applicantName: user?.name || "", patentName: "Aditya University", patentFiledInInstitution: "Yes", isUtilityType: "Yes", area: "", applicationnumber: "", dateOfFiling: "", status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "", eligibleForTechTransfer: "No", patentFiledCountry: "", customCountryName: "", totalInventors: 1, otherInventors: [], publishedstatus: "no", publishedexpectedamount: "", publishedinsentiveampunt: "", publisheddate: "", publishedinsentiveappllieddate: "", grantedstatus: "no", grantedexpectedamount: "", grantedinsentiveampunt: "", granteddate: "", grantedinsentiveappllieddate: "" });
+      setForm({ facultyRole: "", applicantAffiliation: "", title: "", applicantName: user?.name || "", patentName: "Aditya University", patentFiledInInstitution: "Yes", isUtilityType: "Yes", area: "", applicationnumber: "", dateOfFiling: "", status: "", isStudentsInvolved: "No", applyIncentive: "", applyingSeedGrant: "", eligibleForTechTransfer: "No", patentFiledCountry: "", customCountryName: "", totalInventors: 1, otherInventors: [], publishedstatus: "no", publishedexpectedamount: "", publishedincentiveamount: "", publisheddate: "", publishedinsentiveappllieddate: "", grantedstatus: "no", grantedexpectedamount: "", grantedincentiveamount: "", granteddate: "", grantedinsentiveappllieddate: "" });
       setFiles({ cbr: null, form1: null, grantedCertificate: null });
       setExistingFiles({ cbr: null, form1: null, grantedCertificate: null });
       setDeleteFlags({ cbr: false, form1: false, grantedCertificate: false });
@@ -1400,7 +1400,7 @@ export default function PatentPublication() {
                     { label: "Filed in Institution Name", value: data.patentFiledInInstitution || "Yes", icon: <AccountBalanceIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Name of Applicant in Patent", value: data.patentName || "-", icon: <PersonOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Area of Patent", value: data.area || "-", icon: <CategoryIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    { label: "Patent Application No", value: data.applicationnumber || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Patent Application No", value: data.applicationNo || data.applicationnumber || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Date of Filing", value: formatDate(data.dateOfFiling), icon: <CalendarTodayIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Patent Application Status", value: data.patentStatus || "-", icon: <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Filed Country", value: data.patentFiledCountry || "India", icon: <PublicIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
@@ -1537,26 +1537,51 @@ export default function PatentPublication() {
               </Paper>
 
               {data.patentStatus !== "Granted" && data.status === "Approved" && !updateStatusExpanded && (
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  startIcon={<Edit />}
+                <Box
                   sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    p: 2,
                     borderRadius: "12px",
-                    py: 1.5,
-                    border: "2px dashed var(--color-primary)",
-                    color: "var(--color-primary)",
-                    fontWeight: 700,
-                    textTransform: "none",
-                    "&:hover": {
-                      background: "rgba(190,147,55,0.05)",
-                      border: "2px dashed var(--color-primary)"
-                    }
+                    background: "#eef6fd",
+                    flexWrap: "wrap",
+                    gap: 2
                   }}
-                  onClick={() => setUpdateStatusExpanded(true)}
                 >
-                  Update Patent Status
-                </Button>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Settings sx={{ fontSize: 28, color: "#004085" }} />
+                    <Box>
+                      <Typography variant="body1" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.2 }}>
+                        Patent Status
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                        Current status: <span style={{ color: "#f59e0b" }}>{data.patentStatus || "Published"}</span>
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Button
+                    variant="contained"
+                    startIcon={<Edit />}
+                    sx={{
+                      borderRadius: "8px",
+                      px: 3,
+                      py: 1,
+                      bgcolor: "#003b73",
+                      color: "#fff",
+                      fontWeight: 700,
+                      textTransform: "none",
+                      boxShadow: "none",
+                      "&:hover": {
+                        bgcolor: "#002a54",
+                        boxShadow: "none"
+                      }
+                    }}
+                    onClick={() => setUpdateStatusExpanded(true)}
+                  >
+                    Update Patent Status
+                  </Button>
+                </Box>
               )}
 
               {updateStatusExpanded && (

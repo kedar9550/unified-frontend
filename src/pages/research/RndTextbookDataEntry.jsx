@@ -420,7 +420,7 @@ export default function RndTextbookDataEntry() {
       toast.error("Please select whether you want to apply for incentive");
       return;
     }
-    if (form.applyIncentive === "Yes" && (!form.approvedAmount || Number(form.approvedAmount) <= 0)) {
+    if (computedApplyIncentive === "Yes" && (!form.approvedAmount || Number(form.approvedAmount) <= 0)) {
       toast.error("Please enter a valid Approved Incentive Amount");
       return;
     }
