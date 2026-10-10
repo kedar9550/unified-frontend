@@ -271,9 +271,6 @@ export default function BookChapterPublication() {
   const fetchISBNData = async () => {
     const isbn = form.isbnNumber.trim().replace(/-/g, "");
     if (!isbn) { toast.error("Please enter an ISBN"); return; }
-    if (isbn.length !== 10 && isbn.length !== 13) {
-      toast.error("ISBN must be 10 or 13 digits"); return;
-    }
     setIsbnFetching(true);
     try {
       // Try Open Library first
