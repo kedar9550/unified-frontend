@@ -34,8 +34,7 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
-    const [approveDialogOpen, setApproveDialogOpen] = useState(false);
-    const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+    const [decisionMode, setDecisionMode] = useState(null);
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -118,9 +117,9 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
         const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filepath);
 
         return (
-            <Grid key={index} item xs={12} sm={6} md={4}>
-                <Box sx={{ mb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.75rem", textTransform: "uppercase" }}>
+            <Box key={index} sx={{ minWidth: 0 }}>
+                <Box sx={{ mb: 1, display: "flex", justifyContent: "space-between", alignItems: "center", minWidth: 0 }}>
+                    <Typography variant="subtitle2" noWrap sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.75rem", textTransform: "uppercase" }}>
                         {index}. {title}
                     </Typography>
                     <IconButton size="small" href={fileUrl} download target="_blank" sx={{ color: "var(--color-primary)" }}><DownloadIcon fontSize="small" /></IconButton>
@@ -133,7 +132,7 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                 }} onClick={() => window.open(fileUrl, '_blank')}>
                     {isImage ? <img src={fileUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Box sx={{ textAlign: "center" }}><DescriptionIcon sx={{ fontSize: 40, color: "var(--text-secondary)", mb: 1 }} /><Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>PDF View</Typography></Box>}
                 </Box>
-            </Grid>
+            </Box>
         );
     };
 
@@ -427,11 +426,11 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
             {/* Documents */}
             <Card sx={cardStyle}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><AttachFileIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography></Box>
-                <Grid container spacing={3}>
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" }, gap: 3 }}>
                     {renderFilePreview("e-Filing Receipt", data.cbr, 1)}
                     {renderFilePreview("Form - 1", data.form1, 2)}
                     {data.grantedCertificate && renderFilePreview("Granted Certificate", data.grantedCertificate, 3)}
-                </Grid>
+                </Box>
             </Card>
 
             {/* Actions */}
@@ -447,10 +446,63 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                                 Please review the details above and choose an action to proceed with this patent submission.
                             </Typography>
 
-                            <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-start" }}>
-                                <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => setRejectDialogOpen(true)} sx={{ px: 3, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>Reject</Button>
-                                <Button variant="contained" color="success" disabled={actionLoading} onClick={() => setApproveDialogOpen(true)} sx={{ px: 4, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
-                            </Box>
+                            {!decisionMode ? (
+                                <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-start" }}>
+                                    <Button variant="outlined" color="error" disabled={actionLoading} onClick={() => setDecisionMode('Reject')} sx={{ px: 3, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>Reject</Button>
+                                    <Button variant="contained" color="success" disabled={actionLoading} onClick={() => setDecisionMode('Approve')} sx={{ px: 4, textTransform: "none", fontWeight: 700, borderRadius: "10px" }}>{isHOD ? "Approve & Forward" : "Final Approve"}</Button>
+                                </Box>
+                            ) : (
+                                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                                    {decisionMode === 'Approve' && isResearchAdmin && (
+                                        <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                                            {data.applyIncentive === 'Yes' && (
+                                                <Box sx={{ flex: "1 1 200px" }}>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED INCENTIVE AMOUNT (₹) *</Typography>
+                                                    <TextField 
+                                                        fullWidth size="small" type="number" 
+                                                        placeholder="Enter approved incentive amount" 
+                                                        value={approvedAmount} 
+                                                        onChange={e => setApprovedAmount(e.target.value)} 
+                                                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
+                                                    />
+                                                </Box>
+                                            )}
+                                            <Box sx={{ flex: "1 1 200px" }}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>ARTICLE ELIGIBILITY FOR APPRAISAL *</Typography>
+                                                <Select fullWidth size="small" value={appraisalEligible} onChange={e => setAppraisalEligible(e.target.value)} displayEmpty sx={{ borderRadius: "10px", bgcolor: "var(--bg-panel)" }}>
+                                                    <MenuItem value="" disabled>Select Eligibility</MenuItem>
+                                                    <MenuItem value="Yes">Yes</MenuItem>
+                                                    <MenuItem value="No">No</MenuItem>
+                                                </Select>
+                                            </Box>
+                                        </Box>
+                                    )}
+
+                                    <Box>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>REMARKS {decisionMode === 'Reject' ? '*' : '(OPTIONAL)'}</Typography>
+                                        <TextField 
+                                            fullWidth multiline rows={3} 
+                                            placeholder={`Provide your ${decisionMode.toLowerCase()} comments...`} 
+                                            value={remarks} 
+                                            onChange={e => setRemarks(e.target.value)} 
+                                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }} 
+                                        />
+                                    </Box>
+
+                                    <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end", mt: 1 }}>
+                                        <Button variant="outlined" color="inherit" onClick={() => setDecisionMode(null)} sx={{ px: 3 }}>Cancel</Button>
+                                        <Button
+                                            variant="contained"
+                                            color={decisionMode === 'Reject' ? "error" : "success"}
+                                            disabled={actionLoading}
+                                            onClick={() => handleAction(decisionMode)}
+                                            sx={{ px: 4 }}
+                                        >
+                                            {decisionMode === 'Reject' ? "Confirm Reject" : "Approve"}
+                                        </Button>
+                                    </Box>
+                                </Box>
+                            )}
                         </Card>
                     ) : (
                         <Card sx={{ ...cardStyle, p: 4, textAlign: "center", mb: 0 }}>
@@ -468,101 +520,7 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                 </Box>
             </Box>
 
-            {/* Approve Dialog */}
-            <Dialog open={approveDialogOpen} onClose={() => setApproveDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>
-                <DialogTitle sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                    {isHOD ? "Approve & Forward Submission" : "Final Approve Submission"}
-                </DialogTitle>
-                <DialogContent>
-                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 2.5 }}>
-                        Please confirm approval details for this patent submission:
-                    </Typography>
 
-                    {isResearchAdmin && data.applyIncentive === 'Yes' && (
-                        <Box sx={{ mb: 2.5 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--color-primary)", fontSize: "0.8rem" }}>
-                                APPROVED INCENTIVE AMOUNT (₹) *
-                            </Typography>
-                            <TextField 
-                                fullWidth size="small" type="number" 
-                                placeholder="Enter approved incentive amount" 
-                                value={approvedAmount} 
-                                onChange={e => setApprovedAmount(e.target.value)} 
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
-                            />
-                        </Box>
-                    )}
-
-                    {isResearchAdmin && (
-                        <Box sx={{ mb: 2.5 }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--color-primary)", fontSize: "0.8rem" }}>
-                                ARTICLE ELIGIBILITY FOR APPRAISAL *
-                            </Typography>
-                            <Select fullWidth size="small" value={appraisalEligible} onChange={e => setAppraisalEligible(e.target.value)} displayEmpty sx={{ borderRadius: "10px" }}>
-                                <MenuItem value="" disabled>Select Eligibility</MenuItem>
-                                <MenuItem value="Yes">Yes</MenuItem>
-                                <MenuItem value="No">No</MenuItem>
-                            </Select>
-                        </Box>
-                    )}
-
-                    <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.8, color: "var(--text-primary)", fontSize: "0.8rem" }}>
-                            REMARKS / COMMENTS (OPTIONAL)
-                        </Typography>
-                        <TextField 
-                            fullWidth multiline rows={3} 
-                            placeholder="Provide review comments..." 
-                            value={remarks} 
-                            onChange={e => setRemarks(e.target.value)} 
-                            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
-                        />
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 2 }}>
-                    <Button onClick={() => setApproveDialogOpen(false)} disabled={actionLoading} sx={{ color: "var(--text-secondary)", textTransform: "none" }}>
-                        Cancel
-                    </Button>
-                    <Button 
-                        variant="contained" color="success" disabled={actionLoading} 
-                        onClick={() => handleAction('Approve')}
-                        sx={{ borderRadius: "8px", px: 3, textTransform: "none", fontWeight: 700 }}
-                    >
-                        {actionLoading ? "Processing..." : "Confirm Approve"}
-                    </Button>
-                </DialogActions>
-            </Dialog>
-
-            {/* Reject Dialog */}
-            <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth slotProps={{ paper: { sx: { borderRadius: "16px", p: 1 } } }}>
-                <DialogTitle sx={{ fontWeight: 800, color: "#d32f2f" }}>
-                    Reject Submission
-                </DialogTitle>
-                <DialogContent>
-                    <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 2 }}>
-                        Please provide a reason for rejecting this submission:
-                    </Typography>
-                    <TextField 
-                        fullWidth multiline rows={3} 
-                        placeholder="Provide rejection comments (Required)..." 
-                        value={remarks} 
-                        onChange={e => setRemarks(e.target.value)} 
-                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px" } }} 
-                    />
-                </DialogContent>
-                <DialogActions sx={{ px: 3, pb: 2 }}>
-                    <Button onClick={() => setRejectDialogOpen(false)} disabled={actionLoading} sx={{ color: "var(--text-secondary)", textTransform: "none" }}>
-                        Cancel
-                    </Button>
-                    <Button 
-                        variant="contained" color="error" disabled={actionLoading} 
-                        onClick={() => handleAction('Reject')}
-                        sx={{ borderRadius: "8px", px: 3, textTransform: "none", fontWeight: 700 }}
-                    >
-                        {actionLoading ? "Processing..." : "Confirm Rejection"}
-                    </Button>
-                </DialogActions>
-            </Dialog>
 
             {isResearchAdmin && (
                 <EditResearchDetailsDialog
