@@ -273,6 +273,7 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
                         )}
                         <LabelValue label="Scholar Roll Number" value={data.rollNumber} horizontal />
                         <LabelValue label="Scholar Student Name" value={data.studentName} horizontal />
+                        <LabelValue label="Title of the Ph.D Work" value={data.titleOfPhdWork || "—"} horizontal />
                         <LabelValue label="Course / Program" value={data.course} horizontal />
                         <LabelValue label="Branch / Specialization" value={data.branch || "N/A"} horizontal />
                         <LabelValue label="University" value={data.university || "Aditya University"} horizontal />
@@ -293,6 +294,26 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
                             } 
                         />
                         <LabelValue label="Guide / Co-Guide" value={data.type === 'co-guide' ? 'Co-Guide' : 'Guide'} horizontal />
+                        {data.scholarStatus === 'Awarded' || data.awardedDetails?.academicYear ? (
+                            <>
+                                <LabelValue 
+                                    label="Pursuing Academic Year" 
+                                    value={data.pursuingDetails?.academicYear?.year || (data.scholarStatus === 'Pursuing' ? data.academicYear?.year : "-")} 
+                                    horizontal 
+                                />
+                                <LabelValue 
+                                    label="Awarded Academic Year" 
+                                    value={data.awardedDetails?.academicYear?.year || (data.scholarStatus === 'Awarded' ? data.academicYear?.year : "-")} 
+                                    horizontal 
+                                />
+                            </>
+                        ) : (
+                            <LabelValue 
+                                label="Pursuing Academic Year" 
+                                value={data.pursuingDetails?.academicYear?.year || data.academicYear?.year || "-"} 
+                                horizontal 
+                            />
+                        )}
                         <LabelValue 
                             label="Scholar Status" 
                             horizontal 
@@ -308,16 +329,47 @@ const PhdScholarApprovalDetail = ({ id, onBack, role }) => {
                                 />
                             } 
                         />
-                        <LabelValue label={data.scholarStatus === 'Awarded' ? "Award Date" : "Admission Date"} value={new Date(data.admissionOrAwardDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} horizontal />
+                        {data.scholarStatus === 'Awarded' && data.pursuingDetails?.admissionDate ? (
+                            <>
+                                <LabelValue 
+                                    label="Admission Date" 
+                                    value={new Date(data.pursuingDetails.admissionDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} 
+                                    horizontal 
+                                />
+                                <LabelValue 
+                                    label="Ph.D. Award Date" 
+                                    value={new Date(data.awardedDetails?.awardDate || data.admissionOrAwardDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} 
+                                    horizontal 
+                                />
+                            </>
+                        ) : (
+                            <LabelValue 
+                                label={data.scholarStatus === 'Awarded' ? "Award Date" : "Admission Date"} 
+                                value={data.admissionOrAwardDate ? new Date(data.admissionOrAwardDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "-"} 
+                                horizontal 
+                            />
+                        )}
                     </Box>
                 </Card>
             </Box>
 
             {/* Document proof */}
             <Card sx={cardStyle}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><AttachFileIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Supporting Document</Typography></Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
+                    <AttachFileIcon sx={{ color: "var(--color-primary)" }} />
+                    <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                        Attached Supporting Document{data.scholarStatus === 'Awarded' && data.pursuingDetails?.document ? 's' : ''}
+                    </Typography>
+                </Box>
                 <Grid container spacing={3}>
-                    {renderFilePreview(data.scholarStatus === "Awarded" ? "Award Proceedings / Degree Award Letter" : "Admission Letter / Joining Report", data.document, 1)}
+                    {data.scholarStatus === 'Awarded' && data.pursuingDetails?.document ? (
+                        <>
+                            {renderFilePreview("Admission Letter / Joining Report", data.pursuingDetails.document, 1)}
+                            {renderFilePreview("Award Proceedings / Degree Award Letter", data.awardedDetails?.document || data.document, 2)}
+                        </>
+                    ) : (
+                        renderFilePreview(data.scholarStatus === "Awarded" ? "Award Proceedings / Degree Award Letter" : "Admission Letter / Joining Report", data.document, 1)
+                    )}
                 </Grid>
             </Card>
 
