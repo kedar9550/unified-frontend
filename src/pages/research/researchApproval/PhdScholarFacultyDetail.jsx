@@ -202,6 +202,9 @@ const PhdScholarFacultyDetail = ({ facultyId, onBack, role }) => {
                         <Grid container>
                             <Grid item xs={12} md={8} sx={{ p: 3, borderRight: { md: "1px solid var(--border-color)" } }}>
                                 <Grid container spacing={2}>
+                                    <Grid item xs={12}>
+                                        <LabelValue label="Title of the Ph.D Work" value={app.titleOfPhdWork || "—"} />
+                                    </Grid>
                                     <Grid item xs={12} sm={6}>
                                         <LabelValue label="Course / Program" value={app.course} />
                                     </Grid>
