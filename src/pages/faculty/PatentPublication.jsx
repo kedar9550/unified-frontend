@@ -402,12 +402,14 @@ export default function PatentPublication() {
       fd.append("publishedexpectedamount", (applyIncentive === "Yes" && form.status === "Published") ? expectedAmt : "");
       fd.append("publishedincentiveamount", form.publishedincentiveamount);
       fd.append("publisheddate", form.publisheddate);
+      fd.append("dateOfPublished", form.publisheddate);
       fd.append("publishedinsentiveappllieddate", form.publishedinsentiveappllieddate);
       
       fd.append("grantedstatus", form.grantedstatus);
       fd.append("grantedexpectedamount", (applyIncentive === "Yes" && form.status === "Granted") ? expectedAmt : "");
       fd.append("grantedincentiveamount", form.grantedincentiveamount);
       fd.append("granteddate", form.granteddate);
+      fd.append("dateOfGranted", form.granteddate);
       fd.append("grantedinsentiveappllieddate", form.grantedinsentiveappllieddate);
 
       Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
@@ -578,7 +580,7 @@ export default function PatentPublication() {
                               textOverflow: "ellipsis"
                             }}
                           >
-                            <span>ð¬</span> "{pub.rndComment || pub.hodComment}"
+                            <span>💬</span> "{pub.rndComment || pub.hodComment}"
                           </Typography>
                         </Tooltip>
                       )}

@@ -16,9 +16,10 @@ import DownloadIcon from '@mui/icons-material/Download';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import ArticleIcon from '@mui/icons-material/Article';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
 import { toast } from "sonner";
 import API from "../../../api/axios";
-import EditResearchDetailsDialog from "./EditResearchDetailsDialog";
 
 const PatentApprovalDetail = ({ id, onBack, role }) => {
     const [data, setData] = useState(null);
@@ -33,8 +34,74 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
     const [appraisalEligible, setAppraisalEligible] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
-    const [editOpen, setEditOpen] = useState(false);
+    const [isEditingDetails, setIsEditingDetails] = useState(false);
+    const [editableData, setEditableData] = useState({});
+    const [detailsSaving, setDetailsSaving] = useState(false);
     const [decisionMode, setDecisionMode] = useState(null);
+
+    const handleStartEdit = () => {
+        const formatDateForInput = (d) => {
+            if (!d) return "";
+            try {
+                const dateObj = new Date(d);
+                if (isNaN(dateObj.getTime())) return "";
+                return dateObj.toISOString().split('T')[0];
+            } catch {
+                return "";
+            }
+        };
+
+        setEditableData({
+            area: data.area || "",
+            applicationNo: data.applicationNo || data.filingNo || "",
+            dateOfFiling: formatDateForInput(data.dateOfFiling),
+            patentStatus: data.patentStatus || "Published",
+            publishedDate: formatDateForInput(data.published?.publisheddate || data.dateOfPublished),
+            grantedDate: formatDateForInput(data.granted?.granteddate || data.dateOfGranted),
+            applyIncentive: data.applyIncentive || "No",
+            applyingSeedGrant: data.applyingSeedGrant || "No",
+            approvedAmount: data.approvedAmount !== undefined && data.approvedAmount !== null ? data.approvedAmount : "",
+        });
+        setIsEditingDetails(true);
+    };
+
+    const handleSaveDetails = async () => {
+        setDetailsSaving(true);
+        try {
+            const payload = { ...editableData };
+            if (payload.applicationNo) {
+                payload.filingNo = payload.applicationNo;
+            }
+            if (payload.publishedDate) {
+                payload.publisheddate = payload.publishedDate;
+                payload.dateOfPublished = payload.publishedDate;
+            }
+            if (payload.grantedDate) {
+                payload.granteddate = payload.grantedDate;
+                payload.dateOfGranted = payload.grantedDate;
+            }
+            if (payload.approvedAmount !== undefined && payload.approvedAmount !== "") {
+                payload.approvedAmount = Number(payload.approvedAmount);
+            }
+
+            const res = await API.put(`/api/hod/research-requests/patent/${data._id}`, payload);
+            if (res.data?.success) {
+                const freshRes = await API.get(`/api/research/patent/${data._id}`);
+                const updated = freshRes.data?.data || res.data.data;
+                setData(updated);
+                if (updated.approvedAmount !== undefined) {
+                    setApprovedAmount(updated.approvedAmount);
+                }
+                setIsEditingDetails(false);
+                toast.success("Patent details updated successfully");
+            }
+        } catch (err) {
+            console.error("Failed to update patent details", err);
+            toast.error(err.response?.data?.message || "Failed to update patent details");
+        } finally {
+            setDetailsSaving(false);
+        }
+    };
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -280,13 +347,69 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
 
                 {/* Patent Details */}
                 <Card sx={{ ...cardStyle, flex: { xs: "1 1 100%", lg: "1 1 48%" }, mb: 0 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><ArticleIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Patent Details</Typography></Box>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                            <ArticleIcon sx={{ color: "var(--color-primary)" }} />
+                            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                                Patent Details
+                            </Typography>
+                        </Box>
+                        {isResearchAdmin && (
+                            !isEditingDetails ? (
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    startIcon={<EditIcon />}
+                                    onClick={handleStartEdit}
+                                    sx={{
+                                        borderRadius: "8px",
+                                        textTransform: "none",
+                                        fontWeight: 700,
+                                        borderColor: "var(--color-primary)",
+                                        color: "var(--color-primary)",
+                                        "&:hover": {
+                                            borderColor: "var(--color-primary)",
+                                            bgcolor: "rgba(190, 147, 55, 0.08)"
+                                        }
+                                    }}
+                                >
+                                    Edit
+                                </Button>
+                            ) : (
+                                <Box sx={{ display: "flex", gap: 1 }}>
+                                    <Button
+                                        size="small"
+                                        variant="outlined"
+                                        color="error"
+                                        disabled={detailsSaving}
+                                        onClick={() => setIsEditingDetails(false)}
+                                        sx={{ borderRadius: "8px", textTransform: "none", fontWeight: 700 }}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        size="small"
+                                        variant="contained"
+                                        color="success"
+                                        startIcon={<SaveIcon />}
+                                        disabled={detailsSaving}
+                                        onClick={handleSaveDetails}
+                                        sx={{ borderRadius: "8px", textTransform: "none", fontWeight: 700 }}
+                                    >
+                                        {detailsSaving ? "Saving..." : "Save"}
+                                    </Button>
+                                </Box>
+                            )
+                        )}
+                    </Box>
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
-                        {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
-                            <LabelValue 
-                                label="Entry Source" 
-                                horizontal 
-                                chip={
+                        {[
+                            ...((data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? [{
+                                key: "entryType",
+                                label: "Entry Source",
+                                value: "R&D Direct Entry",
+                                editable: false,
+                                chip: (
                                     <Chip 
                                         label="R&D Direct Entry" 
                                         size="small" 
@@ -297,51 +420,212 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                                             border: "1px solid rgba(124, 58, 237, 0.3)" 
                                         }} 
                                     />
-                                } 
-                            />
-                        )}
-                        <LabelValue label="Applicant Name" value={data.applicantName} horizontal />
-                        <LabelValue 
-                            label="Institution Record" 
-                            horizontal 
-                            chip={
-                                <Chip 
-                                    label={data.isInstitutionRecord === 'Yes' ? 'Yes (Institution Record)' : 'No'} 
-                                    size="small" 
-                                    sx={{ 
-                                        bgcolor: data.isInstitutionRecord === 'Yes' ? "rgba(2, 136, 209, 0.1)" : "var(--bg-panel)", 
-                                        color: data.isInstitutionRecord === 'Yes' ? "#0288d1" : "var(--text-secondary)", 
-                                        fontWeight: 800, 
-                                        border: "1px solid", 
-                                        borderColor: data.isInstitutionRecord === 'Yes' ? "rgba(2, 136, 209, 0.3)" : "var(--border-color)" 
-                                    }} 
-                                />
-                            } 
-                        />
-                        <LabelValue 
-                            label="Filed in Institution Name" 
-                            horizontal 
-                            chip={
-                                <Chip 
-                                    label={data.patentFiledInInstitution === 'No' ? 'No (Personal / Individual)' : 'Yes (Institution Name)'} 
-                                    size="small" 
-                                    sx={{ 
-                                        bgcolor: data.patentFiledInInstitution === 'No' ? "rgba(255, 152, 0, 0.1)" : "rgba(76, 175, 80, 0.1)", 
-                                        color: data.patentFiledInInstitution === 'No' ? "#e65100" : "#1b5e20", 
-                                        fontWeight: 800, 
-                                        border: "1px solid", 
-                                        borderColor: data.patentFiledInInstitution === 'No' ? "#ffe0b2" : "#c8e6c9" 
-                                    }} 
-                                />
-                            } 
-                        />
-                        <LabelValue label="Name of the Applicant in Patent" value={data.patentName} horizontal />
-                        <LabelValue label="Area of Patent" value={data.area} horizontal />
-
-                        <LabelValue label="Date of Filing" value={new Date(data.dateOfFiling).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} horizontal />
-                        <LabelValue label="Patent Status" value={data.patentStatus} horizontal />
-                        <LabelValue label="Incentive" horizontal chip={<Chip label={data.applyIncentive} size="small" sx={{ bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)", color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)", fontWeight: 800, border: "1px solid", borderColor: data.applyIncentive === 'Yes' ? "#4caf5044" : "var(--border-color)" }} />} />
-                        <LabelValue label="Seed Grant Work" value={data.applyingSeedGrant} horizontal />
+                                )
+                            }] : []),
+                            { 
+                                key: "isInstitutionRecord", 
+                                label: "Institution Record", 
+                                value: data.isInstitutionRecord || "No", 
+                                editable: false, 
+                                chip: (
+                                    <Chip 
+                                        label={data.isInstitutionRecord === 'Yes' ? 'Yes (Institution Record)' : 'No'} 
+                                        size="small" 
+                                        sx={{ 
+                                            bgcolor: data.isInstitutionRecord === 'Yes' ? "rgba(2, 136, 209, 0.1)" : "var(--bg-panel)", 
+                                            color: data.isInstitutionRecord === 'Yes' ? "#0288d1" : "var(--text-secondary)", 
+                                            fontWeight: 800, 
+                                            border: "1px solid", 
+                                            borderColor: data.isInstitutionRecord === 'Yes' ? "rgba(2, 136, 209, 0.3)" : "var(--border-color)" 
+                                        }} 
+                                    />
+                                )
+                            },
+                            { 
+                                key: "patentFiledInInstitution", 
+                                label: "Filed in Institution Name", 
+                                value: data.patentFiledInInstitution || "Yes", 
+                                editable: false, 
+                                chip: (
+                                    <Chip 
+                                        label={data.patentFiledInInstitution === 'No' ? 'No (Personal / Individual)' : 'Yes (Institution Name)'} 
+                                        size="small" 
+                                        sx={{ 
+                                            bgcolor: data.patentFiledInInstitution === 'No' ? "rgba(255, 152, 0, 0.1)" : "rgba(76, 175, 80, 0.1)", 
+                                            color: data.patentFiledInInstitution === 'No' ? "#e65100" : "#1b5e20", 
+                                            fontWeight: 800, 
+                                            border: "1px solid", 
+                                            borderColor: data.patentFiledInInstitution === 'No' ? "#ffe0b2" : "#c8e6c9" 
+                                        }} 
+                                    />
+                                )
+                            },
+                            { 
+                                key: "patentName", 
+                                label: "Name of Applicant in Patent", 
+                                value: data.patentName || "-", 
+                                editable: false 
+                            },
+                            { key: "area", label: "Area of Patent", value: data.area || "-", editable: true, type: "text" },
+                            { key: "applicationNo", label: "Application / Filing No", value: data.applicationNo || data.filingNo || "-", editable: true, type: "text" },
+                            { 
+                                key: "dateOfFiling", 
+                                label: "Date of Filing", 
+                                value: data.dateOfFiling ? new Date(data.dateOfFiling).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "-", 
+                                editable: true, 
+                                type: "date" 
+                            },
+                            { 
+                                key: "patentStatus", 
+                                label: "Patent Status", 
+                                value: data.patentStatus || "-", 
+                                editable: true, 
+                                type: "select", 
+                                options: ["Published", "Granted"] 
+                            },
+                            ...((isEditingDetails ? (editableData.patentStatus === 'Published' || editableData.patentStatus === 'Granted') : (data.patentStatus === 'Published' || data.patentStatus === 'Granted')) ? [{
+                                key: "publishedDate",
+                                label: "Date of Publication",
+                                value: (data.published?.publisheddate || data.dateOfPublished) ? new Date(data.published?.publisheddate || data.dateOfPublished).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "-",
+                                editable: true,
+                                type: "date"
+                            }] : []),
+                            ...((isEditingDetails ? editableData.patentStatus === 'Granted' : data.patentStatus === 'Granted') ? [{
+                                key: "grantedDate",
+                                label: "Date of Grant",
+                                value: (data.granted?.granteddate || data.dateOfGranted) ? new Date(data.granted?.granteddate || data.dateOfGranted).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "-",
+                                editable: true,
+                                type: "date"
+                            }] : []),
+                            { 
+                                key: "applyIncentive", 
+                                label: "Incentive", 
+                                value: data.applyIncentive || "No", 
+                                editable: true, 
+                                type: "select", 
+                                options: ["Yes", "No"],
+                                chip: !isEditingDetails && (
+                                    <Chip 
+                                        label={data.applyIncentive || "No"} 
+                                        size="small" 
+                                        sx={{ 
+                                            bgcolor: data.applyIncentive === 'Yes' ? "rgba(76, 175, 80, 0.1)" : "var(--bg-panel)", 
+                                            color: data.applyIncentive === 'Yes' ? "#4caf50" : "var(--text-secondary)", 
+                                            fontWeight: 800, 
+                                            border: "1px solid", 
+                                            borderColor: data.applyIncentive === 'Yes' ? "#4caf5044" : "var(--border-color)" 
+                                        }} 
+                                    />
+                                )
+                            },
+                            { 
+                                key: "applyingSeedGrant", 
+                                label: "Seed Grant Work", 
+                                value: data.applyingSeedGrant || "No", 
+                                editable: true, 
+                                type: "select", 
+                                options: ["Yes", "No"] 
+                            },
+                            { 
+                                key: "estimatedIncentiveAmount", 
+                                label: "Estimated Incentive", 
+                                value: (() => {
+                                    const current = isEditingDetails ? editableData : data;
+                                    if (current.applyIncentive === "No" || current.isUtilityType === "No") return "₹0";
+                                    let base = current.patentStatus === "Published" ? 5000 : (current.patentStatus === "Granted" ? 15000 : 0);
+                                    if (!isEditingDetails) {
+                                        if (current.patentStatus === "Published" && current.published?.publishedexpectedamount) {
+                                            base = current.published.publishedexpectedamount;
+                                        } else if (current.patentStatus === "Granted" && current.granted?.grantedexpectedamount) {
+                                            base = current.granted.grantedexpectedamount;
+                                        }
+                                    }
+                                    if (current.applyingSeedGrant === "Yes") {
+                                        base = base / 2;
+                                    }
+                                    return base > 0 ? `₹${base.toLocaleString('en-IN')}` : "₹0";
+                                })(), 
+                                editable: false, 
+                                type: "text" 
+                            },
+                            { 
+                                key: "approvedAmount", 
+                                label: "Approved Incentive Amount", 
+                                value: data.approvedAmount ? `₹${Number(data.approvedAmount).toLocaleString('en-IN')}` : "-", 
+                                editable: true, 
+                                type: "number" 
+                            }
+                        ].map((item, idx, arr) => (
+                            <Box key={idx} sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                p: "10px 16px",
+                                borderBottom: idx === arr.length - 1 ? "none" : "1px solid var(--border-color)",
+                                transition: "all 0.3s ease",
+                                "&:hover": { bgcolor: "rgba(190, 147, 55, 0.05)" }
+                            }}>
+                                <Typography variant="caption" sx={{
+                                    flex: { xs: "0 0 130px", sm: "0 0 170px" },
+                                    color: "var(--color-primary)",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.08em",
+                                    fontWeight: 900,
+                                    fontSize: "0.65rem",
+                                    display: "inline-block",
+                                    opacity: 0.9
+                                }}>
+                                    {item.label}
+                                </Typography>
+                                <Box sx={{ flex: 1 }}>
+                                    {isEditingDetails && item.editable ? (
+                                        item.type === "select" ? (
+                                            <Select
+                                                size="small"
+                                                fullWidth
+                                                value={editableData[item.key] ?? ""}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    const updates = { [item.key]: val };
+                                                    if (item.key === "patentFiledInInstitution" && val === "Yes" && !["Aditya University", "Aditya College of Pharmacy"].includes(editableData.patentName)) {
+                                                        updates.patentName = "Aditya University";
+                                                    }
+                                                    setEditableData(prev => ({ ...prev, ...updates }));
+                                                }}
+                                                sx={{ minWidth: 120, height: 32, fontSize: "0.875rem" }}
+                                            >
+                                                {item.options.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+                                            </Select>
+                                        ) : item.type === "date" ? (
+                                            <TextField
+                                                size="small"
+                                                fullWidth
+                                                type="date"
+                                                value={editableData[item.key] ?? ""}
+                                                onChange={(e) => setEditableData(prev => ({ ...prev, [item.key]: e.target.value }))}
+                                                InputLabelProps={{ shrink: true }}
+                                                sx={{ "& .MuiInputBase-root": { height: 32, fontSize: "0.875rem" } }}
+                                            />
+                                        ) : (
+                                            <TextField
+                                                size="small"
+                                                fullWidth
+                                                type={item.type === "number" ? "number" : "text"}
+                                                value={editableData[item.key] ?? ""}
+                                                onChange={(e) => setEditableData(prev => ({ ...prev, [item.key]: e.target.value }))}
+                                                sx={{ "& .MuiInputBase-root": { height: 32, fontSize: "0.875rem" } }}
+                                            />
+                                        )
+                                    ) : (
+                                        item.chip ? item.chip : (
+                                            <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.9rem", wordBreak: "break-word" }}>
+                                                {item.value || "-"}
+                                            </Typography>
+                                        )
+                                    )}
+                                </Box>
+                            </Box>
+                        ))}
                     </Box>
                 </Card>
             </Box>
@@ -519,21 +803,6 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                     )}
                 </Box>
             </Box>
-
-
-
-            {isResearchAdmin && (
-                <EditResearchDetailsDialog
-                    open={editOpen}
-                    onClose={() => setEditOpen(false)}
-                    type="Patent"
-                    currentData={data}
-                    onSave={(updated) => {
-                        setData(updated);
-                        if (updated.approvedAmount) setApprovedAmount(updated.approvedAmount);
-                    }}
-                />
-            )}
         </Box>
     );
 };
