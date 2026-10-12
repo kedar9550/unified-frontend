@@ -373,7 +373,8 @@ export default function RndConferenceDataEntry() {
 
   const validateFile = (file, k) => {
     if (!file) return true;
-    if (file.type !== 'application/pdf') {
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
       toast.error("Only PDF files are allowed");
       return false;
     }
@@ -1051,17 +1052,22 @@ export default function RndConferenceDataEntry() {
             <FileField
               label="Published Paper - 1st Page in conference * :"
               name="firstPage"
+              file={files.firstPage}
               onChange={setFile("firstPage")}
             />
             <FileField
               label="Certificate of Presentation * :"
               name="certificate"
+              file={files.certificate}
               onChange={setFile("certificate")}
             />
             <Box>
               <FileField
                 label="Complete Document * :"
                 name="completeDocument"
+                file={files.completeDocument}
+                accept=".pdf"
+                maxSize={5 * 1024 * 1024}
                 onChange={setFile("completeDocument")}
               />
               {scanningSdg && (
@@ -1084,6 +1090,7 @@ export default function RndConferenceDataEntry() {
               <FileField
                 label="Upload flight ticket bill * :"
                 name="flightTicket"
+                file={files.flightTicket}
                 onChange={setFile("flightTicket")}
               />
             )}

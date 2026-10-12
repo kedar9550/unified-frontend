@@ -86,7 +86,11 @@ import PageHeader from "../../components/common/PageHeader";
 
 
 
-// Contribution Categories are now fetched from the database
+const isCourseParticipantActivity = (category, type) => {
+  const cat = category || "";
+  const t = (type || "").toLowerCase();
+  return (cat === "FDP" || cat === "STTP" || cat === "Refresher Course") && t.includes("participant");
+};
 
 const RESOURCE_UTILIZATION_CATEGORIES = [
   "CONFERENCE",
@@ -309,7 +313,7 @@ const SelfAppraisal = () => {
     remarks: "",
     numberOfSessions: "",
     numberOfDaysParticipated: "",
-    courseFdpName: "",
+    courseName: "",
     organizingInstitutionCategory: "",
     location: "",
     labName: "",
@@ -894,7 +898,7 @@ const SelfAppraisal = () => {
       remarks: "",
       numberOfSessions: "",
       numberOfDaysParticipated: "",
-      courseFdpName: "",
+      courseName: "",
       organizingInstitutionCategory: "",
       location: "",
       labName: "",
@@ -920,7 +924,7 @@ const SelfAppraisal = () => {
       remarks: activity.remarks || "",
       numberOfSessions: (activity.numberOfSessions !== undefined ? String(activity.numberOfSessions) : (activity.sessionsConducted !== undefined ? String(activity.sessionsConducted) : "")),
       numberOfDaysParticipated: (activity.numberOfDaysParticipated !== undefined ? String(activity.numberOfDaysParticipated) : (activity.daysParticipated !== undefined ? String(activity.daysParticipated) : "")),
-      courseFdpName: activity.courseFdpName || "",
+      courseName: activity.courseName || "",
       organizingInstitutionCategory: activity.organizingInstitutionCategory || "",
       location: activity.location || "",
       labName: activity.labName || "",
@@ -948,9 +952,9 @@ const SelfAppraisal = () => {
   const handleResUtSaveDraft = async () => {
 
 
-    const isFdpParticipant = resUtForm.activityCategory === "FDP" && resUtForm.activityType === "FDP Participant";
-    const basicFieldsValid = isFdpParticipant
-      ? (resUtForm.activityCategory && resUtForm.activityType && resUtForm.courseFdpName && resUtForm.eventStartDate && resUtForm.eventEndDate)
+    const isCourseParticipant = isCourseParticipantActivity(resUtForm.activityCategory, resUtForm.activityType);
+    const basicFieldsValid = isCourseParticipant
+      ? (resUtForm.activityCategory && resUtForm.activityType && resUtForm.courseName && resUtForm.eventStartDate && resUtForm.eventEndDate)
       : (resUtForm.activityCategory && resUtForm.activityType && resUtForm.organizationName && resUtForm.eventStartDate && resUtForm.eventEndDate);
 
     if (!basicFieldsValid) {
@@ -958,7 +962,7 @@ const SelfAppraisal = () => {
       return;
     }
 
-    if (isFdpParticipant) {
+    if (isCourseParticipant) {
       if (!resUtForm.organizingInstitutionCategory) {
         toast.error("Organizing Institution Category is required");
         return;
@@ -1054,11 +1058,11 @@ const SelfAppraisal = () => {
       }
       fd.append("remarks", resUtForm.remarks || "");
 
-      if (isFdpParticipant) {
-        fd.append("courseFdpName", resUtForm.courseFdpName);
+      if (isCourseParticipant) {
+        fd.append("courseName", resUtForm.courseName);
         fd.append("organizingInstitutionCategory", resUtForm.organizingInstitutionCategory);
         fd.append("location", resUtForm.location);
-        fd.append("organizationName", resUtForm.courseFdpName);
+        fd.append("organizationName", resUtForm.courseName);
         if (resUtForm.organizingInstitutionCategory === "MHRD R&D Lab") {
           fd.append("labName", resUtForm.labName);
         } else if (resUtForm.organizingInstitutionCategory === "Govt. University") {
@@ -1421,7 +1425,7 @@ const SelfAppraisal = () => {
       activityType: "",
       sessionsConducted: "",
       daysParticipated: "",
-      courseFdpName: "",
+      courseName: "",
       organizingInstitutionCategory: "",
       location: "",
       labName: "",
@@ -1438,7 +1442,7 @@ const SelfAppraisal = () => {
       activityType: role,
       sessionsConducted: "",
       daysParticipated: "",
-      courseFdpName: "",
+      courseName: "",
       organizingInstitutionCategory: "",
       location: "",
       labName: "",
@@ -4551,15 +4555,15 @@ const SelfAppraisal = () => {
                 </Select>
               </Box>
 
-              {resUtForm.activityCategory === "FDP" && resUtForm.activityType === "FDP Participant" ? (
+              {isCourseParticipantActivity(resUtForm.activityCategory, resUtForm.activityType) ? (
                 <>
                   <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
                     <Typography sx={labelStyle}>Course Name: *</Typography>
                     <TextField
                       size="small"
                       fullWidth
-                      value={resUtForm.courseFdpName}
-                      onChange={(e) => setResUtForm(p => ({ ...p, courseFdpName: e.target.value }))}
+                      value={resUtForm.courseName}
+                      onChange={(e) => setResUtForm(p => ({ ...p, courseName: e.target.value }))}
                       placeholder="Enter Course Name"
                     />
                   </Box>
@@ -4801,7 +4805,7 @@ const SelfAppraisal = () => {
                   </Box>
                 ) : (
                   <FileField
-                    label="Supporting Proof (PDF/Image, Max 200KB) *"
+                    label="Supporting Proof (PDF, Max 200KB) *"
                     name="proof"
                     onChange={(e) => setResUtProof(e.target.files[0])}
                   />
@@ -4858,14 +4862,14 @@ const SelfAppraisal = () => {
                 <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 1 }}>
                   {data.activityCategory} - {data.activityType}
                 </Typography>
-                {data.activityCategory === "FDP" && data.activityType === "FDP Participant" ? (
-                  <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Course Name: {data.courseFdpName || data.organizationName}</Typography>
+                {isCourseParticipantActivity(data.activityCategory, data.activityType) ? (
+                  <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Course Name: {data.courseName || data.organizationName}</Typography>
                 ) : (
                   <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3, fontWeight: 600 }}>Organization / Event Name: {data.organizationName}</Typography>
                 )}
 
                 <Grid container spacing={2}>
-                  {data.activityCategory === "FDP" && data.activityType === "FDP Participant" && (
+                  {isCourseParticipantActivity(data.activityCategory, data.activityType) && (
                     <>
                       <Grid size={{ xs: 12, sm: 4 }}>
                         <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
@@ -5417,7 +5421,7 @@ const SelfAppraisal = () => {
                   </Box>
                 ) : (
                   <FileField
-                    label="Supporting Proof (PDF/Image, Max 200KB) *"
+                    label="Supporting Proof (PDF, Max 200KB) *"
                     name="proof"
                     onChange={(e) => setContProof(e.target.files[0])}
                   />
