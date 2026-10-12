@@ -42,6 +42,12 @@ import DataTable from "../../components/data/DataTable";
 import AppraisalPDFReport from "../../components/pdf/AppraisalPDFReport";
 import AppraisalBriefPDFReport from "../../components/pdf/AppraisalBriefPDFReport";
 
+const isCourseParticipantActivity = (category, type) => {
+  const cat = category || "";
+  const t = (type || "").toLowerCase();
+  return (cat === "FDP" || cat === "STTP" || cat === "Refresher Course") && t.includes("participant");
+};
+
 const PARAMETERS = [
   { id: 1, text: "Commitment- Unwavering dedication to student growth and institutional progress, consistently completing all work with diligence." },
   { id: 2, text: "Ownership – Going beyond the assigned task reflects accountability, integrity, and leadership potential by anticipating challenges, taking corrective action without waiting for instructions, and consistently striving for excellence." },
@@ -2127,12 +2133,12 @@ const AppraisalReportDetail = () => {
                                         <TableCell sx={{ fontWeight: 600, color: "var(--text-primary)" }}>
                                           <Box>
                                             <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                                              {item.activityCategory === "FDP" && item.activityType === "FDP Participant" ? item.courseFdpName : item.organizationName}
+                                              {isCourseParticipantActivity(item.activityCategory, item.activityType) ? item.courseName || item.organizationName : item.organizationName}
                                             </Typography>
                                             <Typography variant="caption" color="var(--text-secondary)" sx={{ fontSize: "0.75rem", display: "block", mt: 0.25 }}>
                                               Dates: {fromDateFormatted && toDateFormatted ? `${fromDateFormatted} - ${toDateFormatted}` : ""}
                                             </Typography>
-                                            {item.activityCategory === "FDP" && item.activityType === "FDP Participant" && (
+                                            {isCourseParticipantActivity(item.activityCategory, item.activityType) && (
                                               <Box sx={{ mt: 0.5, p: 1, borderRadius: "6px", background: "rgba(0,0,0,0.02)", border: "1px dashed var(--border-color)" }}>
                                                 <Typography variant="caption" color="var(--text-secondary)" display="block">
                                                   Organizing Category: <strong style={{ color: "var(--color-primary)" }}>{item.organizingInstitutionCategory}</strong> | Location: <strong>{item.location}</strong>
@@ -2840,10 +2846,10 @@ const AppraisalReportDetail = () => {
               </Box>
               <Box>
                 <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>
-                  {selectedResUtDetails.activityCategory === "FDP" && selectedResUtDetails.activityType === "FDP Participant" ? "Course Name" : "Organization Name"}
+                  {isCourseParticipantActivity(selectedResUtDetails.activityCategory, selectedResUtDetails.activityType) ? "Course Name" : "Organization Name"}
                 </Typography>
                 <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                  {selectedResUtDetails.activityCategory === "FDP" && selectedResUtDetails.activityType === "FDP Participant" ? selectedResUtDetails.courseFdpName : selectedResUtDetails.organizationName}
+                  {isCourseParticipantActivity(selectedResUtDetails.activityCategory, selectedResUtDetails.activityType) ? selectedResUtDetails.courseName || selectedResUtDetails.organizationName : selectedResUtDetails.organizationName}
                 </Typography>
               </Box>
               <Box display="flex" gap={4}>
@@ -2866,7 +2872,7 @@ const AppraisalReportDetail = () => {
                   </Typography>
                 </Box>
               </Box>
-              {selectedResUtDetails.activityCategory === "FDP" && selectedResUtDetails.activityType === "FDP Participant" && (
+              {isCourseParticipantActivity(selectedResUtDetails.activityCategory, selectedResUtDetails.activityType) && (
                 <>
                   <Box display="flex" gap={4}>
                     <Box>

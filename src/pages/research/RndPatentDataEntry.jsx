@@ -9,7 +9,7 @@ import { Search, AttachFile, Close } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import PageContainer from "../../components/common/design-system/PageContainer";
 import {
-  FormCard, Grid2, SubLabel, FileField, SubmitBtn, FacultyInfoRow
+  FormCard, Grid2, SubLabel, FileField, SubmitBtn, FacultyInfoRow, NoteBox
 } from "../../components/faculty/PublicationFormFields";
 import { labelStyle } from "../../components/faculty/publicationConstants";
 import API from "../../api/axios";
@@ -738,11 +738,12 @@ export default function RndPatentDataEntry() {
 
           {/* Attachments Section */}
           <FormCard title="Attachments & Additional Information" icon={<AttachFile sx={{ color: "var(--color-primary)" }} />}>
+            <NoteBox />
             <Grid2>
-              <FileField label="Certificate of Basic Registration (CBR):" onChange={(e) => setFiles(p => ({ ...p, cbr: e.target.files[0] }))} />
-              <FileField label="Form-1 Document:" onChange={(e) => setFiles(p => ({ ...p, form1: e.target.files[0] }))} />
+              <FileField label="Certificate of Basic Registration (CBR):" name="cbr" file={files.cbr} onChange={(e) => setFiles(p => ({ ...p, cbr: e.target.files[0] }))} />
+              <FileField label="Form-1 Document:" name="form1" file={files.form1} onChange={(e) => setFiles(p => ({ ...p, form1: e.target.files[0] }))} />
               {form.status === "Granted" && (
-                <FileField label="Granted Certificate" onChange={(e) => setFiles(p => ({ ...p, grantedCertificate: e.target.files[0] }))} />
+                <FileField label="Granted Certificate" name="grantedCertificate" file={files.grantedCertificate} onChange={(e) => setFiles(p => ({ ...p, grantedCertificate: e.target.files[0] }))} />
               )}
               <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
                 <Grid2>

@@ -361,7 +361,8 @@ export default function ConferencePublication() {
 
   const validateFile = (file, k) => {
     if (!file) return true;
-    if (file.type !== 'application/pdf') {
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
       toast.error("Only PDF files are allowed");
       return false;
     }
@@ -1448,6 +1449,7 @@ export default function ConferencePublication() {
         <FileField
           label="Published Paper - 1st Page in conference * :"
           name="firstPage"
+          file={files.firstPage}
           onChange={setFile("firstPage")}
           existingFileUrl={!files.firstPage ? (existingFiles.firstPage ? `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000').replace(/\/$/, '')}${existingFiles.firstPage}` : null) : null}
           existingFileName={existingFiles.firstPage ? existingFiles.firstPage.split('/').pop() : ""}
@@ -1456,6 +1458,7 @@ export default function ConferencePublication() {
         <FileField
           label="Certificate of Presentation * :"
           name="certificate"
+          file={files.certificate}
           onChange={setFile("certificate")}
           existingFileUrl={!files.certificate ? (existingFiles.certificate ? `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000').replace(/\/$/, '')}${existingFiles.certificate}` : null) : null}
           existingFileName={existingFiles.certificate ? existingFiles.certificate.split('/').pop() : ""}
@@ -1465,6 +1468,9 @@ export default function ConferencePublication() {
           <FileField
             label="Complete Document * :"
             name="completeDocument"
+            file={files.completeDocument}
+            accept=".pdf"
+            maxSize={5 * 1024 * 1024}
             onChange={setFile("completeDocument")}
             existingFileUrl={!files.completeDocument ? (existingFiles.completeDocument ? `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000').replace(/\/$/, '')}${existingFiles.completeDocument}` : null) : null}
             existingFileName={existingFiles.completeDocument ? existingFiles.completeDocument.split('/').pop() : ""}
@@ -1490,6 +1496,7 @@ export default function ConferencePublication() {
           <FileField
             label="Upload flight ticket bill * :"
             name="flightTicket"
+            file={files.flightTicket}
             onChange={setFile("flightTicket")}
             existingFileUrl={!files.flightTicket ? (existingFiles.flightTicket ? `${(import.meta.env.VITE_BACKEND_URL || 'http://localhost:9000').replace(/\/$/, '')}${existingFiles.flightTicket}` : null) : null}
             existingFileName={existingFiles.flightTicket ? existingFiles.flightTicket.split('/').pop() : ""}

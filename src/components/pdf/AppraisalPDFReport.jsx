@@ -670,7 +670,7 @@ const AppraisalPDFReport = forwardRef(({ data, hideInterpersonal, eligibilityDet
                 <tr key={i} style={styles.tr}>
                   <td style={styles.td}>{i + 1}</td>
                   <td style={styles.tdLeft}>
-                    {r.courseFdpName || r.event || r.organizationName || r.eventName || r.topic}{" "}
+                    {r.courseName || r.event || r.organizationName || r.eventName || r.topic}{" "}
                     {(() => {
                       const fromDate = r.fromDate || r.eventStartDate;
                       const toDate = r.toDate || r.eventEndDate;

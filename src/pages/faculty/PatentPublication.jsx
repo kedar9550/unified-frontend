@@ -1020,6 +1020,7 @@ export default function PatentPublication() {
         <FileField
           label="Certificate of Basic Registration (CBR):"
           name="cbr"
+          file={files.cbr}
           onChange={setFile("cbr")}
           existingFileUrl={existingFiles.cbr}
           onRemoveExisting={() => {
@@ -1030,6 +1031,7 @@ export default function PatentPublication() {
         <FileField
           label="Form -1"
           name="form1"
+          file={files.form1}
           onChange={setFile("form1")}
           existingFileUrl={existingFiles.form1}
           onRemoveExisting={() => {
@@ -1041,6 +1043,7 @@ export default function PatentPublication() {
           <FileField
             label="Granted Certificate"
             name="grantedCertificate"
+            file={files.grantedCertificate}
             onChange={setFile("grantedCertificate")}
             existingFileUrl={existingFiles.grantedCertificate}
             onRemoveExisting={() => {
