@@ -482,7 +482,18 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                             <TextField fullWidth label="Area" name="area" value={formData.area || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
-                            <TextField fullWidth label="Filing Number" name="filingNo" value={formData.filingNo || ""} onChange={handleChange} variant="outlined" size="small" />
+                            <TextField 
+                                fullWidth 
+                                label="Filing / Application Number" 
+                                name="applicationNo" 
+                                value={formData.applicationNo || formData.filingNo || ""} 
+                                onChange={(e) => {
+                                    handleChange(e);
+                                    setFormData(prev => ({ ...prev, filingNo: e.target.value, applicationNo: e.target.value }));
+                                }} 
+                                variant="outlined" 
+                                size="small" 
+                            />
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                             <TextField

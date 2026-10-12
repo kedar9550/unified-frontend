@@ -16,6 +16,12 @@ import { labelStyle } from "../../components/faculty/publicationConstants";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../api/axios";
 
+export const isCourseParticipantActivity = (category, type) => {
+  const cat = category || "";
+  const t = (type || "").toLowerCase();
+  return (cat === "FDP" || cat === "STTP" || cat === "Refresher Course") && t.includes("participant");
+};
+
 // Activity categories and types mappings
 const ACTIVITY_CATEGORIES = [
   "CONFERENCE",
@@ -189,7 +195,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
     remarks: "",
     numberOfSessions: "",
     numberOfDaysParticipated: "",
-    courseFdpName: "",
+    courseName: "",
     organizingInstitutionCategory: "",
     location: "",
     labName: "",
@@ -268,7 +274,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
       activityType: "",
       sessionsConducted: "",
       daysParticipated: "",
-      courseFdpName: "",
+      courseName: "",
       organizingInstitutionCategory: "",
       location: "",
       labName: "",
@@ -286,7 +292,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
       activityType: role,
       sessionsConducted: "",
       daysParticipated: "",
-      courseFdpName: "",
+      courseName: "",
       organizingInstitutionCategory: "",
       location: "",
       labName: "",
@@ -317,7 +323,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
       remarks: "",
       numberOfSessions: "",
       numberOfDaysParticipated: "",
-      courseFdpName: "",
+      courseName: "",
       organizingInstitutionCategory: "",
       location: "",
       labName: "",
@@ -349,7 +355,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
       remarks: activity.remarks || "",
       numberOfSessions: (activity.numberOfSessions !== undefined ? String(activity.numberOfSessions) : (activity.sessionsConducted !== undefined ? String(activity.sessionsConducted) : "")),
       numberOfDaysParticipated: (activity.numberOfDaysParticipated !== undefined ? String(activity.numberOfDaysParticipated) : (activity.daysParticipated !== undefined ? String(activity.daysParticipated) : "")),
-      courseFdpName: activity.courseFdpName || "",
+      courseName: activity.courseName || "",
       organizingInstitutionCategory: activity.organizingInstitutionCategory || "",
       location: activity.location || "",
       labName: activity.labName || "",
@@ -385,9 +391,9 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
   };
 
   const handleSaveDraft = async () => {
-    const isFdpParticipant = form.activityCategory === "FDP" && form.activityType === "FDP Participant";
-    const basicFieldsValid = isFdpParticipant
-      ? (form.academicYear && form.activityCategory && form.activityType && form.courseFdpName && form.eventStartDate && form.eventEndDate)
+    const isCourseParticipant = isCourseParticipantActivity(form.activityCategory, form.activityType);
+    const basicFieldsValid = isCourseParticipant
+      ? (form.academicYear && form.activityCategory && form.activityType && form.courseName && form.eventStartDate && form.eventEndDate)
       : (form.academicYear && form.activityCategory && form.activityType && form.organizationName && form.eventStartDate && form.eventEndDate);
 
     if (!basicFieldsValid) {
@@ -410,7 +416,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
       }
     }
 
-    if (isFdpParticipant) {
+    if (isCourseParticipant) {
       if (!form.organizingInstitutionCategory) {
         toast.error("Organizing Institution Category is required");
         return;
@@ -527,11 +533,11 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
       }
       fd.append("remarks", form.remarks || "");
 
-      if (isFdpParticipant) {
-        fd.append("courseFdpName", form.courseFdpName);
+      if (isCourseParticipant) {
+        fd.append("courseName", form.courseName);
         fd.append("organizingInstitutionCategory", form.organizingInstitutionCategory);
         fd.append("location", form.location);
-        fd.append("organizationName", form.courseFdpName);
+        fd.append("organizationName", form.courseName);
         if (form.organizingInstitutionCategory === "MHRD R&D Lab") {
           fd.append("labName", form.labName);
         } else if (form.organizingInstitutionCategory === "Govt. University") {
@@ -749,7 +755,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
                       <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{activity.academicYear?.year || "N/A"}</TableCell>
                       <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{activity.activityCategory}</TableCell>
                       <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{activity.activityType}</TableCell>
-                      <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{activity.organizationName}</TableCell>
+                      <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{activity.courseName || activity.organizationName}</TableCell>
                       <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{fromDateFormatted} - {toDateFormatted}</TableCell>
                       <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
                         {(() => {
@@ -932,8 +938,8 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
                   color: "var(--text-secondary)",
                   fontWeight: 500
                 }}>
-                  {data.activityCategory === "FDP" && data.activityType === "FDP Participant"
-                    ? data.courseFdpName || data.organizationName
+                  {isCourseParticipantActivity(data.activityCategory, data.activityType)
+                    ? data.courseName || data.organizationName
                     : data.organizationName}
                 </Typography>
               </Box>
@@ -982,14 +988,14 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
                   <Typography sx={{ color: "#0f172a", fontWeight: 600, fontSize: "0.9rem" }}>{data.activityType}</Typography>
 
                   <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Organization / Event Name</Typography>
-                  <Typography sx={{ color: "#0f172a", fontWeight: 600, fontSize: "0.9rem" }}>
-                    {data.activityCategory === "FDP" && data.activityType === "FDP Participant"
-                      ? data.courseFdpName || data.organizationName
+                  <Typography sx={{ color: "#0f172a",fontWeight: 600, fontSize: "0.9rem" }}>
+                    {isCourseParticipantActivity(data.activityCategory, data.activityType)
+                      ? data.courseName || data.organizationName
                       : data.organizationName}
                   </Typography>
 
-                  {/* FDP organizing category or location details */}
-                  {data.activityCategory === "FDP" && data.activityType === "FDP Participant" && (
+                  {/* Course organizing category or location details */}
+                  {isCourseParticipantActivity(data.activityCategory, data.activityType) && (
                     <>
                       <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Organizing Institution Category</Typography>
                       <Typography sx={{ color: "#0f172a", fontWeight: 600, fontSize: "0.9rem" }}>{data.organizingInstitutionCategory || "N/A"}</Typography>
@@ -1277,23 +1283,50 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
         </Box>
         <Grid2>
 
-          <Box>
-            <Typography sx={labelStyle}>Activity Category: *</Typography>
-            <Select
-              size="small"
-              fullWidth
-              displayEmpty
-              value={form.activityCategory}
-              onChange={handleCategoryChange}
-              onClose={blurActiveElement}
-              MenuProps={selectMenuProps}
-            >
-              <MenuItem value="" disabled>--Select Category--</MenuItem>
-              {ACTIVITY_CATEGORIES.map(cat => (
-                <MenuItem key={cat} value={cat}>{cat}</MenuItem>
-              ))}
-            </Select>
-          </Box>
+        {isCourseParticipantActivity(form.activityCategory, form.activityType) ? (
+          <>
+            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+              <Typography sx={labelStyle}>Course Name: *</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                value={form.courseName}
+                onChange={setVal("courseName")}
+                placeholder="Enter Course Name"
+              />
+            </Box>
+
+            <Box>
+              <Typography sx={labelStyle}>Organizing Institution Category: *</Typography>
+              <Select
+                size="small"
+                fullWidth
+                displayEmpty
+                value={form.organizingInstitutionCategory}
+                onChange={setVal("organizingInstitutionCategory")}
+                onClose={blurActiveElement}
+                MenuProps={selectMenuProps}
+              >
+                <MenuItem value="" disabled>--Select Category--</MenuItem>
+                {[
+                  "UGC",
+                  "AICTE",
+                  "IIT",
+                  "IIM",
+                  "NIT",
+                  "MHRD R&D Lab",
+                  "NITTTR",
+                  "NIPER",
+                  "ICMR",
+                  "Govt. University",
+                  "NIRF Ranked Institute (Below 200)",
+                  "NPTEL",
+                  "Other / Host Institute"
+                ].map(opt => (
+                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                ))}
+              </Select>
+            </Box>
 
           <Box>
             <Typography sx={labelStyle}>Activity Role / Type: *</Typography>

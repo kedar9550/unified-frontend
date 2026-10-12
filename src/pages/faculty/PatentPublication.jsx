@@ -402,12 +402,14 @@ export default function PatentPublication() {
       fd.append("publishedexpectedamount", (applyIncentive === "Yes" && form.status === "Published") ? expectedAmt : "");
       fd.append("publishedincentiveamount", form.publishedincentiveamount);
       fd.append("publisheddate", form.publisheddate);
+      fd.append("dateOfPublished", form.publisheddate);
       fd.append("publishedinsentiveappllieddate", form.publishedinsentiveappllieddate);
       
       fd.append("grantedstatus", form.grantedstatus);
       fd.append("grantedexpectedamount", (applyIncentive === "Yes" && form.status === "Granted") ? expectedAmt : "");
       fd.append("grantedincentiveamount", form.grantedincentiveamount);
       fd.append("granteddate", form.granteddate);
+      fd.append("dateOfGranted", form.granteddate);
       fd.append("grantedinsentiveappllieddate", form.grantedinsentiveappllieddate);
 
       Object.entries(files).forEach(([k, v]) => { if (v) fd.append(k, v); });
@@ -578,7 +580,7 @@ export default function PatentPublication() {
                               textOverflow: "ellipsis"
                             }}
                           >
-                            <span>ð¬</span> "{pub.rndComment || pub.hodComment}"
+                            <span>💬</span> "{pub.rndComment || pub.hodComment}"
                           </Typography>
                         </Tooltip>
                       )}
@@ -1018,6 +1020,7 @@ export default function PatentPublication() {
         <FileField
           label="Certificate of Basic Registration (CBR):"
           name="cbr"
+          file={files.cbr}
           onChange={setFile("cbr")}
           existingFileUrl={existingFiles.cbr}
           onRemoveExisting={() => {
@@ -1028,6 +1031,7 @@ export default function PatentPublication() {
         <FileField
           label="Form -1"
           name="form1"
+          file={files.form1}
           onChange={setFile("form1")}
           existingFileUrl={existingFiles.form1}
           onRemoveExisting={() => {
@@ -1039,6 +1043,7 @@ export default function PatentPublication() {
           <FileField
             label="Granted Certificate"
             name="grantedCertificate"
+            file={files.grantedCertificate}
             onChange={setFile("grantedCertificate")}
             existingFileUrl={existingFiles.grantedCertificate}
             onRemoveExisting={() => {

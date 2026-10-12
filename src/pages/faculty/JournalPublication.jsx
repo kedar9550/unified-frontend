@@ -1294,6 +1294,7 @@ export default function JournalPublication() {
       setEditJournalId(null);
       setSelectedYear("");
       setViewMode("select-year");
+      setDoiPromptOpen(true);
     } else {
       setNoActiveYearAlertOpen(true);
     }
@@ -1500,6 +1501,14 @@ export default function JournalPublication() {
     return (
       <Box sx={{ maxWidth: 500, mx: "auto", mt: 5 }}>
         <FormCard title="Select Academic Year">
+          <Box sx={{ mb: 2, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+            <Typography sx={{ color: "var(--text-secondary)", fontWeight: 500, fontSize: "0.9rem" }}>
+              DOI Mode: <strong style={{ color: isNoDoiMode ? "#ea580c" : "var(--color-primary)" }}>{isNoDoiMode ? "Manual Entry (Without DOI)" : "With DOI"}</strong>
+            </Typography>
+            <Button size="small" onClick={() => setDoiPromptOpen(true)} sx={{ textTransform: "none", fontSize: "0.8rem", fontWeight: 700, color: "var(--color-primary)" }}>
+              Change
+            </Button>
+          </Box>
           <Typography sx={{ mb: 2, color: "var(--text-secondary)", fontWeight: 500 }}>Please select the academic year for this publication submission:</Typography>
           <Select
             fullWidth
@@ -1521,8 +1530,8 @@ export default function JournalPublication() {
             {filteredYears.map(y => <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>)}
           </Select>
           <Box sx={{ display: "flex", gap: 2, mt: 4, justifyContent: "flex-end" }}>
-            <Button variant="outlined" onClick={() => setViewMode("list")} sx={{ textTransform: "none", fontWeight: 600, color: "var(--text-primary)", borderColor: "var(--border-color)", "&:hover": { borderColor: "var(--color-primary)", background: "rgba(0,0,0,0.02)" } }}>Cancel</Button>
-            <Button variant="contained" disabled={!selectedYear} onClick={() => setDoiPromptOpen(true)} sx={{ background: "var(--gradient-primary)", px: 4, fontWeight: 700, textTransform: "none", "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }, "&.Mui-disabled": { background: "var(--bg-panel)", color: "var(--text-secondary)", opacity: 0.5 }, transition: "all 0.2s ease" }}>Proceed</Button>
+            <Button variant="outlined" onClick={() => { setViewMode("list"); setIsNoDoiMode(false); }} sx={{ textTransform: "none", fontWeight: 600, color: "var(--text-primary)", borderColor: "var(--border-color)", "&:hover": { borderColor: "var(--color-primary)", background: "rgba(0,0,0,0.02)" } }}>Cancel</Button>
+            <Button variant="contained" disabled={!selectedYear} onClick={() => setViewMode("form")} sx={{ background: "var(--gradient-primary)", px: 4, fontWeight: 700, textTransform: "none", "&:hover": { opacity: 0.9, transform: "translateY(-1px)", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }, "&.Mui-disabled": { background: "var(--bg-panel)", color: "var(--text-secondary)", opacity: 0.5 }, transition: "all 0.2s ease" }}>Proceed</Button>
           </Box>
         </FormCard>
       </Box>
@@ -2863,8 +2872,18 @@ export default function JournalPublication() {
         <DialogActions sx={{ p: 2 }}>
           <Button
             onClick={() => {
+              const dummyDoi = `NODOI-AUS-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
               setIsNoDoiMode(true);
-              setViewMode("form");
+              setEditJournalId(null);
+              setDoiFetched(false);
+              setDoiFetchedFields({});
+              setForm({
+                ...emptyForm,
+                doi: dummyDoi,
+                isNoDoi: "Yes"
+              });
+              setFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
+              setExistingFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
               setDoiPromptOpen(false);
             }}
             sx={{ fontWeight: 700, textTransform: "none" }}
@@ -2876,7 +2895,12 @@ export default function JournalPublication() {
             variant="contained"
             onClick={() => {
               setIsNoDoiMode(false);
-              setViewMode("form");
+              setEditJournalId(null);
+              setDoiFetched(false);
+              setDoiFetchedFields({});
+              setForm(emptyForm);
+              setFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
+              setExistingFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
               setDoiPromptOpen(false);
             }}
             sx={{ background: "var(--gradient-primary)", fontWeight: 700, textTransform: "none" }}

@@ -1039,7 +1039,7 @@ export default function Contribution() {
                 Submit All Drafts
               </Button>
             )}
-            {/* <Button
+            <Button
               variant="contained"
               startIcon={<AddCircle />}
               onClick={handleOpenAddModal}
@@ -1054,7 +1054,7 @@ export default function Contribution() {
               }}
             >
               Add Contribution
-            </Button> */}
+            </Button>
           </Box>
         </Box>
 
