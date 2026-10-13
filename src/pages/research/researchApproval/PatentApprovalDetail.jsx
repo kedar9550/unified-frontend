@@ -554,7 +554,26 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                                 value: data.approvedAmount ? `₹${Number(data.approvedAmount).toLocaleString('en-IN')}` : "-", 
                                 editable: true, 
                                 type: "number" 
-                            }
+                            },
+                            ...(data.published?.status ? [{
+                                key: "publishedAppraisalClaimant",
+                                label: "Published Appraisal Claimant",
+                                value: data.published?.appraisalClaimant || "-",
+                                editable: false
+                            }] : []),
+                            ...(data.patentStatus === 'Granted' ? [{
+                                key: "grantedAppraisalClaimant",
+                                label: "Granted Appraisal Claimant",
+                                value: data.granted?.appraisalClaimant || (data.patentStatus === 'Granted' && data.status === 'Approved' ? data.appraisalClaimant : null) || "-",
+                                editable: false
+                            }] : [
+                                {
+                                    key: "appraisalClaimant",
+                                    label: "Appraisal Claimant",
+                                    value: data.appraisalClaimant || "-",
+                                    editable: false
+                                }
+                            ])
                         ].map((item, idx, arr) => (
                             <Box key={idx} sx={{
                                 display: "flex",
@@ -742,6 +761,11 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                                 {(data.published?.publishedincentiveamount || data.published?.approvedAmount) && (
                                     <Typography variant="body2" sx={{ fontWeight: 800, color: "#10b981" }}>
                                         Approved Incentive: ₹{data.published.publishedincentiveamount || data.published.approvedAmount}
+                                    </Typography>
+                                )}
+                                {data.published?.appraisalClaimant && (
+                                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                                        Appraisal Claimant: {data.published.appraisalClaimant}
                                     </Typography>
                                 )}
                             </Box>
