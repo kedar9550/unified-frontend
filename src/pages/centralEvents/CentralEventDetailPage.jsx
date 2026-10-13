@@ -24,9 +24,11 @@ import {
   LocationOn as LocationIcon,
   People as PeopleIcon,
   Close as CloseIcon,
-  QrCode2 as QrIcon
+  QrCode2 as QrIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
 import { getCentralEventBySlug, registerCentralEvent } from '../../api/centralEventsApi';
 import { PageHeader } from '../../components/common';
@@ -157,6 +159,10 @@ export default function CentralEventDetailPage() {
   const isDeadlinePassed = new Date() > new Date(event.schedule?.regDeadline);
   const isFull = event.registrationCount >= event.capacity;
 
+  const { user, activeRole } = useAuth();
+  const userRoles = (user?.roles || []).map(r => (typeof r === 'string' ? r : (r.role?.key || r.role?.name || r.role || '')).toUpperCase());
+  const isGlobalAdmin = userRoles.includes('GLOBAL_EVENT_ADMIN') || userRoles.includes('SUPER_ADMIN') || activeRole?.toUpperCase() === 'GLOBAL_EVENT_ADMIN';
+
   return (
     <PageContainer maxWidth="lg" px={3} py={3}>
       {/* Standard Page Header */}
@@ -166,6 +172,18 @@ export default function CentralEventDetailPage() {
         icon={<EventIcon />}
         showBack
         backPath="/central-events"
+        action={
+          isGlobalAdmin && (
+            <Button
+              variant="contained"
+              startIcon={<EditIcon />}
+              onClick={() => navigate(`/central-events/edit/${event.slug || event._id}`)}
+              sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600 }}
+            >
+              Edit Event
+            </Button>
+          )
+        }
       />
 
       {/* Main Banner Card */}

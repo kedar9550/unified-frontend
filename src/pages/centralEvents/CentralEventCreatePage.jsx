@@ -38,9 +38,18 @@ import {
   Badge as BadgeIcon,
   Person as PersonIcon
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getEventTypes, getCategoriesByTypeCode, getOrganizers, createCentralEvent, uploadCentralEventFile } from '../../api/centralEventsApi';
+import {
+  getEventTypes,
+  getCategoriesByTypeCode,
+  getOrganizers,
+  createCentralEvent,
+  updateCentralEvent,
+  getCentralEventBySlug,
+  uploadCentralEventFile,
+  getAcademicYears
+} from '../../api/centralEventsApi';
 import { fetchEventDepartments } from '../../api/eventDepartmentApi';
 import API from '../../api/axios';
 import axios from 'axios';
@@ -63,8 +72,22 @@ const getImageUrl = (img) => {
   return `${BACKEND_URL}${pathStr.startsWith('/') ? '' : '/'}${pathStr}`;
 };
 
+const toLocalISOString = (dateInput) => {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  const tzOffset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - tzOffset).toISOString().slice(0, 16);
+};
+
 export default function CentralEventCreatePage() {
   const navigate = useNavigate();
+  const { slug: routeSlug } = useParams();
+  const [searchParams] = useSearchParams();
+  const editSlug = routeSlug || searchParams.get('slug') || searchParams.get('editId') || searchParams.get('id');
+  const isEditMode = Boolean(editSlug);
+  const [editingEventId, setEditingEventId] = useState(null);
+
   const { user, activeRole } = useAuth();
 
   const userRoles = (user?.roles || []).map(r => (typeof r === 'string' ? r : (r.role?.key || r.role?.name || r.role || '')).toUpperCase());
@@ -75,6 +98,10 @@ export default function CentralEventCreatePage() {
   const [organizers, setOrganizers] = useState([]);
   const [loadingTypes, setLoadingTypes] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  // Academic Year State
+  const [academicYears, setAcademicYears] = useState([]);
+  const [academicYear, setAcademicYear] = useState('');
 
   // Department State
   const [departments, setDepartments] = useState([]);
@@ -210,19 +237,20 @@ export default function CentralEventCreatePage() {
     { key: 'types', label: 'Event Types', icon: <CategoryIcon />, path: '/central-events/types' },
     { key: 'categories', label: 'Event Categories', icon: <FolderIcon />, path: '/central-events/categories' },
     { key: 'subcategories', label: 'Event Subcategories', icon: <FolderIcon />, path: '/central-events/subcategories' },
-    ...(isGlobalAdmin ? [{ key: 'create', label: 'Create Event', icon: <AddIcon />, path: '/central-events/create' }] : [])
+    ...(isGlobalAdmin ? [{ key: 'create', label: isEditMode ? 'Edit Event' : 'Create Event', icon: isEditMode ? <EventIcon /> : <AddIcon />, path: isEditMode ? `/central-events/edit/${editSlug}` : '/central-events/create' }] : [])
   ];
 
   useEffect(() => {
     const fetchMasterData = async () => {
       try {
-        const [typesRes, orgsRes, bRes, fRes, gRes, dRes] = await Promise.allSettled([
+        const [typesRes, orgsRes, bRes, fRes, gRes, dRes, ayRes] = await Promise.allSettled([
           getEventTypes(),
           getOrganizers(),
           API.get('/api/infrastructure/buildings'),
           API.get('/api/infrastructure/floors'),
           API.get('/api/infrastructure/grounds'),
-          fetchEventDepartments()
+          fetchEventDepartments(),
+          getAcademicYears()
         ]);
         if (typesRes.status === 'fulfilled' && typesRes.value?.success) setTypes(typesRes.value.data);
         if (orgsRes.status === 'fulfilled' && orgsRes.value?.success) setOrganizers(orgsRes.value.data);
@@ -239,6 +267,16 @@ export default function CentralEventCreatePage() {
           const depts = dRes.value.data?.departments || dRes.value.data?.data || [];
           setDepartmentsList(depts.filter((d) => d.status === 'Active' || !d.status));
         }
+        if (ayRes.status === 'fulfilled') {
+          const ayList = ayRes.value?.years || ayRes.value?.data || ayRes.value || [];
+          if (Array.isArray(ayList)) {
+            setAcademicYears(ayList);
+            const activeAY = ayList.find((ay) => ay.active)?.year || ayList[0]?.year || '';
+            if (activeAY) {
+              setAcademicYear((prev) => prev || activeAY);
+            }
+          }
+        }
       } catch (err) {
         toast.error('Failed to load form metadata');
       } finally {
@@ -247,6 +285,91 @@ export default function CentralEventCreatePage() {
     };
     fetchMasterData();
   }, []);
+
+  // Fetch event details if in Edit Mode
+  useEffect(() => {
+    if (!editSlug) return;
+    const fetchEventForEdit = async () => {
+      try {
+        const res = await getCentralEventBySlug(editSlug);
+        if (res.success && res.data) {
+          const ev = res.data;
+          setEditingEventId(ev._id);
+          setTitle(ev.title || '');
+          setDescription(ev.description || '');
+          if (ev.academicYear) setAcademicYear(ev.academicYear);
+          if (ev.typeCode) {
+            setTypeCode(ev.typeCode);
+            try {
+              const catRes = await getCategoriesByTypeCode(ev.typeCode);
+              if (catRes.success && catRes.data) {
+                setCategories(catRes.data);
+              }
+            } catch (catErr) {
+              console.error('Failed to load categories for edit:', catErr);
+            }
+          }
+          if (ev.categoryId) {
+            setCategoryId(typeof ev.categoryId === 'object' ? ev.categoryId._id : ev.categoryId);
+          }
+          if (ev.level) setLevel(ev.level);
+          if (ev.activityType) setActivityType(ev.activityType);
+          if (ev.organizer?.organizerId) {
+            setOrganizerId(typeof ev.organizer.organizerId === 'object' ? ev.organizer.organizerId._id : ev.organizer.organizerId);
+          }
+          if (ev.mode) setMode(ev.mode);
+          if (ev.venue?.venueType) setVenueType(ev.venue.venueType);
+          if (ev.venue?.building) setBuildingId(typeof ev.venue.building === 'object' ? ev.venue.building._id : ev.venue.building);
+          if (ev.venue?.floor) setFloorId(typeof ev.venue.floor === 'object' ? ev.venue.floor._id : ev.venue.floor);
+          if (ev.venue?.ground) setGroundId(typeof ev.venue.ground === 'object' ? ev.venue.ground._id : ev.venue.ground);
+          if (ev.venue?.roomNo) setRoomNo(ev.venue.roomNo);
+          if (ev.venue?.link) setOnlineLink(ev.venue.link);
+          if (ev.venue?.venueType === 'Indoor' || ev.venue?.venueType === 'Outdoor') {
+            setVenueName('');
+          } else {
+            setVenueName(ev.venue?.name || '');
+          }
+          if (ev.department && Array.isArray(ev.department)) {
+            setDepartments(ev.department.map(d => typeof d === 'object' ? d._id : d));
+          }
+          if (ev.fee?.amount !== undefined) setFeeRupees((ev.fee.amount / 100).toString());
+          if (ev.capacity !== undefined) setCapacity(ev.capacity.toString());
+          if (ev.schedule?.fromDate) setFromDate(toLocalISOString(ev.schedule.fromDate));
+          if (ev.schedule?.toDate) setToDate(toLocalISOString(ev.schedule.toDate));
+          if (ev.schedule?.regDeadline) setRegDeadline(toLocalISOString(ev.schedule.regDeadline));
+          if (ev.participation?.type) setParticipationType(ev.participation.type);
+          if (ev.participation?.minTeamSize !== undefined) setMinTeamSize(ev.participation.minTeamSize.toString());
+          if (ev.participation?.maxTeamSize !== undefined) setMaxTeamSize(ev.participation.maxTeamSize.toString());
+          if (Array.isArray(ev.rules) && ev.rules.length > 0) setRules(ev.rules);
+          if (ev.banner) setBanner(ev.banner);
+          if (ev.coordinators?.faculty && Array.isArray(ev.coordinators.faculty)) {
+            setSelectedFacultyCoordinators(ev.coordinators.faculty);
+          }
+          if (ev.coordinators?.student && Array.isArray(ev.coordinators.student)) {
+            setStudentCoordinators(ev.coordinators.student);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching event for edit:', err);
+        toast.error('Failed to load event details for editing');
+      }
+    };
+    fetchEventForEdit();
+  }, [editSlug]);
+
+  useEffect(() => {
+    if (types.length && typeCode && (!selectedTypeObj || !selectedTypeObj.name)) {
+      const tObj = types.find((t) => t.code === typeCode);
+      if (tObj) {
+        setSelectedTypeObj(tObj);
+        if (tObj.hasCategories && categories.length === 0) {
+          getCategoriesByTypeCode(typeCode).then(res => {
+            if (res.success) setCategories(res.data);
+          }).catch(() => {});
+        }
+      }
+    }
+  }, [types, typeCode, selectedTypeObj, categories.length]);
 
   const handleTypeChange = async (code) => {
     setTypeCode(code);
@@ -358,7 +481,7 @@ export default function CentralEventCreatePage() {
 
     setUploadingBanner(true);
     try {
-      const targetAy = categories.find((c) => c._id === categoryId)?.academicYear || '';
+      const targetAy = academicYear || categories.find((c) => c._id === categoryId)?.academicYear || '';
       const res = await uploadCentralEventFile(file, { folderType: 'events', academicYear: targetAy });
       if (res.success) {
         setBanner(res.data);
@@ -397,7 +520,7 @@ export default function CentralEventCreatePage() {
 
     try {
       const parsedRules = rules.map((r) => r.trim()).filter(Boolean);
-      const targetAy = categories.find((c) => c._id === categoryId)?.academicYear || '';
+      const targetAy = academicYear || categories.find((c) => c._id === categoryId)?.academicYear || '';
 
       // Construct structured venue name and payload
       let finalVenueName = venueName;
@@ -405,11 +528,13 @@ export default function CentralEventCreatePage() {
         if (venueType === 'Indoor') {
           const bName = buildingsList.find((b) => b._id === buildingId)?.name || '';
           const fName = floorsList.find((f) => f._id === floorId)?.name || '';
-          const parts = [bName, fName, roomNo ? `Room: ${roomNo}` : '', venueName].filter(Boolean);
+          const customDetail = (venueName && !venueName.includes(bName) && !venueName.includes(fName)) ? venueName : '';
+          const parts = [bName, fName, roomNo ? `Room: ${roomNo}` : '', customDetail].filter(Boolean);
           finalVenueName = parts.join(' - ');
         } else if (venueType === 'Outdoor') {
           const gName = groundsList.find((g) => g._id === groundId)?.name || '';
-          const parts = [gName, venueName].filter(Boolean);
+          const customDetail = (venueName && !venueName.includes(gName)) ? venueName : '';
+          const parts = [gName, customDetail].filter(Boolean);
           finalVenueName = parts.join(' - ');
         }
       }
@@ -438,9 +563,9 @@ export default function CentralEventCreatePage() {
         },
         capacity: parseInt(capacity || '100', 10),
         schedule: {
-          fromDate,
-          toDate,
-          regDeadline
+          fromDate: new Date(fromDate).toISOString(),
+          toDate: new Date(toDate).toISOString(),
+          regDeadline: new Date(regDeadline).toISOString()
         },
         participation: {
           type: participationType,
@@ -484,13 +609,21 @@ export default function CentralEventCreatePage() {
         payload.organizer = { organizerId };
       }
 
-      const res = await createCentralEvent(payload);
-      if (res.success) {
-        toast.success('Central Event created successfully (DRAFT)');
-        navigate(`/central-events/${res.data.slug}`);
+      if (isEditMode && editingEventId) {
+        const res = await updateCentralEvent(editingEventId, payload);
+        if (res.success) {
+          toast.success('Central Event updated successfully!');
+          navigate('/central-events');
+        }
+      } else {
+        const res = await createCentralEvent(payload);
+        if (res.success) {
+          toast.success('Central Event created successfully (DRAFT)');
+          navigate(`/central-events/${res.data.slug}`);
+        }
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to create central event');
+      toast.error(err.response?.data?.message || 'Failed to save central event');
     } finally {
       setSubmitting(false);
     }
@@ -508,8 +641,8 @@ export default function CentralEventCreatePage() {
     <PageContainer maxWidth="lg" px={3} py={3}>
       {/* Standard Page Header */}
       <PageHeader
-        title="Create New Central Event"
-        subtitle="Configure event hierarchy, target levels, schedule timelines, participation rules, and fee parameters."
+        title={isEditMode ? "Edit Central Event" : "Create New Central Event"}
+        subtitle={isEditMode ? "Update event details, academic year, schedule timelines, and participation parameters." : "Configure event hierarchy, target levels, schedule timelines, participation rules, and fee parameters."}
         icon={<EventIcon />}
         showBack
         backPath="/central-events"
@@ -529,8 +662,28 @@ export default function CentralEventCreatePage() {
               </Box>
 
               <Grid container spacing={3}>
+                {/* Academic Year */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <FormControl fullWidth required>
+                    <InputLabel id="academic-year-label">Academic Year</InputLabel>
+                    <Select
+                      labelId="academic-year-label"
+                      value={academicYear}
+                      label="Academic Year"
+                      onChange={(e) => setAcademicYear(e.target.value)}
+                      sx={{ borderRadius: '12px' }}
+                    >
+                      {academicYears.map((ay) => (
+                        <MenuItem key={ay._id || ay.year} value={ay.year}>
+                          {ay.year} {ay.active ? '(Active)' : ''}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+
                 {/* Event Type */}
-                <Grid size={{ xs: 12, md: isDepartmentalOrUniversity ? 6 : (selectedTypeObj?.hasCategories ? 6 : 12) }}>
+                <Grid size={{ xs: 12, md: 6 }}>
                   <FormControl fullWidth required>
                     <InputLabel id="event-type-label">Event Type</InputLabel>
                     <Select
@@ -1424,7 +1577,7 @@ export default function CentralEventCreatePage() {
                     <Grid size={{ xs: 12 }}>
                       <Box>
                         <Typography variant="subtitle1" fontWeight={600} color="text.primary" sx={{ mb: 2 }}>
-                          Rules (Enter the regulation in form of points.)
+                          Rules & Guidelines (Add points / regulations for participants)
                         </Typography>
 
                         <Stack spacing={2}>
@@ -1440,7 +1593,7 @@ export default function CentralEventCreatePage() {
                             >
                               <TextField
                                 fullWidth
-                                placeholder={`Regulation ${index + 1}`}
+                                placeholder={`Rule / Regulation ${index + 1}`}
                                 value={rule}
                                 onChange={(e) => handleRuleChange(index, e.target.value)}
                                 slotProps={{
@@ -1472,6 +1625,7 @@ export default function CentralEventCreatePage() {
                         <Box sx={{ mt: 2.5 }}>
                           <Button
                             variant="contained"
+                            startIcon={<AddIcon />}
                             onClick={addRule}
                             sx={{
                               bgcolor: '#0a192f',
@@ -1485,7 +1639,7 @@ export default function CentralEventCreatePage() {
                               boxShadow: '0 2px 8px rgba(10, 25, 47, 0.25)'
                             }}
                           >
-                            Add Regulation
+                            Add Rule / Regulation
                           </Button>
                         </Box>
                       </Box>
@@ -1561,7 +1715,7 @@ export default function CentralEventCreatePage() {
                     boxShadow: '0 8px 20px -4px rgba(37, 99, 235, 0.4)'
                   }}
                 >
-                  {submitting ? <CircularProgress size={24} color="inherit" /> : 'Create Event'}
+                  {submitting ? <CircularProgress size={24} color="inherit" /> : (isEditMode ? 'Update Central Event' : 'Create Central Event')}
                 </Button>
               </Box>
             </>

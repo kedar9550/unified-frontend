@@ -37,7 +37,8 @@ import {
   ChevronLeft,
   ChevronRight,
   EventAvailable,
-  Category
+  Category,
+  Settings
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { ROLE_ROUTES } from "../../config/rolesNav";
@@ -164,6 +165,7 @@ const ITEM_METADATA = {
   "Events": { color: "rgba(234, 179, 8, 0.12)", iconColor: "#eab308", icon: <AccountBalance /> },
   "Payments": { color: "rgba(124, 58, 237, 0.12)", iconColor: "#7c3aed", icon: <AccountBalance /> },
   "VEDA EVENT ": { color: "rgba(236, 72, 153, 0.12)", iconColor: "#ec4899", icon: <SupportAgent /> },
+  "Configuration": { color: "rgba(99, 102, 241, 0.12)", iconColor: "#6366f1", icon: <Settings /> },
 };
 
 const isItemOrDescendantActive = (item, activePath) => {

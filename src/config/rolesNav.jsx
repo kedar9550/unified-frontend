@@ -54,6 +54,17 @@ export const ROLE_ROUTES = {
       text: "Central Events",
       icon: <EventAvailable />,
       nested: [
+        { text: "Event Types", path: "/central-events/types", icon: <Category /> },
+        { text: "Event Categories", path: "/central-events/categories", icon: <Category /> },
+        { text: "Event Subcategories", path: "/central-events/subcategories", icon: <Category /> },
+        { text: "All Central Events", path: "/central-events", icon: <EventAvailable /> },
+        { text: "Activities", path: "/central-events/activities", icon: <ListAlt /> },
+      ]
+    },
+    {
+      text: "Configuration",
+      icon: <Settings />,
+      nested: [
         { text: "Organisation Committee", path: "/central-events/organisation-committee", icon: <Groups /> },
         { text: "Departments", path: "/central-events/departments", icon: <AccountTree /> },
         {
@@ -65,11 +76,6 @@ export const ROLE_ROUTES = {
             { text: "Grounds for outdoor", path: "/infrastructure/grounds", icon: <AccountBalance /> }
           ]
         },
-        { text: "Event Types", path: "/central-events/types", icon: <Category /> },
-        { text: "Event Categories", path: "/central-events/categories", icon: <Category /> },
-        { text: "Event Subcategories", path: "/central-events/subcategories", icon: <Category /> },
-        { text: "All Central Events", path: "/central-events", icon: <EventAvailable /> },
-        { text: "Activities", path: "/central-events/activities", icon: <ListAlt /> },
       ]
     },
   ],

@@ -529,8 +529,14 @@ body.dark-mode .MuiChip-outlined {
 
 [data-sonner-toast][data-type="warning"] {
   background-color: #FFFBEB !important;
-  color: #92400e !important;
+  color: #d97706 !important;
   border-color: #f59e0b33 !important;
+}
+
+[data-sonner-toast][data-type="warning"] [data-title],
+[data-sonner-toast][data-type="warning"] [data-description] {
+  color: #d97706 !important;
+  font-weight: 500 !important;
 }
 
 [data-sonner-toast][data-type="info"] {

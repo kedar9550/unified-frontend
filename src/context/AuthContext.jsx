@@ -58,8 +58,8 @@ export const AuthProvider = ({ children }) => {
 
     try {
       // Send fcmToken in logout requests to disassociate & remove Firebase ID from DB
-      await API.post("/api/employees/logout", { fcmToken }).catch(() => {});
-      await API.post("/api/campus-service-request/auth/logout", { fcmToken }).catch(() => {});
+      await API.post("/api/employees/logout", { fcmToken }).catch(() => { });
+      await API.post("/api/campus-service-request/auth/logout", { fcmToken }).catch(() => { });
     } catch (e) {
       console.error("Logout err", e);
     }
@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }) => {
     delete API.defaults.headers.common["Authorization"];
 
     if (reason === "inactivity") {
-      toast.error("Session expired due to 30 minutes of inactivity. Please sign in again.");
+      toast.warning("Session expired due to 30 minutes of inactivity. Please sign in again.");
     }
   };
 
@@ -181,7 +181,7 @@ export const AuthProvider = ({ children }) => {
       let fcmToken = localStorage.getItem("fcmToken") || null;
       if (!fcmToken) {
         try {
-          const timeoutPromise = new Promise((_, reject) => 
+          const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error("FCM token timeout")), 1000)
           );
           fcmToken = await Promise.race([requestForToken(), timeoutPromise]);
@@ -196,14 +196,14 @@ export const AuthProvider = ({ children }) => {
       // Non-blocking background cleanup for previous student session
       const prevStudentToken = localStorage.getItem("campus_student_token");
       if (prevStudentToken || fcmToken) {
-        API.post("/api/campus-service-request/auth/logout", { fcmToken }, { skipGlobalLoader: true }).catch(() => {});
+        API.post("/api/campus-service-request/auth/logout", { fcmToken }, { skipGlobalLoader: true }).catch(() => { });
       }
       localStorage.removeItem("campus_student_token");
       localStorage.removeItem("campus_student_profile");
 
       // Append app context to login details as required by backend
       const payload = { ...formData, app: "UNIFIED_SYSTEM", fcmToken };
-      const res = await API.post("/api/employees/login", payload); 
+      const res = await API.post("/api/employees/login", payload);
 
       const token = res.data.token;
       if (token) {

@@ -420,6 +420,8 @@ function App() {
         <Route path="/central-events/activities" element={<ProtectedRoute element={<CentralActivitiesPage />} />} />
         <Route path="/central-events" element={<ProtectedRoute element={<CentralEventsListPage />} />} />
         <Route path="/central-events/create" element={<ProtectedRoute element={<CentralEventCreatePage />} />} />
+        <Route path="/central-events/edit/:slug" element={<ProtectedRoute element={<CentralEventCreatePage />} />} />
+        <Route path="/central-events/edit" element={<ProtectedRoute element={<CentralEventCreatePage />} />} />
         <Route path="/central-events/:slug" element={<ProtectedRoute element={<CentralEventDetailPage />} />} />
         <Route path="/pay/:token" element={<ProtectedRoute element={<PaymentCheckoutPage />} />} />
 

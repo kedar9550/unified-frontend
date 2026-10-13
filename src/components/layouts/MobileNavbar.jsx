@@ -44,7 +44,8 @@ import {
     EventAvailable,
     SupportAgent,
     Build,
-    Group as GroupIcon
+    Group as GroupIcon,
+    Settings
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { ROLE_ROUTES } from "../../config/rolesNav";
@@ -112,7 +113,8 @@ const SUB_ITEM_METADATA = {
     "Participants": { desc: "Manage event attendees and accommodation", icon: <Groups />, color: "#F0FDF4", iconColor: "#15803D" },
     "Events": { desc: "Manage events and coordinators", icon: <EventAvailable />, color: "#EFF6FF", iconColor: "#2563EB" },
     "Schools": { desc: "Manage participating schools and coordinators", icon: <School />, color: "#FFF7ED", iconColor: "#C2410C" },
-    "Infrastructure": { desc: "Manage campus venues, buildings and grounds", icon: <AccountBalance />, color: "#F1F5F9", iconColor: "#475569" }
+    "Infrastructure": { desc: "Manage campus venues, buildings and grounds", icon: <AccountBalance />, color: "#F1F5F9", iconColor: "#475569" },
+    "Configuration": { desc: "Manage committees, departments and infrastructure", icon: <Settings />, color: "#EEF2FF", iconColor: "#6366F1" }
 };
 
 const isItemActive = (item, currentPath) => {
