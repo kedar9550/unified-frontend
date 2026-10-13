@@ -276,9 +276,29 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                                     }} 
                                 />
                             )}
-                            <Chip label="Patent Application" sx={{ bgcolor: "rgba(22, 101, 52, 0.1)", color: "#2e7d32", fontWeight: 800, borderRadius: "8px", textTransform: "uppercase", fontSize: "0.65rem" }} />
+                            <Chip 
+                                label={Boolean(data.statusUpdatedToGranted || (data.patentStatus === 'Granted' && (data.published?.publishedstatus === 'yes' || data.published?.status === 'Approved'))) ? "Patent (Granted Update)" : "Patent Application"} 
+                                sx={{ 
+                                    bgcolor: Boolean(data.statusUpdatedToGranted || (data.patentStatus === 'Granted' && (data.published?.publishedstatus === 'yes' || data.published?.status === 'Approved'))) ? "rgba(124, 58, 237, 0.1)" : "rgba(22, 101, 52, 0.1)", 
+                                    color: Boolean(data.statusUpdatedToGranted || (data.patentStatus === 'Granted' && (data.published?.publishedstatus === 'yes' || data.published?.status === 'Approved'))) ? "#7c3aed" : "#2e7d32", 
+                                    fontWeight: 800, 
+                                    borderRadius: "8px", 
+                                    textTransform: "uppercase", 
+                                    fontSize: "0.65rem" 
+                                }} 
+                            />
                         </Box>
-                        <Typography variant="caption" sx={{ display: "block", mt: 1, color: "var(--text-secondary)", fontWeight: 700 }}>Submitted on {new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</Typography>
+                        {(() => {
+                            const isGrantedUpdate = Boolean(data.statusUpdatedToGranted || (data.patentStatus === 'Granted' && (data.published?.publishedstatus === 'yes' || data.published?.status === 'Approved')));
+                            const effectiveSubmittedDate = isGrantedUpdate
+                                ? (data.statusUpdatedDate || data.granted?.submittedDate || data.granted?.grantedinsentiveappllieddate || data.createdAt)
+                                : data.createdAt;
+                            return (
+                                <Typography variant="caption" sx={{ display: "block", mt: 1, color: "var(--text-secondary)", fontWeight: 700 }}>
+                                    Submitted on {new Date(effectiveSubmittedDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                </Typography>
+                            );
+                        })()}
                     </Box>
                 </Box>
 
@@ -287,10 +307,16 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                         <LabelValue label="Academic Year" value={data.academicYear?.year} />
                     </Box>
                     <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 23%" } }}>
-                        <LabelValue label="Reference ID" value={`PAT-${new Date(data.createdAt).getFullYear()}-${data._id.substring(data._id.length - 6).toUpperCase()}`} />
+                        <LabelValue label="Reference ID" value={`PAT-${new Date((data.statusUpdatedToGranted && (data.statusUpdatedDate || data.granted?.submittedDate || data.granted?.grantedinsentiveappllieddate)) || data.createdAt).getFullYear()}-${data._id.substring(data._id.length - 6).toUpperCase()}`} />
                     </Box>
                     <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 23%" } }}>
-                        <LabelValue label="Submission Date" value={new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} />
+                        <LabelValue 
+                            label="Submission Date" 
+                            value={new Date((data.statusUpdatedToGranted || (data.patentStatus === 'Granted' && (data.published?.publishedstatus === 'yes' || data.published?.status === 'Approved')))
+                                ? (data.statusUpdatedDate || data.granted?.submittedDate || data.granted?.grantedinsentiveappllieddate || data.createdAt)
+                                : data.createdAt
+                            ).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} 
+                        />
                     </Box>
                     <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 23%" } }}>
                         <Box sx={{ 
