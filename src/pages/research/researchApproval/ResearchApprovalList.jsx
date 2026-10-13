@@ -115,7 +115,7 @@ const ResearchApprovalList = ({ role }) => {
 
     const rows = data.map((item, index) => {
         const statusStyle = getStatusColor(item.status);
-        const submitDate = new Date(item.createdAt).toLocaleDateString("en-GB", {
+        const submitDate = new Date(item.submittedDate || item.createdAt).toLocaleDateString("en-GB", {
             day: "2-digit", month: "short", year: "numeric"
         });
 

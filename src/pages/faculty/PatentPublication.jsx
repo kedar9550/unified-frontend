@@ -1696,15 +1696,14 @@ export default function PatentPublication() {
                       return (cInst && cInst === acInst) || (cId && cId === acId);
                     });
 
-                    if (isApplicant && appraisalConfigActive && uniqueClaimants.length > 1) {
+                    if (isApplicant && appraisalConfigActive && uniqueClaimants.length > 1 && !claimantVal) {
                       return (
                         <Select
                           size="small"
-                          fullWidth
-                          value={currentClaimantObj ? (currentClaimantObj.institutionId || currentClaimantObj._id) : (claimantVal || "")}
+                          value=""
                           displayEmpty
                           onChange={(e) => handleResolveClaim(data._id, "Patent", e.target.value, stageName)}
-                          sx={{ backgroundColor: "var(--bg-paper)", fontSize: "0.875rem", minWidth: 160 }}
+                          sx={{ backgroundColor: "var(--bg-paper)", fontSize: "0.875rem", minWidth: 170 }}
                         >
                           <MenuItem value="" disabled>Select Claimant</MenuItem>
                           {uniqueClaimants.map(c => (
@@ -1718,7 +1717,7 @@ export default function PatentPublication() {
 
                     return (
                       <Typography variant="body2" sx={{ fontWeight: 800, color: currentClaimantObj ? "var(--text-primary)" : "#ed6c02" }}>
-                        {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
+                        {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : (claimantVal || "Not Yet Designated")}
                       </Typography>
                     );
                   };
