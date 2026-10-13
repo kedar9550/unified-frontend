@@ -467,7 +467,7 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                                 editable: false 
                             },
                             { key: "area", label: "Area of Patent", value: data.area || "-", editable: true, type: "text" },
-                            { key: "applicationNo", label: "Application / Filing No", value: data.applicationNo || data.filingNo || "-", editable: true, type: "text" },
+                            { key: "applicationNo", label: "Application No", value: data.applicationNo || data.filingNo || "-", editable: true, type: "text" },
                             { 
                                 key: "dateOfFiling", 
                                 label: "Date of Filing", 
