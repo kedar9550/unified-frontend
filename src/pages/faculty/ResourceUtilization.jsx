@@ -1579,6 +1579,8 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
               placeholder="Any additional remarks..."
             />
           </Box>
+        </>
+        ) : null}
         </Grid2>
 
         <NoteBox />
