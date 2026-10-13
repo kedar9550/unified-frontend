@@ -359,7 +359,7 @@ export default function ResearchReports() {
             ]);
             filename = `Conferences_Report_${yearName}.csv`;
         } else if (type === "patents") {
-            headers = ["S.No", "Emp Id", "Name of Faculty", "Dept", "PAN No", "Patent Title", "Filing No", "Academic Year", "Amount (Rs)", "Status", "Co-Inventors"];
+            headers = ["S.No", "Emp Id", "Name of Faculty", "Dept", "PAN No", "Patent Title", "Application No", "Patent Status", "Academic Year", "Amount (Rs)", "Status", "Co-Inventors"];
             rows = (data.patents || []).map((item, i) => [
                 i + 1,
                 item.empId,
@@ -367,7 +367,8 @@ export default function ResearchReports() {
                 item.dept,
                 item.panNo,
                 item.title,
-                item.filingNo,
+                item.applicationNo || item.filingNo || "N/A",
+                item.patentStatus || "N/A",
                 item.year,
                 item.amount,
                 item.status,
@@ -753,7 +754,8 @@ export default function ResearchReports() {
             "Serving Department",
             "PAN Number",
             "Patent Title",
-            "Filing No",
+            "Application No",
+            "Patent Status",
             "Academic Year",
             "Amount",
             "Status",
@@ -768,7 +770,8 @@ export default function ResearchReports() {
                 item.dept,
                 item.panNo,
                 item.title,
-                item.filingNo || "-",
+                item.applicationNo || item.filingNo || "-",
+                item.patentStatus || "-",
                 item.year,
                 item.amount || "-",
                 item.status,
@@ -1131,13 +1134,15 @@ export default function ResearchReports() {
     };
 
     const renderPatents = () => {
-        const columns = ["S.No", "Emp Id", "Faculty Name", "Dept", "Patent Title", "Academic Year", "Status", "Co-Inventors"];
+        const columns = ["S.No", "Emp Id", "Faculty Name", "Dept", "Patent Title", "Application No", "Patent Status", "Academic Year", "Status", "Co-Inventors"];
         const rows = (data.patents || []).map((item, i) => [
             i + 1,
             item.empId,
             item.facultyName,
             item.dept,
             item.title,
+            item.applicationNo || item.filingNo || "N/A",
+            item.patentStatus || "N/A",
             item.year,
             item.status,
             item.coAuthorsText || "N/A"

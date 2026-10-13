@@ -231,7 +231,7 @@ export default function RndPatentDataEntry() {
       return;
     }
     if (!/^[A-Za-z0-9\/.-]+$/.test(form.applicationNo)) {
-      toast.error("Patent Filing No can only contain letters, numbers, '/', '.', and '-'");
+      toast.error("Patent Application No can only contain letters, numbers, '/', '.', and '-'");
       return;
     }
     if (!form.patentFiledCountry) {

@@ -57,6 +57,7 @@ export default function PatentPublication() {
   const [editMode, setEditMode] = useState(false);
   const [editId, setEditId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [publishedDuplicateNotice, setPublishedDuplicateNotice] = useState(null);
 
   const [updateStatusExpanded, setUpdateStatusExpanded] = useState(false);
   const [statusUpdateForm, setStatusUpdateForm] = useState({ granteddate: "", eligibleForTechTransfer: "No" });
@@ -317,6 +318,27 @@ export default function PatentPublication() {
       return;
     }
 
+    // Check if patent already exists in published status in current user's list
+    if (!editMode) {
+      const trimmedTitle = (form.title || "").trim().toLowerCase();
+      const trimmedAppNo = (form.applicationNo || "").trim().toLowerCase();
+      const existingInList = (publicationsList || []).find(p => {
+        const pTitle = (p.title || "").trim().toLowerCase();
+        const pAppNo = (p.applicationNo || p.applicationnumber || "").trim().toLowerCase();
+        return (trimmedAppNo && pAppNo === trimmedAppNo) || (trimmedTitle && pTitle === trimmedTitle);
+      });
+
+      if (existingInList && (existingInList.patentStatus === "Published" || existingInList.status === "Published")) {
+        const msg = "This patent has already been submitted under the 'Published' category. If your patent has now been granted, you can update its status from your existing patent records.";
+        toast.error(msg, { duration: 8000 });
+        setPublishedDuplicateNotice({
+          message: msg,
+          existingRecord: existingInList
+        });
+        return;
+      }
+    }
+
     // Future date validation
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -438,7 +460,15 @@ export default function PatentPublication() {
       setSelectedYear("");
       setViewMode("list");
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Submission failed");
+      const resData = err?.response?.data;
+      const errorMsg = resData?.message || "Submission failed";
+      toast.error(errorMsg, { duration: 8000 });
+      if (resData?.isPublishedDuplicate || (errorMsg && errorMsg.includes("'Published' status"))) {
+        setPublishedDuplicateNotice({
+          message: errorMsg,
+          existingId: resData?.existingPatentId
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -1806,6 +1836,66 @@ export default function PatentPublication() {
         open={noActiveYearAlertOpen}
         onClose={() => setNoActiveYearAlertOpen(false)}
       />
+
+      {/* Dialog for Published Patent Duplicate Notification */}
+      <Dialog
+        open={Boolean(publishedDuplicateNotice)}
+        onClose={() => setPublishedDuplicateNotice(null)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: "16px", p: 1 }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: "#003b73", display: "flex", alignItems: "center", gap: 1.5, pb: 1 }}>
+          <Settings sx={{ color: "#003b73", fontSize: 28 }} /> Published Patent Already Exists
+        </DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Typography variant="body1" sx={{ color: "var(--text-primary)", mb: 2, fontWeight: 500 }}>
+            {publishedDuplicateNotice?.message || "This patent already exists in 'Published' status in the database. Rather than submitting a new publication, you can update its status to 'Granted' on the existing record."}
+          </Typography>
+          <Alert severity="info" variant="outlined" sx={{ borderRadius: "10px", bgcolor: "#f0f7ff", borderColor: "#bae6fd" }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: "#0369a1" }}>
+              To update your patent:
+            </Typography>
+            <Typography variant="caption" sx={{ color: "#0c4a6e", display: "block", mt: 0.5 }}>
+              1. Go to your Patents List.<br />
+              2. Find and open the published patent.<br />
+              3. Select <strong>"Update Patent Status"</strong> to enter the grant details.
+            </Typography>
+          </Alert>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 1, gap: 1 }}>
+          <Button
+            onClick={() => setPublishedDuplicateNotice(null)}
+            sx={{ textTransform: "none", color: "var(--text-secondary)", fontWeight: 600 }}
+          >
+            Stay on Form
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              const rec = publishedDuplicateNotice?.existingRecord;
+              setPublishedDuplicateNotice(null);
+              setViewMode("list");
+              if (rec) {
+                setSelectedPubDetails(rec);
+              }
+            }}
+            sx={{
+              bgcolor: "#003b73",
+              color: "#fff",
+              textTransform: "none",
+              fontWeight: 700,
+              borderRadius: "8px",
+              px: 2.5,
+              "&:hover": { bgcolor: "#002a54" }
+            }}
+          >
+            Go to My Patents List
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
