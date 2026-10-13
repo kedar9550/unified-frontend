@@ -9,3 +9,4 @@ export { default as SunLoader } from "./SunLoader";
 export { default as NotificationBell } from "./NotificationBell";
 export { default as Themetoggle } from "./Themetoggle";
 export { default as CustomTabs } from "./CustomTabs";
+export { default as ProfileCard } from "./ProfileCard";

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -27,7 +27,10 @@ import {
   Select,
   FormControl,
   InputLabel,
-  Card
+  InputAdornment,
+  Card,
+  Avatar,
+  Autocomplete
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -37,7 +40,14 @@ import {
   Folder as FolderIcon,
   Event as EventIcon,
   CloudUpload as UploadIcon,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Person as PersonIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  FormatListBulleted as FormatListBulletedIcon,
+  People as PeopleIcon,
+  Search as SearchIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -51,7 +61,8 @@ import {
   uploadCentralEventFile,
   getAcademicYears
 } from '../../api/centralEventsApi';
-import { PageHeader } from '../../components/common';
+import API from '../../api/axios';
+import { PageHeader, CustomTabs, ProfileCard } from '../../components/common';
 import PageContainer from '../../components/common/design-system/PageContainer';
 import { toast } from 'sonner';
 
@@ -63,6 +74,48 @@ const getImageUrl = (img) => {
   if (!pathStr) return '';
   return pathStr.startsWith('http') ? pathStr : `${BACKEND_URL}${pathStr.startsWith('/') ? '' : '/'}${pathStr}`;
 };
+
+const CAMPUS_PHOTO_BASES = [
+  'https://info.aec.edu.in/aus/employeephotos',
+  'https://info.aec.edu.in/aec/employeephotos',
+  'https://info.aec.edu.in/acet/employeephotos',
+  'https://info.aec.edu.in/acoe/employeephotos',
+];
+
+function CoordinatorPhoto({ employeeCode, photoUrl, name, sx }) {
+  const initials = (name || '').split(' ').filter(Boolean).slice(0, 2).map(n => n[0]).join('').toUpperCase() || 'FC';
+  const placeholderSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><rect width='100%' height='100%' fill='%231e40af'/><text x='50%' y='50%' dy='.35em' text-anchor='middle' font-family='Inter, Arial, Helvetica, sans-serif' font-size='46' fill='%23ffffff'>${initials}</text></svg>`;
+  const placeholderDataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(placeholderSvg)}`;
+
+  const initialUrl = photoUrl || (employeeCode ? `${CAMPUS_PHOTO_BASES[0]}/${employeeCode}.jpg` : placeholderDataUrl);
+  const [attemptIndex, setAttemptIndex] = useState(photoUrl ? -1 : 0);
+  const [imgSrc, setImgSrc] = useState(initialUrl);
+
+  useEffect(() => {
+    setAttemptIndex(photoUrl ? -1 : 0);
+    setImgSrc(photoUrl || (employeeCode ? `${CAMPUS_PHOTO_BASES[0]}/${employeeCode}.jpg` : placeholderDataUrl));
+  }, [employeeCode, photoUrl]);
+
+  const handleError = () => {
+    const nextIndex = attemptIndex + 1;
+    if (nextIndex < CAMPUS_PHOTO_BASES.length) {
+      setAttemptIndex(nextIndex);
+      setImgSrc(`${CAMPUS_PHOTO_BASES[nextIndex]}/${employeeCode}.jpg`);
+    } else {
+      setImgSrc(placeholderDataUrl);
+    }
+  };
+
+  return (
+    <Box
+      component="img"
+      src={imgSrc}
+      alt={`Photo of ${name || 'Coordinator'}`}
+      sx={{ ...sx, objectFit: 'cover' }}
+      onError={handleError}
+    />
+  );
+}
 
 export default function CentralEventSubcategoriesPage() {
   const navigate = useNavigate();
@@ -82,6 +135,10 @@ export default function CentralEventSubcategoriesPage() {
   const [selectedAcademicYearFilter, setSelectedAcademicYearFilter] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('');
 
+  // View Tabs: 0 = List, 1 = Coordinators
+  const [activeTab, setActiveTab] = useState(0);
+  const [coordinatorSearch, setCoordinatorSearch] = useState('');
+
   // Pagination State
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -97,6 +154,12 @@ export default function CentralEventSubcategoriesPage() {
   const [name, setName] = useState('');
   const [sortOrder, setSortOrder] = useState('0');
   const [isActive, setIsActive] = useState(true);
+
+  // Multi-Coordinator Search State
+  const [selectedCoordinators, setSelectedCoordinators] = useState([]);
+  const [employeeOptions, setEmployeeOptions] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   // Banner State
   const [banner, setBanner] = useState(null);
@@ -129,6 +192,34 @@ export default function CentralEventSubcategoriesPage() {
     };
     fetchInitialData();
   }, []);
+
+  // Employee live search effect
+  useEffect(() => {
+    if (!searchQuery || searchQuery.trim().length < 2) return;
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await API.get('/api/employees/search', { params: { query: searchQuery.trim() } });
+        const users = res.data?.data || res.data || [];
+        if (Array.isArray(users)) {
+          const formatted = users.map(u => ({
+            empId: u.institutionId || u.empId || u.employeeId || '',
+            name: u.name || u.EMP_NAME || '',
+            designation: u.designation || u.DESIGNATION || '',
+            department: typeof u.department === 'object' ? (u.department?.name || u.department?.code) : (u.department || u.DEPT_NAME || ''),
+            phone: u.phone || u.MOBILE || '',
+            email: u.email || u.EMAIL || ''
+          }));
+          setEmployeeOptions(formatted);
+        }
+      } catch (err) {
+        console.error('Error searching employees:', err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const fetchCategories = async () => {
     try {
@@ -185,6 +276,9 @@ export default function CentralEventSubcategoriesPage() {
     setSortOrder('0');
     setIsActive(true);
     setBanner(null);
+    setSelectedCoordinators([]);
+    setSearchQuery('');
+    setEmployeeOptions([]);
     setOpenModal(true);
   };
 
@@ -196,6 +290,14 @@ export default function CentralEventSubcategoriesPage() {
     setSortOrder(String(item.sortOrder || 0));
     setIsActive(item.isActive !== undefined ? item.isActive : true);
     setBanner(item.banner || null);
+
+    const coords = item.coordinators?.length > 0
+      ? item.coordinators
+      : (item.coordinator?.empId || item.coordinator?.name ? [item.coordinator] : []);
+
+    setSelectedCoordinators(coords);
+    setEmployeeOptions(coords);
+    setSearchQuery('');
     setOpenModal(true);
   };
 
@@ -239,7 +341,9 @@ export default function CentralEventSubcategoriesPage() {
         name: name.trim(),
         sortOrder: parseInt(sortOrder || '0', 10),
         isActive,
-        banner
+        banner,
+        coordinators: selectedCoordinators,
+        coordinator: selectedCoordinators[0] || null
       };
 
       if (editingItem) {
@@ -279,6 +383,61 @@ export default function CentralEventSubcategoriesPage() {
     }
   };
 
+  // Extract and deduplicate coordinators from subcategories
+  const coordinatorsList = useMemo(() => {
+    const coordsMap = new Map();
+
+    subcategories.forEach((sub) => {
+      const list = Array.isArray(sub.coordinators) && sub.coordinators.length > 0
+        ? sub.coordinators
+        : (sub.coordinator?.name || sub.coordinator?.empId ? [sub.coordinator] : []);
+
+      list.forEach((c) => {
+        const id = c.empId || c.employeeId || c.institutionId;
+        if (!id) return;
+
+        if (!coordsMap.has(id)) {
+          coordsMap.set(id, {
+            id,
+            empId: id,
+            name: c.name || 'Coordinator',
+            designation: c.designation || 'Coordinator',
+            department: typeof c.department === 'object' ? (c.department?.name || c.department?.code || '') : (c.department || ''),
+            phone: c.phone || c.mobile || 'N/A',
+            email: c.email || '',
+            photoUrl: c.photoUrl || c.profileImage || null,
+            subcategories: []
+          });
+        }
+
+        const entry = coordsMap.get(id);
+        const subLabel = sub.name || '';
+        if (subLabel && !entry.subcategories.includes(subLabel)) {
+          entry.subcategories.push(subLabel);
+        }
+        if ((!entry.phone || entry.phone === 'N/A') && (c.phone || c.mobile)) {
+          entry.phone = c.phone || c.mobile;
+        }
+        if (!entry.photoUrl && (c.photoUrl || c.profileImage)) {
+          entry.photoUrl = c.photoUrl || c.profileImage;
+        }
+      });
+    });
+
+    return Array.from(coordsMap.values());
+  }, [subcategories]);
+
+  const filteredCoordinators = useMemo(() => {
+    if (!coordinatorSearch.trim()) return coordinatorsList;
+    const q = coordinatorSearch.trim().toLowerCase();
+    return coordinatorsList.filter((c) =>
+      (c.name && c.name.toLowerCase().includes(q)) ||
+      (c.empId && c.empId.toLowerCase().includes(q)) ||
+      (c.phone && c.phone.toLowerCase().includes(q)) ||
+      (c.subcategories && c.subcategories.some((sub) => sub.toLowerCase().includes(q)))
+    );
+  }, [coordinatorsList, coordinatorSearch]);
+
   const displayedSubcategories = subcategories.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
@@ -308,6 +467,17 @@ export default function CentralEventSubcategoriesPage() {
             Add Event Subcategory
           </Button>
         }
+      />
+
+      {/* View Mode Tabs: List and Coordinators */}
+      <CustomTabs
+        value={activeTab}
+        onChange={(e, val) => setActiveTab(val)}
+        tabs={[
+          { label: 'List', icon: <FormatListBulletedIcon /> },
+          { label: 'Coordinators', icon: <PeopleIcon /> }
+        ]}
+        sx={{ my: 3 }}
       />
 
       {/* Filter Bar */}
@@ -394,14 +564,45 @@ export default function CentralEventSubcategoriesPage() {
             ))}
           </Select>
         </FormControl>
+
+        {activeTab === 1 && (
+          <TextField
+            size="small"
+            placeholder="Search coordinator by name, ID, or subcategory..."
+            value={coordinatorSearch}
+            onChange={(e) => setCoordinatorSearch(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                </InputAdornment>
+              ),
+              endAdornment: coordinatorSearch ? (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => setCoordinatorSearch('')}>
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ) : null
+            }}
+            sx={{
+              minWidth: 280,
+              maxWidth: 400,
+              flex: { xs: '1 1 100%', md: 'none' },
+              ml: { xs: 0, md: 'auto' },
+              '& .MuiOutlinedInput-root': { borderRadius: '12px', backgroundColor: 'var(--bg-paper)' }
+            }}
+          />
+        )}
       </Paper>
 
-      {/* Table Section */}
+      {/* Content Section */}
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
           <CircularProgress />
         </Box>
-      ) : (
+      ) : activeTab === 0 ? (
+        /* List Tab: Subcategories Table Section */
         <Paper
           elevation={0}
           sx={{
@@ -423,6 +624,7 @@ export default function CentralEventSubcategoriesPage() {
                   <TableCell><strong>Parent Category</strong></TableCell>
                   <TableCell><strong>Subcategory Code</strong></TableCell>
                   <TableCell><strong>Subcategory Name</strong></TableCell>
+                  <TableCell><strong>Subcategory Coordinators</strong></TableCell>
                   <TableCell><strong>Sort Order</strong></TableCell>
                   <TableCell><strong>Status</strong></TableCell>
                   <TableCell align="right"><strong>Actions</strong></TableCell>
@@ -431,7 +633,7 @@ export default function CentralEventSubcategoriesPage() {
               <TableBody>
                 {subcategories.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
+                    <TableCell colSpan={11} align="center" sx={{ py: 4 }}>
                       No subcategories found. Click "Add Event Subcategory" to create one.
                     </TableCell>
                   </TableRow>
@@ -462,7 +664,7 @@ export default function CentralEventSubcategoriesPage() {
                               bgcolor: 'var(--bg-accent-1, #f1f5f9)',
                               display: 'flex',
                               alignItems: 'center',
-                              justify: 'center'
+                              justifyContent: 'center'
                             }}
                           >
                             <ImageIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
@@ -483,6 +685,43 @@ export default function CentralEventSubcategoriesPage() {
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" fontWeight={600}>{row.name}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        {(() => {
+                          const coordsList = row.coordinators?.length > 0
+                            ? row.coordinators
+                            : (row.coordinator?.name ? [row.coordinator] : []);
+
+                          if (coordsList.length === 0) {
+                            return (
+                              <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                                Unassigned
+                              </Typography>
+                            );
+                          }
+
+                          return (
+                            <Stack spacing={0.6}>
+                              {coordsList.map((c, idx) => (
+                                <Box key={idx} display="flex" alignItems="center" gap={1}>
+                                  <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem', bgcolor: '#2563eb', fontWeight: 700 }}>
+                                    {(c.name || 'C').charAt(0)}
+                                  </Avatar>
+                                  <Box>
+                                    <Typography variant="body2" fontWeight={600} lineHeight={1.2}>
+                                      {c.name}
+                                    </Typography>
+                                    {(c.empId || c.department) && (
+                                      <Typography variant="caption" color="text.secondary" display="block">
+                                        {c.empId ? `(${c.empId})` : ''} {c.department ? `• ${c.department}` : ''}
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                </Box>
+                              ))}
+                            </Stack>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell>{row.sortOrder || 0}</TableCell>
                       <TableCell>
@@ -526,6 +765,82 @@ export default function CentralEventSubcategoriesPage() {
             onRowsPerPageChange={handleChangeRowsPerPage}
           />
         </Paper>
+      ) : (
+        /* Coordinators Tab: ProfileCards Grid */
+        filteredCoordinators.length === 0 ? (
+          <Paper
+            elevation={0}
+            sx={{
+              py: 8,
+              px: 3,
+              textAlign: 'center',
+              borderRadius: '20px',
+              border: '1px dashed var(--border-color)',
+              bgcolor: 'var(--bg-paper)'
+            }}
+          >
+            <Box
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                bgcolor: 'var(--bg-accent-2, #f1f5f9)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 2,
+                color: 'text.secondary'
+              }}
+            >
+              <PeopleIcon sx={{ fontSize: 32 }} />
+            </Box>
+            <Typography variant="h6" fontWeight={700} color="text.primary" gutterBottom>
+              No Subcategory Coordinators Found
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 450, mx: 'auto' }}>
+              {coordinatorSearch
+                ? `No coordinators matching "${coordinatorSearch}". Try clearing your search.`
+                : 'No coordinators are currently assigned to subcategories matching the selected filters.'}
+            </Typography>
+          </Paper>
+        ) : (
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: 'repeat(2, 1fr)',
+                lg: 'repeat(3, 1fr)'
+              },
+              gap: 3
+            }}
+          >
+            {filteredCoordinators.map((coord) => (
+              <ProfileCard
+                key={coord.id}
+                name={coord.name}
+                role="Coordinator"
+                employeeId={coord.empId}
+                phone={coord.phone}
+                labels={coord.subcategories}
+                avatarComponent={
+                  <CoordinatorPhoto
+                    employeeCode={coord.empId}
+                    photoUrl={coord.photoUrl}
+                    name={coord.name}
+                    sx={{
+                      width: 110,
+                      height: 110,
+                      border: '2px solid #fff',
+                      borderRadius: '50%'
+                    }}
+                  />
+                }
+              />
+            ))}
+          </Box>
+        )
       )}
 
       {/* Add / Edit Subcategory Modal */}
@@ -628,6 +943,127 @@ export default function CentralEventSubcategoriesPage() {
                     </Card>
                   )}
                 </Stack>
+              </Box>
+
+              {/* Subcategory Coordinators (Employee Search) */}
+              <Box sx={{ width: '100%' }}>
+                <Typography
+                  variant="subtitle2"
+                  fontWeight="600"
+                  mb={1}
+                  sx={{ color: 'text.primary', display: 'flex', alignItems: 'center', gap: 0.8 }}
+                >
+                  <PersonIcon fontSize="small" color="primary" /> Subcategory Coordinators (Employees)
+                </Typography>
+                <Autocomplete
+                  multiple
+                  fullWidth
+                  options={employeeOptions}
+                  getOptionLabel={(option) => {
+                    if (!option) return '';
+                    const coordName = option.name || option.employeeName || '';
+                    const empCode = option.empId || option.institutionId || option.employeeId || '';
+                    return empCode ? `${coordName} (${empCode})` : coordName;
+                  }}
+                  value={selectedCoordinators}
+                  onChange={(_, newValue) => {
+                    if (newValue) {
+                      const formattedValue = newValue.map(val => {
+                        const code = val.empId || val.institutionId || val.employeeId || '';
+                        return {
+                          ...val,
+                          empId: code,
+                          institutionId: code,
+                          name: val.name || val.employeeName || ''
+                        };
+                      });
+                      setSelectedCoordinators(formattedValue);
+                    } else {
+                      setSelectedCoordinators([]);
+                    }
+                  }}
+                  inputValue={searchQuery}
+                  onInputChange={(_, newInputValue) => {
+                    setSearchQuery(newInputValue);
+                  }}
+                  filterOptions={(x) => x}
+                  isOptionEqualToValue={(option, val) => {
+                    const optionCode = option.empId || option.institutionId || option.employeeId || '';
+                    const valCode = val?.empId || val?.institutionId || val?.employeeId || '';
+                    return optionCode === valCode;
+                  }}
+                  loading={isSearching}
+                  noOptionsText={searchQuery ? 'No coordinator found' : 'Search employee by name or ID (min 2 chars)'}
+                  renderInput={(params) => {
+                    const inputProps = params.InputProps || {};
+                    return (
+                      <TextField
+                        {...params}
+                        fullWidth
+                        placeholder={selectedCoordinators.length === 0 ? "Search employee by name or ID..." : "Add another coordinator..."}
+                        InputProps={{
+                          ...inputProps,
+                          sx: { borderRadius: '12px' },
+                          endAdornment: (
+                            <>
+                              {isSearching ? <CircularProgress color="inherit" size={20} /> : null}
+                              {inputProps.endAdornment}
+                            </>
+                          )
+                        }}
+                        variant="outlined"
+                      />
+                    );
+                  }}
+                  renderOption={(props, option) => (
+                    <Box
+                      component="li"
+                      {...props}
+                      key={option.empId || option.institutionId || option.employeeId || option._id}
+                      sx={{ py: 1.25, px: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}
+                    >
+                      <Avatar
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          bgcolor: 'primary.main',
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {(option.name || option.employeeName || 'E')[0]?.toUpperCase()}
+                      </Avatar>
+                      <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                        <Typography variant="body2" fontWeight={600} sx={{ color: 'text.primary' }}>
+                          {option.name || option.employeeName}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {option.designation || 'Staff'} • {option.department || 'General'}
+                          {(option.empId || option.institutionId || option.employeeId) &&
+                            ` • ID: ${option.empId || option.institutionId || option.employeeId}`}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  )}
+                  renderTags={(value, getTagProps) =>
+                    value.map((option, index) => (
+                      <Chip
+                        key={option.empId || index}
+                        avatar={
+                          <Avatar sx={{ bgcolor: 'primary.main', color: '#fff', fontSize: '0.75rem' }}>
+                            {(option.name || 'C')[0]?.toUpperCase()}
+                          </Avatar>
+                        }
+                        label={`${option.name || 'Coordinator'} ${option.empId ? `(${option.empId})` : ''}`}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                        sx={{ borderRadius: '8px', fontWeight: 600 }}
+                        {...getTagProps({ index })}
+                      />
+                    ))
+                  }
+                />
               </Box>
 
               {/* Status and Order Number Row */}

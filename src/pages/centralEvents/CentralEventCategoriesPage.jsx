@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -27,6 +27,7 @@ import {
   Select,
   FormControl,
   InputLabel,
+  InputAdornment,
   Grid,
   Avatar,
   Card,
@@ -42,7 +43,11 @@ import {
   CloudUpload as UploadIcon,
   Image as ImageIcon,
   CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon
+  Cancel as CancelIcon,
+  FormatListBulleted as FormatListBulletedIcon,
+  People as PeopleIcon,
+  Search as SearchIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -56,7 +61,7 @@ import {
   getAcademicYears
 } from '../../api/centralEventsApi';
 import API from '../../api/axios';
-import { PageHeader, CustomTabs } from '../../components/common';
+import { PageHeader, CustomTabs, ProfileCard } from '../../components/common';
 import PageContainer from '../../components/common/design-system/PageContainer';
 import { toast } from 'sonner';
 
@@ -68,6 +73,48 @@ const getImageUrl = (img) => {
   if (!pathStr) return '';
   return pathStr.startsWith('http') ? pathStr : `${BACKEND_URL}${pathStr.startsWith('/') ? '' : '/'}${pathStr}`;
 };
+
+const CAMPUS_PHOTO_BASES = [
+  'https://info.aec.edu.in/aus/employeephotos',
+  'https://info.aec.edu.in/aec/employeephotos',
+  'https://info.aec.edu.in/acet/employeephotos',
+  'https://info.aec.edu.in/acoe/employeephotos',
+];
+
+function CoordinatorPhoto({ employeeCode, photoUrl, name, sx }) {
+  const initials = (name || '').split(' ').filter(Boolean).slice(0, 2).map(n => n[0]).join('').toUpperCase() || 'FC';
+  const placeholderSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><rect width='100%' height='100%' fill='%231e40af'/><text x='50%' y='50%' dy='.35em' text-anchor='middle' font-family='Inter, Arial, Helvetica, sans-serif' font-size='46' fill='%23ffffff'>${initials}</text></svg>`;
+  const placeholderDataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(placeholderSvg)}`;
+
+  const initialUrl = photoUrl || (employeeCode ? `${CAMPUS_PHOTO_BASES[0]}/${employeeCode}.jpg` : placeholderDataUrl);
+  const [attemptIndex, setAttemptIndex] = useState(photoUrl ? -1 : 0);
+  const [imgSrc, setImgSrc] = useState(initialUrl);
+
+  useEffect(() => {
+    setAttemptIndex(photoUrl ? -1 : 0);
+    setImgSrc(photoUrl || (employeeCode ? `${CAMPUS_PHOTO_BASES[0]}/${employeeCode}.jpg` : placeholderDataUrl));
+  }, [employeeCode, photoUrl]);
+
+  const handleError = () => {
+    const nextIndex = attemptIndex + 1;
+    if (nextIndex < CAMPUS_PHOTO_BASES.length) {
+      setAttemptIndex(nextIndex);
+      setImgSrc(`${CAMPUS_PHOTO_BASES[nextIndex]}/${employeeCode}.jpg`);
+    } else {
+      setImgSrc(placeholderDataUrl);
+    }
+  };
+
+  return (
+    <Box
+      component="img"
+      src={imgSrc}
+      alt={`Photo of ${name || 'Coordinator'}`}
+      sx={{ ...sx, objectFit: 'cover' }}
+      onError={handleError}
+    />
+  );
+}
 
 export default function CentralEventCategoriesPage() {
   const navigate = useNavigate();
@@ -84,6 +131,10 @@ export default function CentralEventCategoriesPage() {
   // Selected Filters
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('');
   const [selectedAcademicYearFilter, setSelectedAcademicYearFilter] = useState('');
+
+  // View Tabs: 0 = List, 1 = Coordinators
+  const [activeTab, setActiveTab] = useState(0);
+  const [coordinatorSearch, setCoordinatorSearch] = useState('');
 
   // Pagination State
   const [page, setPage] = useState(0);
@@ -398,6 +449,97 @@ export default function CentralEventCategoriesPage() {
     }
   };
 
+  // Extract and deduplicate coordinators from categories
+  const coordinatorsList = useMemo(() => {
+    const coordsMap = new Map();
+
+    categories.forEach((category) => {
+      const list = Array.isArray(category.coordinators) && category.coordinators.length > 0
+        ? category.coordinators
+        : (category.coordinator?.name || category.coordinator?.empId ? [category.coordinator] : []);
+
+      list.forEach((c) => {
+        const id = c.empId || c.employeeId || c.institutionId;
+        if (!id) return;
+
+        if (!coordsMap.has(id)) {
+          coordsMap.set(id, {
+            id,
+            empId: id,
+            name: c.name || 'Coordinator',
+            designation: c.designation || 'Coordinator',
+            department: typeof c.department === 'object' ? (c.department?.name || c.department?.code || '') : (c.department || ''),
+            phone: c.phone || c.mobile || 'N/A',
+            email: c.email || '',
+            photoUrl: c.photoUrl || c.profileImage || null,
+            categories: []
+          });
+        }
+
+        const entry = coordsMap.get(id);
+        if (category.name && !entry.categories.includes(category.name)) {
+          entry.categories.push(category.name);
+        }
+        if ((!entry.phone || entry.phone === 'N/A') && (c.phone || c.mobile)) {
+          entry.phone = c.phone || c.mobile;
+        }
+        if (!entry.photoUrl && (c.photoUrl || c.profileImage)) {
+          entry.photoUrl = c.photoUrl || c.profileImage;
+        }
+      });
+
+      // Also check subcategories coordinators if any
+      if (Array.isArray(category.subcategories)) {
+        category.subcategories.forEach((sub) => {
+          const subList = Array.isArray(sub.coordinators) && sub.coordinators.length > 0
+            ? sub.coordinators
+            : (sub.coordinator?.name || sub.coordinator?.empId ? [sub.coordinator] : []);
+
+          subList.forEach((c) => {
+            const id = c.empId || c.employeeId || c.institutionId;
+            if (!id) return;
+
+            if (!coordsMap.has(id)) {
+              coordsMap.set(id, {
+                id,
+                empId: id,
+                name: c.name || 'Coordinator',
+                designation: c.designation || 'Coordinator',
+                department: typeof c.department === 'object' ? (c.department?.name || c.department?.code || '') : (c.department || ''),
+                phone: c.phone || c.mobile || 'N/A',
+                email: c.email || '',
+                photoUrl: c.photoUrl || c.profileImage || null,
+                categories: []
+              });
+            }
+
+            const entry = coordsMap.get(id);
+            const labelText = sub.name ? `${category.name} (${sub.name})` : category.name;
+            if (labelText && !entry.categories.includes(labelText)) {
+              entry.categories.push(labelText);
+            }
+            if ((!entry.phone || entry.phone === 'N/A') && (c.phone || c.mobile)) {
+              entry.phone = c.phone || c.mobile;
+            }
+          });
+        });
+      }
+    });
+
+    return Array.from(coordsMap.values());
+  }, [categories]);
+
+  const filteredCoordinators = useMemo(() => {
+    if (!coordinatorSearch.trim()) return coordinatorsList;
+    const q = coordinatorSearch.trim().toLowerCase();
+    return coordinatorsList.filter((c) =>
+      (c.name && c.name.toLowerCase().includes(q)) ||
+      (c.empId && c.empId.toLowerCase().includes(q)) ||
+      (c.phone && c.phone.toLowerCase().includes(q)) ||
+      (c.categories && c.categories.some((cat) => cat.toLowerCase().includes(q)))
+    );
+  }, [coordinatorsList, coordinatorSearch]);
+
   const displayedCategories = categories.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
@@ -427,6 +569,17 @@ export default function CentralEventCategoriesPage() {
             Add Event Category
           </Button>
         }
+      />
+
+      {/* View Mode Tabs: List and Coordinators */}
+      <CustomTabs
+        value={activeTab}
+        onChange={(e, val) => setActiveTab(val)}
+        tabs={[
+          { label: 'List', icon: <FormatListBulletedIcon /> },
+          { label: 'Coordinators', icon: <PeopleIcon /> }
+        ]}
+        sx={{ my: 3 }}
       />
 
       {/* Filter Bar with Standardized MUI Form Controls */}
@@ -499,14 +652,45 @@ export default function CentralEventCategoriesPage() {
             ))}
           </Select>
         </FormControl>
+
+        {activeTab === 1 && (
+          <TextField
+            size="small"
+            placeholder="Search coordinator by name, ID, or category..."
+            value={coordinatorSearch}
+            onChange={(e) => setCoordinatorSearch(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                </InputAdornment>
+              ),
+              endAdornment: coordinatorSearch ? (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => setCoordinatorSearch('')}>
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ) : null
+            }}
+            sx={{
+              minWidth: 280,
+              maxWidth: 400,
+              flex: { xs: '1 1 100%', md: 'none' },
+              ml: { xs: 0, md: 'auto' },
+              '& .MuiOutlinedInput-root': { borderRadius: '12px', backgroundColor: 'var(--bg-paper)' }
+            }}
+          />
+        )}
       </Paper>
 
-      {/* Table Section */}
+      {/* Content Section */}
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
           <CircularProgress />
         </Box>
-      ) : (
+      ) : activeTab === 0 ? (
+        /* List Tab: Table Section */
         <Paper
           elevation={0}
           sx={{
@@ -662,6 +846,82 @@ export default function CentralEventCategoriesPage() {
             onRowsPerPageChange={handleChangeRowsPerPage}
           />
         </Paper>
+      ) : (
+        /* Coordinators Tab: ProfileCards Grid */
+        filteredCoordinators.length === 0 ? (
+          <Paper
+            elevation={0}
+            sx={{
+              py: 8,
+              px: 3,
+              textAlign: 'center',
+              borderRadius: '20px',
+              border: '1px dashed var(--border-color)',
+              bgcolor: 'var(--bg-paper)'
+            }}
+          >
+            <Box
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                bgcolor: 'var(--bg-accent-2, #f1f5f9)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 2,
+                color: 'text.secondary'
+              }}
+            >
+              <PeopleIcon sx={{ fontSize: 32 }} />
+            </Box>
+            <Typography variant="h6" fontWeight={700} color="text.primary" gutterBottom>
+              No Coordinators Found
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 450, mx: 'auto' }}>
+              {coordinatorSearch
+                ? `No coordinators matching "${coordinatorSearch}". Try clearing your search.`
+                : 'No coordinators are currently assigned to categories matching the selected filters.'}
+            </Typography>
+          </Paper>
+        ) : (
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: 'repeat(2, 1fr)',
+                lg: 'repeat(3, 1fr)'
+              },
+              gap: 3
+            }}
+          >
+            {filteredCoordinators.map((coord) => (
+              <ProfileCard
+                key={coord.id}
+                name={coord.name}
+                role="Coordinator"
+                employeeId={coord.empId}
+                phone={coord.phone}
+                labels={coord.categories}
+                avatarComponent={
+                  <CoordinatorPhoto
+                    employeeCode={coord.empId}
+                    photoUrl={coord.photoUrl}
+                    name={coord.name}
+                    sx={{
+                      width: 110,
+                      height: 110,
+                      border: '2px solid #fff',
+                      borderRadius: '50%'
+                    }}
+                  />
+                }
+              />
+            ))}
+          </Box>
+        )
       )}
 
       {/* Add / Edit Dialog with Standardized MUI Form Controls */}

@@ -54,11 +54,22 @@ export const ROLE_ROUTES = {
       text: "Central Events",
       icon: <EventAvailable />,
       nested: [
+        { text: "Organisation Committee", path: "/central-events/organisation-committee", icon: <Groups /> },
+        { text: "Departments", path: "/central-events/departments", icon: <AccountTree /> },
+        {
+          text: "Infrastructure",
+          icon: <AccountBalance />,
+          nested: [
+            { text: "Building", path: "/infrastructure/building", icon: <AccountBalance /> },
+            { text: "Floors", path: "/infrastructure/floors", icon: <AccountBalance /> },
+            { text: "Grounds for outdoor", path: "/infrastructure/grounds", icon: <AccountBalance /> }
+          ]
+        },
         { text: "Event Types", path: "/central-events/types", icon: <Category /> },
         { text: "Event Categories", path: "/central-events/categories", icon: <Category /> },
         { text: "Event Subcategories", path: "/central-events/subcategories", icon: <Category /> },
-        { text: "Activities", path: "/central-events/activities", icon: <ListAlt /> },
         { text: "All Central Events", path: "/central-events", icon: <EventAvailable /> },
+        { text: "Activities", path: "/central-events/activities", icon: <ListAlt /> },
       ]
     },
   ],

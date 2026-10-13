@@ -231,7 +231,7 @@ const DepartmentManagement = () => {
       <PageContainer>
         <PageHeader
           title="Department Management"
-          subtitle="Create and manage VEDA event departments"
+          subtitle="Create and manage Central event departments"
           action={
             <Button
               variant="contained"

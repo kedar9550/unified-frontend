@@ -185,7 +185,7 @@ export default function CentralEventsListPage() {
     setActionLoading(true);
     try {
       const parsedRules = editFormData.rulesText.split('\n').map((r) => r.trim()).filter(Boolean);
-      const parsedOutcomes = editFormData.outcomesText.split('\n').map((o) => o.trim()).filter(Boolean);
+      const parsedOutcomes = editingEvent.outcomes || [];
       const parsedAssociation = editFormData.inAssociationWithText.split(',').map((a) => a.trim()).filter(Boolean);
 
       const payload = {
@@ -208,10 +208,18 @@ export default function CentralEventsListPage() {
       };
 
       if (editFormData.fromDate && editFormData.toDate && editFormData.regDeadline) {
+        const start = new Date(editFormData.fromDate);
+        const end = new Date(editFormData.toDate);
+        const deadline = new Date(editFormData.regDeadline);
+        if (end < start) {
+          toast.error('End Date must be after or equal to Start Date');
+          setActionLoading(false);
+          return;
+        }
         payload.schedule = {
-          fromDate: new Date(editFormData.fromDate).toISOString(),
-          toDate: new Date(editFormData.toDate).toISOString(),
-          regDeadline: new Date(editFormData.regDeadline).toISOString()
+          fromDate: start.toISOString(),
+          toDate: end.toISOString(),
+          regDeadline: deadline.toISOString()
         };
       }
 
@@ -937,7 +945,7 @@ export default function CentralEventsListPage() {
               />
             </Grid>
 
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
                 multiline
@@ -946,19 +954,6 @@ export default function CentralEventsListPage() {
                 placeholder="Enter each rule on a new line"
                 value={editFormData.rulesText}
                 onChange={(e) => setEditFormData({ ...editFormData, rulesText: e.target.value })}
-                slotProps={{ input: { sx: { borderRadius: '12px' } } }}
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <TextField
-                fullWidth
-                multiline
-                rows={3}
-                label="Key Outcomes"
-                placeholder="Enter each outcome on a new line"
-                value={editFormData.outcomesText}
-                onChange={(e) => setEditFormData({ ...editFormData, outcomesText: e.target.value })}
                 slotProps={{ input: { sx: { borderRadius: '12px' } } }}
               />
             </Grid>

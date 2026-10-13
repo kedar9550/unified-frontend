@@ -325,18 +325,41 @@ export default function CentralEventDetailPage() {
             </Paper>
           )}
 
-          {/* Coordinators */}
+          {/* Faculty Coordinators */}
           {event.coordinators?.faculty?.length > 0 && (
-            <Paper elevation={0} sx={{ p: 3, borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)', mb: 4 }}>
+            <Paper elevation={0} sx={{ p: 3, borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)', mb: 3 }}>
               <Typography variant="h6" fontWeight={700} gutterBottom color="primary.main">
-                Event Coordinators
+                Faculty Coordinators
               </Typography>
               <Stack spacing={1.5} mt={2}>
                 {event.coordinators.faculty.map((c, i) => (
-                  <Box key={i}>
-                    <Typography fontWeight={600}>{c.name}</Typography>
-                    {c.email && <Typography variant="caption" color="text.secondary" display="block">{c.email}</Typography>}
-                    {c.phone && <Typography variant="caption" color="text.secondary" display="block">{c.phone}</Typography>}
+                  <Box key={i} sx={{ p: 1.5, borderRadius: '10px', bgcolor: 'var(--bg-accent-1, #f8fafc)' }}>
+                    <Typography fontWeight={700}>{c.name} {c.empId ? `(${c.empId})` : ''}</Typography>
+                    {c.designation && <Typography variant="caption" color="text.secondary" display="block">{c.designation} {c.department ? `• ${c.department}` : ''}</Typography>}
+                    {c.email && <Typography variant="caption" color="text.secondary" display="block">📧 {c.email}</Typography>}
+                    {c.phone && <Typography variant="caption" color="text.secondary" display="block">📞 {c.phone}</Typography>}
+                  </Box>
+                ))}
+              </Stack>
+            </Paper>
+          )}
+
+          {/* Student Coordinators */}
+          {event.coordinators?.student?.length > 0 && (
+            <Paper elevation={0} sx={{ p: 3, borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)', mb: 3 }}>
+              <Typography variant="h6" fontWeight={700} gutterBottom color="primary.main">
+                Student Coordinators
+              </Typography>
+              <Stack spacing={1.5} mt={2}>
+                {event.coordinators.student.map((s, i) => (
+                  <Box key={i} sx={{ p: 1.5, borderRadius: '10px', bgcolor: 'var(--bg-accent-1, #f8fafc)' }}>
+                    <Typography fontWeight={700}>{s.name}</Typography>
+                    <Typography variant="caption" color="primary" fontWeight={600} display="block">Roll No: {s.rollNo}</Typography>
+                    {(s.branch || s.department) && (
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {s.branch || s.department}
+                      </Typography>
+                    )}
                   </Box>
                 ))}
               </Stack>

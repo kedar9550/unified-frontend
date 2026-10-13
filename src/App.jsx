@@ -412,6 +412,8 @@ function App() {
         <Route path="/major-event-admin/form-preview" element={<ProtectedRoute element={<FormPreview />} />} />
 
         {/* Central Events Module Routes */}
+        <Route path="/central-events/organisation-committee" element={<ProtectedRoute element={<OrganisationCommittee />} />} />
+        <Route path="/central-events/departments" element={<ProtectedRoute element={<DepartmentManagement />} />} />
         <Route path="/central-events/types" element={<ProtectedRoute element={<CentralEventTypesPage />} />} />
         <Route path="/central-events/categories" element={<ProtectedRoute element={<CentralEventCategoriesPage />} />} />
         <Route path="/central-events/subcategories" element={<ProtectedRoute element={<CentralEventSubcategoriesPage />} />} />
