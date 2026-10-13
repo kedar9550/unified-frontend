@@ -177,6 +177,17 @@ const theme = createTheme({
         disableScrollLock: true,
       },
     },
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          "&.MuiInputLabel-shrink": {
+            background: "var(--bg-paper)",
+            padding: "0 4px",
+            borderRadius: "4px",
+          },
+        },
+      },
+    },
     MuiTypography: {
       styleOverrides: {
         overline: {

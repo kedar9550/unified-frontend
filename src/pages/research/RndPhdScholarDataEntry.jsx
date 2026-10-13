@@ -36,6 +36,7 @@ export default function RndPhdScholarDataEntry() {
   const initialFormState = {
     rollNumber: "",
     studentName: "",
+    titleOfPhdWork: "",
     course: "Ph.D.",
     branch: "",
     scholarStatus: "",
@@ -183,6 +184,10 @@ export default function RndPhdScholarDataEntry() {
       toast.error("Please fill student details (Roll Number and Name are required)");
       return;
     }
+    if (!form.titleOfPhdWork?.trim()) {
+      toast.error("Please enter the Title of the Ph.D Work");
+      return;
+    }
     if (!form.admissionOrAwardDate) {
       toast.error("Please select the date");
       return;
@@ -194,6 +199,7 @@ export default function RndPhdScholarDataEntry() {
       // Scholar details
       fd.append("rollNumber", form.rollNumber.trim().toUpperCase());
       fd.append("studentName", form.studentName.trim());
+      fd.append("titleOfPhdWork", form.titleOfPhdWork.trim());
       fd.append("course", form.course || "Ph.D.");
       fd.append("branch", form.branch || "N/A");
       fd.append("scholarStatus", form.scholarStatus);
@@ -453,6 +459,18 @@ export default function RndPhdScholarDataEntry() {
               {/* ── Scholar Status & Date (shown after student is verified or manual entry) ── */}
               {(form.universitySelect === "Other" || isVerified) && (
                 <>
+                  <SubLabel text="Research & Scholar Details:" />
+                  <Box sx={{ mb: 3 }}>
+                    <Typography sx={{ ...labelStyle, mb: 0.5 }}>TITLE OF THE PH.D WORK : <span style={{ color: 'red' }}>*</span></Typography>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      placeholder="Enter Title of the Ph.D Work"
+                      value={form.titleOfPhdWork}
+                      onChange={set("titleOfPhdWork")}
+                    />
+                  </Box>
+
                   <SubLabel text="Scholar Status & Admission Details:" />
                   <Grid2>
                     <Box>

@@ -234,7 +234,7 @@ export default function Login({ defaultSignUp = false }) {
   const [loginData, setLoginData] = useState({ id: '', password: '' });
   const [loginMsg, setLoginMsg] = useState({ text: '', type: '' });
 
-  // Read empId from URL if provided & prevent browser autofill from overriding it
+  // Read empId from URL if provided, or detect browser autofill
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const empIdFromUrl = params.get('empId');
@@ -251,6 +251,25 @@ export default function Login({ defaultSignUp = false }) {
       return () => {
         clearTimeout(t1);
         clearTimeout(t2);
+      };
+    } else {
+      const syncAutofill = () => {
+        const idEl = document.getElementById('login-id');
+        const passEl = document.getElementById('login-password');
+        if (idEl?.value || passEl?.value) {
+          setLoginData(prev => ({
+            id: prev.id || idEl?.value || '',
+            password: prev.password || passEl?.value || ''
+          }));
+        }
+      };
+      const t1 = setTimeout(syncAutofill, 80);
+      const t2 = setTimeout(syncAutofill, 400);
+      const t3 = setTimeout(syncAutofill, 1000);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
       };
     }
   }, [location.search]);
@@ -598,10 +617,16 @@ export default function Login({ defaultSignUp = false }) {
   // ── login submit ──
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    const v = validateLogin(loginData);
+    const idVal = loginData.id || document.getElementById('login-id')?.value || '';
+    const passVal = loginData.password || document.getElementById('login-password')?.value || '';
+    const currentData = { id: idVal, password: passVal };
+    if (!loginData.id || !loginData.password) {
+      setLoginData(currentData);
+    }
+    const v = validateLogin(currentData);
     if (!v.isValid) { setLoginMsg({ text: Object.values(v.errors)[0], type: 'error' }); return; }
     try {
-      await login(loginData);
+      await login(currentData);
       navigate('/dashboard');
     } catch (err) {
       setLoginMsg({ text: err.response?.data?.message || err.message || 'Login failed', type: 'error' });
@@ -629,16 +654,27 @@ export default function Login({ defaultSignUp = false }) {
             </p>
           )}
           <form className="auth-form" onSubmit={handleLoginSubmit}>
-            <div className="auth-field">
+            <div className="auth-field" data-has-value={!!loginData.id}>
               <input id="login-id" type="text" placeholder=" "
                 autoComplete={new URLSearchParams(location.search).get('empId') ? "off" : "username"}
                 value={loginData.id}
+                onAnimationStart={(e) => {
+                  if (e.animationName === 'onAutoFillStart' && e.target.value) {
+                    setLoginData(prev => ({ ...prev, id: e.target.value }));
+                  }
+                }}
                 onChange={e => setLoginData({ ...loginData, id: e.target.value })} />
               <label className="auth-label" htmlFor="login-id">Employee ID</label>
             </div>
-            <div className="auth-field">
+            <div className="auth-field" data-has-value={!!loginData.password}>
               <input id="login-password" type={showLogPass ? 'text' : 'password'} placeholder=" "
+                autoComplete="current-password"
                 value={loginData.password}
+                onAnimationStart={(e) => {
+                  if (e.animationName === 'onAutoFillStart' && e.target.value) {
+                    setLoginData(prev => ({ ...prev, password: e.target.value }));
+                  }
+                }}
                 onChange={e => setLoginData({ ...loginData, password: e.target.value })} />
               <label className="auth-label" htmlFor="login-password">Password</label>
               <button type="button" className="password-toggle" onClick={() => setShowLogPass(!showLogPass)}>

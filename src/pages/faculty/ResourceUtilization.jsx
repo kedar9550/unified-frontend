@@ -16,6 +16,12 @@ import { labelStyle } from "../../components/faculty/publicationConstants";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../api/axios";
 
+export const isCourseParticipantActivity = (category, type) => {
+  const cat = category || "";
+  const t = (type || "").toLowerCase();
+  return (cat === "FDP" || cat === "STTP" || cat === "Refresher Course") && t.includes("participant");
+};
+
 // Activity categories and types mappings
 const ACTIVITY_CATEGORIES = [
   "CONFERENCE",
@@ -146,7 +152,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
       const data = selectedActivityDetails;
       const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
       const fileUrl = data.proof.startsWith('http') ? data.proof : `${backendURL}${data.proof}`;
-      
+
       fetch(fileUrl)
         .then(res => {
           if (!res.ok) throw new Error("Failed to fetch proof");
@@ -189,7 +195,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
     remarks: "",
     numberOfSessions: "",
     numberOfDaysParticipated: "",
-    courseFdpName: "",
+    courseName: "",
     organizingInstitutionCategory: "",
     location: "",
     labName: "",
@@ -268,7 +274,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
       activityType: "",
       sessionsConducted: "",
       daysParticipated: "",
-      courseFdpName: "",
+      courseName: "",
       organizingInstitutionCategory: "",
       location: "",
       labName: "",
@@ -286,7 +292,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
       activityType: role,
       sessionsConducted: "",
       daysParticipated: "",
-      courseFdpName: "",
+      courseName: "",
       organizingInstitutionCategory: "",
       location: "",
       labName: "",
@@ -297,7 +303,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
     }));
   };
 
-  
+
 
   const handleOpenAddModal = () => {
     const activeYearDoc = academicYears[0];
@@ -317,7 +323,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
       remarks: "",
       numberOfSessions: "",
       numberOfDaysParticipated: "",
-      courseFdpName: "",
+      courseName: "",
       organizingInstitutionCategory: "",
       location: "",
       labName: "",
@@ -349,7 +355,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
       remarks: activity.remarks || "",
       numberOfSessions: (activity.numberOfSessions !== undefined ? String(activity.numberOfSessions) : (activity.sessionsConducted !== undefined ? String(activity.sessionsConducted) : "")),
       numberOfDaysParticipated: (activity.numberOfDaysParticipated !== undefined ? String(activity.numberOfDaysParticipated) : (activity.daysParticipated !== undefined ? String(activity.daysParticipated) : "")),
-      courseFdpName: activity.courseFdpName || "",
+      courseName: activity.courseName || "",
       organizingInstitutionCategory: activity.organizingInstitutionCategory || "",
       location: activity.location || "",
       labName: activity.labName || "",
@@ -385,9 +391,9 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
   };
 
   const handleSaveDraft = async () => {
-    const isFdpParticipant = form.activityCategory === "FDP" && form.activityType === "FDP Participant";
-    const basicFieldsValid = isFdpParticipant
-      ? (form.academicYear && form.activityCategory && form.activityType && form.courseFdpName && form.eventStartDate && form.eventEndDate)
+    const isCourseParticipant = isCourseParticipantActivity(form.activityCategory, form.activityType);
+    const basicFieldsValid = isCourseParticipant
+      ? (form.academicYear && form.activityCategory && form.activityType && form.courseName && form.eventStartDate && form.eventEndDate)
       : (form.academicYear && form.activityCategory && form.activityType && form.organizationName && form.eventStartDate && form.eventEndDate);
 
     if (!basicFieldsValid) {
@@ -400,17 +406,17 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
       end.setHours(0, 0, 0, 0);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       const diffTime = today.getTime() - end.getTime();
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       if (diffDays > 20) {
         toast.error("You cannot add activities that ended more than 20 days ago.");
         return;
       }
     }
 
-    if (isFdpParticipant) {
+    if (isCourseParticipant) {
       if (!form.organizingInstitutionCategory) {
         toast.error("Organizing Institution Category is required");
         return;
@@ -527,11 +533,11 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
       }
       fd.append("remarks", form.remarks || "");
 
-      if (isFdpParticipant) {
-        fd.append("courseFdpName", form.courseFdpName);
+      if (isCourseParticipant) {
+        fd.append("courseName", form.courseName);
         fd.append("organizingInstitutionCategory", form.organizingInstitutionCategory);
         fd.append("location", form.location);
-        fd.append("organizationName", form.courseFdpName);
+        fd.append("organizationName", form.courseName);
         if (form.organizingInstitutionCategory === "MHRD R&D Lab") {
           fd.append("labName", form.labName);
         } else if (form.organizingInstitutionCategory === "Govt. University") {
@@ -680,7 +686,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
                 Submit All Drafts
               </Button>
             )}
-            {/* <Button
+            <Button
               variant="contained"
               startIcon={<AddCircle />}
               onClick={handleOpenAddModal}
@@ -695,7 +701,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
               }}
             >
               Add Resource Utilization
-            </Button> */}
+            </Button>
           </Box>
         </Box>
 
@@ -739,9 +745,9 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
                 {activitiesList.map((activity, i) => {
                   const isDraft = activity.status === 'Draft';
                   const startDate = activity.eventStartDate || activity.fromDate;
-    const endDate = activity.eventEndDate || activity.toDate;
-    const fromDateFormatted = startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
-    const toDateFormatted = endDate ? new Date(endDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
+                  const endDate = activity.eventEndDate || activity.toDate;
+                  const fromDateFormatted = startDate ? new Date(startDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
+                  const toDateFormatted = endDate ? new Date(endDate).toLocaleDateString("en-IN", { day: '2-digit', month: '2-digit', year: 'numeric' }) : "";
                   const statusStyle = getStatusColor(activity.status);
 
                   return (
@@ -749,23 +755,23 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
                       <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{activity.academicYear?.year || "N/A"}</TableCell>
                       <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{activity.activityCategory}</TableCell>
                       <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{activity.activityType}</TableCell>
-                      <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{activity.organizationName}</TableCell>
+                      <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{activity.courseName || activity.organizationName}</TableCell>
                       <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{fromDateFormatted} - {toDateFormatted}</TableCell>
                       <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
-        {(() => {
-          const role = (activity.activityType || '').toLowerCase();
-          if (role.includes('resource person') || role.includes('resourceperson')) {
-            const num = activity.numberOfSessions || activity.sessionsConducted || 0;
-            return `${num} session${num === 1 ? '' : 's'}`;
-          } else if (role.includes('participant') || role.includes('participated')) {
-            const num = activity.numberOfDaysParticipated || activity.daysParticipated || activity.duration || 0;
-            return `${num} day${num === 1 ? '' : 's'}`;
-          } else {
-            const num = activity.numberOfDaysOrganized || activity.duration || 0;
-            return `${num} day${num === 1 ? '' : 's'}`;
-          }
-        })()}
-      </TableCell>
+                        {(() => {
+                          const role = (activity.activityType || '').toLowerCase();
+                          if (role.includes('resource person') || role.includes('resourceperson')) {
+                            const num = activity.numberOfSessions || activity.sessionsConducted || 0;
+                            return `${num} session${num === 1 ? '' : 's'}`;
+                          } else if (role.includes('participant') || role.includes('participated')) {
+                            const num = activity.numberOfDaysParticipated || activity.daysParticipated || activity.duration || 0;
+                            return `${num} day${num === 1 ? '' : 's'}`;
+                          } else {
+                            const num = activity.numberOfDaysOrganized || activity.duration || 0;
+                            return `${num} day${num === 1 ? '' : 's'}`;
+                          }
+                        })()}
+                      </TableCell>
                       <TableCell sx={{ py: 2 }}>
                         <Typography
                           variant="body2"
@@ -915,7 +921,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
               }}>
                 <School sx={{ fontSize: 32, color: "#1e3a8a" }} />
               </Box>
-              
+
               {/* Title & Subtitle */}
               <Box>
                 <Typography sx={{
@@ -932,8 +938,8 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
                   color: "var(--text-secondary)",
                   fontWeight: 500
                 }}>
-                  {data.activityCategory === "FDP" && data.activityType === "FDP Participant"
-                    ? data.courseFdpName || data.organizationName
+                  {isCourseParticipantActivity(data.activityCategory, data.activityType)
+                    ? data.courseName || data.organizationName
                     : data.organizationName}
                 </Typography>
               </Box>
@@ -967,35 +973,35 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
           <Grid container spacing={4}>
             {/* Left Column: Activity Info and Activity Duration */}
             <Grid size={{ xs: 12, md: 7.5 }}>
-              
+
               {/* ACTIVITY INFORMATION */}
               <Box sx={{ mb: 4 }}>
                 <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, color: "#2563eb", textTransform: "uppercase", letterSpacing: "0.05em", mb: 2.5 }}>
                   Activity Information
                 </Typography>
-                
+
                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "120px 1fr", sm: "220px 1fr" }, gap: 2 }}>
                   <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Activity Category</Typography>
-                  <Typography sx={{ color: "#0f172a",fontWeight: 600, fontSize: "0.9rem" }}>{data.activityCategory}</Typography>
-                  
+                  <Typography sx={{ color: "#0f172a", fontWeight: 600, fontSize: "0.9rem" }}>{data.activityCategory}</Typography>
+
                   <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Activity Role / Type</Typography>
                   <Typography sx={{ color: "#0f172a", fontWeight: 600, fontSize: "0.9rem" }}>{data.activityType}</Typography>
-                  
+
                   <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Organization / Event Name</Typography>
                   <Typography sx={{ color: "#0f172a",fontWeight: 600, fontSize: "0.9rem" }}>
-                    {data.activityCategory === "FDP" && data.activityType === "FDP Participant"
-                      ? data.courseFdpName || data.organizationName
+                    {isCourseParticipantActivity(data.activityCategory, data.activityType)
+                      ? data.courseName || data.organizationName
                       : data.organizationName}
                   </Typography>
 
-                  {/* FDP organizing category or location details */}
-                  {data.activityCategory === "FDP" && data.activityType === "FDP Participant" && (
+                  {/* Course organizing category or location details */}
+                  {isCourseParticipantActivity(data.activityCategory, data.activityType) && (
                     <>
                       <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Organizing Institution Category</Typography>
-                      <Typography sx={{ color: "#0f172a",fontWeight: 600, fontSize: "0.9rem" }}>{data.organizingInstitutionCategory || "N/A"}</Typography>
-                      
+                      <Typography sx={{ color: "#0f172a", fontWeight: 600, fontSize: "0.9rem" }}>{data.organizingInstitutionCategory || "N/A"}</Typography>
+
                       <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Location</Typography>
-                      <Typography sx={{ color: "#0f172a",fontWeight: 600, fontSize: "0.9rem" }}>{data.location || "N/A"}</Typography>
+                      <Typography sx={{ color: "#0f172a", fontWeight: 600, fontSize: "0.9rem" }}>{data.location || "N/A"}</Typography>
                     </>
                   )}
                   {data.certificateNumber && (
@@ -1015,7 +1021,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
                 <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, color: "#2563eb", textTransform: "uppercase", letterSpacing: "0.05em", mb: 2.5 }}>
                   Activity Duration
                 </Typography>
-                
+
                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1px 1.2fr" }, gap: 3.5 }}>
                   {/* From & To Dates */}
                   <Box sx={{ display: "grid", gridTemplateColumns: "90px 1fr", gap: 2 }}>
@@ -1023,7 +1029,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
                     <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>
                       {new Date(data.eventStartDate || data.fromDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                     </Typography>
-                    
+
                     <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>To Date</Typography>
                     <Typography sx={{ color: "#0f172a", fontSize: "0.9rem" }}>
                       {new Date(data.eventEndDate || data.toDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
@@ -1051,7 +1057,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
                         }
                       })()}
                     </Typography>
-                    
+
                     {data.activityType?.includes("Participant") && data.daysParticipated && (
                       <>
                         <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Number of Days Participated</Typography>
@@ -1069,7 +1075,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
               <Typography sx={{ fontSize: "0.85rem", fontWeight: 800, color: "#2563eb", textTransform: "uppercase", letterSpacing: "0.05em", mb: 2.5 }}>
                 Proof Document
               </Typography>
-              
+
               {fileUrl ? (
                 <Box sx={{
                   display: "flex",
@@ -1132,7 +1138,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
               )}
             </Grid>
           </Grid>
-          
+
           {/* HOD Remarks (only shown if present) */}
           {data.hodComment && (
             <Box sx={{
@@ -1159,7 +1165,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
               }}>
                 <WorkspacePremium sx={{ color: "#e11d48", fontSize: 22 }} />
               </Box>
-              
+
               <Box sx={{
                 width: "1px",
                 height: 32,
@@ -1245,84 +1251,47 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
       <Box sx={{ opacity: (isDirectEntry && !isTargetFacultyValid) ? 0.5 : 1, pointerEvents: (isDirectEntry && !isTargetFacultyValid) ? 'none' : 'auto' }}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2, mb: 3, flexWrap: "wrap", gap: 2 }}>
           <Typography sx={{
-          fontSize: 13,
-          fontWeight: 800,
-          color: "var(--text-primary)",
-          background: "var(--bg-accent-1)",
-          px: 2,
-          py: 1.2,
-          borderRadius: "12px",
-          borderLeft: "5px solid var(--color-primary)",
-          textTransform: "uppercase",
-          letterSpacing: "0.03em"
-        }}>
-          Details of the Activity:
-        </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-secondary)" }}>Academic Year: *</Typography>
-          <Select
-            size="small"
-            displayEmpty
-            value={form.academicYear || ""}
-            onChange={setVal("academicYear")}
-            disabled={!!editingId}
-            sx={{ minWidth: 150, background: "var(--bg-panel)" }}
-          >
-            <MenuItem value="" disabled>--Select--</MenuItem>
-            {academicYears.map(y => (
-              <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
-            ))}
-          </Select>
+            fontSize: 13,
+            fontWeight: 800,
+            color: "var(--text-primary)",
+            background: "var(--bg-accent-1)",
+            px: 2,
+            py: 1.2,
+            borderRadius: "12px",
+            borderLeft: "5px solid var(--color-primary)",
+            textTransform: "uppercase",
+            letterSpacing: "0.03em"
+          }}>
+            Details of the Activity:
+          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography sx={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-secondary)" }}>Academic Year: *</Typography>
+            <Select
+              size="small"
+              displayEmpty
+              value={form.academicYear || ""}
+              onChange={setVal("academicYear")}
+              disabled={!!editingId}
+              sx={{ minWidth: 150, background: "var(--bg-panel)" }}
+            >
+              <MenuItem value="" disabled>--Select--</MenuItem>
+              {academicYears.map(y => (
+                <MenuItem key={y._id} value={y._id}>{y.year}</MenuItem>
+              ))}
+            </Select>
+          </Box>
         </Box>
-      </Box>
-      <Grid2>
+        <Grid2>
 
-        <Box>
-          <Typography sx={labelStyle}>Activity Category: *</Typography>
-          <Select
-            size="small"
-            fullWidth
-            displayEmpty
-            value={form.activityCategory}
-            onChange={handleCategoryChange}
-            onClose={blurActiveElement}
-            MenuProps={selectMenuProps}
-          >
-            <MenuItem value="" disabled>--Select Category--</MenuItem>
-            {ACTIVITY_CATEGORIES.map(cat => (
-              <MenuItem key={cat} value={cat}>{cat}</MenuItem>
-            ))}
-          </Select>
-        </Box>
-
-        <Box>
-          <Typography sx={labelStyle}>Activity Role / Type: *</Typography>
-          <Select
-            size="small"
-            fullWidth
-            displayEmpty
-            value={form.activityType}
-            onChange={handleRoleChange}
-            disabled={!form.activityCategory}
-            onClose={blurActiveElement}
-            MenuProps={selectMenuProps}
-          >
-            <MenuItem value="" disabled>--Select Role--</MenuItem>
-            {form.activityCategory && ROLES_BY_CATEGORY[form.activityCategory]?.map(role => (
-              <MenuItem key={role} value={role}>{role}</MenuItem>
-            ))}
-          </Select>
-        </Box>
-
-        {form.activityCategory === "FDP" && form.activityType === "FDP Participant" ? (
+        {isCourseParticipantActivity(form.activityCategory, form.activityType) ? (
           <>
             <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
               <Typography sx={labelStyle}>Course Name: *</Typography>
               <TextField
                 size="small"
                 fullWidth
-                value={form.courseFdpName}
-                onChange={setVal("courseFdpName")}
+                value={form.courseName}
+                onChange={setVal("courseName")}
                 placeholder="Enter Course Name"
               />
             </Box>
@@ -1359,46 +1328,135 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
               </Select>
             </Box>
 
-            <Box>
-              <Typography sx={labelStyle}>Location (City, State): *</Typography>
-              <TextField
-                size="small"
-                fullWidth
-                value={form.location}
-                onChange={setVal("location")}
-                placeholder="e.g. Hyderabad, Telangana"
-              />
-            </Box>
+          <Box>
+            <Typography sx={labelStyle}>Activity Role / Type: *</Typography>
+            <Select
+              size="small"
+              fullWidth
+              displayEmpty
+              value={form.activityType}
+              onChange={handleRoleChange}
+              disabled={!form.activityCategory}
+              onClose={blurActiveElement}
+              MenuProps={selectMenuProps}
+            >
+              <MenuItem value="" disabled>--Select Role--</MenuItem>
+              {form.activityCategory && ROLES_BY_CATEGORY[form.activityCategory]?.map(role => (
+                <MenuItem key={role} value={role}>{role}</MenuItem>
+              ))}
+            </Select>
+          </Box>
 
-            {form.organizingInstitutionCategory === "MHRD R&D Lab" && (
+          {form.activityCategory === "FDP" && form.activityType === "FDP Participant" ? (
+            <>
               <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                <Typography sx={labelStyle}>Lab Name: *</Typography>
+                <Typography sx={labelStyle}>Course Name: *</Typography>
                 <TextField
                   size="small"
                   fullWidth
-                  value={form.labName}
-                  onChange={setVal("labName")}
-                  placeholder="Enter Lab Name"
+                  value={form.courseFdpName}
+                  onChange={setVal("courseFdpName")}
+                  placeholder="Enter Course Name"
                 />
               </Box>
-            )}
 
-            {form.organizingInstitutionCategory === "Govt. University" && (
-              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                <Typography sx={labelStyle}>University Name: *</Typography>
+              <Box>
+                <Typography sx={labelStyle}>Organizing Institution Category: *</Typography>
+                <Select
+                  size="small"
+                  fullWidth
+                  displayEmpty
+                  value={form.organizingInstitutionCategory}
+                  onChange={setVal("organizingInstitutionCategory")}
+                  onClose={blurActiveElement}
+                  MenuProps={selectMenuProps}
+                >
+                  <MenuItem value="" disabled>--Select Category--</MenuItem>
+                  {[
+                    "UGC",
+                    "AICTE",
+                    "IIT",
+                    "IIM",
+                    "NIT",
+                    "MHRD R&D Lab",
+                    "NITTTR",
+                    "NIPER",
+                    "ICMR",
+                    "Govt. University",
+                    "NIRF Ranked Institute (Below 200)",
+                    "NPTEL",
+                    "Other"
+                  ].map(opt => (
+                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                  ))}
+                </Select>
+              </Box>
+
+              <Box>
+                <Typography sx={labelStyle}>Location (City, State): *</Typography>
                 <TextField
                   size="small"
                   fullWidth
-                  value={form.universityName}
-                  onChange={setVal("universityName")}
-                  placeholder="Enter University Name"
+                  value={form.location}
+                  onChange={setVal("location")}
+                  placeholder="e.g. Hyderabad, Telangana"
                 />
               </Box>
-            )}
 
-            {form.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)" && (
-              <>
-                <Box>
+              {form.organizingInstitutionCategory === "MHRD R&D Lab" && (
+                <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                  <Typography sx={labelStyle}>Lab Name: *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={form.labName}
+                    onChange={setVal("labName")}
+                    placeholder="Enter Lab Name"
+                  />
+                </Box>
+              )}
+
+              {form.organizingInstitutionCategory === "Govt. University" && (
+                <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                  <Typography sx={labelStyle}>University Name: *</Typography>
+                  <TextField
+                    size="small"
+                    fullWidth
+                    value={form.universityName}
+                    onChange={setVal("universityName")}
+                    placeholder="Enter University Name"
+                  />
+                </Box>
+              )}
+
+              {form.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)" && (
+                <>
+                  <Box>
+                    <Typography sx={labelStyle}>Institute Name: *</Typography>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      value={form.instituteName}
+                      onChange={setVal("instituteName")}
+                      placeholder="Enter Institute Name"
+                    />
+                  </Box>
+                  <Box>
+                    <Typography sx={labelStyle}>NIRF Rank: *</Typography>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      type="number"
+                      value={form.nirfRank}
+                      onChange={setVal("nirfRank")}
+                      placeholder="e.g. 45"
+                    />
+                  </Box>
+                </>
+              )}
+
+              {form.organizingInstitutionCategory === "Other / Host Institute" && (
+                <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
                   <Typography sx={labelStyle}>Institute Name: *</Typography>
                   <TextField
                     size="small"
@@ -1408,182 +1466,159 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
                     placeholder="Enter Institute Name"
                   />
                 </Box>
-                <Box>
-                  <Typography sx={labelStyle}>NIRF Rank: *</Typography>
+              )}
+
+              {form.organizingInstitutionCategory === "NPTEL" && (
+                <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+                  <Typography sx={labelStyle}>NPTEL Certificate Number: *</Typography>
                   <TextField
                     size="small"
                     fullWidth
-                    type="number"
-                    value={form.nirfRank}
-                    onChange={setVal("nirfRank")}
-                    placeholder="e.g. 45"
+                    value={form.certificateNumber}
+                    onChange={setVal("certificateNumber")}
+                    placeholder="e.g. NPTEL24CS01S1234"
+                    helperText="Required to prevent duplicate claims in Metric 3.2 (Contribution)"
                   />
                 </Box>
-              </>
-            )}
-
-            {form.organizingInstitutionCategory === "Other / Host Institute" && (
-              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                <Typography sx={labelStyle}>Institute Name: *</Typography>
-                <TextField
-                  size="small"
-                  fullWidth
-                  value={form.instituteName}
-                  onChange={setVal("instituteName")}
-                  placeholder="Enter Institute Name"
-                />
-              </Box>
-            )}
-
-            {form.organizingInstitutionCategory === "NPTEL" && (
-              <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-                <Typography sx={labelStyle}>NPTEL Certificate Number: *</Typography>
-                <TextField
-                  size="small"
-                  fullWidth
-                  value={form.certificateNumber}
-                  onChange={setVal("certificateNumber")}
-                  placeholder="e.g. NPTEL24CS01S1234"
-                  helperText="Required to prevent duplicate claims in Metric 3.2 (Contribution)"
-                />
-              </Box>
-            )}
-          </>
-        ) : (
-          <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-            <Typography sx={labelStyle}>Organization / Event Name: *</Typography>
-            <TextField
-              size="small"
-              fullWidth
-              value={form.organizationName}
-              onChange={setVal("organizationName")}
-            placeholder="Enter Name of Event or Organization"
-            />
-          </Box>
-        )}
-
-        <Box>
-          <Typography sx={labelStyle}>Event Start Date: *</Typography>
-          <TextField
-            size="small"
-            fullWidth
-            type="date"
-            value={form.eventStartDate}
-            onChange={setVal("eventStartDate")}
-            slotProps={{
-              inputLabel: { shrink: true },
-              htmlInput: { max: new Date().toISOString().split("T")[0] }
-            }}
-          />
-        </Box>
-
-        <Box>
-          <Typography sx={labelStyle}>Event End Date: *</Typography>
-          <TextField
-            size="small"
-            fullWidth
-            type="date"
-            value={form.eventEndDate}
-            onChange={setVal("eventEndDate")}
-            slotProps={{
-              inputLabel: { shrink: true },
-              htmlInput: { max: new Date().toISOString().split("T")[0] }
-            }}
-          />
-        </Box>
-
-        {showOrganizedDaysField && (
-          <Box>
-            <Typography sx={labelStyle}>Number of Days Organized: *</Typography>
-            <TextField
-              size="small"
-              fullWidth
-              type="number"
-              value={form.numberOfDaysOrganized}
-              onChange={setVal("numberOfDaysOrganized")}
-              placeholder="e.g. 5"
-            />
-          </Box>
-        )}
-
-        {showSessionsField && (
-          <Box>
-            <Typography sx={labelStyle}>Number of Sessions Conducted: *</Typography>
-            <TextField
-              size="small"
-              fullWidth
-              type="number"
-              value={form.numberOfSessions}
-              onChange={setVal("numberOfSessions")}
-              placeholder="e.g. 3"
-            />
-          </Box>
-        )}
-
-        {showDaysField && (
-          <Box>
-            <Typography sx={labelStyle}>Number of Days Participated: *</Typography>
-            <TextField
-              size="small"
-              fullWidth
-              type="number"
-              value={form.numberOfDaysParticipated}
-              onChange={setVal("numberOfDaysParticipated")}
-              placeholder="e.g. 5"
-            />
-          </Box>
-        )}
-
-        <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-          <Typography sx={labelStyle}>Remarks (Optional):</Typography>
-          <TextField
-            size="small"
-            fullWidth
-            multiline
-            rows={2}
-            value={form.remarks}
-            onChange={setVal("remarks")}
-            placeholder="Any additional remarks..."
-          />
-        </Box>
-      </Grid2>
-
-      <NoteBox />
-
-      <Box sx={{ mt: 2 }}>
-        {editingId && form.existingProof && !isDocumentRemoved ? (
-          <Box sx={{ p: 2, border: "1px solid var(--border-color)", borderRadius: "12px", background: "var(--bg-glass)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              {form.existingProof.match(/\.(jpeg|jpg|gif|png)$/i) ? (
-                 <a href={form.existingProof.startsWith('http') ? form.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${form.existingProof}`} target="_blank" rel="noreferrer">
-                   <img 
-                     src={form.existingProof.startsWith('http') ? form.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${form.existingProof}`} 
-                     alt="Proof Document"
-                     style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "8px", border: "1px solid var(--border-color)" }}
-                   />
-                 </a>
-              ) : (
-                 <FilePresent sx={{ color: "var(--color-primary)", fontSize: 40 }} />
               )}
-              <Box>
-                <Typography sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Existing Document</Typography>
-                {!form.existingProof.match(/\.(jpeg|jpg|gif|png)$/i) && (
-                  <Button size="small" href={form.existingProof.startsWith('http') ? form.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${form.existingProof}`} target="_blank" sx={{ mt: 0.5, textTransform: "none", p: 0, minWidth: "auto" }}>View PDF</Button>
-                )}
-              </Box>
+            </>
+          ) : (
+            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+              <Typography sx={labelStyle}>Organization / Event Name: *</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                value={form.organizationName}
+                onChange={setVal("organizationName")}
+                placeholder="Enter Name of Event or Organization"
+              />
             </Box>
-            <IconButton onClick={() => setIsDocumentRemoved(true)} sx={{ color: "#ef4444" }}>
-              <Delete />
-            </IconButton>
+          )}
+
+          <Box>
+            <Typography sx={labelStyle}>Event Start Date: *</Typography>
+            <TextField
+              size="small"
+              fullWidth
+              type="date"
+              value={form.eventStartDate}
+              onChange={setVal("eventStartDate")}
+              slotProps={{
+                inputLabel: { shrink: true },
+                htmlInput: { max: new Date().toISOString().split("T")[0] }
+              }}
+            />
           </Box>
-        ) : (
-          <FileField
-            label="Relevant Proof Upload: *"
-            name="proof"
-            onChange={handleFileChange}
-          />
-        )}
-      </Box>
+
+          <Box>
+            <Typography sx={labelStyle}>Event End Date: *</Typography>
+            <TextField
+              size="small"
+              fullWidth
+              type="date"
+              value={form.eventEndDate}
+              onChange={setVal("eventEndDate")}
+              slotProps={{
+                inputLabel: { shrink: true },
+                htmlInput: { max: new Date().toISOString().split("T")[0] }
+              }}
+            />
+          </Box>
+
+          {showOrganizedDaysField && (
+            <Box>
+              <Typography sx={labelStyle}>Number of Days Organized: *</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                type="number"
+                value={form.numberOfDaysOrganized}
+                onChange={setVal("numberOfDaysOrganized")}
+                placeholder="e.g. 5"
+              />
+            </Box>
+          )}
+
+          {showSessionsField && (
+            <Box>
+              <Typography sx={labelStyle}>Number of Sessions Conducted: *</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                type="number"
+                value={form.numberOfSessions}
+                onChange={setVal("numberOfSessions")}
+                placeholder="e.g. 3"
+              />
+            </Box>
+          )}
+
+          {showDaysField && (
+            <Box>
+              <Typography sx={labelStyle}>Number of Days Participated: *</Typography>
+              <TextField
+                size="small"
+                fullWidth
+                type="number"
+                value={form.numberOfDaysParticipated}
+                onChange={setVal("numberOfDaysParticipated")}
+                placeholder="e.g. 5"
+              />
+            </Box>
+          )}
+
+          <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
+            <Typography sx={labelStyle}>Remarks (Optional):</Typography>
+            <TextField
+              size="small"
+              fullWidth
+              multiline
+              rows={2}
+              value={form.remarks}
+              onChange={setVal("remarks")}
+              placeholder="Any additional remarks..."
+            />
+          </Box>
+        </>
+        ) : null}
+        </Grid2>
+
+        <NoteBox />
+
+        <Box sx={{ mt: 2 }}>
+          {editingId && form.existingProof && !isDocumentRemoved ? (
+            <Box sx={{ p: 2, border: "1px solid var(--border-color)", borderRadius: "12px", background: "var(--bg-glass)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                {form.existingProof.match(/\.(jpeg|jpg|gif|png)$/i) ? (
+                  <a href={form.existingProof.startsWith('http') ? form.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${form.existingProof}`} target="_blank" rel="noreferrer">
+                    <img
+                      src={form.existingProof.startsWith('http') ? form.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${form.existingProof}`}
+                      alt="Proof Document"
+                      style={{ width: "60px", height: "60px", objectFit: "cover", borderRadius: "8px", border: "1px solid var(--border-color)" }}
+                    />
+                  </a>
+                ) : (
+                  <FilePresent sx={{ color: "var(--color-primary)", fontSize: 40 }} />
+                )}
+                <Box>
+                  <Typography sx={{ fontWeight: 600, color: "var(--text-primary)" }}>Existing Document</Typography>
+                  {!form.existingProof.match(/\.(jpeg|jpg|gif|png)$/i) && (
+                    <Button size="small" href={form.existingProof.startsWith('http') ? form.existingProof : `${(import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "")}${form.existingProof}`} target="_blank" sx={{ mt: 0.5, textTransform: "none", p: 0, minWidth: "auto" }}>View PDF</Button>
+                  )}
+                </Box>
+              </Box>
+              <IconButton onClick={() => setIsDocumentRemoved(true)} sx={{ color: "#ef4444" }}>
+                <Delete />
+              </IconButton>
+            </Box>
+          ) : (
+            <FileField
+              label="Relevant Proof Upload: *"
+              name="proof"
+              onChange={handleFileChange}
+            />
+          )}
+        </Box>
       </Box>
     </>
   );
@@ -1665,10 +1700,10 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
         open={noActiveYearAlertOpen}
         onClose={() => setNoActiveYearAlertOpen(false)}
       />
-      
+
       {/* Confirmation Dialog */}
-      <Dialog 
-        open={confirmDialog.open} 
+      <Dialog
+        open={confirmDialog.open}
         onClose={() => setConfirmDialog({ ...confirmDialog, open: false })}
         maxWidth="xs"
         fullWidth
@@ -1693,21 +1728,21 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)", gap: 1 }}>
-          <Button 
-            onClick={() => setConfirmDialog({ ...confirmDialog, open: false })} 
+          <Button
+            onClick={() => setConfirmDialog({ ...confirmDialog, open: false })}
             sx={{ color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'none' }}
           >
             Cancel
           </Button>
-          <Button 
-            onClick={handleConfirmAction} 
-            variant="contained" 
+          <Button
+            onClick={handleConfirmAction}
+            variant="contained"
             color={confirmDialog.type === "delete" ? "error" : "primary"}
             disabled={loading}
-            sx={{ 
-              borderRadius: '50px', 
-              px: 4, 
-              fontWeight: 700, 
+            sx={{
+              borderRadius: '50px',
+              px: 4,
+              fontWeight: 700,
               textTransform: 'none',
               boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
             }}

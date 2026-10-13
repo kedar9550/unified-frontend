@@ -482,7 +482,18 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                             <TextField fullWidth label="Area" name="area" value={formData.area || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
-                            <TextField fullWidth label="Filing Number" name="filingNo" value={formData.filingNo || ""} onChange={handleChange} variant="outlined" size="small" />
+                            <TextField 
+                                fullWidth 
+                                label="Filing / Application Number" 
+                                name="applicationNo" 
+                                value={formData.applicationNo || formData.filingNo || ""} 
+                                onChange={(e) => {
+                                    handleChange(e);
+                                    setFormData(prev => ({ ...prev, filingNo: e.target.value, applicationNo: e.target.value }));
+                                }} 
+                                variant="outlined" 
+                                size="small" 
+                            />
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                             <TextField
@@ -805,6 +816,9 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                             <TextField fullWidth label="Student Name" name="studentName" value={formData.studentName || ""} onChange={handleChange} variant="outlined" size="small" />
+                        </Box>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 12" } }}>
+                            <TextField fullWidth label="Title of the Ph.D Work" name="titleOfPhdWork" value={formData.titleOfPhdWork || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                             <TextField fullWidth label="Course / Program" name="course" value={formData.course || "Ph.D."} disabled variant="outlined" size="small" />

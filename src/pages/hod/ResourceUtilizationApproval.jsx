@@ -140,7 +140,7 @@ const ResourceUtilizationApproval = () => {
     if (selected) {
       detailFields = [
         { label: 'Type/Role', value: selected.activityType },
-        { label: 'Course/FDP Name', value: selected.courseFdpName },
+        { label: 'Course Name', value: selected.courseName },
         { label: 'Organizing Institution', value: selected.organizingInstitutionCategory },
         { label: 'Location', value: selected.location },
         { label: 'University Name', value: selected.universityName },

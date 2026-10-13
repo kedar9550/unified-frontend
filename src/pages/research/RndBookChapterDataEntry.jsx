@@ -884,12 +884,12 @@ export default function RndBookChapterDataEntry() {
             <Grid2>
               <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
                 <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", mb: 1, fontSize: "0.85rem", textTransform: "uppercase" }}>ATTACH PAGE DISPLAYING AUTHOR AFFILIATION AND CHAPTER TITLE *</Typography>
-                <FileField onChange={setFile("authorAffiliation")} label="No file chosen" file={files.authorAffiliation} />
+                <FileField name="authorAffiliation" onChange={setFile("authorAffiliation")} label="No file chosen" file={files.authorAffiliation} />
               </Box>
 
               <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
                 <Typography sx={{ fontWeight: 700, color: "var(--text-primary)", mb: 1, fontSize: "0.85rem", textTransform: "uppercase" }}>TOTAL BOOK CHAPTER *</Typography>
-                <FileField onChange={setFile("totalBookChapter")} label="No file chosen" file={files.totalBookChapter} />
+                <FileField name="totalBookChapter" accept=".pdf" maxSize={5 * 1024 * 1024} onChange={setFile("totalBookChapter")} label="No file chosen" file={files.totalBookChapter} />
               </Box>
 
               {(() => {

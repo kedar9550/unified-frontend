@@ -110,7 +110,6 @@ export const ROLE_ROUTES = {
       text: "Value addition",
       icon: <AccountBalance />,
       nested: [
-        { text: "Research", path: "/hod/research-approvals", icon: <Science /> },
         { text: "Resource Utilization", path: "/value-addition/resource-utilization", icon: <Assignment /> },
         { text: "Contribution", path: "/value-addition/contribution", icon: <WorkspacePremium /> },
       ],

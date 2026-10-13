@@ -416,6 +416,7 @@ const ManageBlocks = () => {
                             onChange={handleChange}
                             fullWidth
                             required
+                            slotProps={{ inputLabel: { shrink: true } }}
                             placeholder={formData.blockType === 'HOSTEL' ? "e.g. Kaveri Block, Ganga, Block-1" : "e.g. Ramanujan Bhavan, Cotton Bhavan"}
                             size="small"
                         />
@@ -426,6 +427,7 @@ const ManageBlocks = () => {
                             onChange={handleChange}
                             fullWidth
                             required
+                            slotProps={{ inputLabel: { shrink: true } }}
                             placeholder={formData.blockType === 'HOSTEL' ? (formData.genderTag === 'GIRLS' ? "e.g. GH-KAV, GH-B1" : "e.g. BH-KAV, BH-B1") : "e.g. RB, CB, BGB"}
                             size="small"
                             helperText="Must be unique. For hostels, prefix with BH- (Boys) or GH- (Girls) if names are identical."
@@ -439,6 +441,7 @@ const ManageBlocks = () => {
                             fullWidth
                             multiline
                             rows={2}
+                            slotProps={{ inputLabel: { shrink: true } }}
                             placeholder="Brief details about the block, floors or rooms"
                             size="small"
                         />
