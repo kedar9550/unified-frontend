@@ -1324,15 +1324,29 @@ export default function PatentPublication() {
     setStatusUpdateFile(null);
   };
 
-  const handleResolveClaim = async (researchId, researchType, claimantId) => {
+  const handleResolveClaim = async (researchId, researchType, claimantId, stage = null) => {
     try {
-      const res = await API.post("/api/appraisal/resolve-claim", {
+      const payload = {
         researchId,
         researchType,
         claimantId
-      });
+      };
+      if (stage) payload.stage = stage;
+      const res = await API.post("/api/appraisal/resolve-claim", payload);
       if (res.data.success) {
-        setSelectedPubDetails(prev => ({ ...prev, appraisalClaimant: claimantId }));
+        setSelectedPubDetails(prev => {
+          if (!prev) return prev;
+          const updated = { ...prev };
+          const targetStage = stage || (prev.patentStatus === 'Granted' ? 'granted' : 'published');
+          if (targetStage === 'published') {
+            updated.published = { ...(updated.published || {}), appraisalClaimant: claimantId };
+            if (prev.patentStatus === 'Published') updated.appraisalClaimant = claimantId;
+          } else if (targetStage === 'granted') {
+            updated.granted = { ...(updated.granted || {}), appraisalClaimant: claimantId };
+            if (prev.patentStatus === 'Granted') updated.appraisalClaimant = claimantId;
+          }
+          return updated;
+        });
         API.get("/api/research/patent").then(r => setPublicationsList(r.data?.data || r.data || [])).catch(() => { });
         toast.success("Appraisal claimant successfully updated!");
       }
@@ -1618,98 +1632,215 @@ export default function PatentPublication() {
             <Box sx={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
               {/* Card 1: Appraisal & Eligibility Info */}
               <Paper elevation={0} sx={{ p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)" }}>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 2, borderBottom: "1px solid var(--border-color)" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                      <CheckCircleOutlineIcon sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
-                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
-                        Patent Eligibility for Appraisal
+                {(() => {
+                  const eligibleClaimants = [
+                    { _id: data.facultyId?._id || data.facultyId, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
+                    ...((data.coInventors || [])
+                      .filter(ca => ca.employeeId)
+                      .map(ca => ({
+                        _id: ca.employeeId?._id || ca.employeeId,
+                        name: ca.employeeId?.name || ca.name,
+                        institutionId: ca.employeeId?.institutionId || ca.employeeId || ""
+                      })))
+                  ];
+                  const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
+                  const isApplicant = data.visibilityRole === "Applicant" || (data.facultyId && (data.facultyId === user?.userId || data.facultyId._id === user?.userId));
+
+                  const hasBothStages = Boolean(
+                    (data.published?.publishedstatus === 'yes' || data.published?.publisheddate) &&
+                    (data.granted?.grantedstatus === 'yes' || data.statusUpdatedToGranted || data.patentStatus === 'Granted')
+                  );
+
+                  const renderClaimantSelector = (claimantVal, stageName, isStageApproved, isStageEligible) => {
+                    if (uniqueClaimants.length <= 1) {
+                      return (
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                          {data.facultyId?.name || "-"} <Typography component="span" variant="caption" sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>(Auto-assigned)</Typography>
+                        </Typography>
+                      );
+                    }
+
+                    if (!isStageApproved || !isStageEligible) {
+                      return (
+                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
+                          {!isStageApproved ? "Pending Approval" : "N/A - Not Eligible"}
+                        </Typography>
+                      );
+                    }
+
+                    const currentClaimantObj = uniqueClaimants.find(c => {
+                      const cInst = (c.institutionId || "").toString().trim();
+                      const cId = (c._id || "").toString().trim();
+                      const acInst = (claimantVal?.institutionId || claimantVal || "").toString().trim();
+                      const acId = (claimantVal?._id || claimantVal || "").toString().trim();
+                      return (cInst && cInst === acInst) || (cId && cId === acId);
+                    });
+
+                    if (!claimantVal && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1) {
+                      return (
+                        <Select
+                          size="small"
+                          fullWidth
+                          value=""
+                          displayEmpty
+                          onChange={(e) => handleResolveClaim(data._id, "Patent", e.target.value, stageName)}
+                          sx={{ backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
+                        >
+                          <MenuItem value="" disabled>Select Claimant</MenuItem>
+                          {uniqueClaimants.map(c => (
+                            <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
+                              {c.name} ({c.institutionId})
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      );
+                    }
+
+                    return (
+                      <Typography variant="body2" sx={{ fontWeight: 800, color: currentClaimantObj ? "var(--text-primary)" : "#ed6c02" }}>
+                        {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
                       </Typography>
-                    </Box>
-                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                      {data.status === "Approved" ? (data.appraisalEligible || "No") : "Not yet decided"}
-                    </Typography>
-                  </Box>
+                    );
+                  };
 
-                  <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 0.5 }}>
-                      <PersonIcon sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
-                      <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
-                        Appraisal Claimant
-                      </Typography>
-                    </Box>
-                    <Box sx={{ textAlign: "right", maxWidth: "60%" }}>
-                      {(() => {
-                        const eligibleClaimants = [
-                          { _id: data.facultyId?._id, name: data.facultyId?.name, institutionId: data.facultyId?.institutionId },
-                          ...((data.coInventors || [])
-                            .filter(ca => ca.employeeId)
-                            .map(ca => ({
-                              _id: ca.employeeId?._id || ca.employeeId,
-                              name: ca.employeeId?.name || ca.name,
-                              institutionId: ca.employeeId?.institutionId || ca.employeeId || ""
-                            })))
-                        ];
-                        const uniqueClaimants = eligibleClaimants.filter((v, i, a) => v._id && a.findIndex(t => t._id.toString() === v._id.toString()) === i);
+                  if (hasBothStages) {
+                    const isPubApproved = data.published?.status === "Approved";
+                    const isPubEligible = data.published?.appraisalEligible !== "No";
+                    const pubClaimantVal = data.published?.appraisalClaimant;
 
-                        const isApproved = data.status === "Approved";
-                        const isAppraisalEligible = data.appraisalEligible === "Yes";
+                    const isGrantedApproved = data.granted?.status === "Approved" || (data.patentStatus === "Granted" && data.status === "Approved");
+                    const isGrantedEligible = (data.granted?.appraisalEligible || data.appraisalEligible) === "Yes";
+                    const grantedClaimantVal = data.granted?.appraisalClaimant || (data.patentStatus === "Granted" && data.granted?.status === "Approved" ? data.appraisalClaimant : null);
 
-                        if (uniqueClaimants.length <= 1) {
-                          return (
-                            <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
-                              {data.facultyId?.name || "-"} <Typography component="span" variant="caption" sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>(Auto-assigned)</Typography>
+                    return (
+                      <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                        {/* Published Stage Appraisal */}
+                        <Box sx={{ pb: 2, borderBottom: "1px dashed var(--border-color)" }}>
+                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.5px", color: "var(--color-primary)" }}>
+                              Published Stage Appraisal
                             </Typography>
-                          );
-                        }
-
-                        if (!isApproved || !isAppraisalEligible) {
-                          return (
-                            <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
-                              N/A - Not Eligible or Not Approved
-                            </Typography>
-                          );
-                        }
-
-                        const currentClaimantObj = uniqueClaimants.find(c => {
-                          const cInst = (c.institutionId || "").toString().trim();
-                          const cId = (c._id || "").toString().trim();
-                          const acInst = (data.appraisalClaimant?.institutionId || data.appraisalClaimant || "").toString().trim();
-                          const acId = (data.appraisalClaimant?._id || data.appraisalClaimant || "").toString().trim();
-                          return (cInst && cInst === acInst) || (cId && cId === acId);
-                        });
-
-                        const isApplicant = data.visibilityRole === "Applicant" || (data.facultyId && (data.facultyId === user?.userId || data.facultyId._id === user?.userId));
-
-                        if (!data.appraisalClaimant && isApplicant && appraisalConfigActive && uniqueClaimants.length > 1) {
-                          return (
-                            <Select
+                            <Chip
+                              label={isPubApproved ? "Published Approved" : (data.published?.status || "Pending")}
                               size="small"
-                              fullWidth
-                              value=""
-                              displayEmpty
-                              onChange={(e) => handleResolveClaim(data._id, "Patent", e.target.value)}
-                              sx={{ backgroundColor: "var(--bg-paper)", fontSize: "0.875rem" }}
-                            >
-                              <MenuItem value="" disabled>Select Claimant</MenuItem>
-                              {uniqueClaimants.map(c => (
-                                <MenuItem key={c.institutionId || c._id} value={c.institutionId || c._id}>
-                                  {c.name} ({c.institutionId})
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          );
-                        }
+                              sx={{
+                                height: 22,
+                                fontSize: "0.7rem",
+                                fontWeight: 800,
+                                bgcolor: isPubApproved ? "rgba(46, 125, 50, 0.1)" : "rgba(237, 108, 2, 0.1)",
+                                color: isPubApproved ? "#2e7d32" : "#ed6c02"
+                              }}
+                            />
+                          </Box>
 
-                        return (
-                          <Typography variant="body2" sx={{ fontWeight: 800, color: currentClaimantObj ? "var(--text-primary)" : "#ed6c02" }}>
-                            {currentClaimantObj ? `${currentClaimantObj.name} (${currentClaimantObj.institutionId})` : "Not Yet Designated"}
+                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <CheckCircleOutlineIcon sx={{ color: "var(--text-secondary)", fontSize: 18 }} />
+                              <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.85rem" }}>
+                                Eligibility for Appraisal
+                              </Typography>
+                            </Box>
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                              {isPubApproved ? (data.published?.appraisalEligible || "Yes") : "Not yet decided"}
+                            </Typography>
+                          </Box>
+
+                          <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
+                              <PersonIcon sx={{ color: "var(--text-secondary)", fontSize: 18 }} />
+                              <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.85rem" }}>
+                                Appraisal Claimant
+                              </Typography>
+                            </Box>
+                            <Box sx={{ textAlign: "right", maxWidth: "60%" }}>
+                              {renderClaimantSelector(pubClaimantVal, "published", isPubApproved, isPubEligible)}
+                            </Box>
+                          </Box>
+                        </Box>
+
+                        {/* Granted Stage Appraisal */}
+                        <Box>
+                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
+                            <Typography variant="caption" sx={{ fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.5px", color: "var(--color-primary)" }}>
+                              Granted Stage Appraisal
+                            </Typography>
+                            <Chip
+                              label={isGrantedApproved ? "Granted Approved" : (data.granted?.status || "Pending Approval")}
+                              size="small"
+                              sx={{
+                                height: 22,
+                                fontSize: "0.7rem",
+                                fontWeight: 800,
+                                bgcolor: isGrantedApproved ? "rgba(46, 125, 50, 0.1)" : "rgba(237, 108, 2, 0.1)",
+                                color: isGrantedApproved ? "#2e7d32" : "#ed6c02"
+                              }}
+                            />
+                          </Box>
+
+                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <CheckCircleOutlineIcon sx={{ color: "var(--text-secondary)", fontSize: 18 }} />
+                              <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.85rem" }}>
+                                Eligibility for Appraisal
+                              </Typography>
+                            </Box>
+                            <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                              {isGrantedApproved ? (data.granted?.appraisalEligible || data.appraisalEligible || "No") : "Not yet decided"}
+                            </Typography>
+                          </Box>
+
+                          <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
+                              <PersonIcon sx={{ color: "var(--text-secondary)", fontSize: 18 }} />
+                              <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: "0.85rem" }}>
+                                Appraisal Claimant
+                              </Typography>
+                            </Box>
+                            <Box sx={{ textAlign: "right", maxWidth: "60%" }}>
+                              {renderClaimantSelector(grantedClaimantVal, "granted", isGrantedApproved, isGrantedEligible)}
+                            </Box>
+                          </Box>
+                        </Box>
+                      </Box>
+                    );
+                  }
+
+                  // Single Stage (Published only OR Granted only)
+                  const isApproved = data.status === "Approved";
+                  const isAppraisalEligible = data.appraisalEligible === "Yes";
+                  const claimantVal = data.patentStatus === 'Granted'
+                    ? (data.granted?.appraisalClaimant || data.appraisalClaimant)
+                    : (data.published?.appraisalClaimant || data.appraisalClaimant);
+                  const activeStage = data.patentStatus === 'Granted' ? 'granted' : 'published';
+
+                  return (
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 2, borderBottom: "1px solid var(--border-color)" }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                          <CheckCircleOutlineIcon sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
+                          <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                            Patent Eligibility for Appraisal
                           </Typography>
-                        );
-                      })()}
+                        </Box>
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>
+                          {isApproved ? (data.appraisalEligible || "No") : "Not yet decided"}
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mt: 0.5 }}>
+                          <PersonIcon sx={{ color: "var(--text-secondary)", fontSize: 20 }} />
+                          <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+                            Appraisal Claimant
+                          </Typography>
+                        </Box>
+                        <Box sx={{ textAlign: "right", maxWidth: "60%" }}>
+                          {renderClaimantSelector(claimantVal, activeStage, isApproved, isAppraisalEligible)}
+                        </Box>
+                      </Box>
                     </Box>
-                  </Box>
-                </Box>
+                  );
+                })()}
               </Paper>
 
               {data.patentStatus !== "Granted" && data.status === "Approved" && !updateStatusExpanded && (
