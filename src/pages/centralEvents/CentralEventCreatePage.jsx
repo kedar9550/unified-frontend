@@ -15,7 +15,10 @@ import {
   IconButton,
   Card,
   CardContent,
-  InputAdornment
+  InputAdornment,
+  Autocomplete,
+  Avatar,
+  Chip
 } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
@@ -28,18 +31,27 @@ import {
   Description as DescriptionIcon,
   LocationOn as LocationIcon,
   CheckCircle as CheckCircleIcon,
-  Add as AddIcon
+  Add as AddIcon,
+  Remove as RemoveIcon,
+  People as PeopleIcon,
+  School as SchoolIcon,
+  Badge as BadgeIcon,
+  Person as PersonIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getEventTypes, getCategoriesByTypeCode, getOrganizers, createCentralEvent, uploadCentralEventFile } from '../../api/centralEventsApi';
+import { fetchEventDepartments } from '../../api/eventDepartmentApi';
+import API from '../../api/axios';
+import axios from 'axios';
 import { PageHeader, CustomTabs } from '../../components/common';
 import PageContainer from '../../components/common/design-system/PageContainer';
 import { toast } from 'sonner';
 import formRegistry from '../../config/form-registry.json';
 import DynamicForm from '../UniversityData/DynamicForm';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9022';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const ECAP_API_KEY = import.meta.env.VITE_ECAP_API_KEY || import.meta.env.ECAP_API_KEY || (typeof process !== 'undefined' && process.env?.ECAP_API_KEY);
 
 const getImageUrl = (img) => {
   if (!img) return '';
@@ -64,6 +76,21 @@ export default function CentralEventCreatePage() {
   const [loadingTypes, setLoadingTypes] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // Department State
+  const [departments, setDepartments] = useState([]);
+  const [departmentsList, setDepartmentsList] = useState([]);
+
+  // Infrastructure & Venue State
+  const [venueType, setVenueType] = useState('Indoor');
+  const [buildingId, setBuildingId] = useState('');
+  const [floorId, setFloorId] = useState('');
+  const [groundId, setGroundId] = useState('');
+  const [roomNo, setRoomNo] = useState('');
+  const [onlineLink, setOnlineLink] = useState('');
+  const [buildingsList, setBuildingsList] = useState([]);
+  const [floorsList, setFloorsList] = useState([]);
+  const [groundsList, setGroundsList] = useState([]);
+
   // Form State
   const [typeCode, setTypeCode] = useState('');
   const [selectedTypeObj, setSelectedTypeObj] = useState(null);
@@ -85,8 +112,32 @@ export default function CentralEventCreatePage() {
   const [minTeamSize, setMinTeamSize] = useState('1');
   const [maxTeamSize, setMaxTeamSize] = useState('1');
 
-  const [rulesText, setRulesText] = useState('');
-  const [outcomesText, setOutcomesText] = useState('');
+  const [rules, setRules] = useState(['', '', '']);
+
+  const handleRuleChange = (index, value) => {
+    setRules((currentRules) => currentRules.map((rule, i) => (i === index ? value : rule)));
+  };
+
+  const addRule = () => setRules((currentRules) => [...currentRules, '']);
+
+  const removeRule = (index) => {
+    setRules((currentRules) => {
+      if (currentRules.length <= 1) return [''];
+      return currentRules.filter((_, i) => i !== index);
+    });
+  };
+
+  // Faculty Coordinators State
+  const [selectedFacultyCoordinators, setSelectedFacultyCoordinators] = useState([]);
+  const [facultySearchQuery, setFacultySearchQuery] = useState('');
+  const [facultyOptions, setFacultyOptions] = useState([]);
+  const [isSearchingFaculty, setIsSearchingFaculty] = useState(false);
+
+  // Student Coordinators State
+  const [studentCoordinators, setStudentCoordinators] = useState([]);
+  const [studentRollNoInput, setStudentRollNoInput] = useState('');
+  const [studentError, setStudentError] = useState('');
+  const [isFetchingStudent, setIsFetchingStudent] = useState(false);
 
   // Uploaded Files
   const [banner, setBanner] = useState(null);
@@ -165,9 +216,29 @@ export default function CentralEventCreatePage() {
   useEffect(() => {
     const fetchMasterData = async () => {
       try {
-        const [typesRes, orgsRes] = await Promise.all([getEventTypes(), getOrganizers()]);
-        if (typesRes.success) setTypes(typesRes.data);
-        if (orgsRes.success) setOrganizers(orgsRes.data);
+        const [typesRes, orgsRes, bRes, fRes, gRes, dRes] = await Promise.allSettled([
+          getEventTypes(),
+          getOrganizers(),
+          API.get('/api/infrastructure/buildings'),
+          API.get('/api/infrastructure/floors'),
+          API.get('/api/infrastructure/grounds'),
+          fetchEventDepartments()
+        ]);
+        if (typesRes.status === 'fulfilled' && typesRes.value?.success) setTypes(typesRes.value.data);
+        if (orgsRes.status === 'fulfilled' && orgsRes.value?.success) setOrganizers(orgsRes.value.data);
+        if (bRes.status === 'fulfilled') {
+          setBuildingsList(bRes.value.data?.data?.filter((b) => b.status?.toLowerCase() === 'active') || []);
+        }
+        if (fRes.status === 'fulfilled') {
+          setFloorsList(fRes.value.data?.data?.filter((f) => f.status?.toLowerCase() === 'active') || []);
+        }
+        if (gRes.status === 'fulfilled') {
+          setGroundsList(gRes.value.data?.data?.filter((g) => g.status?.toLowerCase() === 'active') || []);
+        }
+        if (dRes.status === 'fulfilled') {
+          const depts = dRes.value.data?.departments || dRes.value.data?.data || [];
+          setDepartmentsList(depts.filter((d) => d.status === 'Active' || !d.status));
+        }
       } catch (err) {
         toast.error('Failed to load form metadata');
       } finally {
@@ -198,19 +269,103 @@ export default function CentralEventCreatePage() {
     }
   };
 
+  // Live employee search for faculty coordinators
+  useEffect(() => {
+    if (!facultySearchQuery || facultySearchQuery.trim().length < 2) return;
+    const timer = setTimeout(async () => {
+      setIsSearchingFaculty(true);
+      try {
+        const res = await API.get('/api/employees/search', { params: { query: facultySearchQuery.trim() } });
+        const users = res.data?.data || res.data || [];
+        if (Array.isArray(users)) {
+          const formatted = users.map((u) => ({
+            empId: u.institutionId || u.empId || u.employeeId || '',
+            name: u.name || u.EMP_NAME || '',
+            designation: u.designation || u.DESIGNATION || '',
+            department: typeof u.department === 'object' ? (u.department?.name || u.department?.code) : (u.department || u.DEPT_NAME || ''),
+            phone: u.phone || u.MOBILE || '',
+            email: u.email || u.EMAIL || ''
+          }));
+          setFacultyOptions(formatted);
+        }
+      } catch (err) {
+        console.error('Error searching faculty employees:', err);
+      } finally {
+        setIsSearchingFaculty(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [facultySearchQuery]);
+
+  const handleAddStudentCoordinator = async () => {
+    const rollNo = studentRollNoInput.trim().toUpperCase();
+    if (!rollNo) {
+      setStudentError('Please enter a roll number');
+      return;
+    }
+    if (studentCoordinators.some((s) => s.rollNo === rollNo)) {
+      setStudentError(`Roll number ${rollNo} is already added`);
+      return;
+    }
+
+    setIsFetchingStudent(true);
+    setStudentError('');
+    try {
+      const targetUrl = `/adityaapi/api/studentdata/${encodeURIComponent(rollNo)}`;
+      const res = await axios.get(targetUrl, {
+        headers: {
+          'x-api-key': ECAP_API_KEY,
+          'X-API-Key': ECAP_API_KEY
+        }
+      });
+      const json = res.data;
+      const norm = Array.isArray(json) ? json : (json ? [json] : []);
+      if (norm.length > 0 && !norm[0].error && (norm[0].studentname || norm[0].studentName || norm[0].name)) {
+        const student = norm[0];
+        setStudentCoordinators((prev) => [
+          ...prev,
+          {
+            rollNo: student.rollno || student.RollNo || rollNo,
+            name: student.studentname || student.studentName || student.name,
+            department: student.department || '',
+            branch: student.branch || ''
+          }
+        ]);
+        setStudentRollNoInput('');
+        toast.success(`Added student coordinator: ${student.studentname || student.studentName || student.name} (${rollNo})`);
+      } else {
+        setStudentError(`Student with roll number "${rollNo}" not found`);
+      }
+    } catch (err) {
+      console.error('Error fetching student data:', err);
+      if (err.response?.status === 404) {
+        setStudentError(`Student with roll number "${rollNo}" not found`);
+      } else {
+        setStudentError(err.response?.data?.message || err.message || 'Error connecting to student database');
+      }
+    } finally {
+      setIsFetchingStudent(false);
+    }
+  };
+
+  const handleRemoveStudentCoordinator = (rollNoToRemove) => {
+    setStudentCoordinators((prev) => prev.filter((s) => s.rollNo !== rollNoToRemove));
+  };
+
   const handleBannerUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     setUploadingBanner(true);
     try {
-      const res = await uploadCentralEventFile(file, { folderType: 'events', academicYear: formData.academicYear });
+      const targetAy = categories.find((c) => c._id === categoryId)?.academicYear || '';
+      const res = await uploadCentralEventFile(file, { folderType: 'events', academicYear: targetAy });
       if (res.success) {
         setBanner(res.data);
         toast.success('Banner uploaded successfully');
       }
     } catch (err) {
-      toast.error('Failed to upload banner');
+      toast.error(err.response?.data?.message || err.message || 'Failed to upload banner');
     } finally {
       setUploadingBanner(false);
     }
@@ -218,18 +373,65 @@ export default function CentralEventCreatePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!fromDate || !toDate || !regDeadline) {
+      toast.error('Please specify Start Date, End Date, and Registration Deadline');
+      return;
+    }
+
+    const startDt = new Date(fromDate);
+    const endDt = new Date(toDate);
+    const deadlineDt = new Date(regDeadline);
+
+    if (isNaN(startDt.getTime()) || isNaN(endDt.getTime()) || isNaN(deadlineDt.getTime())) {
+      toast.error('Please enter valid dates for schedule');
+      return;
+    }
+
+    if (endDt < startDt) {
+      toast.error('End Date & Time must be after or equal to Start Date & Time');
+      return;
+    }
+
     setSubmitting(true);
 
     try {
-      const parsedRules = rulesText.split('\n').map((r) => r.trim()).filter(Boolean);
-      const parsedOutcomes = outcomesText.split('\n').map((o) => o.trim()).filter(Boolean);
+      const parsedRules = rules.map((r) => r.trim()).filter(Boolean);
+      const targetAy = categories.find((c) => c._id === categoryId)?.academicYear || '';
+
+      // Construct structured venue name and payload
+      let finalVenueName = venueName;
+      if (mode === 'OFFLINE' || mode === 'HYBRID') {
+        if (venueType === 'Indoor') {
+          const bName = buildingsList.find((b) => b._id === buildingId)?.name || '';
+          const fName = floorsList.find((f) => f._id === floorId)?.name || '';
+          const parts = [bName, fName, roomNo ? `Room: ${roomNo}` : '', venueName].filter(Boolean);
+          finalVenueName = parts.join(' - ');
+        } else if (venueType === 'Outdoor') {
+          const gName = groundsList.find((g) => g._id === groundId)?.name || '';
+          const parts = [gName, venueName].filter(Boolean);
+          finalVenueName = parts.join(' - ');
+        }
+      }
+
+      const venuePayload = {
+        name: finalVenueName || venueName || (mode === 'ONLINE' ? 'Online' : 'Campus Venue'),
+        address: finalVenueName || venueName || '',
+        link: (mode === 'ONLINE' || mode === 'HYBRID') ? onlineLink : '',
+        venueType: (mode === 'OFFLINE' || mode === 'HYBRID') ? venueType : null,
+        building: (venueType === 'Indoor' && buildingId) ? buildingId : null,
+        floor: (venueType === 'Indoor' && floorId) ? floorId : null,
+        ground: (venueType === 'Outdoor' && groundId) ? groundId : null,
+        roomNo: roomNo || ''
+      };
 
       const payload = {
         typeCode,
         title,
         description,
         mode,
-        venue: { name: venueName },
+        venue: venuePayload,
+        department: departments || [],
         fee: {
           amount: Math.round(parseFloat(feeRupees || '0') * 100), // convert rupees to paise
           currency: 'INR'
@@ -246,9 +448,31 @@ export default function CentralEventCreatePage() {
           maxTeamSize: parseInt(maxTeamSize, 10)
         },
         rules: parsedRules,
-        outcomes: parsedOutcomes,
-        banner
+        outcomes: [],
+        banner,
+        coordinators: {
+          faculty: selectedFacultyCoordinators.map((f) => ({
+            name: f.name || f.employeeName || '',
+            empId: f.empId || f.institutionId || f.employeeId || '',
+            designation: f.designation || '',
+            department: f.department || '',
+            phone: f.phone || '',
+            email: f.email || ''
+          })),
+          student: studentCoordinators.map((s) => ({
+            rollNo: s.rollNo,
+            name: s.name,
+            department: s.department || '',
+            branch: s.branch || '',
+            phone: s.phone || '',
+            email: s.email || ''
+          }))
+        }
       };
+
+      if (targetAy) {
+        payload.academicYear = targetAy;
+      }
 
       if (selectedTypeObj?.hasCategories) {
         payload.categoryId = categoryId;
@@ -364,21 +588,90 @@ export default function CentralEventCreatePage() {
                   </Grid>
                 )}
 
-                {/* Category */}
+                {/* Category / Event School */}
                 {!isDepartmentalOrUniversity && selectedTypeObj?.hasCategories && (
                   <Grid size={{ xs: 12, md: 6 }}>
                     <FormControl fullWidth required>
-                      <InputLabel id="category-label">Category</InputLabel>
+                      <InputLabel id="category-label">
+                        {typeCode === 'VEDA' ? 'Event School' : 'Category'}
+                      </InputLabel>
                       <Select
                         labelId="category-label"
                         value={categoryId}
-                        label="Category"
+                        label={typeCode === 'VEDA' ? 'Event School' : 'Category'}
                         onChange={(e) => setCategoryId(e.target.value)}
                         sx={{ borderRadius: '12px' }}
                       >
                         {categories.map((c) => (
                           <MenuItem key={c._id} value={c._id}>
                             {c.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                )}
+
+                {/* Department Dropdown */}
+                {!isDepartmentalOrUniversity && (
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <FormControl fullWidth>
+                      <InputLabel id="department-label">Department</InputLabel>
+                      <Select
+                        labelId="department-label"
+                        multiple
+                        value={departments}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value.includes('all')) {
+                            if (departmentsList.length > 0 && departments.length === departmentsList.length) {
+                              setDepartments([]);
+                            } else {
+                              setDepartments(departmentsList.map((d) => d._id));
+                            }
+                          } else {
+                            setDepartments(value);
+                          }
+                        }}
+                        label="Department"
+                        renderValue={(selected) => {
+                          if (!selected || selected.length === 0) {
+                            return <Typography color="text.secondary">Select department(s)</Typography>;
+                          }
+                          if (departmentsList.length > 0 && selected.length === departmentsList.length) {
+                            return 'All Departments';
+                          }
+                          return selected
+                            .map((deptId) => departmentsList.find((dept) => dept._id === deptId)?.name || deptId)
+                            .join(', ');
+                        }}
+                        sx={{ borderRadius: '12px' }}
+                        MenuProps={{ PaperProps: { sx: { maxHeight: 300, borderRadius: '12px' } } }}
+                      >
+                        {departmentsList.length > 0 && (
+                          <MenuItem value="all">
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                              <input
+                                type="checkbox"
+                                checked={departmentsList.length > 0 && departments.length === departmentsList.length}
+                                readOnly
+                                style={{ width: 16, height: 16, cursor: 'pointer' }}
+                              />
+                              <Typography sx={{ fontWeight: 700, color: 'primary.main' }}>Select All</Typography>
+                            </Box>
+                          </MenuItem>
+                        )}
+                        {departmentsList.map((dept) => (
+                          <MenuItem key={dept._id} value={dept._id}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                              <input
+                                type="checkbox"
+                                checked={departments.includes(dept._id)}
+                                readOnly
+                                style={{ width: 16, height: 16, cursor: 'pointer' }}
+                              />
+                              <Typography>{dept.name}</Typography>
+                            </Box>
                           </MenuItem>
                         ))}
                       </Select>
@@ -508,7 +801,8 @@ export default function CentralEventCreatePage() {
                       />
                     </Grid>
 
-                    <Grid size={{ xs: 12, sm: 5 }}>
+                    {/* Event Mode */}
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <FormControl fullWidth required>
                         <InputLabel id="mode-label">Event Mode</InputLabel>
                         <Select
@@ -525,36 +819,446 @@ export default function CentralEventCreatePage() {
                       </FormControl>
                     </Grid>
 
-                    <Grid size={{ xs: 12, sm: 7 }}>
-                      <TextField
-                        fullWidth
-                        label="Venue Name / Address / Meeting Link"
-                        placeholder="e.g. K.L. Rao Bhavan Auditorium / Zoom Link"
-                        value={venueName}
-                        onChange={(e) => setVenueName(e.target.value)}
-                        slotProps={{
-                          input: {
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <LocationIcon color="action" />
-                              </InputAdornment>
-                            ),
-                            sx: { borderRadius: '12px' }
+                    {/* Venue Type (Indoor / Outdoor) */}
+                    {(mode === 'OFFLINE' || mode === 'HYBRID') && (
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <FormControl fullWidth required>
+                          <InputLabel id="venue-type-label">Venue Type</InputLabel>
+                          <Select
+                            labelId="venue-type-label"
+                            value={venueType}
+                            label="Venue Type"
+                            onChange={(e) => {
+                              setVenueType(e.target.value);
+                              setBuildingId('');
+                              setFloorId('');
+                              setGroundId('');
+                              setRoomNo('');
+                            }}
+                            sx={{ borderRadius: '12px' }}
+                          >
+                            <MenuItem value="Indoor">Indoor</MenuItem>
+                            <MenuItem value="Outdoor">Outdoor</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                    )}
+
+                    {/* Online Link for ONLINE mode */}
+                    {mode === 'ONLINE' && (
+                      <Grid size={{ xs: 12, sm: 6 }}>
+                        <TextField
+                          fullWidth
+                          required
+                          label="Online Meeting Link"
+                          placeholder="e.g. Zoom / Google Meet / Teams link"
+                          value={onlineLink}
+                          onChange={(e) => setOnlineLink(e.target.value)}
+                          slotProps={{
+                            input: {
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <LocationIcon color="action" />
+                                </InputAdornment>
+                              ),
+                              sx: { borderRadius: '12px' }
+                            }
+                          }}
+                        />
+                      </Grid>
+                    )}
+
+                    {/* Indoor: Building and Floor */}
+                    {(mode === 'OFFLINE' || mode === 'HYBRID') && venueType === 'Indoor' && (
+                      <>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <FormControl fullWidth required>
+                            <InputLabel id="building-label">Building</InputLabel>
+                            <Select
+                              labelId="building-label"
+                              value={buildingId}
+                              label="Building"
+                              onChange={(e) => setBuildingId(e.target.value)}
+                              sx={{ borderRadius: '12px' }}
+                            >
+                              {buildingsList.map((b) => (
+                                <MenuItem key={b._id} value={b._id}>
+                                  {b.name}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <FormControl fullWidth required>
+                            <InputLabel id="floor-label">Floor</InputLabel>
+                            <Select
+                              labelId="floor-label"
+                              value={floorId}
+                              label="Floor"
+                              onChange={(e) => setFloorId(e.target.value)}
+                              sx={{ borderRadius: '12px' }}
+                            >
+                              {floorsList.map((f) => (
+                                <MenuItem key={f._id} value={f._id}>
+                                  {f.name}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                      </>
+                    )}
+
+                    {/* Outdoor: Ground */}
+                    {(mode === 'OFFLINE' || mode === 'HYBRID') && venueType === 'Outdoor' && (
+                      <>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <FormControl fullWidth required>
+                            <InputLabel id="ground-label">Ground</InputLabel>
+                            <Select
+                              labelId="ground-label"
+                              value={groundId}
+                              label="Ground"
+                              onChange={(e) => setGroundId(e.target.value)}
+                              sx={{ borderRadius: '12px' }}
+                            >
+                              {groundsList.map((g) => (
+                                <MenuItem key={g._id} value={g._id}>
+                                  {g.name}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <TextField
+                            fullWidth
+                            label="Ground Location / Landmark (Optional)"
+                            placeholder="e.g. Near West Pavilion / Athletic Track"
+                            value={venueName}
+                            onChange={(e) => setVenueName(e.target.value)}
+                            slotProps={{ input: { sx: { borderRadius: '12px' } } }}
+                          />
+                        </Grid>
+                      </>
+                    )}
+
+                    {/* Room No (for Indoor) and Additional Details */}
+                    {(mode === 'OFFLINE' || mode === 'HYBRID') && venueType && (
+                      <>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <TextField
+                            fullWidth
+                            label="Room No"
+                            placeholder="e.g. 101"
+                            value={roomNo}
+                            onChange={(e) => setRoomNo(e.target.value)}
+                            slotProps={{ input: { sx: { borderRadius: '12px' } } }}
+                          />
+                        </Grid>
+
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <TextField
+                            fullWidth
+                            label="Additional Venue Details (Optional)"
+                            placeholder="e.g. Seminar Hall / Lab 4 / Auditorium"
+                            value={venueName}
+                            onChange={(e) => setVenueName(e.target.value)}
+                            slotProps={{
+                              input: {
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <LocationIcon color="action" />
+                                  </InputAdornment>
+                                ),
+                                sx: { borderRadius: '12px' }
+                              }
+                            }}
+                          />
+                        </Grid>
+                      </>
+                    )}
+
+                    {/* Hybrid Meeting Link */}
+                    {mode === 'HYBRID' && (
+                      <Grid size={{ xs: 12 }}>
+                        <TextField
+                          fullWidth
+                          label="Online Meeting Link (Hybrid Event)"
+                          placeholder="e.g. Zoom / Google Meet link"
+                          value={onlineLink}
+                          onChange={(e) => setOnlineLink(e.target.value)}
+                          slotProps={{
+                            input: {
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <LocationIcon color="action" />
+                                </InputAdornment>
+                              ),
+                              sx: { borderRadius: '12px' }
+                            }
+                          }}
+                        />
+                      </Grid>
+                    )}
+                  </Grid>
+                </CardContent>
+              </Card>
+
+              {/* Section 3: Event Coordinators (Faculty & Student) */}
+              <Card elevation={0} sx={{ borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)' }}>
+                <CardContent sx={{ p: 3.5 }}>
+                  <Box display="flex" alignItems="center" gap={1.5} mb={3}>
+                    <PeopleIcon color="primary" />
+                    <Typography variant="h6" fontWeight={700}>
+                      3. Event Coordinators
+                    </Typography>
+                  </Box>
+
+                  <Grid container spacing={3.5}>
+                    {/* Faculty Coordinators Sub-section */}
+                    <Grid size={{ xs: 12 }}>
+                      <Box sx={{ p: 2.5, borderRadius: '14px', bgcolor: 'var(--bg-accent-1, #f8fafc)', border: '1px solid var(--border-color)' }}>
+                        <Box display="flex" alignItems="center" gap={1} mb={1}>
+                          <BadgeIcon color="primary" fontSize="small" />
+                          <Typography variant="subtitle1" fontWeight={700}>
+                            Faculty Coordinators
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" color="text.secondary" mb={2}>
+                          Search and assign faculty / staff coordinators for this event.
+                        </Typography>
+
+                        <Autocomplete
+                          multiple
+                          fullWidth
+                          options={facultyOptions}
+                          getOptionLabel={(option) => {
+                            if (!option) return '';
+                            const name = option.name || option.employeeName || '';
+                            const id = option.empId || option.institutionId || option.employeeId || '';
+                            return id ? `${name} (${id})` : name;
+                          }}
+                          value={selectedFacultyCoordinators}
+                          onChange={(_, newValue) => {
+                            if (newValue) {
+                              const formatted = newValue.map((val) => {
+                                const id = val.empId || val.institutionId || val.employeeId || '';
+                                return {
+                                  ...val,
+                                  empId: id,
+                                  name: val.name || val.employeeName || '',
+                                  designation: val.designation || '',
+                                  department: val.department || ''
+                                };
+                              });
+                              setSelectedFacultyCoordinators(formatted);
+                            } else {
+                              setSelectedFacultyCoordinators([]);
+                            }
+                          }}
+                          inputValue={facultySearchQuery}
+                          onInputChange={(_, newInputValue) => setFacultySearchQuery(newInputValue)}
+                          filterOptions={(x) => x}
+                          isOptionEqualToValue={(option, val) => {
+                            const optId = option.empId || option.institutionId || option.employeeId || '';
+                            const valId = val?.empId || val?.institutionId || val?.employeeId || '';
+                            return optId === valId;
+                          }}
+                          loading={isSearchingFaculty}
+                          noOptionsText={facultySearchQuery ? 'No coordinator found' : 'Search employee by name or ID (min 2 chars)'}
+                          renderInput={(params) => {
+                            const inputProps = params.InputProps || {};
+                            return (
+                              <TextField
+                                {...params}
+                                fullWidth
+                                placeholder={selectedFacultyCoordinators.length === 0 ? "Search employee by name or ID..." : "Add another faculty coordinator..."}
+                                InputProps={{
+                                  ...inputProps,
+                                  sx: { borderRadius: '12px', bgcolor: 'var(--bg-paper)' },
+                                  endAdornment: (
+                                    <>
+                                      {isSearchingFaculty ? <CircularProgress color="inherit" size={20} /> : null}
+                                      {inputProps.endAdornment}
+                                    </>
+                                  )
+                                }}
+                                variant="outlined"
+                              />
+                            );
+                          }}
+                          renderOption={(props, option) => (
+                            <Box
+                              component="li"
+                              {...props}
+                              key={option.empId || option.institutionId || option.employeeId || option._id}
+                              sx={{ py: 1.25, px: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}
+                            >
+                              <Avatar
+                                sx={{
+                                  width: 32,
+                                  height: 32,
+                                  bgcolor: 'primary.main',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 600
+                                }}
+                              >
+                                {(option.name || option.employeeName || 'F')[0]?.toUpperCase()}
+                              </Avatar>
+                              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                                <Typography variant="body2" fontWeight={600} sx={{ color: 'text.primary' }}>
+                                  {option.name || option.employeeName}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {option.designation || 'Staff'} • {option.department || 'General'}
+                                  {(option.empId || option.institutionId || option.employeeId) &&
+                                    ` • ID: ${option.empId || option.institutionId || option.employeeId}`}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          )}
+                          renderTags={(value, getTagProps) =>
+                            value.map((option, index) => (
+                              <Chip
+                                key={option.empId || index}
+                                avatar={
+                                  <Avatar sx={{ bgcolor: 'primary.main', color: '#fff', fontSize: '0.75rem' }}>
+                                    {(option.name || 'F')[0]?.toUpperCase()}
+                                  </Avatar>
+                                }
+                                label={`${option.name || 'Faculty'} ${option.empId ? `(${option.empId})` : ''}`}
+                                size="small"
+                                color="primary"
+                                variant="outlined"
+                                sx={{ borderRadius: '8px', fontWeight: 600 }}
+                                {...getTagProps({ index })}
+                              />
+                            ))
                           }
-                        }}
-                      />
+                        />
+                      </Box>
+                    </Grid>
+
+                    {/* Student Coordinators Sub-section */}
+                    <Grid size={{ xs: 12 }}>
+                      <Box sx={{ p: 2.5, borderRadius: '14px', bgcolor: 'var(--bg-accent-1, #f8fafc)', border: '1px solid var(--border-color)' }}>
+                        <Box display="flex" alignItems="center" gap={1} mb={1}>
+                          <SchoolIcon color="primary" fontSize="small" />
+                          <Typography variant="subtitle1" fontWeight={700}>
+                            Student Coordinators
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" color="text.secondary" mb={2}>
+                          Add student coordinators by selecting or typing their university roll number.
+                        </Typography>
+
+                        <Box display="flex" gap={2} alignItems="flex-start" flexWrap={{ xs: 'wrap', sm: 'nowrap' }}>
+                          <TextField
+                            fullWidth
+                            label="Student Roll Number"
+                            placeholder="e.g. 21A91A0501"
+                            value={studentRollNoInput}
+                            onChange={(e) => {
+                              setStudentRollNoInput(e.target.value.toUpperCase());
+                              if (studentError) setStudentError('');
+                            }}
+                            error={!!studentError}
+                            helperText={studentError || 'Type roll number and click Add Student (or press Enter)'}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleAddStudentCoordinator();
+                              }
+                            }}
+                            slotProps={{ input: { sx: { borderRadius: '12px', bgcolor: 'var(--bg-paper)' } } }}
+                          />
+                          <Button
+                            variant="contained"
+                            onClick={handleAddStudentCoordinator}
+                            disabled={isFetchingStudent || !studentRollNoInput.trim()}
+                            sx={{
+                              borderRadius: '12px',
+                              px: 3.5,
+                              py: 1.8,
+                              fontWeight: 700,
+                              textTransform: 'none',
+                              whiteSpace: 'nowrap',
+                              minWidth: '150px'
+                            }}
+                          >
+                            {isFetchingStudent ? <CircularProgress size={22} color="inherit" /> : 'Add Student'}
+                          </Button>
+                        </Box>
+
+                        {/* Selected Student Coordinators List */}
+                        {studentCoordinators.length > 0 && (
+                          <Box mt={2.5}>
+                            <Typography variant="caption" fontWeight={700} color="text.secondary" textTransform="uppercase" letterSpacing={0.5} mb={1.5} display="block">
+                              Assigned Student Coordinators ({studentCoordinators.length})
+                            </Typography>
+                            <Grid container spacing={2}>
+                              {studentCoordinators.map((s) => (
+                                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={s.rollNo}>
+                                  <Card
+                                    variant="outlined"
+                                    sx={{
+                                      p: 1.5,
+                                      borderRadius: '12px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'space-between',
+                                      bgcolor: 'var(--bg-paper)'
+                                    }}
+                                  >
+                                    <Box display="flex" alignItems="center" gap={1.5} overflow="hidden">
+                                      <Avatar sx={{ bgcolor: '#0284c7', width: 36, height: 36, fontSize: '0.85rem', fontWeight: 700 }}>
+                                        {(s.name || 'S')[0]?.toUpperCase()}
+                                      </Avatar>
+                                      <Box minWidth={0}>
+                                        <Typography variant="body2" fontWeight={700} noWrap>
+                                          {s.name}
+                                        </Typography>
+                                        <Typography variant="caption" color="primary" fontWeight={600} display="block">
+                                          {s.rollNo}
+                                        </Typography>
+                                        {(s.branch || s.department) && (
+                                          <Typography variant="caption" color="text.secondary" noWrap display="block">
+                                            {s.branch || s.department}
+                                          </Typography>
+                                        )}
+                                      </Box>
+                                    </Box>
+                                    <IconButton
+                                      size="small"
+                                      color="error"
+                                      onClick={() => handleRemoveStudentCoordinator(s.rollNo)}
+                                      title="Remove student coordinator"
+                                    >
+                                      <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                  </Card>
+                                </Grid>
+                              ))}
+                            </Grid>
+                          </Box>
+                        )}
+                      </Box>
                     </Grid>
                   </Grid>
                 </CardContent>
               </Card>
 
-              {/* Section 3: Schedule Timeline */}
+              {/* Section 4: Schedule Timeline */}
               <Card elevation={0} sx={{ borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)' }}>
                 <CardContent sx={{ p: 3.5 }}>
                   <Box display="flex" alignItems="center" gap={1.5} mb={3}>
                     <ScheduleIcon color="primary" />
                     <Typography variant="h6" fontWeight={700}>
-                      3. Schedule & Deadlines
+                      4. Schedule & Deadlines
                     </Typography>
                   </Box>
 
@@ -566,7 +1270,12 @@ export default function CentralEventCreatePage() {
                         type="datetime-local"
                         label="Start Date & Time"
                         value={fromDate}
-                        onChange={(e) => setFromDate(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFromDate(val);
+                          if (!regDeadline) setRegDeadline(val);
+                          if (!toDate) setToDate(val);
+                        }}
                         helperText="Event start date & time"
                         slotProps={{
                           inputLabel: { shrink: true },
@@ -586,7 +1295,10 @@ export default function CentralEventCreatePage() {
                         helperText="Event conclusion date & time"
                         slotProps={{
                           inputLabel: { shrink: true },
-                          input: { sx: { borderRadius: '12px' } }
+                          input: {
+                            min: fromDate || undefined,
+                            sx: { borderRadius: '12px' }
+                          }
                         }}
                       />
                     </Grid>
@@ -610,13 +1322,13 @@ export default function CentralEventCreatePage() {
                 </CardContent>
               </Card>
 
-              {/* Section 4: Participation, Fee & Capacity */}
+              {/* Section 5: Participation, Fee & Capacity */}
               <Card elevation={0} sx={{ borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)' }}>
                 <CardContent sx={{ p: 3.5 }}>
                   <Box display="flex" alignItems="center" gap={1.5} mb={3}>
                     <PaymentsIcon color="primary" />
                     <Typography variant="h6" fontWeight={700}>
-                      4. Capacity, Fees & Participation Mode
+                      5. Capacity, Fees & Participation Mode
                     </Typography>
                   </Box>
 
@@ -698,43 +1410,85 @@ export default function CentralEventCreatePage() {
                 </CardContent>
               </Card>
 
-              {/* Section 5: Media & Rules */}
+              {/* Section 6: Media & Rules */}
               <Card elevation={0} sx={{ borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)' }}>
                 <CardContent sx={{ p: 3.5 }}>
                   <Box display="flex" alignItems="center" gap={1.5} mb={3}>
                     <UploadIcon color="primary" />
                     <Typography variant="h6" fontWeight={700}>
-                      5. Rules, Outcomes & Banner Image
+                      6. Rules & Banner Image
                     </Typography>
                   </Box>
 
                   <Grid container spacing={3}>
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={4}
-                        label="Rules & Guidelines"
-                        placeholder="Rule 1: Plagiarism is strictly prohibited&#10;Rule 2: Laptops are mandatory"
-                        value={rulesText}
-                        onChange={(e) => setRulesText(e.target.value)}
-                        helperText="Enter each rule on a new line"
-                        slotProps={{ input: { sx: { borderRadius: '12px' } } }}
-                      />
-                    </Grid>
+                    <Grid size={{ xs: 12 }}>
+                      <Box>
+                        <Typography variant="subtitle1" fontWeight={600} color="text.primary" sx={{ mb: 2 }}>
+                          Rules (Enter the regulation in form of points.)
+                        </Typography>
 
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <TextField
-                        fullWidth
-                        multiline
-                        rows={4}
-                        label="Key Outcomes"
-                        placeholder="Outcome 1: Practical knowledge of React & Node.js&#10;Outcome 2: Participation Certificate"
-                        value={outcomesText}
-                        onChange={(e) => setOutcomesText(e.target.value)}
-                        helperText="Enter each outcome on a new line"
-                        slotProps={{ input: { sx: { borderRadius: '12px' } } }}
-                      />
+                        <Stack spacing={2}>
+                          {rules.map((rule, index) => (
+                            <Box
+                              key={`rule-${index}`}
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1.5,
+                                width: '100%'
+                              }}
+                            >
+                              <TextField
+                                fullWidth
+                                placeholder={`Regulation ${index + 1}`}
+                                value={rule}
+                                onChange={(e) => handleRuleChange(index, e.target.value)}
+                                slotProps={{
+                                  input: {
+                                    sx: {
+                                      borderRadius: '12px',
+                                      bgcolor: 'var(--bg-paper)'
+                                    }
+                                  }
+                                }}
+                              />
+                              <IconButton
+                                aria-label="remove regulation"
+                                onClick={() => removeRule(index)}
+                                disabled={rules.length === 1 && !rule}
+                                sx={{
+                                  color: 'text.secondary',
+                                  '&:hover': { color: 'error.main', bgcolor: 'rgba(239, 68, 68, 0.08)' },
+                                  p: 1,
+                                  flexShrink: 0
+                                }}
+                              >
+                                <RemoveIcon />
+                              </IconButton>
+                            </Box>
+                          ))}
+                        </Stack>
+
+                        <Box sx={{ mt: 2.5 }}>
+                          <Button
+                            variant="contained"
+                            onClick={addRule}
+                            sx={{
+                              bgcolor: '#0a192f',
+                              '&:hover': { bgcolor: '#1e293b' },
+                              color: '#ffffff',
+                              borderRadius: '24px',
+                              textTransform: 'none',
+                              fontWeight: 700,
+                              px: 3,
+                              py: 1,
+                              boxShadow: '0 2px 8px rgba(10, 25, 47, 0.25)'
+                            }}
+                          >
+                            Add Regulation
+                          </Button>
+                        </Box>
+                      </Box>
                     </Grid>
 
                     <Grid size={{ xs: 12 }}>
@@ -807,7 +1561,7 @@ export default function CentralEventCreatePage() {
                     boxShadow: '0 8px 20px -4px rgba(37, 99, 235, 0.4)'
                   }}
                 >
-                  {submitting ? <CircularProgress size={24} color="inherit" /> : 'Create Event (Draft)'}
+                  {submitting ? <CircularProgress size={24} color="inherit" /> : 'Create Event'}
                 </Button>
               </Box>
             </>

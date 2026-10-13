@@ -1,17 +1,20 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
-export default defineConfig({
-  resolve: {
-    alias: {
-      stream: path.resolve(__dirname, 'src/utils/streamMock.js'),
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  return {
+    resolve: {
+      alias: {
+        stream: path.resolve(__dirname, 'src/utils/streamMock.js'),
+      },
     },
-  },
-  define: {
-    'process.env': {},
-  },
+    define: {
+      'process.env.ECAP_API_KEY': JSON.stringify(env.ECAP_API_KEY || env.VITE_ECAP_API_KEY || ''),
+      'process.env': {},
+    },
   plugins: [
     react(),
     VitePWA({
@@ -24,7 +27,7 @@ export default defineConfig({
       },
       manifest: {
         name: 'AUS | Digital Services',
- short_name: 'AUS Services',
+        short_name: 'AUS Services',
         description: 'Service Request and Ticket Management System',
         theme_color: '#0b5299',
         background_color: '#ffffff',
@@ -70,12 +73,13 @@ export default defineConfig({
       }
     }
   },
-  // This is your server preview block
-  preview: {
-    host: '0.0.0.0',
-    port: 4173,
-    allowedHosts: [
-      'digitalservices.adityauniversity.in'
-    ]
-  }
-})
+    // This is your server preview block
+    preview: {
+      host: '0.0.0.0',
+      port: 4173,
+      allowedHosts: [
+        'digitalservices.adityauniversity.in'
+      ]
+    }
+  };
+});
