@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import {
   AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium,
   CheckCircle, Visibility, AccessTime, School, MenuBook, AccountTree, Person, CalendarToday,
-  Business, FormatListBulleted, Edit
+  Business, FormatListBulleted, Edit, Settings, InfoOutlined
 } from "@mui/icons-material";
 import PageHeader from "../../components/common/PageHeader";
 import { Alert, AlertTitle } from "@mui/material";
@@ -39,9 +39,20 @@ export default function PhdScholarPublication() {
   const [milestoneScholar, setMilestoneScholar] = useState(null);
   const [milestoneAcademicYear, setMilestoneAcademicYear] = useState("");
   const [milestoneAwardDate, setMilestoneAwardDate] = useState("");
+  const [milestoneTitle, setMilestoneTitle] = useState("");
   const [milestoneFile, setMilestoneFile] = useState(null);
   const [milestoneExistingDoc, setMilestoneExistingDoc] = useState(null);
   const [milestoneLoading, setMilestoneLoading] = useState(false);
+  const [isAwardingMode, setIsAwardingMode] = useState(false);
+
+  // Pursuing conflict popup modal state (when trying to submit/select Awarded for already pursuing scholar)
+  const [pursuingConflictModal, setPursuingConflictModal] = useState({
+    open: false,
+    rollNumber: "",
+    studentName: "",
+    scholar: null
+  });
+  const [highlightedRollNumber, setHighlightedRollNumber] = useState("");
 
   // Form state
   const [rollNumberInput, setRollNumberInput] = useState("");
@@ -125,7 +136,21 @@ export default function PhdScholarPublication() {
           branch: student.branch || "N/A"
         }));
         setIsVerified(true);
-        toast.success(`Scholar ${rollNo} verified successfully!`);
+        if (student.existingApplication) {
+          const app = student.existingApplication;
+          const roleLabel = (app.type || 'guide').toLowerCase() === 'co-guide' ? 'Co-Guide' : 'Guide';
+          if (app.isRejected) {
+            toast.warning(`Note: You already have a rejected application for this scholar (${rollNo}) as ${roleLabel}. Please edit and resubmit that application instead of creating a new one.`, { duration: 7000 });
+          } else {
+            toast.warning(`Note: You have already registered scholar (${rollNo}) as ${roleLabel} (Status: ${app.status || 'Pending'}). Duplicate submissions are not allowed.`, { duration: 7000 });
+          }
+        } else if (student.existingGuide) {
+          toast.info(`Note: Scholar already has a registered Guide (${student.existingGuide.name}). If you supervise this scholar, please select "Co-Guide".`, { duration: 6000 });
+        } else if (student.existingCoGuide) {
+          toast.info(`Note: Scholar already has a registered Co-Guide (${student.existingCoGuide.name}). If you supervise this scholar, please select "Guide".`, { duration: 6000 });
+        } else {
+          toast.success(`Scholar ${rollNo} verified successfully!`);
+        }
       } else {
         throw new Error(res.data?.message || "Verification failed");
       }
@@ -185,7 +210,9 @@ export default function PhdScholarPublication() {
       course: pub.course || "Ph.D.",
       branch: pub.branch || "",
       scholarStatus: pub.scholarStatus || "Pursuing",
-      admissionOrAwardDate: pub.admissionOrAwardDate ? pub.admissionOrAwardDate.split("T")[0] : "",
+      admissionOrAwardDate: pub.scholarStatus === 'Awarded'
+        ? (pub.awardedDetails?.awardDate ? pub.awardedDetails.awardDate.split("T")[0] : (pub.admissionOrAwardDate ? pub.admissionOrAwardDate.split("T")[0] : ""))
+        : (pub.pursuingDetails?.admissionDate ? pub.pursuingDetails.admissionDate.split("T")[0] : (pub.admissionOrAwardDate ? pub.admissionOrAwardDate.split("T")[0] : "")),
       scholarType: pub.scholarType || "Full-Time",
       type: pub.type || "guide",
       universitySelect: isAditya ? "Aditya University" : "Other",
@@ -219,7 +246,6 @@ export default function PhdScholarPublication() {
     return publicationsList.some(p =>
       p._id !== scholar._id &&
       p.rollNumber?.toUpperCase() === scholar.rollNumber?.toUpperCase() &&
-      (p.type || 'guide').toLowerCase() === (scholar.type || 'guide').toLowerCase() &&
       p.scholarStatus === 'Awarded' &&
       !p.status?.includes('Rejected')
     );
@@ -236,21 +262,80 @@ export default function PhdScholarPublication() {
 
     // If resubmitting a rejected awarded milestone, pre-populate existing awarded values
     const existingAwardedAcyId = (scholar.awardedDetails?.academicYear?._id || scholar.awardedDetails?.academicYear)?.toString();
-    const existingAwardDate = scholar.awardedDetails?.awardDate 
-      ? scholar.awardedDetails.awardDate.split("T")[0] 
+    const existingAwardDate = scholar.awardedDetails?.awardDate
+      ? scholar.awardedDetails.awardDate.split("T")[0]
       : (scholar.scholarStatus === 'Awarded' && scholar.admissionOrAwardDate ? scholar.admissionOrAwardDate.split("T")[0] : "");
 
     const existingDoc = scholar.awardedDetails?.document || (scholar.scholarStatus === 'Awarded' ? scholar.document : null);
 
-    const activeYearDoc = academicYears.find(y => y.active && y._id?.toString() !== pursuingAcyId) 
+    const activeYearDoc = academicYears.find(y => y.active && y._id?.toString() !== pursuingAcyId)
       || academicYears.find(y => y._id?.toString() !== pursuingAcyId)
       || academicYears[0];
 
     setMilestoneAcademicYear(existingAwardedAcyId || activeYearDoc?._id || "");
     setMilestoneAwardDate(existingAwardDate || "");
+    setMilestoneTitle(scholar.titleOfPhdWork || "");
     setMilestoneExistingDoc(existingDoc || null);
     setMilestoneFile(null);
-    setMilestoneDialogOpen(true);
+    setMilestoneDialogOpen(false);
+    setSelectedPubDetails(scholar);
+    setIsAwardingMode(true);
+  };
+
+  const resetFormState = () => {
+    setForm({
+      rollNumber: "",
+      studentName: "",
+      titleOfPhdWork: "",
+      course: "Ph.D.",
+      branch: "",
+      scholarStatus: "",
+      admissionOrAwardDate: "",
+      scholarType: "",
+      type: "",
+      universitySelect: "Aditya University",
+      universityText: ""
+    });
+    setRollNumberInput("");
+    setFiles({ document: null });
+    setExistingFiles({ document: null });
+    setEditingId(null);
+    setIsVerified(false);
+    setSelectedYear("");
+  };
+
+  const handleGoToScholarsList = () => {
+    const roll = pursuingConflictModal.rollNumber;
+    setPursuingConflictModal({ open: false, rollNumber: "", studentName: "", scholar: null });
+    resetFormState();
+    setViewMode("list");
+    if (roll) {
+      setHighlightedRollNumber(roll);
+      setTimeout(() => setHighlightedRollNumber(""), 4500);
+    }
+  };
+
+  const handleScholarStatusChange = (e) => {
+    const newStatus = e.target.value;
+    setForm(p => ({ ...p, scholarStatus: newStatus }));
+
+    if (newStatus === "Awarded") {
+      const cleanRoll = (form.rollNumber || rollNumberInput || "").trim().toUpperCase();
+      if (cleanRoll) {
+        const existingPursuing = publicationsList.find(p =>
+          p.rollNumber?.trim().toUpperCase() === cleanRoll &&
+          p.scholarStatus === "Pursuing"
+        );
+        if (existingPursuing) {
+          setPursuingConflictModal({
+            open: true,
+            rollNumber: cleanRoll,
+            studentName: form.studentName || existingPursuing.studentName || "",
+            scholar: existingPursuing
+          });
+        }
+      }
+    }
   };
 
   const handleMilestoneSubmit = async () => {
@@ -315,6 +400,7 @@ export default function PhdScholarPublication() {
       const fd = new FormData();
       fd.append("academicYear", milestoneAcademicYear);
       fd.append("awardDate", milestoneAwardDate);
+      fd.append("titleOfPhdWork", milestoneTitle?.trim() || "");
       if (milestoneFile) {
         fd.append("document", milestoneFile);
       }
@@ -332,7 +418,9 @@ export default function PhdScholarPublication() {
       setMilestoneDialogOpen(false);
       setMilestoneExistingDoc(null);
       setMilestoneFile(null);
+      setIsAwardingMode(false);
       setSelectedPubDetails(null);
+      setMilestoneScholar(null);
     } catch (err) {
       toast.error(err?.response?.data?.message || "Failed to submit Awarded milestone");
     } finally {
@@ -376,9 +464,25 @@ export default function PhdScholarPublication() {
       }
     }
 
-    if (!form.titleOfPhdWork?.trim()) {
-      toast.error("Please enter the Title of the Ph.D Work");
-      return;
+    // Client-side duplicate check: Prevent duplicate submissions for the same scholar
+    if (!editingId && form.rollNumber?.trim()) {
+      const existingInList = publicationsList.find(
+        p => p.rollNumber?.toUpperCase() === form.rollNumber.trim().toUpperCase()
+      );
+      if (existingInList) {
+        const roleLabel = (existingInList.type || 'guide').toLowerCase() === 'co-guide' ? 'Co-Guide' : 'Guide';
+        if (existingInList.scholarStatus === 'Pursuing' && form.scholarStatus === 'Awarded') {
+          setConflictScholar(existingInList);
+          setConflictDialogOpen(true);
+          return;
+        }
+        if (existingInList.status?.includes('Reject')) {
+          toast.error(`You already have a rejected entry for this scholar (${form.rollNumber.trim().toUpperCase()}) as ${roleLabel}. Please edit and resubmit that entry instead.`);
+          return;
+        }
+        toast.error(`You have already registered scholar (${form.rollNumber.trim().toUpperCase()}) as ${roleLabel} (Status: ${existingInList.status || 'Pending'}). A faculty member cannot submit duplicate entries for the same scholar.`);
+        return;
+      }
     }
 
     if (!form.scholarStatus) {
@@ -442,28 +546,33 @@ export default function PhdScholarPublication() {
       const res = await API.get("/api/research/phd-scholar");
       setPublicationsList(res.data?.data || res.data || []);
 
-      // Reset state
-      setForm({
-        rollNumber: "",
-        studentName: "",
-        course: "Ph.D.",
-        branch: "",
-        scholarStatus: "",
-        admissionOrAwardDate: "",
-        scholarType: "",
-        type: "",
-        universitySelect: "Aditya University",
-        universityText: ""
-      });
-      setRollNumberInput("");
-      setFiles({ document: null });
-      setExistingFiles({ document: null });
-      setEditingId(null);
-      setIsVerified(false);
-      setSelectedYear("");
+      resetFormState();
       setViewMode("list");
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Appraisal submission failed");
+      const errData = err?.response?.data;
+      const errMsg = errData?.message || "";
+      const isPursuingConflict =
+        errData?.code === "PURSUING_SCHOLAR_EXISTS" ||
+        errMsg.includes("already registered as 'Pursuing'") ||
+        errMsg.includes("cannot create a separate new entry for 'Awarded'");
+
+      if (isPursuingConflict) {
+        const cleanRoll = (form.rollNumber || rollNumberInput || "").trim().toUpperCase();
+        const matchedScholar = publicationsList.find(p =>
+          (p.rollNumber?.trim().toUpperCase() === cleanRoll) &&
+          (p.scholarStatus === "Pursuing")
+        ) || errData?.existingScholar;
+
+        setPursuingConflictModal({
+          open: true,
+          rollNumber: cleanRoll,
+          studentName: form.studentName || matchedScholar?.studentName || "",
+          scholar: matchedScholar
+        });
+        return;
+      }
+
+      toast.error(errMsg || "Appraisal submission failed");
     } finally {
       setLoading(false);
     }
@@ -479,7 +588,7 @@ export default function PhdScholarPublication() {
         gap: { xs: 2, sm: 0 },
         mb: 3
       }}>
-        <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Guided Ph.D. Scholars</Typography>
+        <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Ph.D. Scholars</Typography>
         <Button
           variant="contained"
           onClick={() => {
@@ -547,109 +656,103 @@ export default function PhdScholarPublication() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {publicationsList.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((pub, i) => (
-                <TableRow key={pub._id || i} sx={{ "&:hover": { background: "var(--bg-accent-1)" }, transition: "background 0.15s" }}>
-                  <TableCell sx={{ color: "var(--text-primary)", fontWeight: 600, py: 2 }}>{pub.rollNumber || "N/A"}</TableCell>
-                  <TableCell sx={{ color: "var(--text-primary)", py: 2 }}>
-                    <Typography sx={{ fontWeight: 600, fontSize: "0.875rem" }}>{pub.studentName || "N/A"}</Typography>
-                    {pub.titleOfPhdWork && (
-                      <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontStyle: "italic", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={pub.titleOfPhdWork}>
-                        {pub.titleOfPhdWork}
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.branch || "—"}</TableCell>
-                  <TableCell sx={{ py: 2 }}>
-                    <Chip
-                      label={pub.type === 'co-guide' ? 'Co-Guide' : 'Guide'}
-                      size="small"
-                      sx={{
-                        fontWeight: 800,
-                        bgcolor: pub.type === 'co-guide' ? 'rgba(124, 58, 237, 0.1)' : 'rgba(59, 130, 246, 0.1)',
-                        color: pub.type === 'co-guide' ? '#7c3aed' : '#3b82f6',
-                        borderRadius: '6px'
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ py: 2 }}>
-                    <Chip
-                      label={pub.scholarStatus}
-                      size="small"
-                      sx={{
-                        fontWeight: 800,
-                        bgcolor: pub.scholarStatus === "Awarded" ? "rgba(16, 185, 129, 0.1)" : "rgba(59, 130, 246, 0.1)",
-                        color: pub.scholarStatus === "Awarded" ? "#10B981" : "#3B82F6",
-                        borderRadius: "6px"
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.academicYear?.year || "N/A"}</TableCell>
-                  <TableCell sx={{ py: 2, maxWidth: 220 }}>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: pub.status?.includes('Rejected') ? "#ef4444" : pub.status === 'Approved' ? "#10b981" : "#e8a000",
-                        fontWeight: 700,
-                        background: pub.status?.includes('Rejected') ? "rgba(239, 68, 68, 0.1)" : pub.status === 'Approved' ? "rgba(16, 185, 129, 0.1)" : "rgba(232, 160, 0, 0.1)",
-                        px: 1.5,
-                        py: 0.5,
-                        borderRadius: "6px",
-                        display: "inline-block"
-                      }}
-                    >
-                      {pub.scholarStatus === 'Awarded' && pub.pursuingDetails?.status === 'Approved' && pub.status?.includes('Rejected')
-                        ? "Award Milestone Rejected"
-                        : (pub.status || "Pending at R&D")}
-                    </Typography>
-                    {pub.status?.includes("Rejected") && (pub.rndComment || pub.hodComment) && (
-                      <Typography
-                        variant="caption"
+              {publicationsList.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((pub, i) => {
+                const isHighlighted = highlightedRollNumber && pub.rollNumber?.trim().toUpperCase() === highlightedRollNumber.trim().toUpperCase();
+                return (
+                  <TableRow
+                    key={pub._id || i}
+                    sx={{
+                      "&:hover": { background: "var(--bg-accent-1)" },
+                      transition: "all 0.3s ease",
+                      ...(isHighlighted ? {
+                        backgroundColor: "rgba(14, 116, 144, 0.1) !important",
+                        boxShadow: "inset 0 0 0 2px #0284c7"
+                      } : {})
+                    }}
+                  >
+                    <TableCell sx={{ color: "var(--text-primary)", fontWeight: 600, py: 2 }}>{pub.rollNumber || "N/A"}</TableCell>
+                    <TableCell sx={{ color: "var(--text-primary)", py: 2 }}>
+                      <Typography sx={{ fontWeight: 600, fontSize: "0.875rem" }}>{pub.studentName || "N/A"}</Typography>
+                      {pub.titleOfPhdWork && (
+                        <Typography sx={{ fontSize: "0.75rem", color: "var(--text-secondary)", fontStyle: "italic", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={pub.titleOfPhdWork}>
+                          {pub.titleOfPhdWork}
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.branch || "—"}</TableCell>
+                    <TableCell sx={{ py: 2 }}>
+                      <Chip
+                        label={pub.type === 'co-guide' ? 'Co-Guide' : 'Guide'}
+                        size="small"
                         sx={{
-                          display: "block",
-                          mt: 0.8,
-                          color: "#ef4444",
-                          fontStyle: "italic",
-                          fontWeight: 500,
-                          lineHeight: 1.4,
-                          maxWidth: 200,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap"
+                          fontWeight: 800,
+                          bgcolor: pub.type === 'co-guide' ? 'rgba(124, 58, 237, 0.1)' : 'rgba(59, 130, 246, 0.1)',
+                          color: pub.type === 'co-guide' ? '#7c3aed' : '#3b82f6',
+                          borderRadius: '6px'
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ py: 2 }}>
+                      <Chip
+                        label={pub.scholarStatus}
+                        size="small"
+                        sx={{
+                          fontWeight: 800,
+                          bgcolor: pub.scholarStatus === "Awarded" ? "rgba(16, 185, 129, 0.1)" : "rgba(59, 130, 246, 0.1)",
+                          color: pub.scholarStatus === "Awarded" ? "#10B981" : "#3B82F6",
+                          borderRadius: "6px"
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.academicYear?.year || "N/A"}</TableCell>
+                    <TableCell sx={{ py: 2, maxWidth: 220 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: pub.status?.includes('Rejected') ? "#ef4444" : pub.status === 'Approved' ? "#10b981" : "#e8a000",
+                          fontWeight: 700,
+                          background: pub.status?.includes('Rejected') ? "rgba(239, 68, 68, 0.1)" : pub.status === 'Approved' ? "rgba(16, 185, 129, 0.1)" : "rgba(232, 160, 0, 0.1)",
+                          px: 1.5,
+                          py: 0.5,
+                          borderRadius: "6px",
+                          display: "inline-block"
                         }}
                       >
-                        <Tooltip title={pub.rndComment || pub.hodComment} arrow placement="top">
-                          <span>💬 "{pub.rndComment || pub.hodComment}"</span>
-                        </Tooltip>
+                        {pub.scholarStatus === 'Awarded' && pub.pursuingDetails?.status === 'Approved' && pub.status?.includes('Rejected')
+                          ? "Award Milestone Rejected"
+                          : (pub.status || "Pending at R&D")}
                       </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell sx={{ py: 2, textAlign: "center" }}>
-                    <Stack direction="row" spacing={1} justifyContent="center">
-                      <Tooltip title="View Details" arrow>
-                        <IconButton
-                          size="small"
-                          onClick={() => setSelectedPubDetails(pub)}
+                      {pub.status?.includes("Rejected") && (pub.rndComment || pub.hodComment) && (
+                        <Typography
+                          variant="caption"
                           sx={{
-                            color: "var(--color-primary)",
-                            border: "1px solid var(--color-primary)",
-                            borderRadius: "8px",
-                            p: "5px",
-                            transition: "all 0.2s ease",
-                            "&:hover": {
-                              background: "var(--bg-accent-1)",
-                              transform: "scale(1.1)",
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
-                            }
+                            display: "block",
+                            mt: 0.8,
+                            color: "#ef4444",
+                            fontStyle: "italic",
+                            fontWeight: 500,
+                            lineHeight: 1.4,
+                            maxWidth: 200,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap"
                           }}
                         >
-                          <Visibility fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      {pub.status === 'Approved' && pub.scholarStatus === 'Pursuing' && !hasAwardedRecord(pub) && (
-                        <Tooltip title="Mark as Awarded (Submit Degree Completion)" arrow>
+                          <Tooltip title={pub.rndComment || pub.hodComment} arrow placement="top">
+                            <span>💬 "{pub.rndComment || pub.hodComment}"</span>
+                          </Tooltip>
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell sx={{ py: 2, textAlign: "center" }}>
+                      <Stack direction="row" spacing={1} sx={{ justifyContent: "center" }}>
+                        <Tooltip title="View Details" arrow>
                           <IconButton
                             size="small"
-                            onClick={() => handleOpenMilestoneModal(pub)}
+                            onClick={() => {
+                              setSelectedPubDetails(pub);
+                              setIsAwardingMode(false);
+                            }}
                             sx={{
                               color: "var(--color-primary)",
                               border: "1px solid var(--color-primary)",
@@ -657,48 +760,70 @@ export default function PhdScholarPublication() {
                               p: "5px",
                               transition: "all 0.2s ease",
                               "&:hover": {
-                                background: "rgba(189, 2, 20, 0.1)",
-                                color: "#bd0214",
-                                borderColor: "#bd0214",
+                                background: "var(--bg-accent-1)",
                                 transform: "scale(1.1)",
-                                boxShadow: "0 2px 8px rgba(189, 2, 20, 0.25)"
+                                boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
                               }
                             }}
                           >
-                            <WorkspacePremium fontSize="small" />
+                            <Visibility fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                      )}
-                      {pub.status?.includes("Rejected") && (
-                        <Tooltip title={pub.scholarStatus === 'Awarded' && pub.pursuingDetails?.status === 'Approved' ? "Edit & Resubmit Awarded Milestone" : "Edit & Resubmit Application"} arrow>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEditClick(pub)}
-                            sx={{
-                              color: "#ef4444",
-                              border: "1px solid #ef4444",
-                              borderRadius: "8px",
-                              p: "5px",
-                              transition: "all 0.2s ease",
-                              "&:hover": {
-                                background: "rgba(239, 68, 68, 0.1)",
-                                transform: "scale(1.1)",
-                                boxShadow: "0 2px 8px rgba(239, 68, 68, 0.2)"
-                              }
-                            }}
-                          >
-                            {pub.scholarStatus === 'Awarded' && pub.pursuingDetails?.status === 'Approved' ? (
+                        {pub.status === 'Approved' && pub.scholarStatus === 'Pursuing' && !hasAwardedRecord(pub) && (
+                          <Tooltip title="Mark as Awarded (Submit Degree Completion)" arrow>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleOpenMilestoneModal(pub)}
+                              sx={{
+                                color: "var(--color-primary)",
+                                border: "1px solid var(--color-primary)",
+                                borderRadius: "8px",
+                                p: "5px",
+                                transition: "all 0.2s ease",
+                                "&:hover": {
+                                  background: "rgba(189, 2, 20, 0.1)",
+                                  color: "#bd0214",
+                                  borderColor: "#bd0214",
+                                  transform: "scale(1.1)",
+                                  boxShadow: "0 2px 8px rgba(189, 2, 20, 0.25)"
+                                }
+                              }}
+                            >
                               <WorkspacePremium fontSize="small" />
-                            ) : (
-                              <Edit fontSize="small" />
-                            )}
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))}
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {pub.status?.includes("Rejected") && (
+                          <Tooltip title={pub.scholarStatus === 'Awarded' && pub.pursuingDetails?.status === 'Approved' ? "Edit & Resubmit Awarded Milestone" : "Edit & Resubmit Application"} arrow>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleEditClick(pub)}
+                              sx={{
+                                color: "#ef4444",
+                                border: "1px solid #ef4444",
+                                borderRadius: "8px",
+                                p: "5px",
+                                transition: "all 0.2s ease",
+                                "&:hover": {
+                                  background: "rgba(239, 68, 68, 0.1)",
+                                  transform: "scale(1.1)",
+                                  boxShadow: "0 2px 8px rgba(239, 68, 68, 0.2)"
+                                }
+                              }}
+                            >
+                              {pub.scholarStatus === 'Awarded' && pub.pursuingDetails?.status === 'Approved' ? (
+                                <WorkspacePremium fontSize="small" />
+                              ) : (
+                                <Edit fontSize="small" />
+                              )}
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
           <TablePagination
@@ -763,6 +888,7 @@ export default function PhdScholarPublication() {
             <Button
               variant="outlined"
               onClick={() => {
+                resetFormState();
                 setViewMode("list");
               }}
               sx={{
@@ -966,11 +1092,11 @@ export default function PhdScholarPublication() {
         <>
           <SubLabel text="Research & Scholar Details:" />
           <Box sx={{ mb: 3 }}>
-            <Typography sx={labelStyle}>Title of the Ph.D Work : *</Typography>
+            <Typography sx={labelStyle}>Title of the Ph.D Work :</Typography>
             <TextField
               size="small"
               fullWidth
-              placeholder="Enter Title of the Ph.D Work"
+              placeholder="Enter Title of the Ph.D Work (Optional)"
               value={form.titleOfPhdWork}
               onChange={set("titleOfPhdWork")}
             />
@@ -980,7 +1106,7 @@ export default function PhdScholarPublication() {
           <Grid2>
             <Box>
               <Typography sx={labelStyle}>Scholar Status : *</Typography>
-              <Select size="small" fullWidth displayEmpty value={form.scholarStatus} onChange={set("scholarStatus")}>
+              <Select size="small" fullWidth displayEmpty value={form.scholarStatus} onChange={handleScholarStatusChange}>
                 <MenuItem value="" disabled>--Select--</MenuItem>
                 {SCHOLAR_STATUSES.map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
               </Select>
@@ -1025,24 +1151,7 @@ export default function PhdScholarPublication() {
         <Button
           variant="outlined"
           onClick={() => {
-            setForm({
-              rollNumber: "",
-              studentName: "",
-              titleOfPhdWork: "",
-              course: "Ph.D.",
-              branch: "",
-              scholarStatus: "",
-              admissionOrAwardDate: "",
-              scholarType: "",
-              type: "",
-              universitySelect: "Aditya University",
-              universityText: ""
-            });
-            setRollNumberInput("");
-            setFiles({ document: null });
-            setExistingFiles({ document: null });
-            setEditingId(null);
-            setIsVerified(false);
+            resetFormState();
             setViewMode("list");
           }}
           sx={{
@@ -1069,7 +1178,13 @@ export default function PhdScholarPublication() {
     </FormCard>
   );
 
-  const handleCloseDetails = () => setSelectedPubDetails(null);
+  const handleCloseDetails = () => {
+    setSelectedPubDetails(null);
+    setIsAwardingMode(false);
+    setMilestoneScholar(null);
+    setMilestoneExistingDoc(null);
+    setMilestoneFile(null);
+  };
 
   const renderDetailFile = (title, filepath, folder = "phdScholars") => {
     if (!filepath) {
@@ -1174,7 +1289,9 @@ export default function PhdScholarPublication() {
         <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--gradient-primary)", color: "#fff", py: 2 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <School sx={{ color: "#fff" }} />
-            <Typography variant="h6" sx={{ fontWeight: 800 }}>Ph.D. Scholar Details</Typography>
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              {isAwardingMode ? "Mark Scholar as Awarded" : "Ph.D. Scholar Details"}
+            </Typography>
           </Box>
           <IconButton onClick={handleCloseDetails} sx={{ color: "#fff" }}><Close /></IconButton>
         </DialogTitle>
@@ -1305,11 +1422,11 @@ export default function PhdScholarPublication() {
                       icon: <WorkspacePremium sx={{ fontSize: 18, color: "var(--text-secondary)" }} />
                     },
                     { label: "Scholar Type", value: data.scholarType || "Full-Time", icon: <Groups sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
-                    ...(data.scholarStatus === "Awarded" && data.pursuingDetails?.admissionDate ? [
-                      { label: "Admission Date", value: formatDate(data.pursuingDetails.admissionDate), icon: <CalendarToday sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    ...(data.scholarStatus === "Awarded" ? [
+                      ...(data.pursuingDetails?.admissionDate ? [{ label: "Admission Date", value: formatDate(data.pursuingDetails.admissionDate), icon: <CalendarToday sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> }] : []),
                       { label: "Ph.D. Award Date", value: formatDate(data.awardedDetails?.awardDate || data.admissionOrAwardDate), icon: <WorkspacePremium sx={{ fontSize: 18, color: "#10b981" }} /> }
                     ] : [
-                      { label: data.scholarStatus === "Awarded" ? "Award Date" : "Admission Date", value: formatDate(data.admissionOrAwardDate), icon: <CalendarToday sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> }
+                      { label: "Admission Date", value: formatDate(data.pursuingDetails?.admissionDate || data.admissionOrAwardDate), icon: <CalendarToday sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> }
                     ]),
                   ].map((item, idx, arr) => (
                     <Box
@@ -1380,7 +1497,7 @@ export default function PhdScholarPublication() {
                     </Typography>
                   </Box>
 
-                  {data.status === 'Approved' && data.scholarStatus === 'Pursuing' && !hasAwardedRecord(data) && (
+                  {data.status === 'Approved' && data.scholarStatus === 'Pursuing' && !hasAwardedRecord(data) && !isAwardingMode && (
                     <Box sx={{ mt: 1.5, pt: 1.5, borderTop: "1px dashed var(--border-color)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 1 }}>
                       <Box>
                         <Typography variant="caption" sx={{ color: "#10b981", fontWeight: 800, display: "block" }}>
@@ -1469,6 +1586,229 @@ export default function PhdScholarPublication() {
                 </Box>
               </Paper>
 
+              {/* Inline Mark Scholar as Awarded Form */}
+              {isAwardingMode && (
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 3,
+                    borderRadius: "16px",
+                    border: "1.5px solid var(--color-primary)",
+                    background: "var(--bg-paper)",
+                    boxShadow: "0 8px 24px rgba(0, 78, 146, 0.12)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2.2
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 1.5, borderBottom: "1px solid var(--border-color)" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.2 }}>
+                      <Box sx={{
+                        width: 38,
+                        height: 38,
+                        borderRadius: "10px",
+                        bgcolor: "rgba(0, 78, 146, 0.1)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "var(--color-primary)"
+                      }}>
+                        <WorkspacePremium sx={{ fontSize: 22 }} />
+                      </Box>
+                      <Box>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "var(--text-primary)", lineHeight: 1.2 }}>
+                          Mark Scholar as Awarded
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 500 }}>
+                          Submit Ph.D. degree completion milestone
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <IconButton
+                      size="small"
+                      onClick={() => setIsAwardingMode(false)}
+                      sx={{ color: "var(--text-secondary)", "&:hover": { bgcolor: "rgba(0,0,0,0.05)" } }}
+                      title="Cancel"
+                    >
+                      <Close sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Box>
+
+                  {/* Field: Title of the Ph.D Work */}
+                  <Box>
+                    <Typography sx={labelStyle}>Title of the Ph.D Work :</Typography>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      placeholder="Enter or modify Title of the Ph.D Work"
+                      value={milestoneTitle}
+                      onChange={(e) => setMilestoneTitle(e.target.value)}
+                    />
+                    <Typography variant="caption" sx={{ color: "var(--text-secondary)", mt: 0.5, display: "block", fontWeight: 500 }}>
+                      You can enter or update the Ph.D. title when marking as Awarded (Must be unique if provided).
+                    </Typography>
+                  </Box>
+
+                  {/* Field 1: Awarded Academic Year */}
+                  <Box>
+                    <Typography sx={labelStyle}>Awarded Academic Year : *</Typography>
+                    <Select
+                      size="small"
+                      fullWidth
+                      value={milestoneAcademicYear}
+                      onChange={(e) => setMilestoneAcademicYear(e.target.value)}
+                      displayEmpty
+                    >
+                      <MenuItem value="" disabled>-- Select Academic Year --</MenuItem>
+                      {academicYears.map((y) => (
+                        <MenuItem key={y._id} value={y._id}>
+                          {y.year} {y.active ? "(Active)" : ""}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {(() => {
+                      const pursuingAcyId = (
+                        data?.pursuingDetails?.academicYear?._id ||
+                        data?.pursuingDetails?.academicYear ||
+                        data?.academicYear?._id ||
+                        data?.academicYear
+                      )?.toString();
+                      if (milestoneAcademicYear && pursuingAcyId && milestoneAcademicYear.toString() === pursuingAcyId) {
+                        return (
+                          <Typography variant="caption" sx={{ color: "#d32f2f", mt: 0.8, display: "block", fontWeight: 700 }}>
+                            ⚠️ Error: Awarded Academic Year cannot be the same as Pursuing Academic Year ({data.pursuingDetails?.academicYear?.year || data.academicYear?.year || ""}). Please choose a later academic year.
+                          </Typography>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </Box>
+
+                  {/* Field 2: Ph.D. Award Date */}
+                  <Box>
+                    <Typography sx={labelStyle}>Ph.D. Award Date : *</Typography>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      type="date"
+                      value={milestoneAwardDate}
+                      onChange={(e) => setMilestoneAwardDate(e.target.value)}
+                      slotProps={{
+                        inputLabel: { shrink: true },
+                        htmlInput: {
+                          max: new Date().toISOString().split("T")[0],
+                          min: (data.pursuingDetails?.admissionDate || data.admissionOrAwardDate)
+                            ? new Date(new Date(data.pursuingDetails?.admissionDate || data.admissionOrAwardDate).getTime() + 86400000).toISOString().split("T")[0]
+                            : undefined
+                        }
+                      }}
+                    />
+                    {(data.pursuingDetails?.admissionDate || data.admissionOrAwardDate) && (
+                      <Typography variant="caption" sx={{ color: "var(--text-secondary)", mt: 0.5, display: "block", fontWeight: 500 }}>
+                        Must be strictly after Admission Date: <strong>{formatDate(data.pursuingDetails?.admissionDate || data.admissionOrAwardDate)}</strong>
+                      </Typography>
+                    )}
+                  </Box>
+
+                  {/* Field 3: Award Proceedings / Degree Letter */}
+                  <Box>
+                    <FileField
+                      label="Award Proceedings / Degree Award Letter *"
+                      name="milestoneProof"
+                      maxSize={200 * 1024}
+                      onChange={(e) => setMilestoneFile(e.target.files?.[0] || null)}
+                      file={milestoneFile}
+                      existingFileUrl={!milestoneFile && milestoneExistingDoc ? getFileUrl(milestoneExistingDoc) : null}
+                      existingFileName={milestoneExistingDoc ? milestoneExistingDoc.split('/').pop() : ""}
+                      onRemoveExisting={() => setMilestoneExistingDoc(null)}
+                    />
+                  </Box>
+
+                  {/* Inline Submit / Cancel buttons */}
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 1.5, pt: 1, borderTop: "1px dashed var(--border-color)" }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => setIsAwardingMode(false)}
+                      disabled={milestoneLoading}
+                      sx={{
+                        color: "var(--text-secondary)",
+                        borderColor: "var(--border-color)",
+                        textTransform: "none",
+                        fontWeight: 700,
+                        borderRadius: "8px",
+                        px: 2
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={handleMilestoneSubmit}
+                      disabled={milestoneLoading}
+                      sx={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 1,
+                        borderRadius: "50px",
+                        fontSize: "0.825rem",
+                        fontWeight: 700,
+                        textTransform: "none",
+                        color: "#ffffff",
+                        px: 3,
+                        py: 0.8,
+                        boxShadow: "0 4px 12px rgba(0, 78, 146, 0.2)",
+                        transition: "all 0.4s ease",
+                        position: "relative",
+                        background: "transparent",
+                        overflow: "hidden",
+                        zIndex: 1,
+
+                        // Base Blue State Layer
+                        "& .blue-bg": {
+                          position: "absolute",
+                          inset: 0,
+                          background: "var(--gradient-primary)",
+                          borderRadius: "50px",
+                          zIndex: -2,
+                        },
+
+                        // Red Hover Fill Layer
+                        "&::before": {
+                          content: '""',
+                          position: "absolute",
+                          inset: 0,
+                          borderRadius: "50px",
+                          background: "linear-gradient(90deg, #bd0214ff, #bd0214ff)",
+                          zIndex: -1,
+                          transform: "scaleX(0)",
+                          transformOrigin: "left",
+                          transition: "transform 0.6s ease-in-out",
+                        },
+
+                        "&:hover": {
+                          boxShadow: "0 4px 16px rgba(189, 2, 20, 0.35)",
+                          "&::before": {
+                            transform: "scaleX(1)",
+                          }
+                        }
+                      }}
+                    >
+                      <Box className="blue-bg" />
+                      {milestoneLoading ? (
+                        <Loader size={16} color="inherit" />
+                      ) : (
+                        <WorkspacePremium sx={{ fontSize: 18, color: "#ffffff", zIndex: 2, position: "relative" }} />
+                      )}
+                      <Box component="span" sx={{ zIndex: 2, position: "relative" }}>
+                        {milestoneLoading ? "Submitting..." : "Submit Awarded Milestone"}
+                      </Box>
+                    </Button>
+                  </Box>
+                </Paper>
+              )}
+
               {/* Supporting Document */}
               <Paper elevation={0} sx={{ p: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-paper)" }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
@@ -1522,7 +1862,23 @@ export default function PhdScholarPublication() {
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2.5, borderTop: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          {data.status === 'Approved' && data.scholarStatus === 'Pursuing' && !hasAwardedRecord(data) ? (
+          {isAwardingMode ? (
+            <Button
+              variant="outlined"
+              onClick={() => setIsAwardingMode(false)}
+              disabled={milestoneLoading}
+              sx={{
+                color: "var(--text-secondary)",
+                borderColor: "var(--border-color)",
+                borderRadius: "50px",
+                px: 2.5,
+                fontWeight: 700,
+                textTransform: "none"
+              }}
+            >
+              Cancel Awarded Form
+            </Button>
+          ) : data.status === 'Approved' && data.scholarStatus === 'Pursuing' && !hasAwardedRecord(data) ? (
             <Button
               variant="contained"
               onClick={() => handleOpenMilestoneModal(data)}
@@ -1616,304 +1972,212 @@ export default function PhdScholarPublication() {
               </Box>
             </Button>
           ) : <Box />}
-          <Button onClick={handleCloseDetails} sx={{ color: "var(--text-primary)", fontWeight: 700 }}>Close</Button>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            {isAwardingMode && (
+              <Button
+                variant="contained"
+                onClick={handleMilestoneSubmit}
+                disabled={milestoneLoading}
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 1,
+                  borderRadius: "50px",
+                  fontSize: "0.85rem",
+                  fontWeight: 700,
+                  textTransform: "none",
+                  color: "#ffffff",
+                  px: 3.5,
+                  py: 0.9,
+                  boxShadow: "0 4px 12px rgba(0, 78, 146, 0.2)",
+                  transition: "all 0.4s ease",
+                  position: "relative",
+                  background: "transparent",
+                  overflow: "hidden",
+                  zIndex: 1,
+
+                  // Base Blue State Layer
+                  "& .blue-bg": {
+                    position: "absolute",
+                    inset: 0,
+                    background: "var(--gradient-primary)",
+                    borderRadius: "50px",
+                    zIndex: -2,
+                  },
+
+                  // Red Hover Fill Layer
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: "50px",
+                    background: "linear-gradient(90deg, #bd0214ff, #bd0214ff)",
+                    zIndex: -1,
+                    transform: "scaleX(0)",
+                    transformOrigin: "left",
+                    transition: "transform 0.6s ease-in-out",
+                  },
+
+                  "&:hover": {
+                    boxShadow: "0 4px 16px rgba(189, 2, 20, 0.35)",
+                    "&::before": {
+                      transform: "scaleX(1)",
+                    }
+                  }
+                }}
+              >
+                <Box className="blue-bg" />
+                {milestoneLoading ? (
+                  <Loader size={16} color="inherit" />
+                ) : (
+                  <WorkspacePremium sx={{ fontSize: 18, color: "#ffffff", zIndex: 2, position: "relative" }} />
+                )}
+                <Box component="span" sx={{ zIndex: 2, position: "relative" }}>
+                  {milestoneLoading ? "Submitting..." : "Submit Awarded Milestone"}
+                </Box>
+              </Button>
+            )}
+            <Button onClick={handleCloseDetails} sx={{ color: "var(--text-primary)", fontWeight: 700 }}>Close</Button>
+          </Box>
         </DialogActions>
       </Dialog>
     );
   };
 
-  const renderMilestoneDialog = () => {
-    if (!milestoneDialogOpen || !milestoneScholar) return null;
-    const scholar = milestoneScholar;
+  const renderMilestoneDialog = () => null;
 
-    return (
-      <Dialog
-        open={milestoneDialogOpen}
-        onClose={() => {
-          if (!milestoneLoading) {
-            setMilestoneDialogOpen(false);
-            setMilestoneExistingDoc(null);
-            setMilestoneFile(null);
-          }
-        }}
-        maxWidth="sm"
-        fullWidth
-        sx={{
-          "& .MuiDialog-paper": {
-            borderRadius: "20px",
-            background: "var(--bg-paper)",
-            border: "1px solid var(--border-color)",
-            boxShadow: "var(--shadow-premium)",
-            overflow: "hidden"
-          }
-        }}
-        slotProps={{
-          backdrop: {
-            sx: {
-              backdropFilter: "blur(4px)",
-              backgroundColor: "rgba(0, 0, 0, 0.4)",
-            }
-          }
-        }}
-      >
-        <DialogTitle sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          background: "var(--gradient-primary)",
-          color: "#fff",
-          py: 2.2,
-          px: 3
-        }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <WorkspacePremium sx={{ color: "#fff", fontSize: 26 }} />
-            <Box>
-              <Typography variant="h6" sx={{ fontWeight: 800, color: "#fff", lineHeight: 1.2 }}>
-                {scholar.status?.includes('Rejected') || scholar.awardedDetails?.status?.includes('Reject') || scholar.scholarStatus === 'Awarded'
-                  ? "Edit & Resubmit Awarded Milestone"
-                  : "Mark Scholar as Awarded"}
-              </Typography>
-              <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.85)", fontWeight: 500 }}>
-                {scholar.status?.includes('Rejected') || scholar.awardedDetails?.status?.includes('Reject') || scholar.scholarStatus === 'Awarded'
-                  ? `Revise and resubmit degree award details for ${scholar.studentName}`
-                  : `Progress ${scholar.studentName} to Ph.D. Degree Awarded milestone`}
-              </Typography>
-            </Box>
-          </Box>
-          <IconButton
-            onClick={() => {
-              if (!milestoneLoading) {
-                setMilestoneDialogOpen(false);
-                setMilestoneExistingDoc(null);
-                setMilestoneFile(null);
-              }
+  const renderConflictDialog = () => (
+    <Dialog
+      open={pursuingConflictModal.open}
+      onClose={() => setPursuingConflictModal(p => ({ ...p, open: false }))}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: "18px",
+          boxShadow: "0 24px 48px -12px rgba(15, 23, 42, 0.25)",
+          border: "1px solid rgba(0, 0, 0, 0.06)",
+          background: "#ffffff",
+          overflow: "hidden"
+        }
+      }}
+    >
+      <Box sx={{ p: { xs: 3, sm: 4.5 } }}>
+        {/* Title row with icon */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
+          <Settings sx={{ color: "#0F284E", fontSize: 28 }} />
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 800,
+              color: "#0F284E",
+              fontSize: { xs: "1.2rem", sm: "1.3rem" },
+              letterSpacing: "-0.01em"
             }}
-            sx={{ color: "#fff", "&:hover": { bgcolor: "rgba(255,255,255,0.15)" } }}
           >
-            <Close />
-          </IconButton>
-        </DialogTitle>
+            Pursuing Scholar Already Exists
+          </Typography>
+        </Box>
 
-        <DialogContent sx={{ p: 3, pt: 4 }}>
-          {/* Summary Card */}
-          <Paper elevation={0} sx={{ p: 2.5, mt: 1, mb: 3, borderRadius: "16px", border: "1px solid var(--border-color)", background: "var(--bg-panel)" }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, mb: 2, pb: 1, borderBottom: "1px solid var(--border-color)" }}>
-              <School sx={{ color: "var(--color-primary)", fontSize: 20 }} />
-              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: 0.5 }}>
-                Scholar Information (Carried Over)
-              </Typography>
-            </Box>
-            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
-              <Box>
-                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Scholar Roll No</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{scholar.rollNumber}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Student Name</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{scholar.studentName}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>University</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{scholar.university || "Aditya University"}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Admission Date</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                  {formatDate(scholar.admissionOrAwardDate)}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Supervision Role</Typography>
-                <Box sx={{ mt: 0.3 }}>
-                  <Chip
-                    label={scholar.type === 'co-guide' ? 'Co-Guide' : 'Guide'}
-                    size="small"
-                    sx={{
-                      fontWeight: 800,
-                      fontSize: "0.75rem",
-                      bgcolor: scholar.type === 'co-guide' ? 'rgba(124, 58, 237, 0.1)' : 'rgba(59, 130, 246, 0.1)',
-                      color: scholar.type === 'co-guide' ? '#7c3aed' : '#3b82f6',
-                      borderRadius: '6px'
-                    }}
-                  />
-                </Box>
-              </Box>
-              <Box>
-                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Scholar Type</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{scholar.scholarType || "Full-Time"}</Typography>
-              </Box>
-              <Box>
-                <Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 600 }}>Pursuing Academic Year</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
-                  {scholar.pursuingDetails?.academicYear?.year || scholar.academicYear?.year || "-"}
-                </Typography>
-              </Box>
-            </Box>
-          </Paper>
+        {/* Subtitle description */}
+        <Typography
+          variant="body2"
+          sx={{
+            color: "#475569",
+            lineHeight: 1.65,
+            mb: 3,
+            fontSize: "0.93rem"
+          }}
+        >
+          {`This scholar ${pursuingConflictModal.rollNumber ? `(${pursuingConflictModal.rollNumber})` : ""} has already been submitted under the 'Pursuing' category. If your scholar has now been awarded their Ph.D. degree, you can update their status from your existing scholar records.`}
+        </Typography>
 
-          {/* New Milestone Inputs */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-            <Box>
-              <Typography sx={labelStyle}>Awarded Academic Year : *</Typography>
-              <Select
-                size="small"
-                fullWidth
-                value={milestoneAcademicYear}
-                onChange={(e) => setMilestoneAcademicYear(e.target.value)}
-                displayEmpty
-              >
-                <MenuItem value="" disabled>-- Select Academic Year --</MenuItem>
-                {academicYears.map((y) => (
-                  <MenuItem key={y._id} value={y._id}>
-                    {y.year} {y.active ? "(Active)" : ""}
-                  </MenuItem>
-                ))}
-              </Select>
-              {(() => {
-                const pursuingAcyId = (
-                  scholar?.pursuingDetails?.academicYear?._id ||
-                  scholar?.pursuingDetails?.academicYear ||
-                  scholar?.academicYear?._id ||
-                  scholar?.academicYear
-                )?.toString();
-                if (milestoneAcademicYear && pursuingAcyId && milestoneAcademicYear.toString() === pursuingAcyId) {
-                  return (
-                    <Typography variant="caption" sx={{ color: "#d32f2f", mt: 0.8, display: "block", fontWeight: 700 }}>
-                      ⚠️ Error: Awarded Academic Year cannot be the same as Pursuing Academic Year ({scholar.pursuingDetails?.academicYear?.year || scholar.academicYear?.year || ""}). Please choose a later academic year.
-                    </Typography>
-                  );
-                }
-                return null;
-              })()}
-            </Box>
-
-            <Box>
-              <Typography sx={labelStyle}>Ph.D. Award Date : *</Typography>
-              <TextField
-                size="small"
-                fullWidth
-                type="date"
-                value={milestoneAwardDate}
-                onChange={(e) => setMilestoneAwardDate(e.target.value)}
-                slotProps={{
-                  inputLabel: { shrink: true },
-                  htmlInput: {
-                    max: new Date().toISOString().split("T")[0],
-                    min: scholar.admissionOrAwardDate ? new Date(new Date(scholar.admissionOrAwardDate).getTime() + 86400000).toISOString().split("T")[0] : undefined
-                  }
-                }}
-              />
-              {scholar.admissionOrAwardDate && (
-                <Typography variant="caption" sx={{ color: "var(--text-secondary)", mt: 0.5, display: "block", fontWeight: 500 }}>
-                  Must be strictly after the scholar's Admission Date: <strong>{formatDate(scholar.admissionOrAwardDate)}</strong>
-                </Typography>
-              )}
-            </Box>
-
-            <Box>
-              <FileField
-                label="Award Proceedings / Degree Award Letter *"
-                name="milestoneProof"
-                maxSize={200 * 1024}
-                onChange={(e) => setMilestoneFile(e.target.files?.[0] || null)}
-                file={milestoneFile}
-                existingFileUrl={!milestoneFile && milestoneExistingDoc ? getFileUrl(milestoneExistingDoc) : null}
-                existingFileName={milestoneExistingDoc ? milestoneExistingDoc.split('/').pop() : ""}
-                onRemoveExisting={() => setMilestoneExistingDoc(null)}
-              />
-            </Box>
+        {/* Blue Info Callout Box */}
+        <Box
+          sx={{
+            backgroundColor: "#F0F7FF",
+            border: "1px solid #BAE6FD",
+            borderRadius: "12px",
+            p: { xs: 2.5, sm: 3 },
+            mb: 3.5
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+            <InfoOutlined sx={{ color: "#0284C7", fontSize: 22 }} />
+            <Typography
+              variant="subtitle2"
+              sx={{ fontWeight: 700, color: "#0369A1", fontSize: "0.975rem" }}
+            >
+              To update your scholar:
+            </Typography>
           </Box>
-        </DialogContent>
+          <Box
+            component="ol"
+            sx={{
+              m: 0,
+              pl: 3,
+              color: "#334155",
+              fontSize: "0.885rem",
+              lineHeight: 1.75,
+              "& li": { mb: 0.6 }
+            }}
+          >
+            <li>Go to your <strong>Ph.D. Scholars List</strong>.</li>
+            <li>Find and open the pursuing scholar record{pursuingConflictModal.rollNumber ? ` (${pursuingConflictModal.rollNumber})` : ""}.</li>
+            <li>Select <strong>"Mark as Awarded"</strong> to enter the degree award details.</li>
+          </Box>
+        </Box>
 
-        <DialogActions sx={{ p: 2.5, px: 3, borderTop: "1px solid var(--border-color)" }}>
+        {/* Action Buttons */}
+        <Box sx={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 2, mt: 1 }}>
           <Button
-            onClick={() => {
-              setMilestoneDialogOpen(false);
-              setMilestoneExistingDoc(null);
-              setMilestoneFile(null);
+            variant="text"
+            onClick={() => setPursuingConflictModal(p => ({ ...p, open: false }))}
+            sx={{
+              textTransform: "none",
+              color: "#475569",
+              fontWeight: 600,
+              fontSize: "0.95rem",
+              px: 2.5,
+              py: 1,
+              "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.04)" }
             }}
-            disabled={milestoneLoading}
-            sx={{ color: "var(--text-secondary)", fontWeight: 700, textTransform: "none" }}
           >
-            Cancel
+            Stay on Form
           </Button>
           <Button
             variant="contained"
-            onClick={handleMilestoneSubmit}
-            disabled={milestoneLoading}
+            onClick={handleGoToScholarsList}
             sx={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 1,
-              borderRadius: "50px",
-              fontSize: "0.85rem",
-              fontWeight: 700,
-              textTransform: "none",
+              backgroundColor: "#0A1E3B",
               color: "#ffffff",
+              textTransform: "none",
+              fontWeight: 700,
+              fontSize: "0.95rem",
               px: 3.5,
-              py: 1,
-              boxShadow: "0 4px 12px rgba(0, 78, 146, 0.2)",
-              transition: "all 0.4s ease",
-              position: "relative",
-              background: "transparent",
-              overflow: "hidden",
-              zIndex: 1,
-              "&.Mui-disabled": {
-                opacity: 0.6,
-                color: "#ffffff"
-              },
-
-              // Base Blue State Layer
-              "& .blue-bg": {
-                position: "absolute",
-                inset: 0,
-                background: "var(--gradient-primary)",
-                borderRadius: "50px",
-                zIndex: -2,
-              },
-
-              // Red Hover Fill Layer
-              "&::before": {
-                content: '""',
-                position: "absolute",
-                inset: 0,
-                borderRadius: "50px",
-                background: "linear-gradient(90deg, #bd0214ff, #bd0214ff)",
-                zIndex: -1,
-                transform: "scaleX(0)",
-                transformOrigin: "left",
-                transition: "transform 0.6s ease-in-out",
-              },
-
-              "&:hover:not(.Mui-disabled)": {
-                boxShadow: "0 4px 16px rgba(189, 2, 20, 0.35)",
-                "&::before": {
-                  transform: "scaleX(1)",
-                }
+              py: 1.15,
+              borderRadius: "8px",
+              boxShadow: "none",
+              "&:hover": {
+                backgroundColor: "#051329",
+                boxShadow: "0 4px 12px rgba(10, 30, 59, 0.25)"
               }
             }}
           >
-            <Box className="blue-bg" />
-            {milestoneLoading ? (
-              <Loader size={16} color="inherit" />
-            ) : (
-              <WorkspacePremium sx={{ fontSize: 18, color: "#ffffff", zIndex: 2, position: "relative" }} />
-            )}
-            <Box component="span" sx={{ zIndex: 2, position: "relative" }}>
-              {milestoneLoading ? "Submitting..." : (scholar.status?.includes('Rejected') || scholar.awardedDetails?.status?.includes('Reject') || scholar.scholarStatus === 'Awarded') ? "Resubmit Awarded Milestone" : "Submit Awarded Milestone"}
-            </Box>
+            Go to My Ph.D. Scholars List
           </Button>
-        </DialogActions>
-      </Dialog>
-    );
-  };
+        </Box>
+      </Box>
+    </Dialog>
+  );
 
   return (
     <Box sx={{ width: "100%", pb: 5 }}>
       <PageHeader
         title="Guided Ph.D. Scholars"
         subtitle="Manage and submit details of your guided scholars for annual appraisal cycles"
-        onBack={viewMode !== "list" ? () => setViewMode("list") : undefined}
+        onBack={viewMode !== "list" ? () => { resetFormState(); setViewMode("list"); } : undefined}
       />
       {(!user?.panNumber || !user?.college) && (
         <Box sx={{ px: 3, mb: 4 }}>
@@ -1933,6 +2197,7 @@ export default function PhdScholarPublication() {
       </Box>
       {renderDetailsDialog()}
       {renderMilestoneDialog()}
+      {renderConflictDialog()}
       <NoActiveYearDialog
         open={noActiveYearAlertOpen}
         onClose={() => setNoActiveYearAlertOpen(false)}

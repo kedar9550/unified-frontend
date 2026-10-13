@@ -224,6 +224,8 @@ const ResearchApprovalList = ({ role }) => {
                                 <MenuItem value="Book Chapter">Book Chapter</MenuItem>
                                 <MenuItem value="Consultancy">Consultancy</MenuItem>
                                 <MenuItem value="Funded Project">Funded Project</MenuItem>
+                                <MenuItem value="Ph.D. Scholar">Ph.D. Scholar</MenuItem>
+                                <MenuItem value="Novel Product">Novel Product</MenuItem>
                             </Select>
                         </FormControl>
                     </Grid>
