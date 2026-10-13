@@ -255,6 +255,73 @@ body.dark-mode .MuiInputLabel-root.Mui-focused {
   color: var(--color-primary) !important;
 }
 
+/* ========================================================
+   GLOBAL FIX: Date/Time Pickers, Autofill & Overlapping Placeholders
+   ======================================================== */
+
+/* 1. Ensure floating labels for date/datetime/time/month/week inputs always float properly */
+.MuiFormControl-root:has(input[type="date"]) .MuiInputLabel-root,
+.MuiFormControl-root:has(input[type="datetime-local"]) .MuiInputLabel-root,
+.MuiFormControl-root:has(input[type="time"]) .MuiInputLabel-root,
+.MuiFormControl-root:has(input[type="month"]) .MuiInputLabel-root,
+.MuiFormControl-root:has(input[type="week"]) .MuiInputLabel-root {
+  transform: translate(14px, -9px) scale(0.75) !important;
+  transform-origin: top left !important;
+  background: var(--bg-paper, #ffffff);
+  padding: 0 4px;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+/* 2. Autofilled / prefilled inputs: automatically shrink floating label */
+.MuiFormControl-root:has(input:-webkit-autofill) .MuiInputLabel-root,
+.MuiFormControl-root:has(input:autofill) .MuiInputLabel-root {
+  transform: translate(14px, -9px) scale(0.75) !important;
+  transform-origin: top left !important;
+  background: var(--bg-paper, #ffffff);
+  padding: 0 4px;
+  z-index: 2;
+  pointer-events: auto;
+}
+
+/* 3. Ensure notched outline legend doesn't overlap or clash */
+.MuiFormControl-root:has(input[type="date"]) .MuiOutlinedInput-notchedOutline legend,
+.MuiFormControl-root:has(input[type="datetime-local"]) .MuiOutlinedInput-notchedOutline legend,
+.MuiFormControl-root:has(input[type="time"]) .MuiOutlinedInput-notchedOutline legend,
+.MuiFormControl-root:has(input:-webkit-autofill) .MuiOutlinedInput-notchedOutline legend,
+.MuiFormControl-root:has(input:autofill) .MuiOutlinedInput-notchedOutline legend {
+  max-width: 100% !important;
+}
+
+/* 4. Prevent double placeholders:
+   If an input has a floating label that is NOT shrunk and NOT focused,
+   hide the placeholder so the label and placeholder never mix/overlap! */
+.MuiFormControl-root:not(:has(.MuiInputLabel-shrink)):not(:focus-within) input:not([type="date"]):not([type="datetime-local"]):not([type="time"]):not([type="month"])::placeholder,
+.MuiFormControl-root:not(:has(.MuiInputLabel-shrink)):not(:focus-within) textarea::placeholder {
+  color: transparent !important;
+  opacity: 0 !important;
+}
+
+/* 5. Smooth background for all shrunk MUI labels */
+.MuiInputLabel-root.MuiInputLabel-shrink {
+  background: var(--bg-paper, #ffffff);
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
+body.dark-mode .MuiInputLabel-root.MuiInputLabel-shrink {
+  background: var(--bg-paper, #0f172a);
+}
+
+/* 6. Autofill styles for all MUI inputs across the app */
+.MuiInputBase-input:-webkit-autofill,
+.MuiInputBase-input:-webkit-autofill:hover,
+.MuiInputBase-input:-webkit-autofill:focus,
+.MuiInputBase-input:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--text-primary) !important;
+  transition: background-color 50000s ease-in-out 0s;
+}
+
 body.dark-mode .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
   border-color: var(--text-primary) !important;
 }
