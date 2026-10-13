@@ -719,7 +719,36 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
 
             {/* Actions */}
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mt: 3 }}>
-                {data.hodComment && <Box sx={{ flex: 1, minWidth: 300 }}><Card sx={{ ...cardStyle, borderLeft: "4px solid #ffc107", height: "100%", mb: 0 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><HistoryIcon sx={{ color: "#ffc107" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>HOD Review</Typography></Box><Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}><Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.hodComment}"</Typography></Box></Card></Box>}
+                {(data.statusUpdatedToGranted || (data.patentStatus === 'Granted' && data.published?.status)) && (
+                    <Box sx={{ flex: 1, minWidth: 300 }}>
+                        <Card sx={{ ...cardStyle, borderLeft: "4px solid #10b981", height: "100%", mb: 0 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+                                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Published Stage Decision</Typography>
+                                <Chip label={data.published?.status || "Approved"} size="small" sx={{ fontWeight: 800, bgcolor: "rgba(16, 185, 129, 0.1)", color: "#10b981" }} />
+                            </Box>
+                            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                                {data.published?.hodComment && (
+                                    <Box sx={{ p: 1.5, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 900, color: "#ed6c02", textTransform: "uppercase" }}>HOD Remarks</Typography>
+                                        <Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.published.hodComment}"</Typography>
+                                    </Box>
+                                )}
+                                {data.published?.rndComment && (
+                                    <Box sx={{ p: 1.5, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "10px", border: "1px solid #10b98133" }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 900, color: "#2e7d32", textTransform: "uppercase" }}>R&D Remarks</Typography>
+                                        <Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.published.rndComment}"</Typography>
+                                    </Box>
+                                )}
+                                {(data.published?.publishedincentiveamount || data.published?.approvedAmount) && (
+                                    <Typography variant="body2" sx={{ fontWeight: 800, color: "#10b981" }}>
+                                        Approved Incentive: ₹{data.published.publishedincentiveamount || data.published.approvedAmount}
+                                    </Typography>
+                                )}
+                            </Box>
+                        </Card>
+                    </Box>
+                )}
+                {data.hodComment && <Box sx={{ flex: 1, minWidth: 300 }}><Card sx={{ ...cardStyle, borderLeft: "4px solid #ffc107", height: "100%", mb: 0 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><HistoryIcon sx={{ color: "#ffc107" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{data.statusUpdatedToGranted ? "Granted HOD Review" : "HOD Review"}</Typography></Box><Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}><Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.hodComment}"</Typography></Box></Card></Box>}
                 
                 <Box sx={{ flex: 1, minWidth: 350 }}>
                     {((isResearchAdmin && data.status === 'Pending at R&D') || (isHOD && data.status === 'Pending')) ? (
