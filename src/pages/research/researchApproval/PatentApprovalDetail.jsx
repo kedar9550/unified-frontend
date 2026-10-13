@@ -555,18 +555,40 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                                 editable: true, 
                                 type: "number" 
                             },
-                            ...(data.published?.status ? [{
-                                key: "publishedAppraisalClaimant",
-                                label: "Published Appraisal Claimant",
-                                value: data.published?.appraisalClaimant || "-",
-                                editable: false
-                            }] : []),
-                            ...(data.patentStatus === 'Granted' ? [{
-                                key: "grantedAppraisalClaimant",
-                                label: "Granted Appraisal Claimant",
-                                value: data.granted?.appraisalClaimant || (data.patentStatus === 'Granted' && data.status === 'Approved' ? data.appraisalClaimant : null) || "-",
-                                editable: false
-                            }] : [
+                            ...(data.published?.status || data.patentStatus === 'Published' ? [
+                                {
+                                    key: "publishedAppraisalEligible",
+                                    label: "Published Appraisal Eligible",
+                                    value: data.published?.appraisalEligible || (data.patentStatus === 'Published' && data.status === 'Approved' ? data.appraisalEligible : null) || "-",
+                                    editable: false
+                                },
+                                {
+                                    key: "publishedAppraisalClaimant",
+                                    label: "Published Appraisal Claimant",
+                                    value: data.published?.appraisalClaimant || (data.patentStatus === 'Published' && data.status === 'Approved' ? data.appraisalClaimant : null) || "-",
+                                    editable: false
+                                }
+                            ] : []),
+                            ...(data.granted?.status || data.patentStatus === 'Granted' || data.statusUpdatedToGranted ? [
+                                {
+                                    key: "grantedAppraisalEligible",
+                                    label: "Granted Appraisal Eligible",
+                                    value: data.granted?.appraisalEligible || (data.patentStatus === 'Granted' && data.status === 'Approved' ? data.appraisalEligible : null) || "-",
+                                    editable: false
+                                },
+                                {
+                                    key: "grantedAppraisalClaimant",
+                                    label: "Granted Appraisal Claimant",
+                                    value: data.granted?.appraisalClaimant || (data.patentStatus === 'Granted' && data.status === 'Approved' ? data.appraisalClaimant : null) || "-",
+                                    editable: false
+                                }
+                            ] : [
+                                {
+                                    key: "appraisalEligible",
+                                    label: "Appraisal Eligible",
+                                    value: data.appraisalEligible || "-",
+                                    editable: false
+                                },
                                 {
                                     key: "appraisalClaimant",
                                     label: "Appraisal Claimant",
