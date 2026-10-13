@@ -276,9 +276,29 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                                     }} 
                                 />
                             )}
-                            <Chip label="Patent Application" sx={{ bgcolor: "rgba(22, 101, 52, 0.1)", color: "#2e7d32", fontWeight: 800, borderRadius: "8px", textTransform: "uppercase", fontSize: "0.65rem" }} />
+                            <Chip 
+                                label={Boolean(data.statusUpdatedToGranted || (data.patentStatus === 'Granted' && (data.published?.publishedstatus === 'yes' || data.published?.status === 'Approved'))) ? "Patent (Granted Update)" : "Patent Application"} 
+                                sx={{ 
+                                    bgcolor: Boolean(data.statusUpdatedToGranted || (data.patentStatus === 'Granted' && (data.published?.publishedstatus === 'yes' || data.published?.status === 'Approved'))) ? "rgba(124, 58, 237, 0.1)" : "rgba(22, 101, 52, 0.1)", 
+                                    color: Boolean(data.statusUpdatedToGranted || (data.patentStatus === 'Granted' && (data.published?.publishedstatus === 'yes' || data.published?.status === 'Approved'))) ? "#7c3aed" : "#2e7d32", 
+                                    fontWeight: 800, 
+                                    borderRadius: "8px", 
+                                    textTransform: "uppercase", 
+                                    fontSize: "0.65rem" 
+                                }} 
+                            />
                         </Box>
-                        <Typography variant="caption" sx={{ display: "block", mt: 1, color: "var(--text-secondary)", fontWeight: 700 }}>Submitted on {new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</Typography>
+                        {(() => {
+                            const isGrantedUpdate = Boolean(data.statusUpdatedToGranted || (data.patentStatus === 'Granted' && (data.published?.publishedstatus === 'yes' || data.published?.status === 'Approved')));
+                            const effectiveSubmittedDate = isGrantedUpdate
+                                ? (data.statusUpdatedDate || data.granted?.submittedDate || data.granted?.grantedinsentiveappllieddate || data.createdAt)
+                                : data.createdAt;
+                            return (
+                                <Typography variant="caption" sx={{ display: "block", mt: 1, color: "var(--text-secondary)", fontWeight: 700 }}>
+                                    Submitted on {new Date(effectiveSubmittedDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                </Typography>
+                            );
+                        })()}
                     </Box>
                 </Box>
 
@@ -287,10 +307,16 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                         <LabelValue label="Academic Year" value={data.academicYear?.year} />
                     </Box>
                     <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 23%" } }}>
-                        <LabelValue label="Reference ID" value={`PAT-${new Date(data.createdAt).getFullYear()}-${data._id.substring(data._id.length - 6).toUpperCase()}`} />
+                        <LabelValue label="Reference ID" value={`PAT-${new Date((data.statusUpdatedToGranted && (data.statusUpdatedDate || data.granted?.submittedDate || data.granted?.grantedinsentiveappllieddate)) || data.createdAt).getFullYear()}-${data._id.substring(data._id.length - 6).toUpperCase()}`} />
                     </Box>
                     <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 23%" } }}>
-                        <LabelValue label="Submission Date" value={new Date(data.createdAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} />
+                        <LabelValue 
+                            label="Submission Date" 
+                            value={new Date((data.statusUpdatedToGranted || (data.patentStatus === 'Granted' && (data.published?.publishedstatus === 'yes' || data.published?.status === 'Approved')))
+                                ? (data.statusUpdatedDate || data.granted?.submittedDate || data.granted?.grantedinsentiveappllieddate || data.createdAt)
+                                : data.createdAt
+                            ).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} 
+                        />
                     </Box>
                     <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 23%" } }}>
                         <Box sx={{ 
@@ -554,7 +580,48 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
                                 value: data.approvedAmount ? `₹${Number(data.approvedAmount).toLocaleString('en-IN')}` : "-", 
                                 editable: true, 
                                 type: "number" 
-                            }
+                            },
+                            ...(data.published?.status || data.patentStatus === 'Published' ? [
+                                {
+                                    key: "publishedAppraisalEligible",
+                                    label: "Published Appraisal Eligible",
+                                    value: data.published?.appraisalEligible || (data.patentStatus === 'Published' && data.status === 'Approved' ? data.appraisalEligible : null) || "-",
+                                    editable: false
+                                },
+                                {
+                                    key: "publishedAppraisalClaimant",
+                                    label: "Published Appraisal Claimant",
+                                    value: data.published?.appraisalClaimant || (data.patentStatus === 'Published' && data.status === 'Approved' ? data.appraisalClaimant : null) || "-",
+                                    editable: false
+                                }
+                            ] : []),
+                            ...(data.granted?.status || data.patentStatus === 'Granted' || data.statusUpdatedToGranted ? [
+                                {
+                                    key: "grantedAppraisalEligible",
+                                    label: "Granted Appraisal Eligible",
+                                    value: data.granted?.appraisalEligible || (data.patentStatus === 'Granted' && data.status === 'Approved' ? data.appraisalEligible : null) || "-",
+                                    editable: false
+                                },
+                                {
+                                    key: "grantedAppraisalClaimant",
+                                    label: "Granted Appraisal Claimant",
+                                    value: data.granted?.appraisalClaimant || (data.patentStatus === 'Granted' && data.status === 'Approved' ? data.appraisalClaimant : null) || "-",
+                                    editable: false
+                                }
+                            ] : [
+                                {
+                                    key: "appraisalEligible",
+                                    label: "Appraisal Eligible",
+                                    value: data.appraisalEligible || "-",
+                                    editable: false
+                                },
+                                {
+                                    key: "appraisalClaimant",
+                                    label: "Appraisal Claimant",
+                                    value: data.appraisalClaimant || "-",
+                                    editable: false
+                                }
+                            ])
                         ].map((item, idx, arr) => (
                             <Box key={idx} sx={{
                                 display: "flex",
@@ -719,7 +786,41 @@ const PatentApprovalDetail = ({ id, onBack, role }) => {
 
             {/* Actions */}
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mt: 3 }}>
-                {data.hodComment && <Box sx={{ flex: 1, minWidth: 300 }}><Card sx={{ ...cardStyle, borderLeft: "4px solid #ffc107", height: "100%", mb: 0 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><HistoryIcon sx={{ color: "#ffc107" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>HOD Review</Typography></Box><Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}><Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.hodComment}"</Typography></Box></Card></Box>}
+                {(data.statusUpdatedToGranted || (data.patentStatus === 'Granted' && data.published?.status)) && (
+                    <Box sx={{ flex: 1, minWidth: 300 }}>
+                        <Card sx={{ ...cardStyle, borderLeft: "4px solid #10b981", height: "100%", mb: 0 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+                                <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Published Stage Decision</Typography>
+                                <Chip label={data.published?.status || "Approved"} size="small" sx={{ fontWeight: 800, bgcolor: "rgba(16, 185, 129, 0.1)", color: "#10b981" }} />
+                            </Box>
+                            <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                                {data.published?.hodComment && (
+                                    <Box sx={{ p: 1.5, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 900, color: "#ed6c02", textTransform: "uppercase" }}>HOD Remarks</Typography>
+                                        <Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.published.hodComment}"</Typography>
+                                    </Box>
+                                )}
+                                {data.published?.rndComment && (
+                                    <Box sx={{ p: 1.5, bgcolor: "rgba(76, 175, 80, 0.05)", borderRadius: "10px", border: "1px solid #10b98133" }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 900, color: "#2e7d32", textTransform: "uppercase" }}>R&D Remarks</Typography>
+                                        <Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.published.rndComment}"</Typography>
+                                    </Box>
+                                )}
+                                {(data.published?.publishedincentiveamount || data.published?.approvedAmount) && (
+                                    <Typography variant="body2" sx={{ fontWeight: 800, color: "#10b981" }}>
+                                        Approved Incentive: ₹{data.published.publishedincentiveamount || data.published.approvedAmount}
+                                    </Typography>
+                                )}
+                                {data.published?.appraisalClaimant && (
+                                    <Typography variant="body2" sx={{ fontWeight: 800, color: "var(--color-primary)" }}>
+                                        Appraisal Claimant: {data.published.appraisalClaimant}
+                                    </Typography>
+                                )}
+                            </Box>
+                        </Card>
+                    </Box>
+                )}
+                {data.hodComment && <Box sx={{ flex: 1, minWidth: 300 }}><Card sx={{ ...cardStyle, borderLeft: "4px solid #ffc107", height: "100%", mb: 0 }}><Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}><HistoryIcon sx={{ color: "#ffc107" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>{data.statusUpdatedToGranted ? "Granted HOD Review" : "HOD Review"}</Typography></Box><Box sx={{ p: 2, bgcolor: "rgba(255, 193, 7, 0.05)", borderRadius: "10px", border: "1px solid #ffc10733" }}><Typography variant="body2" sx={{ fontStyle: "italic", fontWeight: 600 }}>"{data.hodComment}"</Typography></Box></Card></Box>}
                 
                 <Box sx={{ flex: 1, minWidth: 350 }}>
                     {((isResearchAdmin && data.status === 'Pending at R&D') || (isHOD && data.status === 'Pending')) ? (

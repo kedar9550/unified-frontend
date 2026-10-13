@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Box, Typography, TextField, MenuItem, Select, FormControl, InputLabel, Button, Alert, IconButton, Dialog, DialogContent, DialogTitle, Tooltip } from "@mui/material";
+import { Box, Typography, TextField, MenuItem, Select, FormControl, InputLabel, Button, Alert, IconButton, Dialog, DialogContent, DialogTitle, Tooltip, Chip } from "@mui/material";
 import { CloudUpload, Delete, Visibility, Close } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "sonner";
@@ -90,7 +90,7 @@ export function NoteBox() {
 }
 
 // File upload field
-export function FileField({ label, name, onChange, error, onError, accept = ".pdf", maxSize = 200 * 1024, existingFileUrl, existingFileName, onRemoveExisting, file }) {
+export function FileField({ label, name, onChange, error, onError, accept = ".pdf", maxSize = 200 * 1024, existingFileUrl, existingFileName, onRemoveExisting, file, disabled = false }) {
   const [fileName, setFileName] = useState("");
   const [preview, setPreview] = useState(null);
   const [fileType, setFileType] = useState("");
@@ -176,33 +176,47 @@ export function FileField({ label, name, onChange, error, onError, accept = ".pd
         border: "1px solid",
         borderColor: error ? "#ef4444" : "var(--border-color)",
         borderRadius: "12px",
-        background: "var(--bg-glass)",
-        "&:hover": { borderColor: error ? "#ef4444" : "var(--color-primary)" },
+        background: disabled ? "rgba(0,0,0,0.02)" : "var(--bg-glass)",
+        "&:hover": { borderColor: error ? "#ef4444" : (disabled ? "var(--border-color)" : "var(--color-primary)") },
         transition: "all 0.3s ease",
         position: "relative",
         minWidth: 0
       }}>
-        <Button
-          component="label"
-          variant="contained"
-          sx={{
-            background: "var(--gradient-primary)",
-
-            textTransform: "none",
-            fontWeight: 700,
-            fontSize: 11,
-            px: 2.5,
-            height: "32px",
-            boxShadow: "none",
-            whiteSpace: "nowrap",
-            flexShrink: 0,
-            "&:hover": { opacity: 0.9, transform: "translateY(-1px)" },
-            transition: "all 0.2s ease"
-          }}
-        >
-          Choose file
-          <input type="file" hidden accept={accept} name={name} onChange={handleFileChange} ref={fileInputRef} />
-        </Button>
+        {!disabled ? (
+          <Button
+            component="label"
+            variant="contained"
+            sx={{
+              background: "var(--gradient-primary)",
+              textTransform: "none",
+              fontWeight: 700,
+              fontSize: 11,
+              px: 2.5,
+              height: "32px",
+              boxShadow: "none",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+              "&:hover": { opacity: 0.9, transform: "translateY(-1px)" },
+              transition: "all 0.2s ease"
+            }}
+          >
+            Choose file
+            <input type="file" hidden accept={accept} name={name} onChange={handleFileChange} ref={fileInputRef} />
+          </Button>
+        ) : (
+          <Chip
+            label="Locked"
+            size="small"
+            sx={{
+              bgcolor: "rgba(100, 116, 139, 0.12)",
+              color: "#475569",
+              fontWeight: 700,
+              fontSize: "0.75rem",
+              borderRadius: "6px",
+              flexShrink: 0
+            }}
+          />
+        )}
 
         <Tooltip title={fileName || (existingFileUrl ? (existingFileName || "Existing File") : "")} disableHoverListener={!(fileName || existingFileUrl)}>
           <Typography sx={{ fontSize: 14, color: "var(--text-secondary)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flexGrow: 1, minWidth: 0 }}>
@@ -233,23 +247,25 @@ export function FileField({ label, name, onChange, error, onError, accept = ".pd
                 Preview
               </Button>
             )}
-            <IconButton
-              onClick={() => {
-                if (fileName) {
-                  handleRemove();
-                } else if (existingFileUrl && onRemoveExisting) {
-                  onRemoveExisting();
-                }
-              }}
-              sx={{
-                color: "#ef4444",
-                background: "rgba(239, 68, 68, 0.05)",
-                "&:hover": { background: "rgba(239, 68, 68, 0.15)", transform: "scale(1.1)" },
-                transition: "all 0.2s ease"
-              }}
-            >
-              <Delete fontSize="small" />
-            </IconButton>
+            {!disabled && (
+              <IconButton
+                onClick={() => {
+                  if (fileName) {
+                    handleRemove();
+                  } else if (existingFileUrl && onRemoveExisting) {
+                    onRemoveExisting();
+                  }
+                }}
+                sx={{
+                  color: "#ef4444",
+                  background: "rgba(239, 68, 68, 0.05)",
+                  "&:hover": { background: "rgba(239, 68, 68, 0.15)", transform: "scale(1.1)" },
+                  transition: "all 0.2s ease"
+                }}
+              >
+                <Delete fontSize="small" />
+              </IconButton>
+            )}
           </Box>
         )}
       </Box>
