@@ -308,6 +308,7 @@ export default function RndJournalDataEntry() {
 
   // ── Fetch JCR Impact Factor by ISSN / eISSN / Journal Name ──────────
   useEffect(() => {
+    let isMounted = true;
     const fetchJcr = async () => {
       const cleanIssn = (form.issn || "").trim();
       const cleanEissn = (form.eissn || "").trim();
@@ -325,26 +326,52 @@ export default function RndJournalDataEntry() {
               journalName: cleanName
             }
           });
+          if (!isMounted) return;
           if (res.data?.success && res.data.found && res.data.data?.jif !== undefined) {
             setForm(p => ({
               ...p,
               jcrImpactFactor: String(res.data.data.jif)
             }));
+          } else {
+            setForm(p => ({
+              ...p,
+              jcrImpactFactor: "0"
+            }));
           }
         } catch (err) {
           console.error("Failed to fetch JIF", err);
+          if (isMounted) {
+            setForm(p => ({
+              ...p,
+              jcrImpactFactor: "0"
+            }));
+          }
+        }
+      } else {
+        if (isMounted) {
+          setForm(p => ({
+            ...p,
+            jcrImpactFactor: "0"
+          }));
         }
       }
     };
 
     const delay = setTimeout(fetchJcr, 500);
-    return () => clearTimeout(delay);
+    return () => {
+      isMounted = false;
+      clearTimeout(delay);
+    };
   }, [form.issn, form.eissn, form.journalName]);
 
   const handleIssnChange = (field) => (e) => {
     const rawVal = e.target.value;
     const formatted = formatIssnInput(rawVal, form[field]);
-    setForm(p => ({ ...p, [field]: formatted }));
+    setForm(p => ({
+      ...p,
+      [field]: formatted,
+      jcrImpactFactor: "0"
+    }));
   };
 
   // ── Field setters ────────────────────────────────────────────────────────────
@@ -1307,7 +1334,7 @@ export default function RndJournalDataEntry() {
                 value={form.jcrImpactFactor === "" || form.jcrImpactFactor === undefined || form.jcrImpactFactor === null ? "0" : form.jcrImpactFactor}
                 onChange={handleNumericChange("jcrImpactFactor", true)}
                 placeholder="0"
-                helperText="Auto-fetched / Default is 0, update if applicable"
+                helperText="Auto-fetched from official JCR database (Clarivate) / 0 if not indexed"
                 FormHelperTextProps={{ sx: { fontSize: "0.75rem", color: "var(--text-secondary)", mt: 0.5 } }}
               />
             </Box>

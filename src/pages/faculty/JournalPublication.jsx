@@ -650,6 +650,7 @@ export default function JournalPublication() {
 
   // ── Auto-fetch JCR Impact Factor by ISSN / eISSN / Journal Name ──────────
   useEffect(() => {
+    let isMounted = true;
     const fetchJcr = async () => {
       const cleanIssn = (form.issn || "").trim();
       const cleanEissn = (form.eissn || "").trim();
@@ -667,26 +668,52 @@ export default function JournalPublication() {
               journalName: cleanName
             }
           });
+          if (!isMounted) return;
           if (res.data?.success && res.data.found && res.data.data?.jif !== undefined) {
             setForm(p => ({
               ...p,
               jcrImpactFactor: String(res.data.data.jif)
             }));
+          } else {
+            setForm(p => ({
+              ...p,
+              jcrImpactFactor: "0"
+            }));
           }
         } catch (err) {
           console.error("Auto-fetch JIF failed:", err);
+          if (isMounted) {
+            setForm(p => ({
+              ...p,
+              jcrImpactFactor: "0"
+            }));
+          }
+        }
+      } else {
+        if (isMounted) {
+          setForm(p => ({
+            ...p,
+            jcrImpactFactor: "0"
+          }));
         }
       }
     };
 
     const delay = setTimeout(fetchJcr, 500);
-    return () => clearTimeout(delay);
+    return () => {
+      isMounted = false;
+      clearTimeout(delay);
+    };
   }, [form.issn, form.eissn, form.journalName]);
 
   const handleIssnChange = (field) => (e) => {
     const rawVal = e.target.value;
     const formatted = formatIssnInput(rawVal, form[field]);
-    setForm(p => ({ ...p, [field]: formatted }));
+    setForm(p => ({
+      ...p,
+      [field]: formatted,
+      jcrImpactFactor: "0"
+    }));
   };
 
   // ── Field setters ────────────────────────────────────────────────────────────
@@ -1218,7 +1245,7 @@ export default function JournalPublication() {
 
       const fields = [
         "doi", "isNoDoi", "paperTitle", "journalName", "journalType", "journalCategory",
-        "vol", "issue", "pageNos", "agecReferencingNumbers", 
+        "vol", "issue", "pageNos", "agecReferencingNumbers",
         "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor", "isStudentsInvolved",
         "correspondingAuthor",
         "issn", "eissn", "isScopus", "citations"
@@ -1821,8 +1848,8 @@ export default function JournalPublication() {
               form.issn && form.issn.length === 9 && !isValidIssn(form.issn)
                 ? "Format must be 4 digits, hyphen, 3 digits & check digit (e.g. 1234-5679 or 1234-567X)"
                 : form.issn && form.issn.length < 9
-                ? "Format: 1234-5679 or 1234-567X"
-                : ""
+                  ? "Format: 1234-5679 or 1234-567X"
+                  : ""
             }
             FormHelperTextProps={{
               sx: {
@@ -1849,8 +1876,8 @@ export default function JournalPublication() {
               form.eissn && form.eissn.length === 9 && !isValidIssn(form.eissn)
                 ? "Format must be 4 digits, hyphen, 3 digits & check digit (e.g. 2049-3630 or 1234-567X)"
                 : form.eissn && form.eissn.length < 9
-                ? "Format: 2049-3630 or 1234-567X"
-                : ""
+                  ? "Format: 2049-3630 or 1234-567X"
+                  : ""
             }
             FormHelperTextProps={{
               sx: {
@@ -1883,9 +1910,10 @@ export default function JournalPublication() {
             size="small"
             fullWidth
             value={form.jcrImpactFactor === "" || form.jcrImpactFactor === undefined || form.jcrImpactFactor === null ? "0" : form.jcrImpactFactor}
-            onChange={set("jcrImpactFactor")}
+            disabled={true}
+            sx={disabledField}
             placeholder="0"
-            helperText="Default is 0, update if applicable"
+            helperText="Auto-calculated from official JCR database"
             FormHelperTextProps={{ sx: { fontSize: "0.75rem", color: "var(--text-secondary)", mt: 0.5 } }}
           />
         </Box>
