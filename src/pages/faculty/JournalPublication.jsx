@@ -31,6 +31,8 @@ import ausLogo from "../../assets/AUS Long Logo.png";
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
+import { formatIssnInput, isValidIssn } from "../../utils/issnValidator";
+
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import SchoolIcon from '@mui/icons-material/School';
 import LinkIcon from '@mui/icons-material/Link';
@@ -646,6 +648,47 @@ export default function JournalPublication() {
       .catch(() => { });
   }, [viewMode]);
 
+  // ── Auto-fetch JCR Impact Factor by ISSN / eISSN / Journal Name ──────────
+  useEffect(() => {
+    const fetchJcr = async () => {
+      const cleanIssn = (form.issn || "").trim();
+      const cleanEissn = (form.eissn || "").trim();
+      const cleanName = (form.journalName || "").trim();
+
+      const validIssn = isValidIssn(cleanIssn) ? cleanIssn : "";
+      const validEissn = isValidIssn(cleanEissn) ? cleanEissn : "";
+
+      if (validIssn || validEissn || cleanName.length > 3) {
+        try {
+          const res = await API.get("/api/journal-impact-factors/lookup", {
+            params: {
+              issn: validIssn,
+              eissn: validEissn,
+              journalName: cleanName
+            }
+          });
+          if (res.data?.success && res.data.found && res.data.data?.jif !== undefined) {
+            setForm(p => ({
+              ...p,
+              jcrImpactFactor: String(res.data.data.jif)
+            }));
+          }
+        } catch (err) {
+          console.error("Auto-fetch JIF failed:", err);
+        }
+      }
+    };
+
+    const delay = setTimeout(fetchJcr, 500);
+    return () => clearTimeout(delay);
+  }, [form.issn, form.eissn, form.journalName]);
+
+  const handleIssnChange = (field) => (e) => {
+    const rawVal = e.target.value;
+    const formatted = formatIssnInput(rawVal, form[field]);
+    setForm(p => ({ ...p, [field]: formatted }));
+  };
+
   // ── Field setters ────────────────────────────────────────────────────────────
   const set = (k) => (e) => {
     const val = e.target.value;
@@ -884,8 +927,8 @@ export default function JournalPublication() {
         journalQuartile: data.journalQuartile,
         journalType: resolvedJournalType,
         isWos: resolvedIsWos,
-        issn: data.issn || "",
-        eissn: data.eissn || "",
+        issn: formatIssnInput(data.issn || ""),
+        eissn: formatIssnInput(data.eissn || ""),
         isScopus: data.isScopus || "No",
         citations: data.citations || "",
         jcrImpactFactor: data.jcrImpactFactor !== undefined && data.jcrImpactFactor !== null ? String(data.jcrImpactFactor) : "0",
@@ -1054,10 +1097,18 @@ export default function JournalPublication() {
       !form.journalType ||
       !form.journalCategory ||
       !form.isScopus ||
-      !form.issn ||
-      !form.eissn
+      (!form.issn && !form.eissn)
     ) {
       toast.error("Please fill all mandatory fields (*)");
+      return;
+    }
+
+    if (form.issn && !isValidIssn(form.issn)) {
+      toast.error("Invalid ISSN format. Expected format: 1234-5679 or 1234-567X");
+      return;
+    }
+    if (form.eissn && !isValidIssn(form.eissn)) {
+      toast.error("Invalid e-ISSN format. Expected format: 1234-5679 or 1234-567X");
       return;
     }
 
@@ -1129,6 +1180,14 @@ export default function JournalPublication() {
       }
     }
 
+    if (form.issn && !isValidIssn(form.issn)) {
+      toast.error("Invalid ISSN format. Expected format: 1234-5679 or 1234-567X");
+      return;
+    }
+    if (form.eissn && !isValidIssn(form.eissn)) {
+      toast.error("Invalid e-ISSN format. Expected format: 1234-5679 or 1234-567X");
+      return;
+    }
     const hasAgecRefs = Number(form.numberOfReferencesBelongingToAGEC || 0) > 0;
 
     if (!editJournalId) {
@@ -1753,10 +1812,24 @@ export default function JournalPublication() {
             size="small"
             fullWidth
             value={form.issn || ""}
-            onChange={set("issn")}
+            onChange={handleIssnChange("issn")}
             disabled={!isNoDoiMode && isFetched("issn")}
             sx={(!isNoDoiMode && isFetched("issn")) ? disabledField : {}}
-            placeholder={(!isNoDoiMode && isFetched("issn")) ? "Auto-filled from DOI" : "Enter ISSN (e.g. 1234-5678)"}
+            placeholder={(!isNoDoiMode && isFetched("issn")) ? "Auto-filled from DOI" : "1234-5679"}
+            error={Boolean(form.issn && form.issn.length === 9 && !isValidIssn(form.issn))}
+            helperText={
+              form.issn && form.issn.length === 9 && !isValidIssn(form.issn)
+                ? "Format must be 4 digits, hyphen, 3 digits & check digit (e.g. 1234-5679 or 1234-567X)"
+                : form.issn && form.issn.length < 9
+                ? "Format: 1234-5679 or 1234-567X"
+                : ""
+            }
+            FormHelperTextProps={{
+              sx: {
+                fontSize: "0.75rem",
+                color: form.issn && form.issn.length === 9 && !isValidIssn(form.issn) ? "#ef4444" : "var(--text-secondary)"
+              }
+            }}
           />
         </Box>
 
@@ -1767,10 +1840,24 @@ export default function JournalPublication() {
             size="small"
             fullWidth
             value={form.eissn || ""}
-            onChange={set("eissn")}
+            onChange={handleIssnChange("eissn")}
             disabled={!isNoDoiMode && isFetched("eissn")}
             sx={(!isNoDoiMode && isFetched("eissn")) ? disabledField : {}}
-            placeholder={(!isNoDoiMode && isFetched("eissn")) ? "Auto-filled from DOI" : "Enter e-ISSN (e.g. 1234-5678)"}
+            placeholder={(!isNoDoiMode && isFetched("eissn")) ? "Auto-filled from DOI" : "2049-3630"}
+            error={Boolean(form.eissn && form.eissn.length === 9 && !isValidIssn(form.eissn))}
+            helperText={
+              form.eissn && form.eissn.length === 9 && !isValidIssn(form.eissn)
+                ? "Format must be 4 digits, hyphen, 3 digits & check digit (e.g. 2049-3630 or 1234-567X)"
+                : form.eissn && form.eissn.length < 9
+                ? "Format: 2049-3630 or 1234-567X"
+                : ""
+            }
+            FormHelperTextProps={{
+              sx: {
+                fontSize: "0.75rem",
+                color: form.eissn && form.eissn.length === 9 && !isValidIssn(form.eissn) ? "#ef4444" : "var(--text-secondary)"
+              }
+            }}
           />
         </Box>
 

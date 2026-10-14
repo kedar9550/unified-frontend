@@ -27,6 +27,8 @@ import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
+import { formatIssnInput, isValidIssn } from "../../utils/issnValidator";
+
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import SchoolIcon from '@mui/icons-material/School';
 import LinkIcon from '@mui/icons-material/Link';
@@ -304,18 +306,30 @@ export default function RndJournalDataEntry() {
       .catch(() => { });
   }, []);
 
-  // ── Fetch JCR Impact Factor ──────────────────────────────────────────────────
+  // ── Fetch JCR Impact Factor by ISSN / eISSN / Journal Name ──────────
   useEffect(() => {
     const fetchJcr = async () => {
-      if (form.journalName && form.journalName.trim().length > 3) {
+      const cleanIssn = (form.issn || "").trim();
+      const cleanEissn = (form.eissn || "").trim();
+      const cleanName = (form.journalName || "").trim();
+
+      const validIssn = isValidIssn(cleanIssn) ? cleanIssn : "";
+      const validEissn = isValidIssn(cleanEissn) ? cleanEissn : "";
+
+      if (validIssn || validEissn || cleanName.length > 3) {
         try {
-          const res = await API.get(`/api/journal-impact-factors?search=${encodeURIComponent(form.journalName.trim())}`);
-          if (res.data?.success && res.data.data && res.data.data.length > 0) {
-            // Pick first match
-            const jif = res.data.data[0].jif;
-            if (jif && !form.jcrImpactFactor) {
-              setForm(p => ({ ...p, jcrImpactFactor: jif.toString() }));
+          const res = await API.get("/api/journal-impact-factors/lookup", {
+            params: {
+              issn: validIssn,
+              eissn: validEissn,
+              journalName: cleanName
             }
+          });
+          if (res.data?.success && res.data.found && res.data.data?.jif !== undefined) {
+            setForm(p => ({
+              ...p,
+              jcrImpactFactor: String(res.data.data.jif)
+            }));
           }
         } catch (err) {
           console.error("Failed to fetch JIF", err);
@@ -323,9 +337,15 @@ export default function RndJournalDataEntry() {
       }
     };
 
-    const delay = setTimeout(fetchJcr, 800);
+    const delay = setTimeout(fetchJcr, 500);
     return () => clearTimeout(delay);
-  }, [form.journalName]);
+  }, [form.issn, form.eissn, form.journalName]);
+
+  const handleIssnChange = (field) => (e) => {
+    const rawVal = e.target.value;
+    const formatted = formatIssnInput(rawVal, form[field]);
+    setForm(p => ({ ...p, [field]: formatted }));
+  };
 
   // ── Field setters ────────────────────────────────────────────────────────────
   const set = (k) => (e) => {
@@ -586,8 +606,8 @@ export default function RndJournalDataEntry() {
         journalQuartile: data.journalQuartile,
         journalType: resolvedJournalType,
         isWos: resolvedIsWos,
-        issn: data.issn || "",
-        eissn: data.eissn || "",
+        issn: formatIssnInput(data.issn || ""),
+        eissn: formatIssnInput(data.eissn || ""),
         isScopus: data.isScopus || "No",
         citations: data.citations || "",
         jcrImpactFactor: data.jcrImpactFactor !== undefined && data.jcrImpactFactor !== null ? String(data.jcrImpactFactor) : "0",
@@ -777,6 +797,15 @@ export default function RndJournalDataEntry() {
       !form.isScopus
     ) {
       toast.error("Please fill all mandatory fields (*)");
+      return;
+    }
+
+    if (form.issn && !isValidIssn(form.issn)) {
+      toast.error("Invalid ISSN format. Expected format: 1234-5679 or 1234-567X");
+      return;
+    }
+    if (form.eissn && !isValidIssn(form.eissn)) {
+      toast.error("Invalid e-ISSN format. Expected format: 1234-5679 or 1234-567X");
       return;
     }
 
@@ -1166,13 +1195,53 @@ export default function RndJournalDataEntry() {
             {/* ISSN */}
             <Box>
               <Typography sx={labelStyle}>ISSN : {form.eissn ? "" : "*"}</Typography>
-              <TextField size="small" fullWidth value={form.issn || ""} onChange={set("issn")} placeholder="e.g. 23644176" />
+              <TextField
+                size="small"
+                fullWidth
+                value={form.issn || ""}
+                onChange={handleIssnChange("issn")}
+                placeholder="1234-5679"
+                error={Boolean(form.issn && form.issn.length === 9 && !isValidIssn(form.issn))}
+                helperText={
+                  form.issn && form.issn.length === 9 && !isValidIssn(form.issn)
+                    ? "Format must be 4 digits, hyphen, 3 digits & check digit (e.g. 1234-5679 or 1234-567X)"
+                    : form.issn && form.issn.length < 9
+                    ? "Format: 1234-5679 or 1234-567X"
+                    : ""
+                }
+                FormHelperTextProps={{
+                  sx: {
+                    fontSize: "0.75rem",
+                    color: form.issn && form.issn.length === 9 && !isValidIssn(form.issn) ? "#ef4444" : "var(--text-secondary)"
+                  }
+                }}
+              />
             </Box>
 
             {/* e-ISSN */}
             <Box>
               <Typography sx={labelStyle}>e-ISSN : {form.issn ? "" : "*"}</Typography>
-              <TextField size="small" fullWidth value={form.eissn || ""} onChange={set("eissn")} placeholder="e.g. 23644184" />
+              <TextField
+                size="small"
+                fullWidth
+                value={form.eissn || ""}
+                onChange={handleIssnChange("eissn")}
+                placeholder="2049-3630"
+                error={Boolean(form.eissn && form.eissn.length === 9 && !isValidIssn(form.eissn))}
+                helperText={
+                  form.eissn && form.eissn.length === 9 && !isValidIssn(form.eissn)
+                    ? "Format must be 4 digits, hyphen, 3 digits & check digit (e.g. 2049-3630 or 1234-567X)"
+                    : form.eissn && form.eissn.length < 9
+                    ? "Format: 2049-3630 or 1234-567X"
+                    : ""
+                }
+                FormHelperTextProps={{
+                  sx: {
+                    fontSize: "0.75rem",
+                    color: form.eissn && form.eissn.length === 9 && !isValidIssn(form.eissn) ? "#ef4444" : "var(--text-secondary)"
+                  }
+                }}
+              />
             </Box>
 
             {/* Quartile */}
