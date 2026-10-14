@@ -425,7 +425,7 @@ export default function RndJournalDataEntry() {
     if (!file) return true;
     const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
     if (!isPdf) { toast.error("Only PDF files are allowed"); return false; }
-    if (file.size > 200 * 1024) { toast.error("File size exceeds 200KB limit"); return false; }
+    if (file.size > 500 * 1024) { toast.error("File size exceeds 500KB limit"); return false; }
     return true;
   };
 
@@ -554,6 +554,11 @@ export default function RndJournalDataEntry() {
       agecReferencingNumbers: filteredValue,
       numberOfReferencesBelongingToAGEC: count
     }));
+
+    if (count === 0) {
+      setFiles(prev => ({ ...prev, referencePages: null }));
+      setExistingFiles(prev => ({ ...prev, referencePages: null }));
+    }
   };
 
   const fetchDOIData = async () => {
@@ -830,14 +835,16 @@ export default function RndJournalDataEntry() {
       }
     }
 
+    const hasAgecRefs = Number(form.numberOfReferencesBelongingToAGEC || 0) > 0;
+
     if (!editJournalId) {
-      if (!files.publishedPaper || !files.referencePages || !files.completeJournal) {
+      if (!files.publishedPaper || (hasAgecRefs && !files.referencePages) || !files.completeJournal) {
         toast.error("Please attach all required documents");
         return;
       }
     } else {
       if (!files.publishedPaper && !existingFiles.publishedPaper) { toast.error("Please attach Published Paper"); return; }
-      if (!files.referencePages && !existingFiles.referencePages) { toast.error("Please attach Reference Pages"); return; }
+      if (hasAgecRefs && !files.referencePages && !existingFiles.referencePages) { toast.error("Please attach Reference Pages"); return; }
       if (!files.completeJournal && !existingFiles.completeJournal) { toast.error("Please attach Complete Journal"); return; }
     }
 
@@ -858,7 +865,7 @@ export default function RndJournalDataEntry() {
 
       const fields = [
         "doi", "paperTitle", "journalName", "journalType", "journalCategory",
-        "vol", "issue", "agecReferencingNumbers", 
+        "vol", "issue", "pageNos", "agecReferencingNumbers", 
         "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor", "isStudentsInvolved",
         "correspondingAuthor",
         "issn", "eissn", "isScopus", "citations", "isInstitutionRecord", "approvedAmount"
@@ -889,7 +896,7 @@ export default function RndJournalDataEntry() {
       fd.append("targetFacultyEmpId", targetFacultyEmpId);
 
       if (files.publishedPaper) fd.append("publishedPaper", files.publishedPaper);
-      if (files.referencePages) fd.append("referencePages", files.referencePages);
+      if (hasAgecRefs && files.referencePages) fd.append("referencePages", files.referencePages);
       if (files.completeJournal) fd.append("completeJournal", files.completeJournal);
 
       if (editJournalId) {
@@ -1248,6 +1255,12 @@ export default function RndJournalDataEntry() {
               <TextField size="small" fullWidth value={form.issue} onChange={set("issue")} />
             </Box>
 
+            {/* Page Nos */}
+            <Box>
+              <Typography sx={labelStyle}>Page Nos :</Typography>
+              <TextField size="small" fullWidth value={form.pageNos} onChange={set("pageNos")} placeholder="e.g. 100-110" />
+            </Box>
+
             {/* Referencing Nos */}
             <Box>
               <Typography sx={labelStyle}>AGEC Referencing Numbers :</Typography>
@@ -1471,7 +1484,7 @@ export default function RndJournalDataEntry() {
           </Box>
 
           {/* ── Documents ── */}
-          <NoteBox />
+          <NoteBox hasCompleteDoc />
           <Grid2 sx={{ mt: 2 }}>
             <Box>
               <FileField
@@ -1484,16 +1497,18 @@ export default function RndJournalDataEntry() {
               />
             </Box>
 
-            <Box>
-              <FileField
-                label="Reference Pages (with tick mark) *"
-                name="referencePages"
-                onChange={setFile("referencePages")}
-                existingFileUrl={!files.referencePages ? existingFiles.referencePages : null}
-                existingFileName={existingFiles.referencePages ? existingFiles.referencePages.split('/').pop() : ""}
-                onRemoveExisting={() => setExistingFiles(prev => ({ ...prev, referencePages: null }))}
-              />
-            </Box>
+            {Number(form.numberOfReferencesBelongingToAGEC || 0) > 0 && (
+              <Box>
+                <FileField
+                  label="Reference Pages (with tick mark) *"
+                  name="referencePages"
+                  onChange={setFile("referencePages")}
+                  existingFileUrl={!files.referencePages ? existingFiles.referencePages : null}
+                  existingFileName={existingFiles.referencePages ? existingFiles.referencePages.split('/').pop() : ""}
+                  onRemoveExisting={() => setExistingFiles(prev => ({ ...prev, referencePages: null }))}
+                />
+              </Box>
+            )}
 
             <Box>
               <FileField

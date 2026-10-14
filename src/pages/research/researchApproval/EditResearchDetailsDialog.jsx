@@ -223,6 +223,9 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                             <TextField fullWidth label="Issue" name="issue" value={formData.issue || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                            <TextField fullWidth label="Page Nos" name="pageNos" value={formData.pageNos || ""} onChange={handleChange} variant="outlined" size="small" placeholder="e.g. 100-110" />
+                        </Box>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                             <TextField fullWidth label="ISSN" name="issn" value={formData.issn || ""} onChange={handleChange} variant="outlined" size="small" placeholder="23644176" />
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>

@@ -221,7 +221,7 @@ export default function ResearchReports() {
                 "S.No", "Emp Id", "Faculty Name", "College", "PAN No", "Dept",
                 "Is No DOI", "DOI", "Name of the Journal", "Paper Title", "Academic Year",
                 "ISSN", "e-ISSN", "Is Scopus", "Is WoS", "Quartile", "WoS Journal Type", "Journal Category",
-                "Vol", "Issue", "h-Index", "JCR Impact Factor", "Citations", "SDGs",
+                "Vol", "Issue", "Page Nos", "h-Index", "JCR Impact Factor", "Citations", "SDGs",
                 "Corresponding Author", "Apply Incentive", "Approved Incentive Amount",
                 "Appraisal Eligible", "Appraisal Claimant", "Status", "Co-Authors", "Applied At"
             ];
@@ -246,6 +246,7 @@ export default function ResearchReports() {
                 item.journalCategory,
                 item.vol,
                 item.issue,
+                item.pageNos,
                 item.hIndex,
                 item.jcrImpactFactor,
                 item.citations,
