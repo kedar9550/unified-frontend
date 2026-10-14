@@ -184,10 +184,6 @@ export default function RndPhdScholarDataEntry() {
       toast.error("Please fill student details (Roll Number and Name are required)");
       return;
     }
-    if (!form.titleOfPhdWork?.trim()) {
-      toast.error("Please enter the Title of the Ph.D Work");
-      return;
-    }
     if (!form.admissionOrAwardDate) {
       toast.error("Please select the date");
       return;
@@ -461,11 +457,11 @@ export default function RndPhdScholarDataEntry() {
                 <>
                   <SubLabel text="Research & Scholar Details:" />
                   <Box sx={{ mb: 3 }}>
-                    <Typography sx={{ ...labelStyle, mb: 0.5 }}>TITLE OF THE PH.D WORK : <span style={{ color: 'red' }}>*</span></Typography>
+                    <Typography sx={{ ...labelStyle, mb: 0.5 }}>TITLE OF THE PH.D WORK :</Typography>
                     <TextField
                       size="small"
                       fullWidth
-                      placeholder="Enter Title of the Ph.D Work"
+                      placeholder="Enter Title of the Ph.D Work (Optional)"
                       value={form.titleOfPhdWork}
                       onChange={set("titleOfPhdWork")}
                     />
