@@ -4805,7 +4805,7 @@ const SelfAppraisal = () => {
                   </Box>
                 ) : (
                   <FileField
-                    label="Supporting Proof (PDF, Max 200KB) *"
+                    label="Supporting Proof (PDF, Max 500KB) *"
                     name="proof"
                     onChange={(e) => setResUtProof(e.target.files[0])}
                   />
@@ -5421,7 +5421,7 @@ const SelfAppraisal = () => {
                   </Box>
                 ) : (
                   <FileField
-                    label="Supporting Proof (PDF, Max 200KB) *"
+                    label="Supporting Proof (PDF, Max 500KB) *"
                     name="proof"
                     onChange={(e) => setContProof(e.target.files[0])}
                   />
