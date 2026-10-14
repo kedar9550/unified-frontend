@@ -513,7 +513,20 @@ const ReferenceJournalManagement = () => {
         setOpenAddJifModal(false);
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to process JIF bulk upload.");
+      console.error("JIF Bulk Upload Error:", err);
+      let errMsg = err.response?.data?.message;
+      if (!errMsg) {
+        if (err.response?.status === 413) {
+          errMsg = "File is too large for server upload (HTTP 413). Max upload limit reached.";
+        } else if (err.response?.status === 504) {
+          errMsg = "Server timed out processing the large CSV file (HTTP 504). Please upload in smaller parts.";
+        } else if (err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
+          errMsg = "Upload request timed out. Please try uploading in smaller batches.";
+        } else {
+          errMsg = err.message || "Failed to process JIF bulk upload.";
+        }
+      }
+      toast.error(errMsg);
     } finally {
       setJifUploading(false);
     }
