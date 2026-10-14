@@ -402,7 +402,7 @@ export default function RndBookChapterDataEntry() {
     if (k === "totalBookChapter") {
       if (file.size > 5 * 1024 * 1024) { toast.error("File size exceeds 5MB limit"); return false; }
     } else {
-      if (file.size > 200 * 1024) { toast.error("File size exceeds 200KB limit"); return false; }
+      if (file.size > 500 * 1024) { toast.error("File size exceeds 500KB limit"); return false; }
     }
     return true;
   };

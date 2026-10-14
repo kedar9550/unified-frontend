@@ -723,7 +723,7 @@ export default function JournalPublication() {
     if (!file) return true;
     const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
     if (!isPdf) { toast.error("Only PDF files are allowed"); return false; }
-    if (file.size > 200 * 1024) { toast.error("File size exceeds 200KB limit"); return false; }
+    if (file.size > 500 * 1024) { toast.error("File size exceeds 500KB limit"); return false; }
     return true;
   };
 
@@ -852,6 +852,11 @@ export default function JournalPublication() {
       agecReferencingNumbers: filteredValue,
       numberOfReferencesBelongingToAGEC: count
     }));
+
+    if (count === 0) {
+      setFiles(prev => ({ ...prev, referencePages: null }));
+      setExistingFiles(prev => ({ ...prev, referencePages: null }));
+    }
   };
 
   const fetchDOIData = async () => {
@@ -1124,14 +1129,16 @@ export default function JournalPublication() {
       }
     }
 
+    const hasAgecRefs = Number(form.numberOfReferencesBelongingToAGEC || 0) > 0;
+
     if (!editJournalId) {
-      if (!files.publishedPaper || !files.referencePages || !files.completeJournal) {
+      if (!files.publishedPaper || (hasAgecRefs && !files.referencePages) || !files.completeJournal) {
         toast.error("Please attach all required documents");
         return;
       }
     } else {
       if (!files.publishedPaper && !existingFiles.publishedPaper) { toast.error("Please attach Published Paper"); return; }
-      if (!files.referencePages && !existingFiles.referencePages) { toast.error("Please attach Reference Pages"); return; }
+      if (hasAgecRefs && !files.referencePages && !existingFiles.referencePages) { toast.error("Please attach Reference Pages"); return; }
       if (!files.completeJournal && !existingFiles.completeJournal) { toast.error("Please attach Complete Journal"); return; }
     }
 
@@ -1152,7 +1159,7 @@ export default function JournalPublication() {
 
       const fields = [
         "doi", "isNoDoi", "paperTitle", "journalName", "journalType", "journalCategory",
-        "vol", "issue", "agecReferencingNumbers", 
+        "vol", "issue", "pageNos", "agecReferencingNumbers", 
         "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor", "isStudentsInvolved",
         "correspondingAuthor",
         "issn", "eissn", "isScopus", "citations"
@@ -1179,7 +1186,7 @@ export default function JournalPublication() {
       fd.append("panNumber", user?.panNumber || "");
 
       if (files.publishedPaper) fd.append("publishedPaper", files.publishedPaper);
-      if (files.referencePages) fd.append("referencePages", files.referencePages);
+      if (hasAgecRefs && files.referencePages) fd.append("referencePages", files.referencePages);
       if (files.completeJournal) fd.append("completeJournal", files.completeJournal);
 
       if (editJournalId) {
@@ -1254,9 +1261,10 @@ export default function JournalPublication() {
       })) || [],
     });
 
+    const hasAgec = Number(pub.numberOfReferencesBelongingToAGEC || 0) > 0;
     setExistingFiles({
       publishedPaper: pub.publishedPaper,
-      referencePages: pub.referencePages,
+      referencePages: hasAgec ? pub.referencePages : null,
       completeJournal: pub.completeJournal
     });
     setFiles({ publishedPaper: null, referencePages: null, completeJournal: null });
@@ -2040,7 +2048,7 @@ export default function JournalPublication() {
       </Box>
 
       {/* ── Documents ── */}
-      <NoteBox />
+      <NoteBox hasCompleteDoc />
       <Grid2 sx={{ mt: 2 }}>
         <Box>
           <FileField
@@ -2053,16 +2061,18 @@ export default function JournalPublication() {
           />
         </Box>
 
-        <Box>
-          <FileField
-            label="Reference Pages (with tick mark) *"
-            name="referencePages"
-            onChange={setFile("referencePages")}
-            existingFileUrl={!files.referencePages ? existingFiles.referencePages : null}
-            existingFileName={existingFiles.referencePages ? existingFiles.referencePages.split('/').pop() : ""}
-            onRemoveExisting={() => setExistingFiles(prev => ({ ...prev, referencePages: null }))}
-          />
-        </Box>
+        {Number(form.numberOfReferencesBelongingToAGEC || 0) > 0 && (
+          <Box>
+            <FileField
+              label="Reference Pages (with tick mark) *"
+              name="referencePages"
+              onChange={setFile("referencePages")}
+              existingFileUrl={!files.referencePages ? existingFiles.referencePages : null}
+              existingFileName={existingFiles.referencePages ? existingFiles.referencePages.split('/').pop() : ""}
+              onRemoveExisting={() => setExistingFiles(prev => ({ ...prev, referencePages: null }))}
+            />
+          </Box>
+        )}
 
         <Box>
           <FileField
@@ -2483,6 +2493,7 @@ export default function JournalPublication() {
                     { label: "e-ISSN", value: data.eissn || "-", icon: <Article sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Volume", value: data.vol || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Issue", value: data.issue || "-", icon: <Article sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
+                    { label: "Page Nos", value: data.pageNos || "-", icon: <Article sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Published Year", value: data.publishedYear || data.year || "-", icon: <CalendarTodayIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "Published Month", value: data.publishedMonth || data.month || "-", icon: <CalendarMonthIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },
                     { label: "H-Index", value: data.hIndex || "-", icon: <TrendingUpIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} /> },

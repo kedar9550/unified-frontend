@@ -390,8 +390,8 @@ export default function PhdScholarPublication() {
       return;
     }
 
-    if (milestoneFile && milestoneFile.size > 200 * 1024) {
-      toast.error("Award Proceedings file size exceeds 200KB limit");
+    if (milestoneFile && milestoneFile.size > 500 * 1024) {
+      toast.error("Award Proceedings file size exceeds 500KB limit");
       return;
     }
 
@@ -1715,7 +1715,7 @@ export default function PhdScholarPublication() {
                     <FileField
                       label="Award Proceedings / Degree Award Letter *"
                       name="milestoneProof"
-                      maxSize={200 * 1024}
+                      maxSize={500 * 1024}
                       onChange={(e) => setMilestoneFile(e.target.files?.[0] || null)}
                       file={milestoneFile}
                       existingFileUrl={!milestoneFile && milestoneExistingDoc ? getFileUrl(milestoneExistingDoc) : null}
