@@ -660,6 +660,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                                     journalCategory: data.journalCategory || "",
                                                     vol: data.vol || "",
                                                     issue: data.issue || "",
+                                                    pageNos: data.pageNos || "",
                                                     hIndex: data.hIndex || "",
                                                     jcrImpactFactor: data.jcrImpactFactor || data.impactFactor || "",
                                                     citations: data.citations || "",
@@ -768,6 +769,7 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                                 { key: "eissn", label: "e-ISSN", value: data.eissn || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
                                 { key: "vol", label: "Volume", value: data.vol || "-", icon: <MenuBookIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
                                 { key: "issue", label: "Issue", value: data.issue || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
+                                { key: "pageNos", label: "Page Nos", value: data.pageNos || "-", icon: <ArticleIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "text" },
                                 { key: "publishedYear", label: "Published Year", value: data.publishedYear || data.year || "-", icon: <CalendarTodayIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "number" },
                                 { key: "publishedMonth", label: "Published Month", value: data.publishedMonth || data.month || "-", icon: <CalendarMonthIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "select", options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] },
                                 { key: "hIndex", label: "H-Index", value: data.hIndex || "-", icon: <TrendingUpIcon sx={{ fontSize: 18, color: "var(--text-secondary)" }} />, editable: true, type: "number" },
@@ -1103,15 +1105,15 @@ const JournalApprovalDetail = ({ id, onBack, role }) => {
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><AttachFileIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography></Box>
                 <Grid container spacing={3}>
                     {renderFilePreview("Published Paper (1st Page)", data.publishedPaper, 1)}
-                    {renderFilePreview("Reference Pages", data.referencePages, 2)}
+                    {data.referencePages && renderFilePreview("Reference Pages", data.referencePages, 2)}
                     {data.completeJournal ? (
-                        renderFilePreview("Complete Journal", data.completeJournal, 3)
+                        renderFilePreview("Complete Journal", data.completeJournal, data.referencePages ? 3 : 2)
                     ) : (
                         data.completeJournalName && (
                             <Grid xs={12} sm={6} md={3}>
                                 <Box sx={{ mb: 1 }}>
                                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.75rem", textTransform: "uppercase" }}>
-                                        3. Complete Journal
+                                        {data.referencePages ? "3." : "2."} Complete Journal
                                     </Typography>
                                 </Box>
                                 <Box sx={{

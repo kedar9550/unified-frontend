@@ -379,9 +379,9 @@ export default function RndConferenceDataEntry() {
       return false;
     }
     const isCompleteDoc = k === 'completeDocument';
-    const maxSize = isCompleteDoc ? 5 * 1024 * 1024 : 200 * 1024;
+    const maxSize = isCompleteDoc ? 5 * 1024 * 1024 : 500 * 1024;
     if (file.size > maxSize) {
-      toast.error(`File size exceeds ${isCompleteDoc ? "5MB" : "200KB"} limit`);
+      toast.error(`File size exceeds ${isCompleteDoc ? "5MB" : "500KB"} limit`);
       return false;
     }
     return true;
@@ -1047,7 +1047,7 @@ export default function RndConferenceDataEntry() {
 
           {/* ── Attachments ── */}
           <SubLabel text="Upload Required Documents:" />
-          <NoteBox />
+          <NoteBox hasCompleteDoc />
           <Grid2 sx={{ mt: 2 }}>
             <FileField
               label="Published Paper - 1st Page in conference * :"

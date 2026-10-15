@@ -1926,7 +1926,7 @@ export default function PatentPublication() {
                     </Box>
                     <Box>
                       <FileField
-                        label="Granted Certificate * (PDF, max 200KB)"
+                        label="Granted Certificate * (PDF, max 500KB)"
                         name="grantedCertificate"
                         onChange={e => setStatusUpdateFile(e.target.files[0])}
                       />

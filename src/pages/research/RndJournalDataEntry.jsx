@@ -27,6 +27,8 @@ import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 // Configure PDF.js worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
+import { formatIssnInput, isValidIssn } from "../../utils/issnValidator";
+
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import SchoolIcon from '@mui/icons-material/School';
 import LinkIcon from '@mui/icons-material/Link';
@@ -304,28 +306,73 @@ export default function RndJournalDataEntry() {
       .catch(() => { });
   }, []);
 
-  // ── Fetch JCR Impact Factor ──────────────────────────────────────────────────
+  // ── Fetch JCR Impact Factor by ISSN / eISSN / Journal Name ──────────
   useEffect(() => {
+    let isMounted = true;
     const fetchJcr = async () => {
-      if (form.journalName && form.journalName.trim().length > 3) {
+      const cleanIssn = (form.issn || "").trim();
+      const cleanEissn = (form.eissn || "").trim();
+      const cleanName = (form.journalName || "").trim();
+
+      const validIssn = isValidIssn(cleanIssn) ? cleanIssn : "";
+      const validEissn = isValidIssn(cleanEissn) ? cleanEissn : "";
+
+      if (validIssn || validEissn || cleanName.length > 3) {
         try {
-          const res = await API.get(`/api/journal-impact-factors?search=${encodeURIComponent(form.journalName.trim())}`);
-          if (res.data?.success && res.data.data && res.data.data.length > 0) {
-            // Pick first match
-            const jif = res.data.data[0].jif;
-            if (jif && !form.jcrImpactFactor) {
-              setForm(p => ({ ...p, jcrImpactFactor: jif.toString() }));
+          const res = await API.get("/api/journal-impact-factors/lookup", {
+            params: {
+              issn: validIssn,
+              eissn: validEissn,
+              journalName: cleanName
             }
+          });
+          if (!isMounted) return;
+          if (res.data?.success && res.data.found && res.data.data?.jif !== undefined) {
+            setForm(p => ({
+              ...p,
+              jcrImpactFactor: String(res.data.data.jif)
+            }));
+          } else {
+            setForm(p => ({
+              ...p,
+              jcrImpactFactor: "0"
+            }));
           }
         } catch (err) {
           console.error("Failed to fetch JIF", err);
+          if (isMounted) {
+            setForm(p => ({
+              ...p,
+              jcrImpactFactor: "0"
+            }));
+          }
+        }
+      } else {
+        if (isMounted) {
+          setForm(p => ({
+            ...p,
+            jcrImpactFactor: "0"
+          }));
         }
       }
     };
 
-    const delay = setTimeout(fetchJcr, 800);
-    return () => clearTimeout(delay);
-  }, [form.journalName]);
+    const delay = setTimeout(fetchJcr, 500);
+    return () => {
+      isMounted = false;
+      clearTimeout(delay);
+    };
+  }, [form.issn, form.eissn, form.journalName]);
+
+  const handleIssnChange = (field) => (e) => {
+    const rawVal = e.target.value;
+    const formatted = formatIssnInput(rawVal, form[field]);
+    setForm(p => ({
+      ...p,
+      [field]: formatted,
+      jcrImpactFactor: "0"
+    }));
+  };
 
   // ── Field setters ────────────────────────────────────────────────────────────
   const set = (k) => (e) => {
@@ -425,7 +472,7 @@ export default function RndJournalDataEntry() {
     if (!file) return true;
     const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
     if (!isPdf) { toast.error("Only PDF files are allowed"); return false; }
-    if (file.size > 200 * 1024) { toast.error("File size exceeds 200KB limit"); return false; }
+    if (file.size > 500 * 1024) { toast.error("File size exceeds 500KB limit"); return false; }
     return true;
   };
 
@@ -554,6 +601,11 @@ export default function RndJournalDataEntry() {
       agecReferencingNumbers: filteredValue,
       numberOfReferencesBelongingToAGEC: count
     }));
+
+    if (count === 0) {
+      setFiles(prev => ({ ...prev, referencePages: null }));
+      setExistingFiles(prev => ({ ...prev, referencePages: null }));
+    }
   };
 
   const fetchDOIData = async () => {
@@ -581,8 +633,8 @@ export default function RndJournalDataEntry() {
         journalQuartile: data.journalQuartile,
         journalType: resolvedJournalType,
         isWos: resolvedIsWos,
-        issn: data.issn || "",
-        eissn: data.eissn || "",
+        issn: formatIssnInput(data.issn || ""),
+        eissn: formatIssnInput(data.eissn || ""),
         isScopus: data.isScopus || "No",
         citations: data.citations || "",
         jcrImpactFactor: data.jcrImpactFactor !== undefined && data.jcrImpactFactor !== null ? String(data.jcrImpactFactor) : "0",
@@ -775,6 +827,15 @@ export default function RndJournalDataEntry() {
       return;
     }
 
+    if (form.issn && !isValidIssn(form.issn)) {
+      toast.error("Invalid ISSN format. Expected format: 1234-5679 or 1234-567X");
+      return;
+    }
+    if (form.eissn && !isValidIssn(form.eissn)) {
+      toast.error("Invalid e-ISSN format. Expected format: 1234-5679 or 1234-567X");
+      return;
+    }
+
     if (form.year && form.month) {
       const selectedYear = parseInt(form.year);
       const currentYear = new Date().getFullYear();
@@ -830,14 +891,16 @@ export default function RndJournalDataEntry() {
       }
     }
 
+    const hasAgecRefs = Number(form.numberOfReferencesBelongingToAGEC || 0) > 0;
+
     if (!editJournalId) {
-      if (!files.publishedPaper || !files.referencePages || !files.completeJournal) {
+      if (!files.publishedPaper || (hasAgecRefs && !files.referencePages) || !files.completeJournal) {
         toast.error("Please attach all required documents");
         return;
       }
     } else {
       if (!files.publishedPaper && !existingFiles.publishedPaper) { toast.error("Please attach Published Paper"); return; }
-      if (!files.referencePages && !existingFiles.referencePages) { toast.error("Please attach Reference Pages"); return; }
+      if (hasAgecRefs && !files.referencePages && !existingFiles.referencePages) { toast.error("Please attach Reference Pages"); return; }
       if (!files.completeJournal && !existingFiles.completeJournal) { toast.error("Please attach Complete Journal"); return; }
     }
 
@@ -858,7 +921,7 @@ export default function RndJournalDataEntry() {
 
       const fields = [
         "doi", "paperTitle", "journalName", "journalType", "journalCategory",
-        "vol", "issue", "agecReferencingNumbers", 
+        "vol", "issue", "pageNos", "agecReferencingNumbers", 
         "totalAuthors", "userAuthorPosition", "hIndex", "jcrImpactFactor", "isStudentsInvolved",
         "correspondingAuthor",
         "issn", "eissn", "isScopus", "citations", "isInstitutionRecord", "approvedAmount"
@@ -889,7 +952,7 @@ export default function RndJournalDataEntry() {
       fd.append("targetFacultyEmpId", targetFacultyEmpId);
 
       if (files.publishedPaper) fd.append("publishedPaper", files.publishedPaper);
-      if (files.referencePages) fd.append("referencePages", files.referencePages);
+      if (hasAgecRefs && files.referencePages) fd.append("referencePages", files.referencePages);
       if (files.completeJournal) fd.append("completeJournal", files.completeJournal);
 
       if (editJournalId) {
@@ -1159,13 +1222,53 @@ export default function RndJournalDataEntry() {
             {/* ISSN */}
             <Box>
               <Typography sx={labelStyle}>ISSN : {form.eissn ? "" : "*"}</Typography>
-              <TextField size="small" fullWidth value={form.issn || ""} onChange={set("issn")} placeholder="e.g. 23644176" />
+              <TextField
+                size="small"
+                fullWidth
+                value={form.issn || ""}
+                onChange={handleIssnChange("issn")}
+                placeholder="1234-5679"
+                error={Boolean(form.issn && form.issn.length === 9 && !isValidIssn(form.issn))}
+                helperText={
+                  form.issn && form.issn.length === 9 && !isValidIssn(form.issn)
+                    ? "Format must be 4 digits, hyphen, 3 digits & check digit (e.g. 1234-5679 or 1234-567X)"
+                    : form.issn && form.issn.length < 9
+                    ? "Format: 1234-5679 or 1234-567X"
+                    : ""
+                }
+                FormHelperTextProps={{
+                  sx: {
+                    fontSize: "0.75rem",
+                    color: form.issn && form.issn.length === 9 && !isValidIssn(form.issn) ? "#ef4444" : "var(--text-secondary)"
+                  }
+                }}
+              />
             </Box>
 
             {/* e-ISSN */}
             <Box>
               <Typography sx={labelStyle}>e-ISSN : {form.issn ? "" : "*"}</Typography>
-              <TextField size="small" fullWidth value={form.eissn || ""} onChange={set("eissn")} placeholder="e.g. 23644184" />
+              <TextField
+                size="small"
+                fullWidth
+                value={form.eissn || ""}
+                onChange={handleIssnChange("eissn")}
+                placeholder="2049-3630"
+                error={Boolean(form.eissn && form.eissn.length === 9 && !isValidIssn(form.eissn))}
+                helperText={
+                  form.eissn && form.eissn.length === 9 && !isValidIssn(form.eissn)
+                    ? "Format must be 4 digits, hyphen, 3 digits & check digit (e.g. 2049-3630 or 1234-567X)"
+                    : form.eissn && form.eissn.length < 9
+                    ? "Format: 2049-3630 or 1234-567X"
+                    : ""
+                }
+                FormHelperTextProps={{
+                  sx: {
+                    fontSize: "0.75rem",
+                    color: form.eissn && form.eissn.length === 9 && !isValidIssn(form.eissn) ? "#ef4444" : "var(--text-secondary)"
+                  }
+                }}
+              />
             </Box>
 
             {/* Quartile */}
@@ -1231,7 +1334,7 @@ export default function RndJournalDataEntry() {
                 value={form.jcrImpactFactor === "" || form.jcrImpactFactor === undefined || form.jcrImpactFactor === null ? "0" : form.jcrImpactFactor}
                 onChange={handleNumericChange("jcrImpactFactor", true)}
                 placeholder="0"
-                helperText="Auto-fetched / Default is 0, update if applicable"
+                helperText="Auto-fetched from official JCR database (Clarivate) / 0 if not indexed"
                 FormHelperTextProps={{ sx: { fontSize: "0.75rem", color: "var(--text-secondary)", mt: 0.5 } }}
               />
             </Box>
@@ -1246,6 +1349,12 @@ export default function RndJournalDataEntry() {
             <Box>
               <Typography sx={labelStyle}>Issue :</Typography>
               <TextField size="small" fullWidth value={form.issue} onChange={set("issue")} />
+            </Box>
+
+            {/* Page Nos */}
+            <Box>
+              <Typography sx={labelStyle}>Page Nos :</Typography>
+              <TextField size="small" fullWidth value={form.pageNos} onChange={set("pageNos")} placeholder="e.g. 100-110" />
             </Box>
 
             {/* Referencing Nos */}
@@ -1471,7 +1580,7 @@ export default function RndJournalDataEntry() {
           </Box>
 
           {/* ── Documents ── */}
-          <NoteBox />
+          <NoteBox hasCompleteDoc />
           <Grid2 sx={{ mt: 2 }}>
             <Box>
               <FileField
@@ -1484,16 +1593,18 @@ export default function RndJournalDataEntry() {
               />
             </Box>
 
-            <Box>
-              <FileField
-                label="Reference Pages (with tick mark) *"
-                name="referencePages"
-                onChange={setFile("referencePages")}
-                existingFileUrl={!files.referencePages ? existingFiles.referencePages : null}
-                existingFileName={existingFiles.referencePages ? existingFiles.referencePages.split('/').pop() : ""}
-                onRemoveExisting={() => setExistingFiles(prev => ({ ...prev, referencePages: null }))}
-              />
-            </Box>
+            {Number(form.numberOfReferencesBelongingToAGEC || 0) > 0 && (
+              <Box>
+                <FileField
+                  label="Reference Pages (with tick mark) *"
+                  name="referencePages"
+                  onChange={setFile("referencePages")}
+                  existingFileUrl={!files.referencePages ? existingFiles.referencePages : null}
+                  existingFileName={existingFiles.referencePages ? existingFiles.referencePages.split('/').pop() : ""}
+                  onRemoveExisting={() => setExistingFiles(prev => ({ ...prev, referencePages: null }))}
+                />
+              </Box>
+            )}
 
             <Box>
               <FileField

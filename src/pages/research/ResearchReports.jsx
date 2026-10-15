@@ -104,7 +104,7 @@ export default function ResearchReports() {
         if (endDate) return `Up to ${endDate}`;
         return "Filter by Date";
     };
-    const [data, setData] = useState({ journals: [], textbooks: [], chapters: [], conferences: [], patents: [], products: [], projects: [], consultancy: [] });
+    const [data, setData] = useState({ journals: [], textbooks: [], chapters: [], conferences: [], patents: [], products: [], projects: [], consultancy: [], phdScholars: [] });
     const [loadedCategories, setLoadedCategories] = useState({});
 
     const TAB_CONFIG = [
@@ -115,7 +115,8 @@ export default function ResearchReports() {
         { key: "patents", type: "Patent" },
         { key: "products", type: "Novel Product" },
         { key: "projects", type: "Funded Project" },
-        { key: "consultancy", type: "Consultancy" }
+        { key: "consultancy", type: "Consultancy" },
+        { key: "phdScholars", type: "Ph.D Scholar" }
     ];
 
     useEffect(() => {
@@ -141,7 +142,8 @@ export default function ResearchReports() {
                 patents: [],
                 products: [],
                 projects: [],
-                consultancy: []
+                consultancy: [],
+                phdScholars: []
             });
             setLoadedCategories({});
             fetchCategoryData(activeTab, selectedYear, false, startDate, endDate);
@@ -219,7 +221,7 @@ export default function ResearchReports() {
                 "S.No", "Emp Id", "Faculty Name", "College", "PAN No", "Dept",
                 "Is No DOI", "DOI", "Name of the Journal", "Paper Title", "Academic Year",
                 "ISSN", "e-ISSN", "Is Scopus", "Is WoS", "Quartile", "WoS Journal Type", "Journal Category",
-                "Vol", "Issue", "h-Index", "JCR Impact Factor", "Citations", "SDGs",
+                "Vol", "Issue", "Page Nos", "h-Index", "JCR Impact Factor", "Citations", "SDGs",
                 "Corresponding Author", "Apply Incentive", "Approved Incentive Amount",
                 "Appraisal Eligible", "Appraisal Claimant", "Status", "Co-Authors", "Applied At"
             ];
@@ -244,6 +246,7 @@ export default function ResearchReports() {
                 item.journalCategory,
                 item.vol,
                 item.issue,
+                item.pageNos,
                 item.hIndex,
                 item.jcrImpactFactor,
                 item.citations,
@@ -427,6 +430,38 @@ export default function ResearchReports() {
                 item.coAuthorsText || "N/A"
             ]);
             filename = `Consultancy_Report_${yearName}.csv`;
+        } else if (type === "phdScholars") {
+            headers = [
+                "S.No", "Emp Id", "Faculty Name", "Dept",
+                "Roll Number", "Student Name", "Title of Ph.D Work",
+                "Course", "Branch", "Scholar Status", "Scholar Type",
+                "Role", "University", "Academic Year",
+                "Admission Date", "Admission Approval Status",
+                "Award Date", "Awarded Approval Status",
+                "Applied At"
+            ];
+            rows = (data.phdScholars || []).map((item, i) => [
+                i + 1,
+                item.empId,
+                item.facultyName,
+                item.dept,
+                item.rollNumber,
+                item.studentName,
+                item.titleOfPhdWork || "-",
+                item.course,
+                item.branch,
+                item.scholarStatus,
+                item.scholarType,
+                item.type,
+                item.university,
+                item.year,
+                item.admissionDate || "N/A",
+                item.pursuingStatus || "N/A",
+                item.awardDate || "N/A",
+                item.awardedStatus || "Not Submitted",
+                item.appliedAt || "N/A"
+            ]);
+            filename = `PhD_Scholars_Report_${yearName}.csv`;
         }
 
         const csvContent = [
@@ -904,6 +939,61 @@ export default function ResearchReports() {
             ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
         });
 
+        // ===============================
+        // PH.D SCHOLARS
+        // ===============================
+
+        lines.push(`"PH.D SCHOLARS"`);
+
+        lines.push([
+            "S.No",
+            "Emp ID",
+            "Faculty Name",
+            "Serving Department",
+            "Roll Number",
+            "Student Name",
+            "Title of Ph.D Work",
+            "Course",
+            "Branch",
+            "Scholar Status",
+            "Scholar Type",
+            "Role (Guide/Co-Guide)",
+            "University",
+            "Academic Year",
+            "Admission Date",
+            "Admission Approval Status",
+            "Award Date",
+            "Awarded Approval Status",
+            "Applied At"
+        ].join(","));
+
+        (currentData.phdScholars || []).forEach((item, index) => {
+            lines.push([
+                index + 1,
+                item.empId,
+                item.facultyName,
+                item.dept,
+                item.rollNumber,
+                item.studentName,
+                item.titleOfPhdWork || "-",
+                item.course,
+                item.branch,
+                item.scholarStatus,
+                item.scholarType,
+                item.type,
+                item.university,
+                item.year,
+                item.admissionDate || "N/A",
+                item.pursuingStatus || "N/A",
+                item.awardDate || "N/A",
+                item.awardedStatus || "Not Submitted",
+                item.appliedAt || "N/A"
+            ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(","));
+        });
+
+        lines.push("");
+        lines.push("");
+
         triggerDownload(
             lines.join("\n"),
             `Research_Report_${academicYearText}.csv`
@@ -1253,6 +1343,52 @@ export default function ResearchReports() {
         );
     };
 
+    const renderPhdScholars = () => {
+        const columns = [
+            "S.No", "Emp Id", "Faculty Name", "Dept",
+            "Roll Number", "Student Name", "Title of Ph.D Work",
+            "Course", "Branch", "Scholar Status", "Scholar Type",
+            "Role", "University", "Academic Year",
+            "Admission Date", "Admission Approval Status",
+            "Award Date", "Awarded Approval Status",
+            "Applied At"
+        ];
+        const rows = (data.phdScholars || []).map((item, i) => [
+            i + 1,
+            item.empId,
+            item.facultyName,
+            item.dept,
+            item.rollNumber,
+            item.studentName,
+            item.titleOfPhdWork || "—",
+            item.course,
+            item.branch,
+            item.scholarStatus,
+            item.scholarType,
+            item.type,
+            item.university,
+            item.year,
+            item.admissionDate || "N/A",
+            item.pursuingStatus || "N/A",
+            item.awardDate || "N/A",
+            item.awardedStatus || "Not Submitted",
+            item.appliedAt || "N/A"
+        ]);
+        const alignments = getAlignments(columns);
+        return (
+            <DataTable columns={columns} alignments={alignments} rows={rows} toolbarLeft={
+                <Button
+                    variant="contained"
+                    startIcon={<DownloadIcon />}
+                    onClick={() => downloadCSV("phdScholars")}
+                    sx={exportButtonSx}
+                >
+                    Export to Excel
+                </Button>
+            } />
+        );
+    };
+
     return (
         <PageContainer>
             <PageHeader
@@ -1310,6 +1446,7 @@ export default function ResearchReports() {
                                 <Tab icon={<BookIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Novel Products" />
                                 <Tab icon={<BookIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Funded Projects" />
                                 <Tab icon={<BookIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Consultancy" />
+                                <Tab icon={<BookIcon sx={{ fontSize: 18 }} />} iconPosition="start" label="Ph.D Scholars" />
                             </Tabs>
                         </Box>
 
@@ -1388,6 +1525,7 @@ export default function ResearchReports() {
                         {activeTab === 5 && renderProducts()}
                         {activeTab === 6 && renderProjects()}
                         {activeTab === 7 && renderConsultancy()}
+                        {activeTab === 8 && renderPhdScholars()}
                     </Box>
                 </Box>
             </Paper>

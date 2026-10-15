@@ -51,11 +51,21 @@ import { toast } from "sonner";
 import Loader from "../../components/common/Loader";
 import PageHeader from "../../components/common/PageHeader";
 import { PageContainer } from "../../components/common/design-system";
+import { formatIssnInput, isValidIssn } from "../../utils/issnValidator";
+
+const SIX_JOURNAL_TYPES = [
+  "IEEE",
+  "ASME",
+  "ASCE",
+  "ACM",
+  "FT-50",
+  "Scopus Top 10%"
+];
 
 const ReferenceJournalManagement = () => {
   const [journals, setJournals] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [types, setTypes] = useState(["FT50", "Scopus", "SCIE"]);
+  const [types, setTypes] = useState(SIX_JOURNAL_TYPES);
   const [selectedType, setSelectedType] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -74,8 +84,10 @@ const ReferenceJournalManagement = () => {
   // Individual Form State
   const [form, setForm] = useState({
     title: "",
+    issn: "",
+    eissn: "",
     impactFactor: "",
-    type: "FT50",
+    type: "IEEE",
     customType: ""
   });
 
@@ -103,10 +115,10 @@ const ReferenceJournalManagement = () => {
   // JIF Add/Upload State
   const [openAddJifModal, setOpenAddJifModal] = useState(false);
   const [jifForm, setJifForm] = useState({
-    rank: "",
     journalName: "",
     abbreviatedJournal: "",
-    publisher: "",
+    issn: "",
+    eissn: "",
     jif: ""
   });
   const [jifCsvFile, setJifCsvFile] = useState(null);
@@ -142,7 +154,7 @@ const ReferenceJournalManagement = () => {
   const fetchJournals = async () => {
     setLoading(true);
     try {
-      const res = await API.get("/api/reference-journals", {
+      const res = await API.get("/api/journal-masters", {
         params: {
           type: selectedType,
           search: debouncedSearch,
@@ -154,7 +166,7 @@ const ReferenceJournalManagement = () => {
         setJournals(res.data.data);
         setTotalRows(res.data.pagination.total);
         if (res.data.types && res.data.types.length > 0) {
-          const mergedTypes = Array.from(new Set(["FT50", "Scopus", "SCIE", ...res.data.types]));
+          const mergedTypes = Array.from(new Set([...SIX_JOURNAL_TYPES, ...res.data.types.filter(Boolean)]));
           setTypes(mergedTypes);
         }
         if (res.data.stats) {
@@ -214,7 +226,7 @@ const ReferenceJournalManagement = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this journal from the database?")) return;
     try {
-      const res = await API.delete(`/api/reference-journals/${id}`);
+      const res = await API.delete(`/api/journal-masters/${id}`);
       if (res.data?.success) {
         toast.success("Journal deleted successfully");
         fetchJournals();
@@ -229,21 +241,31 @@ const ReferenceJournalManagement = () => {
     const finalType = form.type === "Other" ? form.customType.trim() : form.type;
     if (!form.title.trim()) return toast.error("Journal title is required");
     if (!finalType) return toast.error("Journal type is required");
+    if (form.issn && !isValidIssn(form.issn)) {
+      return toast.error("Invalid ISSN format. Expected format: 1234-5679 or 1234-567X");
+    }
+    if (form.eissn && !isValidIssn(form.eissn)) {
+      return toast.error("Invalid eISSN format. Expected format: 1234-5679 or 1234-567X");
+    }
 
     const payload = {
       title: form.title.trim(),
+      issn: form.issn.trim(),
+      eissn: form.eissn.trim(),
       impactFactor: form.impactFactor.trim() || "NA",
       type: finalType.trim()
     };
 
     try {
-      const res = await API.post("/api/reference-journals", payload);
+      const res = await API.post("/api/journal-masters", payload);
       if (res.data?.success) {
         toast.success("Journal added successfully");
         setForm({
           title: "",
+          issn: "",
+          eissn: "",
           impactFactor: "",
-          type: "FT50",
+          type: "IEEE",
           customType: ""
         });
         setOpenAddJournalModal(false);
@@ -256,10 +278,12 @@ const ReferenceJournalManagement = () => {
   };
 
   const handleEditClick = (journal) => {
-    const isCustom = !["FT50", "Scopus", "SCIE"].includes(journal.type);
+    const isCustom = !types.includes(journal.type);
     setEditingJournal({
       _id: journal._id,
-      title: journal.title,
+      title: journal.journalTitle || journal.title,
+      issn: journal.issn || "",
+      eissn: journal.eissn || "",
       impactFactor: journal.impactFactor,
       type: isCustom ? "Other" : journal.type,
       customType: isCustom ? journal.type : ""
@@ -271,15 +295,23 @@ const ReferenceJournalManagement = () => {
     const finalType = editingJournal.type === "Other" ? editingJournal.customType.trim() : editingJournal.type;
     if (!editingJournal.title.trim()) return toast.error("Journal title is required");
     if (!finalType) return toast.error("Journal type is required");
+    if (editingJournal.issn && !isValidIssn(editingJournal.issn)) {
+      return toast.error("Invalid ISSN format. Expected format: 1234-5679 or 1234-567X");
+    }
+    if (editingJournal.eissn && !isValidIssn(editingJournal.eissn)) {
+      return toast.error("Invalid eISSN format. Expected format: 1234-5679 or 1234-567X");
+    }
 
     const payload = {
       title: editingJournal.title.trim(),
+      issn: (editingJournal.issn || "").trim(),
+      eissn: (editingJournal.eissn || "").trim(),
       impactFactor: editingJournal.impactFactor.trim() || "NA",
       type: finalType.trim()
     };
 
     try {
-      const res = await API.put(`/api/reference-journals/${editingJournal._id}`, payload);
+      const res = await API.put(`/api/journal-masters/${editingJournal._id}`, payload);
       if (res.data?.success) {
         toast.success("Journal updated successfully");
         setEditingJournal(null);
@@ -313,10 +345,10 @@ const ReferenceJournalManagement = () => {
   const handleJifEditClick = (jif) => {
     setEditingJif({
       _id: jif._id,
-      rank: jif.rank,
       journalName: jif.journalName,
       abbreviatedJournal: jif.abbreviatedJournal || "",
-      publisher: jif.publisher || "",
+      issn: jif.issn || "",
+      eissn: jif.eissn || "",
       jif: jif.jif
     });
   };
@@ -324,14 +356,19 @@ const ReferenceJournalManagement = () => {
   const handleJifEditSubmit = async (e) => {
     e.preventDefault();
     if (!editingJif.journalName.trim()) return toast.error("Journal name is required");
-    if (editingJif.rank === undefined || editingJif.rank === "") return toast.error("Rank is required");
     if (editingJif.jif === undefined || editingJif.jif === "") return toast.error("JIF value is required");
+    if (editingJif.issn && !isValidIssn(editingJif.issn)) {
+      return toast.error("Invalid ISSN format. Expected format: 1234-5679 or 1234-567X");
+    }
+    if (editingJif.eissn && !isValidIssn(editingJif.eissn)) {
+      return toast.error("Invalid eISSN format. Expected format: 1234-5679 or 1234-567X");
+    }
 
     const payload = {
-      rank: Number(editingJif.rank),
       journalName: editingJif.journalName.trim(),
-      abbreviatedJournal: editingJif.abbreviatedJournal.trim(),
-      publisher: editingJif.publisher.trim(),
+      abbreviatedJournal: (editingJif.abbreviatedJournal || "").trim(),
+      issn: (editingJif.issn || "").trim(),
+      eissn: (editingJif.eissn || "").trim(),
       jif: Number(editingJif.jif)
     };
 
@@ -393,7 +430,7 @@ const ReferenceJournalManagement = () => {
 
     setUploading(true);
     try {
-      const res = await API.post("/api/reference-journals/bulk", formData, {
+      const res = await API.post("/api/journal-masters/bulk", formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
       if (res.data?.success) {
@@ -411,11 +448,11 @@ const ReferenceJournalManagement = () => {
   };
 
   const downloadSampleTemplate = () => {
-    const csvContent = "data:text/csv;charset=utf-8,Journal Title,Impact Factor,Type,Publisher,Link\nAcademy of Management Journal,10.5,FT50,,\nAcademy of Management Review,13.9,FT50,,\nAccounting Organizations and Society,4,FT50,,\nJournal of Accounting and Economics,NA,FT50,,\n";
+    const csvContent = "data:text/csv;charset=utf-8,Journal Title,ISSN,eISSN,Impact Factor,Type\nIEEE TRANSACTIONS ON PATTERN ANALYSIS AND MACHINE INTELLIGENCE,0162-8828,1939-3539,23.6,IEEE\nASME JOURNAL OF MECHANICAL DESIGN,1050-0472,1528-9001,3.2,ASME\nASCE JOURNAL OF STRUCTURAL ENGINEERING,0733-9445,1943-541X,3.8,ASCE\nACM COMPUTING SURVEYS,0360-0300,1557-7341,16.6,ACM\nJOURNAL OF ACCOUNTING RESEARCH,0021-8456,1475-679X,4.0,FT-50\nNATURE REVIEWS MOLECULAR CELL BIOLOGY,1471-0072,1471-0080,81.3,Scopus Top 10%\n";
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "reference_journals_template.csv");
+    link.setAttribute("download", "journal_master_template.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -476,7 +513,20 @@ const ReferenceJournalManagement = () => {
         setOpenAddJifModal(false);
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to process JIF bulk upload.");
+      console.error("JIF Bulk Upload Error:", err);
+      let errMsg = err.response?.data?.message;
+      if (!errMsg) {
+        if (err.response?.status === 413) {
+          errMsg = "File is too large for server upload (HTTP 413). Max upload limit reached.";
+        } else if (err.response?.status === 504) {
+          errMsg = "Server timed out processing the large CSV file (HTTP 504). Please upload in smaller parts.";
+        } else if (err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
+          errMsg = "Upload request timed out. Please try uploading in smaller batches.";
+        } else {
+          errMsg = err.message || "Failed to process JIF bulk upload.";
+        }
+      }
+      toast.error(errMsg);
     } finally {
       setJifUploading(false);
     }
@@ -485,14 +535,19 @@ const ReferenceJournalManagement = () => {
   const handleJifFormSubmit = async (e) => {
     e.preventDefault();
     if (!jifForm.journalName.trim()) return toast.error("Journal name is required");
-    if (jifForm.rank === undefined || jifForm.rank === "") return toast.error("Rank is required");
     if (jifForm.jif === undefined || jifForm.jif === "") return toast.error("JIF value is required");
+    if (jifForm.issn && !isValidIssn(jifForm.issn)) {
+      return toast.error("Invalid ISSN format. Expected format: 1234-5679 or 1234-567X");
+    }
+    if (jifForm.eissn && !isValidIssn(jifForm.eissn)) {
+      return toast.error("Invalid eISSN format. Expected format: 1234-5679 or 1234-567X");
+    }
 
     const payload = {
-      rank: Number(jifForm.rank),
       journalName: jifForm.journalName.trim(),
-      abbreviatedJournal: jifForm.abbreviatedJournal.trim(),
-      publisher: jifForm.publisher.trim(),
+      abbreviatedJournal: (jifForm.abbreviatedJournal || "").trim(),
+      issn: (jifForm.issn || "").trim(),
+      eissn: (jifForm.eissn || "").trim(),
       jif: Number(jifForm.jif)
     };
 
@@ -501,10 +556,10 @@ const ReferenceJournalManagement = () => {
       if (res.data?.success) {
         toast.success("Journal impact factor entry added successfully");
         setJifForm({
-          rank: "",
           journalName: "",
           abbreviatedJournal: "",
-          publisher: "",
+          issn: "",
+          eissn: "",
           jif: ""
         });
         setOpenAddJifModal(false);
@@ -517,7 +572,7 @@ const ReferenceJournalManagement = () => {
   };
 
   const downloadJifSampleTemplate = () => {
-    const csvContent = "data:text/csv;charset=utf-8,Rank,Journal Name,Abbreviated Journal,Publisher,JIF\n1,ACADEMY OF MANAGEMENT JOURNAL,ACAD MANAGE J,ACAD MANAGEMENT,10.5\n2,ACADEMY OF MANAGEMENT REVIEW,ACAD MANAGE REV,ACAD MANAGEMENT,13.9\n3,ACCOUNTING ORGANIZATIONS AND SOCIETY,ACCT ORGAN SOC,PERGAMON-ELSEVIER SCIENCE LTD,4.0\n";
+    const csvContent = "data:text/csv;charset=utf-8,Journal Name,Abbreviated Journal,ISSN,eISSN,JIF\nACADEMY OF MANAGEMENT JOURNAL,ACAD MANAGE J,0001-4273,1948-0989,10.5\nACADEMY OF MANAGEMENT REVIEW,ACAD MANAGE REV,0363-7425,1930-3807,13.9\nACCOUNTING ORGANIZATIONS AND SOCIETY,ACCT ORGAN SOC,0361-3682,1873-6289,4.0\n";
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -529,10 +584,14 @@ const ReferenceJournalManagement = () => {
 
   const getChipColor = (type) => {
     const cleanType = (type || "").toUpperCase().replace(/[-_ ]/g, "");
-    if (cleanType.includes("FT50")) return { bg: "rgba(59, 130, 246, 0.08)", color: "#3b82f6", border: "rgba(59, 130, 246, 0.15)" };
-    if (cleanType.includes("SCOPUS")) return { bg: "rgba(16, 185, 129, 0.08)", color: "#10b981", border: "rgba(16, 185, 129, 0.15)" };
-    if (cleanType.includes("SCIE") || cleanType.includes("SCI")) return { bg: "rgba(245, 158, 11, 0.08)", color: "#f59e0b", border: "rgba(245, 158, 11, 0.15)" };
-    return { bg: "rgba(139, 92, 246, 0.08)", color: "#8b5cf6", border: "rgba(139, 92, 246, 0.15)" };
+    if (cleanType.includes("IEEE")) return { bg: "rgba(2, 132, 199, 0.08)", color: "#0284c7", border: "rgba(2, 132, 199, 0.2)" };
+    if (cleanType.includes("ASME")) return { bg: "rgba(234, 88, 12, 0.08)", color: "#ea580c", border: "rgba(234, 88, 12, 0.2)" };
+    if (cleanType.includes("ASCE")) return { bg: "rgba(13, 148, 136, 0.08)", color: "#0d9488", border: "rgba(13, 148, 136, 0.2)" };
+    if (cleanType.includes("ACM")) return { bg: "rgba(124, 58, 237, 0.08)", color: "#7c3aed", border: "rgba(124, 58, 237, 0.2)" };
+    if (cleanType.includes("FT50")) return { bg: "rgba(59, 130, 246, 0.08)", color: "#3b82f6", border: "rgba(59, 130, 246, 0.2)" };
+    if (cleanType.includes("SCOPUS")) return { bg: "rgba(16, 185, 129, 0.08)", color: "#10b981", border: "rgba(16, 185, 129, 0.2)" };
+    if (cleanType.includes("SCIE") || cleanType.includes("SCI")) return { bg: "rgba(245, 158, 11, 0.08)", color: "#f59e0b", border: "rgba(245, 158, 11, 0.2)" };
+    return { bg: "rgba(100, 116, 139, 0.08)", color: "#64748b", border: "rgba(100, 116, 139, 0.2)" };
   };
 
   return (
@@ -641,16 +700,14 @@ const ReferenceJournalManagement = () => {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search by title..."
                     InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon sx={{ color: "var(--text-secondary)", fontSize: "1.1rem" }} />
-                        </InputAdornment>
-                      ),
-                      endAdornment: searchQuery && (
+                      endAdornment: (
                         <InputAdornment position="end">
-                          <IconButton size="small" onClick={handleClearSearch}>
-                            <Close sx={{ fontSize: "1rem" }} />
-                          </IconButton>
+                          {searchQuery && (
+                            <IconButton size="small" onClick={handleClearSearch} sx={{ mr: 0.5 }}>
+                              <Close sx={{ fontSize: "1rem" }} />
+                            </IconButton>
+                          )}
+                          <SearchIcon sx={{ color: "var(--text-secondary)", fontSize: "1.2rem" }} />
                         </InputAdornment>
                       )
                     }}
@@ -718,8 +775,10 @@ const ReferenceJournalManagement = () => {
                   <TableRow sx={{ background: "rgba(11, 82, 153, 0.03)" }}>
                     <TableCell sx={{ fontWeight: 800, width: "70px", color: "var(--text-primary)" }}>S.No</TableCell>
                     <TableCell sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Journal Name</TableCell>
-                    <TableCell sx={{ fontWeight: 800, width: "160px", color: "var(--text-primary)" }} align="center">Impact Factor</TableCell>
-                    <TableCell sx={{ fontWeight: 800, width: "160px", color: "var(--text-primary)" }} align="center">Type</TableCell>
+                    <TableCell sx={{ fontWeight: 800, width: "130px", color: "var(--text-primary)" }}>ISSN</TableCell>
+                    <TableCell sx={{ fontWeight: 800, width: "130px", color: "var(--text-primary)" }}>eISSN</TableCell>
+                    <TableCell sx={{ fontWeight: 800, width: "140px", color: "var(--text-primary)" }} align="center">Impact Factor</TableCell>
+                    <TableCell sx={{ fontWeight: 800, width: "150px", color: "var(--text-primary)" }} align="center">Type</TableCell>
                     <TableCell sx={{ fontWeight: 800, width: "120px", color: "var(--text-primary)" }} align="center">Actions</TableCell>
                   </TableRow>
                 </TableHead>
@@ -742,7 +801,13 @@ const ReferenceJournalManagement = () => {
                             {page * rowsPerPage + index + 1}
                           </TableCell>
                           <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>
-                            {journal.title}
+                            {journal.journalTitle || journal.title}
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                            {journal.issn || "—"}
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                            {journal.eissn || "—"}
                           </TableCell>
                           <TableCell align="center">
                             <Chip
@@ -809,7 +874,7 @@ const ReferenceJournalManagement = () => {
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                      <TableCell colSpan={7} align="center" sx={{ py: 8 }}>
                         <Box sx={{ textContent: "center", opacity: 0.7 }}>
                           <Typography variant="body1" sx={{ fontWeight: 700, mb: 0.5, color: "var(--text-secondary)" }}>
                             No Reference Journals Found
@@ -1070,6 +1135,41 @@ const ReferenceJournalManagement = () => {
               />
 
               <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2 }}>
+                <TextField
+                  label="ISSN"
+                  fullWidth
+                  size="medium"
+                  value={form.issn}
+                  onChange={(e) => setForm({ ...form, issn: formatIssnInput(e.target.value, form.issn) })}
+                  placeholder="e.g. 1234-5679"
+                  error={Boolean(form.issn && form.issn.length === 9 && !isValidIssn(form.issn))}
+                  helperText={form.issn && form.issn.length === 9 && !isValidIssn(form.issn) ? "Format: 1234-5679 or 1234-567X" : ""}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "12px",
+                      background: "var(--bg-paper)",
+                    }
+                  }}
+                />
+                <TextField
+                  label="eISSN"
+                  fullWidth
+                  size="medium"
+                  value={form.eissn}
+                  onChange={(e) => setForm({ ...form, eissn: formatIssnInput(e.target.value, form.eissn) })}
+                  placeholder="e.g. 2049-3630"
+                  error={Boolean(form.eissn && form.eissn.length === 9 && !isValidIssn(form.eissn))}
+                  helperText={form.eissn && form.eissn.length === 9 && !isValidIssn(form.eissn) ? "Format: 2049-3630 or 1234-567X" : ""}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "12px",
+                      background: "var(--bg-paper)",
+                    }
+                  }}
+                />
+              </Box>
+
+              <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2 }}>
                 <Box sx={{ flex: 1 }}>
                   <TextField
                     label="Impact Factor"
@@ -1098,9 +1198,9 @@ const ReferenceJournalManagement = () => {
                         background: "var(--bg-paper)",
                       }}
                     >
-                      <MenuItem value="FT50">FT50</MenuItem>
-                      <MenuItem value="Scopus">Scopus</MenuItem>
-                      <MenuItem value="SCIE">SCIE</MenuItem>
+                      {types.map((t) => (
+                        <MenuItem key={t} value={t}>{t}</MenuItem>
+                      ))}
                       <MenuItem value="Other">Other / Custom</MenuItem>
                     </Select>
                   </FormControl>
@@ -1172,18 +1272,16 @@ const ReferenceJournalManagement = () => {
                     size="small"
                     value={jifSearchQuery}
                     onChange={(e) => setJifSearchQuery(e.target.value)}
-                    placeholder="Search by journal name, abbreviated name, or publisher..."
+                    placeholder="Search by journal name, ISSN, or eISSN..."
                     InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <SearchIcon sx={{ color: "var(--text-secondary)", fontSize: "1.1rem" }} />
-                        </InputAdornment>
-                      ),
-                      endAdornment: jifSearchQuery && (
+                      endAdornment: (
                         <InputAdornment position="end">
-                          <IconButton size="small" onClick={handleJifClearSearch}>
-                            <Close sx={{ fontSize: "1rem" }} />
-                          </IconButton>
+                          {jifSearchQuery && (
+                            <IconButton size="small" onClick={handleJifClearSearch} sx={{ mr: 0.5 }}>
+                              <Close sx={{ fontSize: "1rem" }} />
+                            </IconButton>
+                          )}
+                          <SearchIcon sx={{ color: "var(--text-secondary)", fontSize: "1.2rem" }} />
                         </InputAdornment>
                       )
                     }}
@@ -1249,10 +1347,10 @@ const ReferenceJournalManagement = () => {
                 <Table size="medium">
                   <TableHead>
                     <TableRow sx={{ background: "rgba(11, 82, 153, 0.03)" }}>
-                      <TableCell sx={{ fontWeight: 800, width: "80px", color: "var(--text-primary)" }} align="center">Rank</TableCell>
                       <TableCell sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Journal Name</TableCell>
                       <TableCell sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Abbreviated Journal</TableCell>
-                      <TableCell sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Publisher</TableCell>
+                      <TableCell sx={{ fontWeight: 800, color: "var(--text-primary)" }}>ISSN</TableCell>
+                      <TableCell sx={{ fontWeight: 800, color: "var(--text-primary)" }}>eISSN</TableCell>
                       <TableCell sx={{ fontWeight: 800, width: "140px", color: "var(--text-primary)" }} align="center">JIF</TableCell>
                       <TableCell sx={{ fontWeight: 800, width: "120px", color: "var(--text-primary)" }} align="center">Actions</TableCell>
                     </TableRow>
@@ -1270,17 +1368,17 @@ const ReferenceJournalManagement = () => {
                             }
                           }}
                         >
-                          <TableCell align="center" sx={{ fontWeight: 700, color: "var(--text-secondary)" }}>
-                            {record.rank}
-                          </TableCell>
                           <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>
                             {record.journalName}
                           </TableCell>
                           <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>
                             {record.abbreviatedJournal || "—"}
                           </TableCell>
-                          <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>
-                            {record.publisher || "—"}
+                          <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                            {record.issn || "—"}
+                          </TableCell>
+                          <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                            {record.eissn || "—"}
                           </TableCell>
                           <TableCell align="center">
                             <Chip
@@ -1410,6 +1508,37 @@ const ReferenceJournalManagement = () => {
               />
 
               <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2 }}>
+                <TextField
+                  label="ISSN"
+                  fullWidth
+                  value={editingJournal.issn}
+                  onChange={(e) => setEditingJournal({ ...editingJournal, issn: formatIssnInput(e.target.value, editingJournal.issn) })}
+                  placeholder="e.g. 1234-5679"
+                  error={Boolean(editingJournal.issn && editingJournal.issn.length === 9 && !isValidIssn(editingJournal.issn))}
+                  helperText={editingJournal.issn && editingJournal.issn.length === 9 && !isValidIssn(editingJournal.issn) ? "Format: 1234-5679 or 1234-567X" : ""}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "12px",
+                    }
+                  }}
+                />
+                <TextField
+                  label="eISSN"
+                  fullWidth
+                  value={editingJournal.eissn}
+                  onChange={(e) => setEditingJournal({ ...editingJournal, eissn: formatIssnInput(e.target.value, editingJournal.eissn) })}
+                  placeholder="e.g. 2049-3630"
+                  error={Boolean(editingJournal.eissn && editingJournal.eissn.length === 9 && !isValidIssn(editingJournal.eissn))}
+                  helperText={editingJournal.eissn && editingJournal.eissn.length === 9 && !isValidIssn(editingJournal.eissn) ? "Format: 2049-3630 or 1234-567X" : ""}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "12px",
+                    }
+                  }}
+                />
+              </Box>
+
+              <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2 }}>
                 <Box sx={{ flex: 1 }}>
                   <TextField
                     label="Impact Factor"
@@ -1435,9 +1564,9 @@ const ReferenceJournalManagement = () => {
                         borderRadius: "12px",
                       }}
                     >
-                      <MenuItem value="FT50">FT50</MenuItem>
-                      <MenuItem value="Scopus">Scopus</MenuItem>
-                      <MenuItem value="SCIE">SCIE</MenuItem>
+                      {types.map((t) => (
+                        <MenuItem key={t} value={t}>{t}</MenuItem>
+                      ))}
                       <MenuItem value="Other">Other / Custom</MenuItem>
                     </Select>
                   </FormControl>
@@ -1515,39 +1644,21 @@ const ReferenceJournalManagement = () => {
               Edit Journal Impact Factor Details
             </DialogTitle>
             <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 3, pt: 3 }}>
-              <Box sx={{ display: "flex", gap: 2, mt: 1 }}>
-                <Box sx={{ width: "100px" }}>
-                  <TextField
-                    label="Rank"
-                    required
-                    type="number"
-                    fullWidth
-                    value={editingJif.rank}
-                    onChange={(e) => setEditingJif({ ...editingJif, rank: e.target.value })}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "12px",
-                      }
-                    }}
-                  />
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  <TextField
-                    label="JIF"
-                    required
-                    type="number"
-                    slotProps={{ htmlInput: { step: "any" } }}
-                    fullWidth
-                    value={editingJif.jif}
-                    onChange={(e) => setEditingJif({ ...editingJif, jif: e.target.value })}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "12px",
-                      }
-                    }}
-                  />
-                </Box>
-              </Box>
+              <TextField
+                label="JIF"
+                required
+                type="number"
+                slotProps={{ htmlInput: { step: "any" } }}
+                fullWidth
+                value={editingJif.jif}
+                onChange={(e) => setEditingJif({ ...editingJif, jif: e.target.value })}
+                sx={{
+                  mt: 1,
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "12px",
+                  }
+                }}
+              />
 
               <TextField
                 label="Journal Name"
@@ -1574,17 +1685,42 @@ const ReferenceJournalManagement = () => {
                 }}
               />
 
-              <TextField
-                label="Publisher"
-                fullWidth
-                value={editingJif.publisher}
-                onChange={(e) => setEditingJif({ ...editingJif, publisher: e.target.value })}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "12px",
-                  }
-                }}
-              />
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <Box sx={{ flex: 1 }}>
+                  <TextField
+                    label="ISSN"
+                    fullWidth
+                    value={editingJif.issn || ""}
+                    onChange={(e) => setEditingJif({ ...editingJif, issn: formatIssnInput(e.target.value, editingJif.issn) })}
+                    placeholder="e.g. 1234-5679"
+                    error={Boolean(editingJif.issn && editingJif.issn.length === 9 && !isValidIssn(editingJif.issn))}
+                    helperText={editingJif.issn && editingJif.issn.length === 9 && !isValidIssn(editingJif.issn) ? "Format: 1234-5679 or 1234-567X" : ""}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "12px",
+                      }
+                    }}
+                  />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <TextField
+                    label="eISSN"
+                    fullWidth
+                    value={editingJif.eissn || ""}
+                    onChange={(e) => setEditingJif({ ...editingJif, eissn: formatIssnInput(e.target.value, editingJif.eissn) })}
+                    placeholder="e.g. 2049-3630"
+                    error={Boolean(editingJif.eissn && editingJif.eissn.length === 9 && !isValidIssn(editingJif.eissn))}
+                    helperText={editingJif.eissn && editingJif.eissn.length === 9 && !isValidIssn(editingJif.eissn) ? "Format: 2049-3630 or 1234-567X" : ""}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "12px",
+                      }
+                    }}
+                  />
+                </Box>
+              </Box>
+
+
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 2 }}>
               <Button
@@ -1661,7 +1797,7 @@ const ReferenceJournalManagement = () => {
               Upload CSV File
             </Typography>
             <Typography variant="body2" sx={{ color: "var(--text-secondary)", mb: 3.5 }}>
-              Upload a CSV file containing columns: Rank, Journal Name, Abbreviated Journal, Publisher, JIF.
+              Upload a CSV file containing columns: Journal Name, Abbreviated Journal, ISSN, eISSN, JIF.
             </Typography>
 
             {/* Drag Drop zone */}
@@ -1822,41 +1958,21 @@ const ReferenceJournalManagement = () => {
             </Typography>
 
             <Box component="form" onSubmit={handleJifFormSubmit} sx={{ display: "flex", flexDirection: "column", gap: 3, flexGrow: 1 }}>
-              <Box sx={{ display: "flex", gap: 2 }}>
-                <Box sx={{ flex: 1 }}>
-                  <TextField
-                    label="Rank"
-                    required
-                    type="number"
-                    fullWidth
-                    value={jifForm.rank}
-                    onChange={(e) => setJifForm({ ...jifForm, rank: e.target.value })}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "12px",
-                        background: "var(--bg-paper)",
-                      }
-                    }}
-                  />
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  <TextField
-                    label="JIF"
-                    required
-                    type="number"
-                    slotProps={{ htmlInput: { step: "any" } }}
-                    fullWidth
-                    value={jifForm.jif}
-                    onChange={(e) => setJifForm({ ...jifForm, jif: e.target.value })}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "12px",
-                        background: "var(--bg-paper)",
-                      }
-                    }}
-                  />
-                </Box>
-              </Box>
+              <TextField
+                label="JIF"
+                required
+                type="number"
+                slotProps={{ htmlInput: { step: "any" } }}
+                fullWidth
+                value={jifForm.jif}
+                onChange={(e) => setJifForm({ ...jifForm, jif: e.target.value })}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: "12px",
+                    background: "var(--bg-paper)",
+                  }
+                }}
+              />
 
               <TextField
                 label="Journal Name"
@@ -1885,18 +2001,44 @@ const ReferenceJournalManagement = () => {
                 }}
               />
 
-              <TextField
-                label="Publisher"
-                fullWidth
-                value={jifForm.publisher}
-                onChange={(e) => setJifForm({ ...jifForm, publisher: e.target.value })}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "12px",
-                    background: "var(--bg-paper)",
-                  }
-                }}
-              />
+              <Box sx={{ display: "flex", gap: 2 }}>
+                <Box sx={{ flex: 1 }}>
+                  <TextField
+                    label="ISSN"
+                    fullWidth
+                    value={jifForm.issn}
+                    onChange={(e) => setJifForm({ ...jifForm, issn: formatIssnInput(e.target.value, jifForm.issn) })}
+                    placeholder="e.g. 1234-5679"
+                    error={Boolean(jifForm.issn && jifForm.issn.length === 9 && !isValidIssn(jifForm.issn))}
+                    helperText={jifForm.issn && jifForm.issn.length === 9 && !isValidIssn(jifForm.issn) ? "Format: 1234-5679 or 1234-567X" : ""}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "12px",
+                        background: "var(--bg-paper)",
+                      }
+                    }}
+                  />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <TextField
+                    label="eISSN"
+                    fullWidth
+                    value={jifForm.eissn}
+                    onChange={(e) => setJifForm({ ...jifForm, eissn: formatIssnInput(e.target.value, jifForm.eissn) })}
+                    placeholder="e.g. 2049-3630"
+                    error={Boolean(jifForm.eissn && jifForm.eissn.length === 9 && !isValidIssn(jifForm.eissn))}
+                    helperText={jifForm.eissn && jifForm.eissn.length === 9 && !isValidIssn(jifForm.eissn) ? "Format: 2049-3630 or 1234-567X" : ""}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "12px",
+                        background: "var(--bg-paper)",
+                      }
+                    }}
+                  />
+                </Box>
+              </Box>
+
+
 
               <Box sx={{ mt: "auto", pt: 2 }}>
                 <Button

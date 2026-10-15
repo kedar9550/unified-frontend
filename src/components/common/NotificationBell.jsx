@@ -8,6 +8,24 @@ import API from '../../api/axios';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 
+const formatNotificationDate = (dateVal) => {
+    if (!dateVal) return '';
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '';
+
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = String(d.getFullYear()).slice(-2);
+
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+
+    return `${day}/${month}/${year} ${hours}:${minutes} ${ampm}`;
+};
+
 const NotificationBell = forwardRef((props, ref) => {
     const [anchorEl, setAnchorEl] = useState(null);
     const [notifications, setNotifications] = useState([]);
@@ -207,7 +225,7 @@ const NotificationBell = forwardRef((props, ref) => {
                 setUnreadCount(prev => Math.max(0, prev - 1));
             }
             toast.success("Notification deleted");
-        } catch (error) {
+        } catch {
             toast.error("Failed to delete notification");
         }
     };
@@ -217,7 +235,7 @@ const NotificationBell = forwardRef((props, ref) => {
             await API.put('/api/notifications/read-all');
             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
             setUnreadCount(0);
-        } catch (error) {
+        } catch {
             toast.error("Failed to mark all as read");
         }
     };
@@ -312,7 +330,7 @@ const NotificationBell = forwardRef((props, ref) => {
                                                     {notif.message}
                                                 </Typography>
                                                 <Typography component="span" variant="caption" sx={{ display: 'block', mt: 1, color: 'text.disabled' }}>
-                                                    {new Date(notif.createdAt).toLocaleDateString() + ' ' + new Date(notif.createdAt).toLocaleTimeString()}
+                                                    {formatNotificationDate(notif.createdAt)}
                                                 </Typography>
                                             </React.Fragment>
                                         }
