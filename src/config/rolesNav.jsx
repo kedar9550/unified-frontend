@@ -41,6 +41,7 @@ import {
   PersonAdd,
   HourglassEmpty,
   Category,
+  DynamicForm,
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
@@ -59,6 +60,8 @@ export const ROLE_ROUTES = {
         { text: "Event Subcategories", path: "/central-events/subcategories", icon: <Category /> },
         { text: "All Central Events", path: "/central-events", icon: <EventAvailable /> },
         { text: "Activities", path: "/central-events/activities", icon: <ListAlt /> },
+        // { text: "Generate Form", path: "/central-events/activities/generate-form", icon: <DynamicForm /> },
+        //  { text: "Dynamic Forms", path: "/central-events/activities/forms", icon: <Description /> },
       ]
     },
     {
