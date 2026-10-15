@@ -1283,50 +1283,23 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
         </Box>
         <Grid2>
 
-        {isCourseParticipantActivity(form.activityCategory, form.activityType) ? (
-          <>
-            <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
-              <Typography sx={labelStyle}>Course Name: *</Typography>
-              <TextField
-                size="small"
-                fullWidth
-                value={form.courseName}
-                onChange={setVal("courseName")}
-                placeholder="Enter Course Name"
-              />
-            </Box>
-
-            <Box>
-              <Typography sx={labelStyle}>Organizing Institution Category: *</Typography>
-              <Select
-                size="small"
-                fullWidth
-                displayEmpty
-                value={form.organizingInstitutionCategory}
-                onChange={setVal("organizingInstitutionCategory")}
-                onClose={blurActiveElement}
-                MenuProps={selectMenuProps}
-              >
-                <MenuItem value="" disabled>--Select Category--</MenuItem>
-                {[
-                  "UGC",
-                  "AICTE",
-                  "IIT",
-                  "IIM",
-                  "NIT",
-                  "MHRD R&D Lab",
-                  "NITTTR",
-                  "NIPER",
-                  "ICMR",
-                  "Govt. University",
-                  "NIRF Ranked Institute (Below 200)",
-                  "NPTEL",
-                  "Other / Host Institute"
-                ].map(opt => (
-                  <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                ))}
-              </Select>
-            </Box>
+          <Box>
+            <Typography sx={labelStyle}>Activity Category: *</Typography>
+            <Select
+              size="small"
+              fullWidth
+              displayEmpty
+              value={form.activityCategory}
+              onChange={handleCategoryChange}
+              onClose={blurActiveElement}
+              MenuProps={selectMenuProps}
+            >
+              <MenuItem value="" disabled>--Select Category--</MenuItem>
+              {ACTIVITY_CATEGORIES.map(cat => (
+                <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+              ))}
+            </Select>
+          </Box>
 
           <Box>
             <Typography sx={labelStyle}>Activity Role / Type: *</Typography>
@@ -1347,15 +1320,15 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
             </Select>
           </Box>
 
-          {form.activityCategory === "FDP" && form.activityType === "FDP Participant" ? (
+          {isCourseParticipantActivity(form.activityCategory, form.activityType) ? (
             <>
               <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
                 <Typography sx={labelStyle}>Course Name: *</Typography>
                 <TextField
                   size="small"
                   fullWidth
-                  value={form.courseFdpName}
-                  onChange={setVal("courseFdpName")}
+                  value={form.courseName}
+                  onChange={setVal("courseName")}
                   placeholder="Enter Course Name"
                 />
               </Box>
@@ -1385,7 +1358,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
                     "Govt. University",
                     "NIRF Ranked Institute (Below 200)",
                     "NPTEL",
-                    "Other"
+                    "Other / Host Institute"
                   ].map(opt => (
                     <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                   ))}
@@ -1579,8 +1552,6 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
               placeholder="Any additional remarks..."
             />
           </Box>
-        </>
-        ) : null}
         </Grid2>
 
         <NoteBox />
