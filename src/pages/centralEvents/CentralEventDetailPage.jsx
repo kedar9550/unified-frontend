@@ -198,16 +198,20 @@ export default function CentralEventDetailPage() {
           boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
         }}
       >
-        <CardMedia
-          component="img"
-          height="340"
-          image={getImageUrl(event.banner)}
-          alt={event.title}
-        />
+        {getImageUrl(event.banner) && (
+          <CardMedia
+            component="img"
+            height="340"
+            image={getImageUrl(event.banner)}
+            alt={event.title}
+          />
+        )}
         <Box sx={{ p: 4 }}>
           <Stack direction="row" spacing={1} mb={2} flexWrap="wrap" gap={0.5}>
             <Chip label={event.typeCode} color="primary" sx={{ fontWeight: 700, borderRadius: '8px' }} />
             {event.categoryName && <Chip label={event.categoryName} variant="outlined" sx={{ borderRadius: '8px' }} />}
+            {event.subcategoryName && <Chip label={event.subcategoryName} color="secondary" variant="outlined" sx={{ borderRadius: '8px', fontWeight: 600 }} />}
+            {event.rounds && <Chip label={`${event.rounds} Round${event.rounds > 1 ? 's' : ''}`} color="info" variant="outlined" sx={{ borderRadius: '8px', fontWeight: 600 }} />}
             {event.level && <Chip label={`Level: ${event.level}`} color="info" sx={{ borderRadius: '8px' }} />}
             {event.activityType && <Chip label={event.activityType} color="success" sx={{ borderRadius: '8px' }} />}
             <Chip label={event.mode} color="warning" sx={{ borderRadius: '8px' }} />

@@ -530,6 +530,11 @@ export default function CentralEventsListPage() {
                         <Typography variant="body2" fontWeight={600}>
                           {event.categoryName || event.activityType || 'General'}
                         </Typography>
+                        {event.subcategoryName && (
+                          <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 600, display: 'block' }}>
+                            ↳ {event.subcategoryName}
+                          </Typography>
+                        )}
                         {event.level && (
                           <Chip label={event.level} size="small" variant="outlined" sx={{ borderRadius: '6px', fontSize: '0.7rem', height: 20 }} />
                         )}

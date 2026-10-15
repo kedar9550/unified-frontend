@@ -43,6 +43,7 @@ import { useAuth } from '../../context/AuthContext';
 import {
   getEventTypes,
   getCategoriesByTypeCode,
+  getAllCentralEventSubcategoriesAdmin,
   getOrganizers,
   createCentralEvent,
   updateCentralEvent,
@@ -78,6 +79,14 @@ const toLocalISOString = (dateInput) => {
   if (isNaN(d.getTime())) return '';
   const tzOffset = d.getTimezoneOffset() * 60000;
   return new Date(d.getTime() - tzOffset).toISOString().slice(0, 16);
+};
+
+const toLocalDateString = (dateInput) => {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  const tzOffset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - tzOffset).toISOString().slice(0, 10);
 };
 
 export default function CentralEventCreatePage() {
@@ -123,6 +132,9 @@ export default function CentralEventCreatePage() {
   const [selectedTypeObj, setSelectedTypeObj] = useState(null);
   const [selectedFormCode, setSelectedFormCode] = useState('2.6');
   const [categoryId, setCategoryId] = useState('');
+  const [subcategoryId, setSubcategoryId] = useState('');
+  const [extraSubcategories, setExtraSubcategories] = useState([]);
+  const [loadingSubcategories, setLoadingSubcategories] = useState(false);
   const [level, setLevel] = useState('');
   const [activityType, setActivityType] = useState('');
   const [organizerId, setOrganizerId] = useState('');
@@ -132,14 +144,13 @@ export default function CentralEventCreatePage() {
   const [venueName, setVenueName] = useState('');
   const [feeRupees, setFeeRupees] = useState('0');
   const [capacity, setCapacity] = useState('100');
+  const [rounds, setRounds] = useState('1');
   const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
-  const [regDeadline, setRegDeadline] = useState('');
   const [participationType, setParticipationType] = useState('SINGLE');
   const [minTeamSize, setMinTeamSize] = useState('1');
   const [maxTeamSize, setMaxTeamSize] = useState('1');
 
-  const [rules, setRules] = useState(['', '', '']);
+  const [rules, setRules] = useState(['']);
 
   const handleRuleChange = (index, value) => {
     setRules((currentRules) => currentRules.map((rule, i) => (i === index ? value : rule)));
@@ -186,6 +197,45 @@ export default function CentralEventCreatePage() {
     return (formRegistry.forms || []).find((f) => f.code === selectedFormCode) || formRegistry.forms[0];
   }, [selectedFormCode]);
 
+  // Selected Category & Subcategories logic
+  const selectedCategory = React.useMemo(() => {
+    return categories.find((c) => c._id === categoryId);
+  }, [categories, categoryId]);
+
+  const availableSubcategories = React.useMemo(() => {
+    if (!selectedCategory) return [];
+    return (selectedCategory.subcategories || []).filter((s) => s.isActive !== false);
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    setSubcategoryId('');
+    setExtraSubcategories([]);
+    if (!categoryId || !selectedCategory?.hasSubcategories) return;
+
+    if (!selectedCategory.subcategories || selectedCategory.subcategories.length === 0) {
+      setLoadingSubcategories(true);
+      getAllCentralEventSubcategoriesAdmin(typeCode, academicYear, categoryId)
+        .then((res) => {
+          if (res.success && Array.isArray(res.data)) {
+            setExtraSubcategories(res.data);
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to fetch subcategories:', err);
+        })
+        .finally(() => setLoadingSubcategories(false));
+    }
+  }, [categoryId, selectedCategory, typeCode, academicYear]);
+
+  const subcategoryOptions = React.useMemo(() => {
+    if (availableSubcategories.length > 0) return availableSubcategories;
+    return extraSubcategories;
+  }, [availableSubcategories, extraSubcategories]);
+
+  const hasSubcategories = Boolean(
+    selectedCategory?.hasSubcategories || subcategoryOptions.length > 0
+  );
+
   const isDepartmentalOrUniversity = typeCode === 'DEPARTMENTAL' || typeCode === 'UNIVERSITY';
 
   const handleActivitySaveSuccess = async (savedRecord, formData) => {
@@ -202,10 +252,11 @@ export default function CentralEventCreatePage() {
         venue: { name: venueName || 'Campus Venue' },
         fee: { amount: 0, currency: 'INR' },
         capacity: parseInt(capacity || '100', 10),
+        rounds: Math.max(1, parseInt(rounds || '1', 10)),
         schedule: {
           fromDate: formData.start_date || fromDate || new Date(),
-          toDate: formData.end_date || toDate || new Date(),
-          regDeadline: formData.start_date || regDeadline || new Date()
+          toDate: formData.end_date || formData.start_date || fromDate || new Date(),
+          regDeadline: formData.start_date || fromDate || new Date()
         },
         participation: {
           type: 'SINGLE',
@@ -312,6 +363,9 @@ export default function CentralEventCreatePage() {
           if (ev.categoryId) {
             setCategoryId(typeof ev.categoryId === 'object' ? ev.categoryId._id : ev.categoryId);
           }
+          if (ev.subcategoryId) {
+            setSubcategoryId(typeof ev.subcategoryId === 'object' ? ev.subcategoryId._id : ev.subcategoryId);
+          }
           if (ev.level) setLevel(ev.level);
           if (ev.activityType) setActivityType(ev.activityType);
           if (ev.organizer?.organizerId) {
@@ -334,9 +388,8 @@ export default function CentralEventCreatePage() {
           }
           if (ev.fee?.amount !== undefined) setFeeRupees((ev.fee.amount / 100).toString());
           if (ev.capacity !== undefined) setCapacity(ev.capacity.toString());
-          if (ev.schedule?.fromDate) setFromDate(toLocalISOString(ev.schedule.fromDate));
-          if (ev.schedule?.toDate) setToDate(toLocalISOString(ev.schedule.toDate));
-          if (ev.schedule?.regDeadline) setRegDeadline(toLocalISOString(ev.schedule.regDeadline));
+          if (ev.rounds !== undefined) setRounds(ev.rounds.toString());
+          if (ev.schedule?.fromDate) setFromDate(toLocalDateString(ev.schedule.fromDate));
           if (ev.participation?.type) setParticipationType(ev.participation.type);
           if (ev.participation?.minTeamSize !== undefined) setMinTeamSize(ev.participation.minTeamSize.toString());
           if (ev.participation?.maxTeamSize !== undefined) setMaxTeamSize(ev.participation.maxTeamSize.toString());
@@ -365,7 +418,7 @@ export default function CentralEventCreatePage() {
         if (tObj.hasCategories && categories.length === 0) {
           getCategoriesByTypeCode(typeCode).then(res => {
             if (res.success) setCategories(res.data);
-          }).catch(() => {});
+          }).catch(() => { });
         }
       }
     }
@@ -376,6 +429,7 @@ export default function CentralEventCreatePage() {
     const tObj = types.find((t) => t.code === code);
     setSelectedTypeObj(tObj);
     setCategoryId('');
+    setSubcategoryId('');
     setLevel('');
     setActivityType('');
     setOrganizerId('');
@@ -497,22 +551,19 @@ export default function CentralEventCreatePage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!fromDate || !toDate || !regDeadline) {
-      toast.error('Please specify Start Date, End Date, and Registration Deadline');
+    if (!fromDate) {
+      toast.error('Please select the Event Start Date');
+      return;
+    }
+
+    if (selectedTypeObj?.hasCategories && hasSubcategories && subcategoryOptions.length > 0 && !subcategoryId) {
+      toast.error('Please select a Subcategory');
       return;
     }
 
     const startDt = new Date(fromDate);
-    const endDt = new Date(toDate);
-    const deadlineDt = new Date(regDeadline);
-
-    if (isNaN(startDt.getTime()) || isNaN(endDt.getTime()) || isNaN(deadlineDt.getTime())) {
-      toast.error('Please enter valid dates for schedule');
-      return;
-    }
-
-    if (endDt < startDt) {
-      toast.error('End Date & Time must be after or equal to Start Date & Time');
+    if (isNaN(startDt.getTime())) {
+      toast.error('Please enter a valid Event Start Date');
       return;
     }
 
@@ -562,10 +613,11 @@ export default function CentralEventCreatePage() {
           currency: 'INR'
         },
         capacity: parseInt(capacity || '100', 10),
+        rounds: Math.max(1, parseInt(rounds || '1', 10)),
         schedule: {
-          fromDate: new Date(fromDate).toISOString(),
-          toDate: new Date(toDate).toISOString(),
-          regDeadline: new Date(regDeadline).toISOString()
+          fromDate: new Date(`${fromDate.includes('T') ? fromDate.split('T')[0] : fromDate}T00:00:00`).toISOString(),
+          toDate: new Date(`${fromDate.includes('T') ? fromDate.split('T')[0] : fromDate}T23:59:59`).toISOString(),
+          regDeadline: new Date(`${fromDate.includes('T') ? fromDate.split('T')[0] : fromDate}T23:59:59`).toISOString()
         },
         participation: {
           type: participationType,
@@ -601,6 +653,18 @@ export default function CentralEventCreatePage() {
 
       if (selectedTypeObj?.hasCategories) {
         payload.categoryId = categoryId;
+        const selectedSubcat = subcategoryOptions.find(
+          (s) => String(s._id || s.subId) === String(subcategoryId) || s.code === subcategoryId
+        );
+        if (hasSubcategories && subcategoryId) {
+          payload.subcategoryId = subcategoryId;
+          payload.subcategoryCode = selectedSubcat ? selectedSubcat.code : null;
+          payload.subcategoryName = selectedSubcat ? selectedSubcat.name : null;
+        } else {
+          payload.subcategoryId = null;
+          payload.subcategoryCode = null;
+          payload.subcategoryName = null;
+        }
       }
 
       if (selectedTypeObj?.hasLevels) {
@@ -752,7 +816,10 @@ export default function CentralEventCreatePage() {
                         labelId="category-label"
                         value={categoryId}
                         label={typeCode === 'VEDA' ? 'Event School' : 'Category'}
-                        onChange={(e) => setCategoryId(e.target.value)}
+                        onChange={(e) => {
+                          setCategoryId(e.target.value);
+                          setSubcategoryId('');
+                        }}
                         sx={{ borderRadius: '12px' }}
                       >
                         {categories.map((c) => (
@@ -760,6 +827,35 @@ export default function CentralEventCreatePage() {
                             {c.name}
                           </MenuItem>
                         ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                )}
+
+                {/* Subcategory Dropdown (shown only when category has subcategories) */}
+                {!isDepartmentalOrUniversity && hasSubcategories && (
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <FormControl fullWidth required>
+                      <InputLabel id="subcategory-label">Subcategory</InputLabel>
+                      <Select
+                        labelId="subcategory-label"
+                        value={subcategoryId}
+                        label="Subcategory"
+                        onChange={(e) => setSubcategoryId(e.target.value)}
+                        sx={{ borderRadius: '12px' }}
+                        disabled={loadingSubcategories}
+                      >
+                        {loadingSubcategories ? (
+                          <MenuItem disabled>Loading subcategories...</MenuItem>
+                        ) : subcategoryOptions.length === 0 ? (
+                          <MenuItem disabled>No subcategories available</MenuItem>
+                        ) : (
+                          subcategoryOptions.map((sub) => (
+                            <MenuItem key={sub._id || sub.subId || sub.code} value={sub._id || sub.subId || sub.code}>
+                              {sub.name} {sub.code ? `(${sub.code})` : ''}
+                            </MenuItem>
+                          ))
+                        )}
                       </Select>
                     </FormControl>
                   </Grid>
@@ -997,28 +1093,49 @@ export default function CentralEventCreatePage() {
                       </Grid>
                     )}
 
-                    {/* Online Link for ONLINE mode */}
+                    {/* Online Link & Rounds for ONLINE mode */}
                     {mode === 'ONLINE' && (
-                      <Grid size={{ xs: 12, sm: 6 }}>
-                        <TextField
-                          fullWidth
-                          required
-                          label="Online Meeting Link"
-                          placeholder="e.g. Zoom / Google Meet / Teams link"
-                          value={onlineLink}
-                          onChange={(e) => setOnlineLink(e.target.value)}
-                          slotProps={{
-                            input: {
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <LocationIcon color="action" />
-                                </InputAdornment>
-                              ),
-                              sx: { borderRadius: '12px' }
-                            }
-                          }}
-                        />
-                      </Grid>
+                      <>
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <TextField
+                            fullWidth
+                            required
+                            label="Online Meeting Link"
+                            placeholder="e.g. Zoom / Google Meet / Teams link"
+                            value={onlineLink}
+                            onChange={(e) => setOnlineLink(e.target.value)}
+                            slotProps={{
+                              input: {
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <LocationIcon color="action" />
+                                  </InputAdornment>
+                                ),
+                                sx: { borderRadius: '12px' }
+                              }
+                            }}
+                          />
+                        </Grid>
+
+                        <Grid size={{ xs: 12, sm: 6 }}>
+                          <TextField
+                            fullWidth
+                            required
+                            type="number"
+                            label="Total Rounds"
+                            value={rounds}
+                            onChange={(e) => setRounds(e.target.value)}
+                            placeholder="1"
+                            helperText="Number of rounds (Default: 1)"
+                            slotProps={{
+                              input: {
+                                min: 1,
+                                sx: { borderRadius: '12px' }
+                              }
+                            }}
+                          />
+                        </Grid>
+                      </>
                     )}
 
                     {/* Indoor: Building and Floor */}
@@ -1064,7 +1181,7 @@ export default function CentralEventCreatePage() {
                       </>
                     )}
 
-                    {/* Outdoor: Ground */}
+                    {/* Outdoor: Ground and Rounds */}
                     {(mode === 'OFFLINE' || mode === 'HYBRID') && venueType === 'Outdoor' && (
                       <>
                         <Grid size={{ xs: 12, sm: 6 }}>
@@ -1089,18 +1206,26 @@ export default function CentralEventCreatePage() {
                         <Grid size={{ xs: 12, sm: 6 }}>
                           <TextField
                             fullWidth
-                            label="Ground Location / Landmark (Optional)"
-                            placeholder="e.g. Near West Pavilion / Athletic Track"
-                            value={venueName}
-                            onChange={(e) => setVenueName(e.target.value)}
-                            slotProps={{ input: { sx: { borderRadius: '12px' } } }}
+                            required
+                            type="number"
+                            label="Total Rounds"
+                            value={rounds}
+                            onChange={(e) => setRounds(e.target.value)}
+                            placeholder="1"
+                            helperText="Number of rounds (Default: 1)"
+                            slotProps={{
+                              input: {
+                                min: 1,
+                                sx: { borderRadius: '12px' }
+                              }
+                            }}
                           />
                         </Grid>
                       </>
                     )}
 
-                    {/* Room No (for Indoor) and Additional Details */}
-                    {(mode === 'OFFLINE' || mode === 'HYBRID') && venueType && (
+                    {/* Room No (for Indoor) and Rounds */}
+                    {(mode === 'OFFLINE' || mode === 'HYBRID') && venueType === 'Indoor' && (
                       <>
                         <Grid size={{ xs: 12, sm: 6 }}>
                           <TextField
@@ -1116,17 +1241,16 @@ export default function CentralEventCreatePage() {
                         <Grid size={{ xs: 12, sm: 6 }}>
                           <TextField
                             fullWidth
-                            label="Additional Venue Details (Optional)"
-                            placeholder="e.g. Seminar Hall / Lab 4 / Auditorium"
-                            value={venueName}
-                            onChange={(e) => setVenueName(e.target.value)}
+                            required
+                            type="number"
+                            label="Total Rounds"
+                            value={rounds}
+                            onChange={(e) => setRounds(e.target.value)}
+                            placeholder="1"
+                            helperText="Number of rounds (Default: 1)"
                             slotProps={{
                               input: {
-                                startAdornment: (
-                                  <InputAdornment position="start">
-                                    <LocationIcon color="action" />
-                                  </InputAdornment>
-                                ),
+                                min: 1,
                                 sx: { borderRadius: '12px' }
                               }
                             }}
@@ -1405,66 +1529,26 @@ export default function CentralEventCreatePage() {
                 </CardContent>
               </Card>
 
-              {/* Section 4: Schedule Timeline */}
+              {/* Section 4: Event Date */}
               <Card elevation={0} sx={{ borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)' }}>
                 <CardContent sx={{ p: 3.5 }}>
                   <Box display="flex" alignItems="center" gap={1.5} mb={3}>
                     <ScheduleIcon color="primary" />
                     <Typography variant="h6" fontWeight={700}>
-                      4. Schedule & Deadlines
+                      4. Event Date
                     </Typography>
                   </Box>
 
                   <Grid container spacing={3}>
-                    <Grid size={{ xs: 12, md: 4 }}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         required
-                        type="datetime-local"
-                        label="Start Date & Time"
+                        type="date"
+                        label="Event Start Date"
                         value={fromDate}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setFromDate(val);
-                          if (!regDeadline) setRegDeadline(val);
-                          if (!toDate) setToDate(val);
-                        }}
-                        helperText="Event start date & time"
-                        slotProps={{
-                          inputLabel: { shrink: true },
-                          input: { sx: { borderRadius: '12px' } }
-                        }}
-                      />
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 4 }}>
-                      <TextField
-                        fullWidth
-                        required
-                        type="datetime-local"
-                        label="End Date & Time"
-                        value={toDate}
-                        onChange={(e) => setToDate(e.target.value)}
-                        helperText="Event conclusion date & time"
-                        slotProps={{
-                          inputLabel: { shrink: true },
-                          input: {
-                            min: fromDate || undefined,
-                            sx: { borderRadius: '12px' }
-                          }
-                        }}
-                      />
-                    </Grid>
-
-                    <Grid size={{ xs: 12, md: 4 }}>
-                      <TextField
-                        fullWidth
-                        required
-                        type="datetime-local"
-                        label="Registration Deadline"
-                        value={regDeadline}
-                        onChange={(e) => setRegDeadline(e.target.value)}
-                        helperText="Last date & time for registrations"
+                        onChange={(e) => setFromDate(e.target.value)}
+                        helperText="Select the event date"
                         slotProps={{
                           inputLabel: { shrink: true },
                           input: { sx: { borderRadius: '12px' } }
@@ -1475,18 +1559,18 @@ export default function CentralEventCreatePage() {
                 </CardContent>
               </Card>
 
-              {/* Section 5: Participation, Fee & Capacity */}
+              {/* Section 5: Fees & Participation Mode */}
               <Card elevation={0} sx={{ borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)' }}>
                 <CardContent sx={{ p: 3.5 }}>
                   <Box display="flex" alignItems="center" gap={1.5} mb={3}>
                     <PaymentsIcon color="primary" />
                     <Typography variant="h6" fontWeight={700}>
-                      5. Capacity, Fees & Participation Mode
+                      5. Fees & Participation Mode
                     </Typography>
                   </Box>
 
                   <Grid container spacing={3}>
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         fullWidth
                         required
@@ -1504,20 +1588,7 @@ export default function CentralEventCreatePage() {
                       />
                     </Grid>
 
-                    <Grid size={{ xs: 12, sm: 4 }}>
-                      <TextField
-                        fullWidth
-                        required
-                        type="number"
-                        label="Seat Capacity"
-                        value={capacity}
-                        onChange={(e) => setCapacity(e.target.value)}
-                        helperText="Max registrations allowed"
-                        slotProps={{ input: { sx: { borderRadius: '12px' } } }}
-                      />
-                    </Grid>
-
-                    <Grid size={{ xs: 12, sm: 4 }}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                       <FormControl fullWidth required>
                         <InputLabel id="participation-label">Participation Type</InputLabel>
                         <Select

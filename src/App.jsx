@@ -143,6 +143,12 @@ import CentralEventCreatePage from "./pages/centralEvents/CentralEventCreatePage
 import CentralActivitiesPage from "./pages/centralEvents/CentralActivitiesPage";
 import PaymentCheckoutPage from "./pages/centralEvents/PaymentCheckoutPage";
 
+// Dynamic Forms Module
+import DynamicFormBuilderPage from "./pages/dynamicForms/DynamicFormBuilderPage";
+import DynamicFormsListPage from "./pages/dynamicForms/DynamicFormsListPage";
+import FormSubmissionsPage from "./pages/dynamicForms/FormSubmissionsPage";
+import PublicFormPage from "./pages/dynamicForms/PublicFormPage";
+
 
 
 // Infrastructure
@@ -236,7 +242,8 @@ function App() {
       {isLoading && <Loader fullScreen />}
       <Routes>
         <Route path="/" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
-
+        {/* Public Dynamic Form Rendering Route */}
+        <Route path="/forms/:slug" element={<PublicFormPage />} />
 
         <Route path="/dashboard" element={<ProtectedRoute element={<Dashboard />} />} />
         <Route path="/university-data" element={<ProtectedRoute element={<UniversityDataPage />} />} />
@@ -418,6 +425,18 @@ function App() {
         <Route path="/central-events/categories" element={<ProtectedRoute element={<CentralEventCategoriesPage />} />} />
         <Route path="/central-events/subcategories" element={<ProtectedRoute element={<CentralEventSubcategoriesPage />} />} />
         <Route path="/central-events/activities" element={<ProtectedRoute element={<CentralActivitiesPage />} />} />
+        {/* Dynamic Forms Routes under Activities */}
+        <Route path="/central-events/activities/generate-form" element={<ProtectedRoute element={<DynamicFormBuilderPage />} />} />
+        <Route path="/central-events/activities/generate-form/:id" element={<ProtectedRoute element={<DynamicFormBuilderPage />} />} />
+        <Route path="/central-events/activities/forms" element={<ProtectedRoute element={<DynamicFormsListPage />} />} />
+        <Route path="/central-events/activities/forms/:id/submissions" element={<ProtectedRoute element={<FormSubmissionsPage />} />} />
+
+        {/* Admin Forms Aliases */}
+        <Route path="/admin/forms" element={<ProtectedRoute element={<DynamicFormsListPage />} />} />
+        <Route path="/admin/forms/create" element={<ProtectedRoute element={<DynamicFormBuilderPage />} />} />
+        <Route path="/admin/forms/:id/edit" element={<ProtectedRoute element={<DynamicFormBuilderPage />} />} />
+        <Route path="/admin/forms/:id/submissions" element={<ProtectedRoute element={<FormSubmissionsPage />} />} />
+
         <Route path="/central-events" element={<ProtectedRoute element={<CentralEventsListPage />} />} />
         <Route path="/central-events/create" element={<ProtectedRoute element={<CentralEventCreatePage />} />} />
         <Route path="/central-events/edit/:slug" element={<ProtectedRoute element={<CentralEventCreatePage />} />} />
