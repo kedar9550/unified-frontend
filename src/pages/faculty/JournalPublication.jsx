@@ -1,7 +1,8 @@
 import Loader from "../../components/common/Loader";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useLoading } from "../../context/LoadingContext";
+import AcademicYearFilter, { matchesAcademicYear } from "../../components/common/AcademicYearFilter";
 
 import {
   Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody,
@@ -106,10 +107,18 @@ export default function JournalPublication() {
   const academicYearSelectRef = useRef(null);
   const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [publicationsList, setPublicationsList] = useState([]);
+  const [filterAcademicYear, setFilterAcademicYear] = useState("ALL");
   const [selectedPubDetails, setSelectedPubDetails] = useState(null);
   const [appraisalConfigActive, setAppraisalConfigActive] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const filteredPublications = useMemo(() => {
+    if (!filterAcademicYear || filterAcademicYear === "ALL") {
+      return publicationsList;
+    }
+    return publicationsList.filter(pub => matchesAcademicYear(pub, filterAcademicYear, academicYears));
+  }, [publicationsList, filterAcademicYear, academicYears]);
 
   const [leftCardHeight, setLeftCardHeight] = useState(null);
   const observerRef = useRef(null);
@@ -1408,6 +1417,15 @@ export default function JournalPublication() {
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Journal Publications</Typography>
 
         <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
+          <AcademicYearFilter
+            academicYears={academicYears}
+            selectedYear={filterAcademicYear}
+            onChange={(newYear) => {
+              setFilterAcademicYear(newYear);
+              setPage(0);
+            }}
+            publications={publicationsList}
+          />
           <Button
             variant="contained"
             onClick={handleOpenApplyNew}
@@ -1438,6 +1456,40 @@ export default function JournalPublication() {
             You haven't submitted any journal details yet. Click the "Apply New" button to submit your first entry.
           </Typography>
         </Box>
+      ) : filteredPublications.length === 0 ? (
+        <Box sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          py: 7,
+          px: 3,
+          background: "var(--bg-panel)",
+          borderRadius: "16px",
+          border: "1px dashed var(--border-color)",
+          boxShadow: "var(--shadow-premium)",
+          textAlign: "center"
+        }}>
+          <Typography variant="h6" sx={{ color: "var(--text-secondary)", fontWeight: 600, mb: 1 }}>
+            No Journals Found
+          </Typography>
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 2.5, maxWidth: "420px" }}>
+            No journal publications found for the selected academic year (
+            {academicYears.find(y => String(y._id) === String(filterAcademicYear) || y.year === filterAcademicYear)?.year || filterAcademicYear}
+            ).
+          </Typography>
+          <Button
+            variant="outlined"
+            onClick={() => {
+              setFilterAcademicYear("ALL");
+              setPage(0);
+            }}
+            size="small"
+            sx={{ borderRadius: "8px", textTransform: "none", fontWeight: 600 }}
+          >
+            View All Academic Years
+          </Button>
+        </Box>
       ) : (
         <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflowX: "auto" }}>
           <Table sx={{ minWidth: 1100 }}>
@@ -1449,12 +1501,13 @@ export default function JournalPublication() {
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Authors</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status / Remarks</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2, textAlign: "center" }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {publicationsList.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((pub, i) => (
+              {filteredPublications.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((pub, i) => (
                 <TableRow key={pub._id || i} sx={{ "&:hover": { background: "var(--bg-accent-1)" }, transition: "background 0.15s" }}>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2, maxWidth: 220 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, flexWrap: "wrap" }}>
@@ -1493,6 +1546,9 @@ export default function JournalPublication() {
                     <Typography variant="body2" sx={{ fontWeight: 600, color: pub.visibilityRole === "Applicant" ? "var(--color-primary)" : "text.secondary" }}>
                       {pub.visibilityRole || "Applicant"}
                     </Typography>
+                  </TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2, fontWeight: 600, fontSize: "0.85rem" }}>
+                    {pub.academicYear?.year || (typeof pub.academicYear === "string" && pub.academicYear) || "—"}
                   </TableCell>
                   <TableCell sx={{ py: 2, maxWidth: 220 }}>
                     <Typography variant="body2" sx={{
@@ -1552,7 +1608,7 @@ export default function JournalPublication() {
           </Table>
           <TablePagination
             component="div"
-            count={publicationsList.length}
+            count={filteredPublications.length}
             page={page}
             onPageChange={(_, newPage) => setPage(newPage)}
             rowsPerPage={rowsPerPage}
@@ -1569,6 +1625,7 @@ export default function JournalPublication() {
           />
         </TableContainer>
       )}
+
     </Box>
   );
 

@@ -1,6 +1,7 @@
 import Loader from "../../components/common/Loader";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../../context/AuthContext";
+import AcademicYearFilter, { matchesAcademicYear } from "../../components/common/AcademicYearFilter";
 
 import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Autocomplete, Tooltip, TablePagination, FormControl } from "@mui/material";
 import { toast } from "sonner";
@@ -21,9 +22,17 @@ export default function FundedProject() {
   const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [selectedYear, setSelectedYear] = useState("");
   const [publicationsList, setPublicationsList] = useState([]);
+  const [filterAcademicYear, setFilterAcademicYear] = useState("ALL");
   const [selectedPubDetails, setSelectedPubDetails] = useState(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const filteredPublications = useMemo(() => {
+    if (!filterAcademicYear || filterAcademicYear === "ALL") {
+      return publicationsList;
+    }
+    return publicationsList.filter(pub => matchesAcademicYear(pub, filterAcademicYear, academicYears));
+  }, [publicationsList, filterAcademicYear, academicYears]);
 
   const [colleagueSearchQuery, setColleagueSearchQuery] = useState("");
   const [colleagueResults, setColleagueResults] = useState([]);
@@ -431,33 +440,17 @@ export default function FundedProject() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Funded Projects</Typography>
-        {/* <Button
-          variant="contained"
-          onClick={() => {
-            const activeYear = academicYears.length > 0;
-            if (activeYear) {
-              setSelectedYear("");
-              setViewMode("select-year");
-            } else {
-              setNoActiveYearAlertOpen(true);
-            }
-          }}
-          sx={{
-            background: "var(--gradient-primary)",
-
-            px: 3,
-            fontWeight: 700,
-            textTransform: "none",
-            "&:hover": {
-              opacity: 0.9,
-              transform: "translateY(-1px)",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
-            },
-            transition: "all 0.2s ease"
-          }}
-        >
-          Apply New
-        </Button> */}
+        <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
+          <AcademicYearFilter
+            academicYears={academicYears}
+            selectedYear={filterAcademicYear}
+            onChange={(newYear) => {
+              setFilterAcademicYear(newYear);
+              setPage(0);
+            }}
+            publications={publicationsList}
+          />
+        </Box>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -477,8 +470,42 @@ export default function FundedProject() {
             No Previous Funded Projects
           </Typography>
           <Typography variant="body2" sx={{ color: "text.secondary", mb: 3, maxWidth: "400px" }}>
-            You haven't submitted any funded project details yet. Click the "Apply New" button to submit your first entry.
+            You haven't submitted any funded project details yet.
           </Typography>
+        </Box>
+      ) : filteredPublications.length === 0 ? (
+        <Box sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          py: 7,
+          px: 3,
+          background: "var(--bg-panel)",
+          borderRadius: "16px",
+          border: "1px dashed var(--border-color)",
+          boxShadow: "var(--shadow-premium)",
+          textAlign: "center"
+        }}>
+          <Typography variant="h6" sx={{ color: "var(--text-secondary)", fontWeight: 600, mb: 1 }}>
+            No Funded Projects Found
+          </Typography>
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 2.5, maxWidth: "420px" }}>
+            No funded projects found for the selected academic year (
+            {academicYears.find(y => String(y._id) === String(filterAcademicYear) || y.year === filterAcademicYear)?.year || filterAcademicYear}
+            ).
+          </Typography>
+          <Button
+            variant="outlined"
+            onClick={() => {
+              setFilterAcademicYear("ALL");
+              setPage(0);
+            }}
+            size="small"
+            sx={{ borderRadius: "8px", textTransform: "none", fontWeight: 600 }}
+          >
+            View All Academic Years
+          </Button>
         </Box>
       ) : (
         <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflowX: "auto" }}>
@@ -490,13 +517,14 @@ export default function FundedProject() {
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Sanction Date</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Investigators</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status / Remarks</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {publicationsList.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((pub, i) => (
+              {filteredPublications.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((pub, i) => (
                 <TableRow key={pub._id || i} sx={{ "&:hover": { background: "rgba(var(--color-primary-rgb, 99,102,241), 0.04)", transition: "background 0.2s" } }}>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.title || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.fundingAgency || "N/A"}</TableCell>
@@ -512,6 +540,9 @@ export default function FundedProject() {
                     <Typography variant="body2" sx={{ fontWeight: 600, color: pub.visibilityRole === "Applicant" ? "var(--color-primary)" : "text.secondary" }}>
                       {pub.visibilityRole || "Applicant"}
                     </Typography>
+                  </TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2, fontWeight: 600, fontSize: "0.85rem" }}>
+                    {pub.academicYear?.year || (typeof pub.academicYear === "string" && pub.academicYear) || "—"}
                   </TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
                     {pub.coInvestigators && pub.coInvestigators.length > 0
@@ -602,7 +633,7 @@ export default function FundedProject() {
           </Table>
           <TablePagination
             component="div"
-            count={publicationsList.length}
+            count={filteredPublications.length}
             page={page}
             onPageChange={(e, newPage) => setPage(newPage)}
             rowsPerPage={rowsPerPage}
