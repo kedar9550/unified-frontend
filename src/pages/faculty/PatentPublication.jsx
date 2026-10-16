@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import AcademicYearFilter, { matchesAcademicYear } from "../../components/common/AcademicYearFilter";
 import { Box, TextField, MenuItem, Select, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Stack, Grid, Card, Chip, Divider, Tooltip, TablePagination, FormControl, Radio, RadioGroup, FormControlLabel } from "@mui/material";
 import { toast } from "sonner";
 import { AddCircle, Delete, Close, Description, Download, AttachFile, Groups, WorkspacePremium, Visibility, Edit, CheckCircle, Cancel, AccessTime, Settings } from "@mui/icons-material";
@@ -39,10 +40,18 @@ export default function PatentPublication() {
   const [selectedYear, setSelectedYear] = useState("");
   const [noActiveYearAlertOpen, setNoActiveYearAlertOpen] = useState(false);
   const [publicationsList, setPublicationsList] = useState([]);
+  const [filterAcademicYear, setFilterAcademicYear] = useState("ALL");
   const [selectedPubDetails, setSelectedPubDetails] = useState(null);
   const [appraisalConfigActive, setAppraisalConfigActive] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const filteredPublications = useMemo(() => {
+    if (!filterAcademicYear || filterAcademicYear === "ALL") {
+      return publicationsList;
+    }
+    return publicationsList.filter(pub => matchesAcademicYear(pub, filterAcademicYear, academicYears));
+  }, [publicationsList, filterAcademicYear, academicYears]);
 
   const [form, setForm] = useState({
     facultyRole: "", applicantAffiliation: "",
@@ -537,33 +546,43 @@ export default function PatentPublication() {
         mb: 3
       }}>
         <Typography variant="h6" sx={{ color: "var(--text-primary)", fontWeight: 800, textAlign: { xs: "center", sm: "left" } }}>My Patent Publications</Typography>
-        <Button
-          variant="contained"
-          onClick={() => {
-            const activeYear = academicYears.length > 0;
-            if (activeYear) {
-              setSelectedYear("");
-              setViewMode("select-year");
-            } else {
-              setNoActiveYearAlertOpen(true);
-            }
-          }}
-          sx={{
-            background: "var(--gradient-primary)",
-
-            px: 3,
-            fontWeight: 700,
-            textTransform: "none",
-            "&:hover": {
-              opacity: 0.9,
-              transform: "translateY(-1px)",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
-            },
-            transition: "all 0.2s ease"
-          }}
-        >
-          Apply New
-        </Button>
+        <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "center" }}>
+          <AcademicYearFilter
+            academicYears={academicYears}
+            selectedYear={filterAcademicYear}
+            onChange={(newYear) => {
+              setFilterAcademicYear(newYear);
+              setPage(0);
+            }}
+            publications={publicationsList}
+          />
+          <Button
+            variant="contained"
+            onClick={() => {
+              const activeYear = academicYears.length > 0;
+              if (activeYear) {
+                setSelectedYear("");
+                setViewMode("select-year");
+              } else {
+                setNoActiveYearAlertOpen(true);
+              }
+            }}
+            sx={{
+              background: "var(--gradient-primary)",
+              px: 3,
+              fontWeight: 700,
+              textTransform: "none",
+              "&:hover": {
+                opacity: 0.9,
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+              },
+              transition: "all 0.2s ease"
+            }}
+          >
+            Apply New
+          </Button>
+        </Box>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
         <Box sx={{
@@ -586,6 +605,40 @@ export default function PatentPublication() {
             You haven't submitted any patent details yet. Click the "Apply New" button to submit your first entry.
           </Typography>
         </Box>
+      ) : filteredPublications.length === 0 ? (
+        <Box sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          py: 7,
+          px: 3,
+          background: "var(--bg-panel)",
+          borderRadius: "16px",
+          border: "1px dashed var(--border-color)",
+          boxShadow: "var(--shadow-premium)",
+          textAlign: "center"
+        }}>
+          <Typography variant="h6" sx={{ color: "var(--text-secondary)", fontWeight: 600, mb: 1 }}>
+            No Patents Found
+          </Typography>
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 2.5, maxWidth: "420px" }}>
+            No patent publications found for the selected academic year (
+            {academicYears.find(y => String(y._id) === String(filterAcademicYear) || y.year === filterAcademicYear)?.year || filterAcademicYear}
+            ).
+          </Typography>
+          <Button
+            variant="outlined"
+            onClick={() => {
+              setFilterAcademicYear("ALL");
+              setPage(0);
+            }}
+            size="small"
+            sx={{ borderRadius: "8px", textTransform: "none", fontWeight: 600 }}
+          >
+            View All Academic Years
+          </Button>
+        </Box>
       ) : (
         <TableContainer component={Paper} sx={{ borderRadius: "16px", background: "var(--bg-panel)", border: "1px solid var(--border-color)", boxShadow: "var(--shadow-premium)", overflowX: "auto" }}>
           <Table sx={{ minWidth: 1100 }}>
@@ -593,16 +646,16 @@ export default function PatentPublication() {
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Title</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Area</TableCell>
-
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Applicant</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Role</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Academic Year</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Co-Inventors</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Status / Remarks</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: "#fff", py: 2 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {publicationsList.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((pub, i) => (
+              {filteredPublications.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((pub, i) => (
                 <TableRow key={pub._id || i} sx={{ "&:hover": { background: "rgba(var(--color-primary-rgb, 99,102,241), 0.04)", transition: "background 0.2s" } }}>
                   <TableCell sx={{ color: "var(--text-primary)", fontWeight: 500, py: 2 }}>{pub.title || "N/A"}</TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>{pub.area || "N/A"}</TableCell>
@@ -616,6 +669,9 @@ export default function PatentPublication() {
                     <Typography variant="body2" sx={{ fontWeight: 600, color: pub.visibilityRole === "Applicant" ? "var(--color-primary)" : "text.secondary" }}>
                       {pub.visibilityRole || "Applicant"}
                     </Typography>
+                  </TableCell>
+                  <TableCell sx={{ color: "var(--text-secondary)", py: 2, fontWeight: 600, fontSize: "0.85rem" }}>
+                    {pub.academicYear?.year || pub.published?.academicYear?.year || pub.granted?.academicYear?.year || (typeof pub.academicYear === "string" && pub.academicYear) || "—"}
                   </TableCell>
                   <TableCell sx={{ color: "var(--text-secondary)", py: 2 }}>
                     {pub.coInventors && pub.coInventors.length > 0
@@ -706,7 +762,7 @@ export default function PatentPublication() {
           </Table>
           <TablePagination
             component="div"
-            count={publicationsList.length}
+            count={filteredPublications.length}
             page={page}
             onPageChange={(e, newPage) => setPage(newPage)}
             rowsPerPage={rowsPerPage}
