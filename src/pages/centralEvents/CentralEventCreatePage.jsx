@@ -199,7 +199,7 @@ export default function CentralEventCreatePage() {
 
   // Selected Category & Subcategories logic
   const selectedCategory = React.useMemo(() => {
-    return categories.find((c) => c._id === categoryId);
+    return categories.find((c) => String(c._id) === String(categoryId));
   }, [categories, categoryId]);
 
   const availableSubcategories = React.useMemo(() => {
@@ -208,7 +208,6 @@ export default function CentralEventCreatePage() {
   }, [selectedCategory]);
 
   useEffect(() => {
-    setSubcategoryId('');
     setExtraSubcategories([]);
     if (!categoryId || !selectedCategory?.hasSubcategories) return;
 
@@ -231,6 +230,20 @@ export default function CentralEventCreatePage() {
     if (availableSubcategories.length > 0) return availableSubcategories;
     return extraSubcategories;
   }, [availableSubcategories, extraSubcategories]);
+
+  // If subcategoryId is set (e.g. loaded from edit mode by code or ID), ensure it resolves correctly to option value
+  useEffect(() => {
+    if (!subcategoryId || subcategoryOptions.length === 0) return;
+    const matched = subcategoryOptions.find(
+      (s) => String(s._id || s.subId) === String(subcategoryId) || s.code === String(subcategoryId).toUpperCase().trim()
+    );
+    if (matched) {
+      const canonicalId = String(matched._id || matched.subId || matched.code);
+      if (subcategoryId !== canonicalId) {
+        setSubcategoryId(canonicalId);
+      }
+    }
+  }, [subcategoryId, subcategoryOptions]);
 
   const hasSubcategories = Boolean(
     selectedCategory?.hasSubcategories || subcategoryOptions.length > 0
@@ -361,10 +374,14 @@ export default function CentralEventCreatePage() {
             }
           }
           if (ev.categoryId) {
-            setCategoryId(typeof ev.categoryId === 'object' ? ev.categoryId._id : ev.categoryId);
+            const catIdStr = String(typeof ev.categoryId === 'object' ? ev.categoryId._id : ev.categoryId);
+            setCategoryId(catIdStr);
           }
-          if (ev.subcategoryId) {
-            setSubcategoryId(typeof ev.subcategoryId === 'object' ? ev.subcategoryId._id : ev.subcategoryId);
+          const loadedSubId = typeof ev.subcategoryId === 'object' ? ev.subcategoryId?._id : ev.subcategoryId;
+          if (loadedSubId) {
+            setSubcategoryId(String(loadedSubId));
+          } else if (ev.subcategoryCode) {
+            setSubcategoryId(String(ev.subcategoryCode));
           }
           if (ev.level) setLevel(ev.level);
           if (ev.activityType) setActivityType(ev.activityType);
@@ -651,13 +668,14 @@ export default function CentralEventCreatePage() {
         payload.academicYear = targetAy;
       }
 
-      if (selectedTypeObj?.hasCategories) {
-        payload.categoryId = categoryId;
+      const isCategorized = selectedTypeObj ? selectedTypeObj.hasCategories : (!isDepartmentalOrUniversity && Boolean(categoryId));
+      if (isCategorized || categoryId) {
+        payload.categoryId = categoryId || null;
         const selectedSubcat = subcategoryOptions.find(
-          (s) => String(s._id || s.subId) === String(subcategoryId) || s.code === subcategoryId
+          (s) => String(s._id || s.subId) === String(subcategoryId) || s.code === String(subcategoryId).toUpperCase().trim()
         );
         if (hasSubcategories && subcategoryId) {
-          payload.subcategoryId = subcategoryId;
+          payload.subcategoryId = selectedSubcat?._id || selectedSubcat?.subId || subcategoryId;
           payload.subcategoryCode = selectedSubcat ? selectedSubcat.code : null;
           payload.subcategoryName = selectedSubcat ? selectedSubcat.name : null;
         } else {
@@ -839,22 +857,32 @@ export default function CentralEventCreatePage() {
                       <InputLabel id="subcategory-label">Subcategory</InputLabel>
                       <Select
                         labelId="subcategory-label"
-                        value={subcategoryId}
+                        value={subcategoryId || ''}
                         label="Subcategory"
                         onChange={(e) => setSubcategoryId(e.target.value)}
                         sx={{ borderRadius: '12px' }}
                         disabled={loadingSubcategories}
+                        renderValue={(selected) => {
+                          if (!selected) return '';
+                          const opt = subcategoryOptions.find(
+                            (s) => String(s._id || s.subId) === String(selected) || s.code === String(selected).toUpperCase().trim()
+                          );
+                          return opt ? `${opt.name}${opt.code ? ` (${opt.code})` : ''}` : selected;
+                        }}
                       >
                         {loadingSubcategories ? (
                           <MenuItem disabled>Loading subcategories...</MenuItem>
                         ) : subcategoryOptions.length === 0 ? (
                           <MenuItem disabled>No subcategories available</MenuItem>
                         ) : (
-                          subcategoryOptions.map((sub) => (
-                            <MenuItem key={sub._id || sub.subId || sub.code} value={sub._id || sub.subId || sub.code}>
-                              {sub.name} {sub.code ? `(${sub.code})` : ''}
-                            </MenuItem>
-                          ))
+                          subcategoryOptions.map((sub) => {
+                            const optVal = String(sub._id || sub.subId || sub.code);
+                            return (
+                              <MenuItem key={optVal} value={optVal}>
+                                {sub.name} {sub.code ? `(${sub.code})` : ''}
+                              </MenuItem>
+                            );
+                          })
                         )}
                       </Select>
                     </FormControl>
