@@ -27,6 +27,7 @@ import {
     Search as SearchIcon,
     CalendarToday as CalendarTodayIcon
 } from "@mui/icons-material";
+import { matchesAcademicYear } from "../../../components/common/AcademicYearFilter";
 
 const ResearchApprovalList = ({ role }) => {
     const navigate = useNavigate();
@@ -40,6 +41,8 @@ const ResearchApprovalList = ({ role }) => {
     // Determine context
 
     // Filters State
+    const [academicYears, setAcademicYears] = useState([]);
+    const [academicYearFilter, setAcademicYearFilter] = useState(() => sessionStorage.getItem("researchAcademicYearFilter") || "");
     const [typeFilter, setTypeFilter] = useState(() => sessionStorage.getItem("researchTypeFilter") || "All");
     const [statusFilter, setStatusFilter] = useState("Pending");
     const [durationFilter, setDurationFilter] = useState(() => sessionStorage.getItem("researchDurationFilter") || "All");
@@ -48,12 +51,34 @@ const ResearchApprovalList = ({ role }) => {
     const [searchQuery, setSearchQuery] = useState(() => sessionStorage.getItem("researchSearchQuery") || "");
 
     useEffect(() => {
+        API.get("/api/academic-years")
+            .then(res => {
+                const years = res.data?.data || res.data || [];
+                const sorted = [...years].sort((a, b) => {
+                    const aStart = parseInt(a.year?.split("-")[0] || "0", 10);
+                    const bStart = parseInt(b.year?.split("-")[0] || "0", 10);
+                    return bStart - aStart;
+                });
+                setAcademicYears(sorted);
+                const activeYear = sorted.find(y => y.active) || sorted[0];
+                setAcademicYearFilter(prev => {
+                    if (prev) return prev;
+                    return activeYear?._id || activeYear?.year || "ALL";
+                });
+            })
+            .catch(err => console.error("Failed to fetch academic years", err));
+    }, []);
+
+    useEffect(() => {
         sessionStorage.setItem("researchTypeFilter", typeFilter);
         sessionStorage.setItem("researchDurationFilter", durationFilter);
         sessionStorage.setItem("researchFromDate", fromDate);
         sessionStorage.setItem("researchToDate", toDate);
         sessionStorage.setItem("researchSearchQuery", searchQuery);
-    }, [typeFilter, durationFilter, fromDate, toDate, searchQuery]);
+        if (academicYearFilter) {
+            sessionStorage.setItem("researchAcademicYearFilter", academicYearFilter);
+        }
+    }, [typeFilter, durationFilter, fromDate, toDate, searchQuery, academicYearFilter]);
 
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -62,6 +87,7 @@ const ResearchApprovalList = ({ role }) => {
         setLoading(true);
         try {
             const params = {};
+            if (academicYearFilter) params.academicYear = academicYearFilter;
             if (typeFilter !== "All") params.type = typeFilter;
 
             // Send status filter (including "All")
@@ -78,9 +104,13 @@ const ResearchApprovalList = ({ role }) => {
             if (res.data?.success) {
                 console.log("Research Approval Data:", res.data.data);
                 setData(res.data.data);
+                if (!academicYearFilter && res.data.activeAcademicYear) {
+                    setAcademicYearFilter(res.data.activeAcademicYear._id || res.data.activeAcademicYear.year);
+                }
             }
         } catch (error) {
             console.error("Failed to fetch research requests", error);
+            setData([]);
         } finally {
             setLoading(false);
         }
@@ -88,12 +118,19 @@ const ResearchApprovalList = ({ role }) => {
 
     useEffect(() => {
         fetchRequests();
-    }, [typeFilter, statusFilter, durationFilter, fromDate, toDate, role]);
+    }, [academicYearFilter, typeFilter, statusFilter, durationFilter, fromDate, toDate, role]);
 
     const handleSearch = (e) => {
         e.preventDefault();
         fetchRequests();
     };
+
+    const filteredData = React.useMemo(() => {
+        if (!academicYearFilter || academicYearFilter === "ALL") {
+            return data;
+        }
+        return data.filter(item => matchesAcademicYear(item, academicYearFilter, academicYears));
+    }, [data, academicYearFilter, academicYears]);
 
     const columns = [
         "#",
@@ -101,6 +138,7 @@ const ResearchApprovalList = ({ role }) => {
         "Emp ID",
         "Title of Work",
         "Type",
+        "Academic Year",
         "Submitted Date",
         "Status",
         "Actions"
@@ -113,11 +151,12 @@ const ResearchApprovalList = ({ role }) => {
         return { bg: "var(--bg-glass)", color: "var(--text-secondary)", border: "var(--border-color)" };
     };
 
-    const rows = data.map((item, index) => {
+    const rows = filteredData.map((item, index) => {
         const statusStyle = getStatusColor(item.status);
         const submitDate = new Date(item.submittedDate || item.createdAt).toLocaleDateString("en-GB", {
             day: "2-digit", month: "short", year: "numeric"
         });
+        const ayYear = item.academicYear?.year || (typeof item.academicYear === "string" ? item.academicYear : "—");
 
         const detailBase = isHOD ? "/hod/research-request" :
             isDean ? "/research-dean/request" :
@@ -150,6 +189,7 @@ const ResearchApprovalList = ({ role }) => {
                 )
             },
             item.type,
+            ayYear,
             submitDate,
             {
                 value: item.status === "Pending" ? "Pending at HOD / Dean" : item.status,
@@ -199,9 +239,82 @@ const ResearchApprovalList = ({ role }) => {
                     container 
                     spacing={2} 
                     sx={{ alignItems: "center" }}
-                    columns={{ xs: 12, md: durationFilter === 'Custom' ? 10 : 12 }}
+                    columns={{ xs: 12, md: 12 }}
                 >
-                    <Grid size={{ xs: 12, sm: 6, md: durationFilter === 'Custom' ? 2 : 4 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: durationFilter === 'Custom' ? 2 : 3 }}>
+                        <FormControl fullWidth size="small">
+                            <InputLabel sx={{ color: "var(--text-secondary)" }}>Academic Year</InputLabel>
+                            <Select
+                                value={academicYearFilter || "ALL"}
+                                label="Academic Year"
+                                onChange={(e) => setAcademicYearFilter(e.target.value)}
+                                sx={{ 
+                                    borderRadius: "12px", 
+                                    background: "var(--bg-glass)",
+                                    color: "var(--text-primary)",
+                                    "& .MuiSelect-icon": { fill: "url(#themeGradient)" }
+                                }}
+                                MenuProps={{ disableAriaHidden: true }}
+                                renderValue={(selected) => {
+                                    if (!selected || selected === "ALL") {
+                                        return "All Academic Years";
+                                    }
+                                    const match = academicYears.find(y => String(y._id) === String(selected) || y.year === selected);
+                                    const yearLabel = match ? match.year : selected;
+                                    const isCurr = match?.active;
+                                    return (
+                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
+                                            <span>{yearLabel}</span>
+                                            {isCurr && (
+                                                <Chip
+                                                    label="Current"
+                                                    size="small"
+                                                    sx={{
+                                                        height: 18,
+                                                        fontSize: "0.62rem",
+                                                        fontWeight: 800,
+                                                        bgcolor: "rgba(16, 185, 129, 0.12)",
+                                                        color: "#10b981",
+                                                        border: "1px solid rgba(16, 185, 129, 0.3)"
+                                                    }}
+                                                />
+                                            )}
+                                        </Box>
+                                    );
+                                }}
+                            >
+                                <MenuItem value="ALL" sx={{ fontWeight: 700 }}>
+                                    All Academic Years
+                                </MenuItem>
+                                {academicYears.map((ay) => (
+                                    <MenuItem
+                                        key={ay._id || ay.year}
+                                        value={ay._id || ay.year}
+                                        sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                                    >
+                                        <span style={{ fontWeight: 600 }}>{ay.year}</span>
+                                        {ay.active && (
+                                            <Chip
+                                                label="Current"
+                                                size="small"
+                                                sx={{
+                                                    ml: 1,
+                                                    height: 18,
+                                                    fontSize: "0.62rem",
+                                                    fontWeight: 800,
+                                                    bgcolor: "rgba(16, 185, 129, 0.12)",
+                                                    color: "#10b981",
+                                                    border: "1px solid rgba(16, 185, 129, 0.3)"
+                                                }}
+                                            />
+                                        )}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, sm: 6, md: durationFilter === 'Custom' ? 2 : 3 }}>
                         <FormControl fullWidth size="small">
                             <InputLabel sx={{ color: "var(--text-secondary)" }}>Research Type</InputLabel>
                             <Select
@@ -230,7 +343,7 @@ const ResearchApprovalList = ({ role }) => {
                         </FormControl>
                     </Grid>
 
-                    <Grid size={{ xs: 12, sm: 6, md: durationFilter === 'Custom' ? 2 : 4 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: durationFilter === 'Custom' ? 2 : 3 }}>
                         <FormControl fullWidth size="small">
                             <InputLabel sx={{ color: "var(--text-secondary)" }}>Status</InputLabel>
                             <Select
@@ -253,7 +366,7 @@ const ResearchApprovalList = ({ role }) => {
                         </FormControl>
                     </Grid>
 
-                    <Grid size={{ xs: 12, sm: 6, md: durationFilter === 'Custom' ? 2 : 4 }}>
+                    <Grid size={{ xs: 12, sm: 6, md: durationFilter === 'Custom' ? 2 : 3 }}>
                         <FormControl fullWidth size="small">
                             <InputLabel sx={{ color: "var(--text-secondary)" }}>Date Range</InputLabel>
                             <Select
