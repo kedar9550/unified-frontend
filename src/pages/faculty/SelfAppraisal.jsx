@@ -925,7 +925,7 @@ const SelfAppraisal = () => {
       numberOfSessions: (activity.numberOfSessions !== undefined ? String(activity.numberOfSessions) : (activity.sessionsConducted !== undefined ? String(activity.sessionsConducted) : "")),
       numberOfDaysParticipated: (activity.numberOfDaysParticipated !== undefined ? String(activity.numberOfDaysParticipated) : (activity.daysParticipated !== undefined ? String(activity.daysParticipated) : "")),
       courseName: activity.courseName || "",
-      organizingInstitutionCategory: activity.organizingInstitutionCategory || "",
+      organizingInstitutionCategory: activity.organizingInstitutionCategory === "Other / Host Institute" ? "Other" : (activity.organizingInstitutionCategory || ""),
       location: activity.location || "",
       labName: activity.labName || "",
       universityName: activity.universityName || "",
@@ -1070,7 +1070,7 @@ const SelfAppraisal = () => {
         } else if (resUtForm.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)") {
           fd.append("instituteName", resUtForm.instituteName);
           fd.append("nirfRank", resUtForm.nirfRank);
-        } else if (resUtForm.organizingInstitutionCategory === "Other / Host Institute") {
+        } else if (resUtForm.organizingInstitutionCategory === "Other" || resUtForm.organizingInstitutionCategory === "Other / Host Institute") {
           fd.append("instituteName", resUtForm.instituteName);
         }
       } else {
@@ -4591,7 +4591,7 @@ const SelfAppraisal = () => {
                         "Govt. University",
                         "NIRF Ranked Institute (Below 200)",
                         "NPTEL",
-                        "Other / Host Institute"
+                        "Other"
                       ].map(opt => (
                         <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                       ))}
@@ -4666,7 +4666,7 @@ const SelfAppraisal = () => {
                     </>
                   )}
 
-                  {resUtForm.organizingInstitutionCategory === "Other / Host Institute" && (
+                  {(resUtForm.organizingInstitutionCategory === "Other" || resUtForm.organizingInstitutionCategory === "Other / Host Institute") && (
                     <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
                       <Typography sx={labelStyle}>Institute Name: *</Typography>
                       <TextField
@@ -4874,7 +4874,7 @@ const SelfAppraisal = () => {
                       <Grid size={{ xs: 12, sm: 4 }}>
                         <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
                           <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Organizing Category</Typography>
-                          <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.organizingInstitutionCategory}</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.organizingInstitutionCategory === "Other / Host Institute" ? "Other" : data.organizingInstitutionCategory}</Typography>
                         </Box>
                       </Grid>
                       <Grid size={{ xs: 12, sm: 4 }}>
@@ -4916,6 +4916,14 @@ const SelfAppraisal = () => {
                             </Box>
                           </Grid>
                         </>
+                      )}
+                      {(data.organizingInstitutionCategory === "Other" || data.organizingInstitutionCategory === "Other / Host Institute") && data.instituteName && (
+                        <Grid size={{ xs: 12, sm: 4 }}>
+                          <Box sx={{ p: 1.5, borderRadius: "10px", background: "var(--bg-paper)", border: "1px solid var(--border-color)" }}>
+                            <Typography variant="caption" sx={{ color: "var(--color-primary)", textTransform: "uppercase", fontWeight: 800 }}>Institute Name</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", mt: 0.5 }}>{data.instituteName}</Typography>
+                          </Box>
+                        </Grid>
                       )}
                     </>
                   )}

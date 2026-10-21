@@ -356,7 +356,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
       numberOfSessions: (activity.numberOfSessions !== undefined ? String(activity.numberOfSessions) : (activity.sessionsConducted !== undefined ? String(activity.sessionsConducted) : "")),
       numberOfDaysParticipated: (activity.numberOfDaysParticipated !== undefined ? String(activity.numberOfDaysParticipated) : (activity.daysParticipated !== undefined ? String(activity.daysParticipated) : "")),
       courseName: activity.courseName || "",
-      organizingInstitutionCategory: activity.organizingInstitutionCategory || "",
+      organizingInstitutionCategory: activity.organizingInstitutionCategory === "Other / Host Institute" ? "Other" : (activity.organizingInstitutionCategory || ""),
       location: activity.location || "",
       labName: activity.labName || "",
       universityName: activity.universityName || "",
@@ -401,6 +401,11 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
       return;
     }
 
+    // =========================================================================
+    // TEMPORARILY DISABLED (Delayed launch - allow uploading past activities):
+    // Re-enable this block when ready.
+    // =========================================================================
+    /*
     if (form.eventEndDate && !isDirectEntry) {
       const end = new Date(form.eventEndDate);
       end.setHours(0, 0, 0, 0);
@@ -415,6 +420,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
         return;
       }
     }
+    */
 
     if (isCourseParticipant) {
       if (!form.organizingInstitutionCategory) {
@@ -545,7 +551,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
         } else if (form.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)") {
           fd.append("instituteName", form.instituteName);
           fd.append("nirfRank", form.nirfRank);
-        } else if (form.organizingInstitutionCategory === "Other / Host Institute") {
+        } else if (form.organizingInstitutionCategory === "Other" || form.organizingInstitutionCategory === "Other / Host Institute") {
           fd.append("instituteName", form.instituteName);
         } else if (form.organizingInstitutionCategory === "NPTEL" && form.certificateNumber) {
           fd.append("certificateNumber", form.certificateNumber);
@@ -998,7 +1004,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
                   {isCourseParticipantActivity(data.activityCategory, data.activityType) && (
                     <>
                       <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Organizing Institution Category</Typography>
-                      <Typography sx={{ color: "#0f172a", fontWeight: 600, fontSize: "0.9rem" }}>{data.organizingInstitutionCategory || "N/A"}</Typography>
+                      <Typography sx={{ color: "#0f172a", fontWeight: 600, fontSize: "0.9rem" }}>{data.organizingInstitutionCategory === "Other / Host Institute" ? "Other" : (data.organizingInstitutionCategory || "N/A")}</Typography>
 
                       <Typography sx={{ fontWeight: 600, color: "#475569", fontSize: "0.9rem" }}>Location</Typography>
                       <Typography sx={{ color: "#0f172a", fontWeight: 600, fontSize: "0.9rem" }}>{data.location || "N/A"}</Typography>
@@ -1358,7 +1364,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
                     "Govt. University",
                     "NIRF Ranked Institute (Below 200)",
                     "NPTEL",
-                    "Other / Host Institute"
+                    "Other"
                   ].map(opt => (
                     <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                   ))}
@@ -1428,7 +1434,7 @@ export default function ResourceUtilization({ isDirectEntry = false }) {
                 </>
               )}
 
-              {form.organizingInstitutionCategory === "Other / Host Institute" && (
+              {(form.organizingInstitutionCategory === "Other" || form.organizingInstitutionCategory === "Other / Host Institute") && (
                 <Box sx={{ gridColumn: { sm: "1 / -1" } }}>
                   <Typography sx={labelStyle}>Institute Name: *</Typography>
                   <TextField

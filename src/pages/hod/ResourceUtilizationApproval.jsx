@@ -141,7 +141,7 @@ const ResourceUtilizationApproval = () => {
       detailFields = [
         { label: 'Type/Role', value: selected.activityType },
         { label: 'Course Name', value: selected.courseName },
-        { label: 'Organizing Institution', value: selected.organizingInstitutionCategory },
+        { label: 'Organizing Institution', value: selected.organizingInstitutionCategory === 'Other / Host Institute' ? 'Other' : selected.organizingInstitutionCategory },
         { label: 'Location', value: selected.location },
         { label: 'University Name', value: selected.universityName },
         { label: 'Institute Name', value: selected.instituteName },

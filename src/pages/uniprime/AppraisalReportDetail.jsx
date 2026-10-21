@@ -2141,7 +2141,7 @@ const AppraisalReportDetail = () => {
                                             {isCourseParticipantActivity(item.activityCategory, item.activityType) && (
                                               <Box sx={{ mt: 0.5, p: 1, borderRadius: "6px", background: "rgba(0,0,0,0.02)", border: "1px dashed var(--border-color)" }}>
                                                 <Typography variant="caption" color="var(--text-secondary)" display="block">
-                                                  Organizing Category: <strong style={{ color: "var(--color-primary)" }}>{item.organizingInstitutionCategory}</strong> | Location: <strong>{item.location}</strong>
+                                                  Organizing Category: <strong style={{ color: "var(--color-primary)" }}>{item.organizingInstitutionCategory === "Other / Host Institute" ? "Other" : item.organizingInstitutionCategory}</strong> | Location: <strong>{item.location}</strong>
                                                 </Typography>
                                                 {item.organizingInstitutionCategory === "MHRD R&D Lab" && item.labName && (
                                                   <Typography variant="caption" color="var(--text-secondary)" display="block">Lab Name: <strong>{item.labName}</strong></Typography>
@@ -2151,6 +2151,9 @@ const AppraisalReportDetail = () => {
                                                 )}
                                                 {item.organizingInstitutionCategory === "NIRF Ranked Institute (Below 200)" && item.instituteName && (
                                                   <Typography variant="caption" color="var(--text-secondary)" display="block">Institute Name: <strong>{item.instituteName}</strong> | NIRF Rank: <strong>{item.nirfRank}</strong></Typography>
+                                                )}
+                                                {(item.organizingInstitutionCategory === "Other" || item.organizingInstitutionCategory === "Other / Host Institute") && item.instituteName && (
+                                                  <Typography variant="caption" color="var(--text-secondary)" display="block">Institute Name: <strong>{item.instituteName}</strong></Typography>
                                                 )}
                                               </Box>
                                             )}
@@ -2877,7 +2880,7 @@ const AppraisalReportDetail = () => {
                   <Box display="flex" gap={4}>
                     <Box>
                       <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Organizing Category</Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{selectedResUtDetails.organizingInstitutionCategory}</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 700, color: "var(--text-primary)" }}>{selectedResUtDetails.organizingInstitutionCategory === "Other / Host Institute" ? "Other" : selectedResUtDetails.organizingInstitutionCategory}</Typography>
                     </Box>
                     <Box>
                       <Typography variant="caption" color="textSecondary" sx={{ fontWeight: 600 }}>Location</Typography>
