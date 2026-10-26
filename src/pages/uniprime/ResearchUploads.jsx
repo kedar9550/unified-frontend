@@ -74,42 +74,41 @@ const ResearchUploads = () => {
         }
       });
       
+      if (res.data.results) {
+        setReportCategory(categoryId);
+        setReportData(res.data.results);
+        setReportModalOpen(true);
+      }
+
       if (res.data.success) {
         toast.success(res.data.message || `${categoryId} data uploaded successfully!`);
       } else {
-        if (res.data.results && (res.data.results.skips > 0 || res.data.results.errs > 0)) {
-          setReportCategory(categoryId);
-          setReportData(res.data.results);
-          setReportModalOpen(true);
-        } else {
-          const errorMessage = res.data.message || `Failed to upload ${categoryId}`;
-          if (errorMessage.includes("Details:")) {
-            const [mainMsg, details] = errorMessage.split("Details:");
-            toast.error(mainMsg.trim(), {
-              description: details.trim(),
-              duration: 8000,
-            });
-          } else {
-            toast.error(errorMessage, { duration: 5000 });
-          }
-        }
-      }
-    } catch (err) {
-      if (err.response?.data?.results && (err.response.data.results.skips > 0 || err.response.data.results.errs > 0)) {
-        setReportCategory(categoryId);
-        setReportData(err.response.data.results);
-        setReportModalOpen(true);
-      } else {
-        const errorMessage = err.response?.data?.message || `An error occurred while uploading ${categoryId}`;
+        const errorMessage = res.data.message || `Upload completed with issues for ${categoryId}`;
         if (errorMessage.includes("Details:")) {
           const [mainMsg, details] = errorMessage.split("Details:");
-          toast.error(mainMsg.trim(), {
+          toast.warning(mainMsg.trim(), {
             description: details.trim(),
             duration: 8000,
           });
         } else {
-          toast.error(errorMessage, { duration: 5000 });
+          toast.warning(errorMessage, { duration: 5000 });
         }
+      }
+    } catch (err) {
+      if (err.response?.data?.results) {
+        setReportCategory(categoryId);
+        setReportData(err.response.data.results);
+        setReportModalOpen(true);
+      }
+      const errorMessage = err.response?.data?.message || `An error occurred while uploading ${categoryId}`;
+      if (errorMessage.includes("Details:")) {
+        const [mainMsg, details] = errorMessage.split("Details:");
+        toast.error(mainMsg.trim(), {
+          description: details.trim(),
+          duration: 8000,
+        });
+      } else {
+        toast.error(errorMessage, { duration: 5000 });
       }
     } finally {
       setUploading((prev) => ({ ...prev, [categoryId]: false }));
@@ -230,6 +229,15 @@ const ResearchUploads = () => {
                   </Card>
                 </Grid>
               </Grid>
+
+              {/* Success Notification if no errors or skips */}
+              {(!reportData.skipDetails?.length && !reportData.errorDetails?.length && (reportData.successCount > 0 || reportData.totalRows > 0)) && (
+                <Box sx={{ p: 2, bgcolor: "rgba(46, 125, 50, 0.08)", borderRadius: "8px", border: "1px solid rgba(46, 125, 50, 0.25)", textAlign: "center" }}>
+                  <Typography variant="body1" sx={{ color: "success.main", fontWeight: "bold" }}>
+                    ✓ All {reportData.successCount || reportData.totalRows || 0} record(s) processed and imported successfully!
+                  </Typography>
+                </Box>
+              )}
 
               {/* Error Table */}
               {(reportData.skipDetails?.length > 0 || reportData.errorDetails?.length > 0) && (
