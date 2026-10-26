@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -32,7 +32,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Tooltip
+  Tooltip,
+  Avatar
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -49,10 +50,11 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Upload as UploadIcon,
+  FormatListBulleted as FormatListBulletedIcon,
+  Close as CloseIcon,
   Download as DownloadIcon,
   ContentCopy as ContentCopyIcon,
   OpenInNew as OpenInNewIcon,
-  Close as CloseIcon,
   School as SchoolIcon,
   Person as PersonIcon,
   Payment as PaymentIcon,
@@ -60,8 +62,9 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getCentralEvents, getAlaRegistrations, getEventTypes, getCategoriesByTypeCode, cancelCentralEvent, getAcademicYears } from '../../api/centralEventsApi';
-import { PageHeader, CustomTabs } from '../../components/common';
+import { getCentralEvents, getAlaRegistrations, getEventTypes, getCategoriesByTypeCode, cancelCentralEvent, getAcademicYears, publishCentralEvent } from '../../api/centralEventsApi';
+import { fetchEventDepartments } from '../../api/eventDepartmentApi';
+import { PageHeader, CustomTabs, ProfileCard } from '../../components/common';
 import PageContainer from '../../components/common/design-system/PageContainer';
 import { toast } from 'sonner';
 
@@ -76,6 +79,11 @@ const TYPE_COLORS = {
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
+const isMongoId = (val) => {
+  if (!val) return false;
+  return /^[0-9a-fA-F]{24}$/.test(String(val).trim());
+};
+
 const getImageUrl = (img) => {
   if (!img) return '';
   const pathStr = typeof img === 'string' ? img : img.url;
@@ -85,6 +93,48 @@ const getImageUrl = (img) => {
   }
   return `${BACKEND_URL}${pathStr.startsWith('/') ? '' : '/'}${pathStr}`;
 };
+
+const CAMPUS_PHOTO_BASES = [
+  'https://info.aec.edu.in/aus/employeephotos',
+  'https://info.aec.edu.in/aec/employeephotos',
+  'https://info.aec.edu.in/acet/employeephotos',
+  'https://info.aec.edu.in/acoe/employeephotos',
+];
+
+function CoordinatorPhoto({ employeeCode, photoUrl, name, sx }) {
+  const initials = (name || '').split(' ').filter(Boolean).slice(0, 2).map(n => n[0]).join('').toUpperCase() || 'FC';
+  const placeholderSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><rect width='100%' height='100%' fill='%231e40af'/><text x='50%' y='50%' dy='.35em' text-anchor='middle' font-family='Inter, Arial, Helvetica, sans-serif' font-size='46' fill='%23ffffff'>${initials}</text></svg>`;
+  const placeholderDataUrl = `data:image/svg+xml;utf8,${encodeURIComponent(placeholderSvg)}`;
+
+  const initialUrl = photoUrl || (employeeCode ? `${CAMPUS_PHOTO_BASES[0]}/${employeeCode}.jpg` : placeholderDataUrl);
+  const [attemptIndex, setAttemptIndex] = useState(photoUrl ? -1 : 0);
+  const [imgSrc, setImgSrc] = useState(initialUrl);
+
+  useEffect(() => {
+    setAttemptIndex(photoUrl ? -1 : 0);
+    setImgSrc(photoUrl || (employeeCode ? `${CAMPUS_PHOTO_BASES[0]}/${employeeCode}.jpg` : placeholderDataUrl));
+  }, [employeeCode, photoUrl]);
+
+  const handleError = () => {
+    const nextIndex = attemptIndex + 1;
+    if (nextIndex < CAMPUS_PHOTO_BASES.length) {
+      setAttemptIndex(nextIndex);
+      setImgSrc(`${CAMPUS_PHOTO_BASES[nextIndex]}/${employeeCode}.jpg`);
+    } else {
+      setImgSrc(placeholderDataUrl);
+    }
+  };
+
+  return (
+    <Box
+      component="img"
+      src={imgSrc}
+      alt={`Photo of ${name || 'Coordinator'}`}
+      sx={{ ...sx, objectFit: 'cover' }}
+      onError={handleError}
+    />
+  );
+}
 
 export default function CentralEventsListPage() {
   const navigate = useNavigate();
@@ -99,6 +149,11 @@ export default function CentralEventsListPage() {
   const [types, setTypes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [departmentsMap, setDepartmentsMap] = useState({});
+
+  // View Tabs: 0 = List, 1 = Coordinators
+  const [activeTab, setActiveTab] = useState(0);
+  const [coordinatorSearch, setCoordinatorSearch] = useState('');
 
   // Pagination State
   const [page, setPage] = useState(0);
@@ -183,6 +238,25 @@ export default function CentralEventsListPage() {
     setDeleteDialogOpen(true);
   };
 
+  const [publishingId, setPublishingId] = useState(null);
+
+  const handlePublishEvent = async (event) => {
+    const eventId = event._id || event.id;
+    if (!eventId) return;
+    setPublishingId(eventId);
+    try {
+      const res = await publishCentralEvent(eventId);
+      if (res.success) {
+        toast.success(`Event "${event.title}" published successfully!`);
+        fetchEvents();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to publish event');
+    } finally {
+      setPublishingId(null);
+    }
+  };
+
   const handleConfirmDelete = async () => {
     if (!deletingEvent) return;
     setActionLoading(true);
@@ -201,20 +275,11 @@ export default function CentralEventsListPage() {
     }
   };
 
-  // Module Navigation Tabs
-  const navTabs = [
-    { key: 'all', label: 'All Central Events', icon: <EventIcon />, path: '/central-events' },
-    { key: 'types', label: 'Event Types', icon: <CategoryIcon />, path: '/central-events/types' },
-    { key: 'categories', label: 'Event Categories', icon: <FolderIcon />, path: '/central-events/categories' },
-    { key: 'subcategories', label: 'Event Subcategories', icon: <FolderIcon />, path: '/central-events/subcategories' },
-    ...(isGlobalAdmin ? [{ key: 'create', label: 'Create Event', icon: <AddIcon />, path: '/central-events/create' }] : [])
-  ];
-
   useEffect(() => {
     setSelectedType(searchParams.get('typeCode') || '');
   }, [searchParams]);
 
-  // Fetch Initial Data on Mount (Types and Academic Years)
+  // Fetch Initial Data on Mount (Types, Academic Years, Departments)
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
@@ -237,6 +302,43 @@ export default function CentralEventsListPage() {
     };
     fetchInitialData();
   }, []);
+
+  // Fetch Departments for human-readable labels
+  useEffect(() => {
+    const loadDepartments = async () => {
+      try {
+        const res = await fetchEventDepartments();
+        const depts = res?.data?.data || res?.data || [];
+        if (Array.isArray(depts)) {
+          const map = {};
+          depts.forEach((d) => {
+            if (d._id) {
+              map[String(d._id)] = d.name || d.code || '';
+            }
+          });
+          setDepartmentsMap(map);
+        }
+      } catch (err) {
+        console.error('Failed to load departments', err);
+      }
+    };
+    loadDepartments();
+  }, []);
+
+  const formatDepartment = (dept) => {
+    if (!dept) return '';
+    if (typeof dept === 'object') {
+      const val = dept.name || dept.code || '';
+      return isMongoId(val) ? '' : val;
+    }
+    const str = String(dept).trim();
+    if (departmentsMap[str]) {
+      const mapped = departmentsMap[str];
+      return isMongoId(mapped) ? '' : mapped;
+    }
+    if (isMongoId(str)) return '';
+    return str;
+  };
 
   // Fetch Categories when Type changes
   useEffect(() => {
@@ -265,7 +367,7 @@ export default function CentralEventsListPage() {
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      const params = {};
+      const params = { limit: 100 };
       if (selectedType) params.typeCode = selectedType;
       if (selectedCategory) params.categoryId = selectedCategory;
       if (selectedLevel) params.level = selectedLevel;
@@ -301,6 +403,72 @@ export default function CentralEventsListPage() {
     fetchEvents();
   };
 
+  // Extract and deduplicate faculty coordinators from events
+  const coordinatorsList = useMemo(() => {
+    const coordsMap = new Map();
+
+    events.forEach((event) => {
+      const list = Array.isArray(event.coordinators?.faculty) && event.coordinators.faculty.length > 0
+        ? event.coordinators.faculty
+        : (event.facultyCoordinators?.length > 0
+          ? event.facultyCoordinators
+          : (event.facultyCoordinator?.employeeId || event.facultyCoordinator?.name
+            ? [{
+              name: event.facultyCoordinator.employeeName || event.facultyCoordinator.name,
+              empId: event.facultyCoordinator.employeeId || event.facultyCoordinator.empId,
+              designation: event.facultyCoordinator.designation,
+              department: event.facultyCoordinator.department,
+              phone: event.facultyCoordinator.phone,
+              email: event.facultyCoordinator.email
+            }]
+            : []));
+
+      list.forEach((c) => {
+        const id = c.empId || c.employeeId || c.institutionId || c.name;
+        if (!id) return;
+
+        if (!coordsMap.has(id)) {
+          coordsMap.set(id, {
+            id,
+            empId: (c.empId && !isMongoId(c.empId)) ? c.empId : '',
+            name: c.name || c.employeeName || 'Coordinator',
+            designation: c.designation || 'Faculty Coordinator',
+            department: formatDepartment(c.department),
+            phone: c.phone || c.mobile || 'N/A',
+            email: c.email || '',
+            photoUrl: c.photoUrl || c.profileImage || null,
+            events: []
+          });
+        }
+
+        const entry = coordsMap.get(id);
+        const eventLabel = event.title || '';
+        if (eventLabel && !entry.events.includes(eventLabel)) {
+          entry.events.push(eventLabel);
+        }
+        if ((!entry.phone || entry.phone === 'N/A') && (c.phone || c.mobile)) {
+          entry.phone = c.phone || c.mobile;
+        }
+        if (!entry.photoUrl && (c.photoUrl || c.profileImage)) {
+          entry.photoUrl = c.photoUrl || c.profileImage;
+        }
+      });
+    });
+
+    return Array.from(coordsMap.values());
+  }, [events, departmentsMap]);
+
+  const filteredCoordinators = useMemo(() => {
+    if (!coordinatorSearch.trim()) return coordinatorsList;
+    const q = coordinatorSearch.trim().toLowerCase();
+    return coordinatorsList.filter((c) =>
+      (c.name && c.name.toLowerCase().includes(q)) ||
+      (c.empId && c.empId.toLowerCase().includes(q)) ||
+      (c.phone && c.phone.toLowerCase().includes(q)) ||
+      (c.events && c.events.some((ev) => ev.toLowerCase().includes(q)))
+    );
+  }, [coordinatorsList, coordinatorSearch]);
+
   return (
     <PageContainer maxWidth="xl" px={3} py={3}>
       {/* Standard Page Header */}
@@ -330,6 +498,17 @@ export default function CentralEventsListPage() {
         }
       />
 
+      {/* View Mode Tabs: List and Coordinators */}
+      <CustomTabs
+        value={activeTab}
+        onChange={(e, val) => setActiveTab(val)}
+        tabs={[
+          { label: 'List', icon: <FormatListBulletedIcon /> },
+          { label: 'Coordinators', icon: <PeopleIcon /> }
+        ]}
+        sx={{ my: 3 }}
+      />
+
       {/* Filter Bar with Standardized MUI Form Fields */}
       <Paper
         elevation={0}
@@ -345,13 +524,13 @@ export default function CentralEventsListPage() {
       >
         <Grid container spacing={2} sx={{ alignItems: 'center' }}>
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-            <form onSubmit={handleSearchSubmit}>
+            {activeTab === 1 ? (
               <TextField
                 fullWidth
                 size="small"
-                placeholder="Search events..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search coordinator by name, ID, or event..."
+                value={coordinatorSearch}
+                onChange={(e) => setCoordinatorSearch(e.target.value)}
                 slotProps={{
                   input: {
                     startAdornment: (
@@ -359,11 +538,45 @@ export default function CentralEventsListPage() {
                         <SearchIcon color="action" />
                       </InputAdornment>
                     ),
+                    endAdornment: coordinatorSearch ? (
+                      <InputAdornment position="end">
+                        <IconButton size="small" onClick={() => setCoordinatorSearch('')}>
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      </InputAdornment>
+                    ) : null,
                     sx: { borderRadius: '12px', background: 'var(--bg-paper)' }
                   }
                 }}
               />
-            </form>
+            ) : (
+              <form onSubmit={handleSearchSubmit}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Search events..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon color="action" />
+                        </InputAdornment>
+                      ),
+                      endAdornment: searchQuery ? (
+                        <InputAdornment position="end">
+                          <IconButton size="small" onClick={() => { setSearchQuery(''); fetchEvents(); }}>
+                            <CloseIcon fontSize="small" />
+                          </IconButton>
+                        </InputAdornment>
+                      ) : null,
+                      sx: { borderRadius: '12px', background: 'var(--bg-paper)' }
+                    }
+                  }}
+                />
+              </form>
+            )}
           </Grid>
 
           <Grid size={{ xs: 6, sm: 3, md: 2.5 }}>
@@ -570,7 +783,7 @@ export default function CentralEventsListPage() {
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
           <CircularProgress />
         </Box>
-      ) : (
+      ) : activeTab === 0 ? (
         <Paper
           elevation={0}
           sx={{
@@ -603,6 +816,7 @@ export default function CentralEventsListPage() {
                     <TableCell><strong>Event Title</strong></TableCell>
                     <TableCell><strong>Type</strong></TableCell>
                     <TableCell><strong>Category / Activity</strong></TableCell>
+                    <TableCell><strong>Faculty Coordinators</strong></TableCell>
                     <TableCell><strong>Schedule & Location</strong></TableCell>
                     <TableCell><strong>Fee & Capacity</strong></TableCell>
                     <TableCell><strong>Status</strong></TableCell>
@@ -613,7 +827,7 @@ export default function CentralEventsListPage() {
               <TableBody>
                 {events.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
+                    <TableCell colSpan={10} align="center" sx={{ py: 6 }}>
                       <Typography variant="body1" color="text.secondary" fontWeight={500}>
                         {isAlaView ? 'No ALA registrations found matching your criteria.' : 'No events found matching your criteria.'}
                       </Typography>
@@ -869,6 +1083,57 @@ export default function CentralEventsListPage() {
                         )}
                       </TableCell>
                       <TableCell>
+                        {(() => {
+                          const coordsList = Array.isArray(event.coordinators?.faculty) && event.coordinators.faculty.length > 0
+                            ? event.coordinators.faculty
+                            : (event.facultyCoordinators?.length > 0
+                              ? event.facultyCoordinators
+                              : (event.facultyCoordinator?.employeeId || event.facultyCoordinator?.name
+                                ? [{
+                                  name: event.facultyCoordinator.employeeName || event.facultyCoordinator.name,
+                                  empId: event.facultyCoordinator.employeeId || event.facultyCoordinator.empId,
+                                  department: event.facultyCoordinator.department
+                                }]
+                                : []));
+
+                          if (coordsList.length === 0) {
+                            return (
+                              <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                                Unassigned
+                              </Typography>
+                            );
+                          }
+
+                          return (
+                            <Stack spacing={0.6}>
+                              {coordsList.map((c, idx) => {
+                                const empCode = c.empId && !isMongoId(c.empId) ? `(${c.empId})` : '';
+                                const dept = formatDepartment(c.department);
+                                const hasSubtitle = Boolean(empCode || dept);
+
+                                return (
+                                  <Box key={idx} display="flex" alignItems="center" gap={1}>
+                                    <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem', bgcolor: '#2563eb', fontWeight: 700 }}>
+                                      {(c.name || c.employeeName || 'C').charAt(0)}
+                                    </Avatar>
+                                    <Box>
+                                      <Typography variant="body2" fontWeight={600} lineHeight={1.2}>
+                                        {c.name || c.employeeName}
+                                      </Typography>
+                                      {hasSubtitle && (
+                                        <Typography variant="caption" color="text.secondary" display="block">
+                                          {empCode} {empCode && dept ? `• ${dept}` : dept}
+                                        </Typography>
+                                      )}
+                                    </Box>
+                                  </Box>
+                                );
+                              })}
+                            </Stack>
+                          );
+                        })()}
+                      </TableCell>
+                      <TableCell>
                         <Typography variant="body2" fontWeight={600}>
                           {new Date(event.schedule?.fromDate).toLocaleDateString()}
                         </Typography>
@@ -885,12 +1150,19 @@ export default function CentralEventsListPage() {
                         </Typography>
                       </TableCell>
                       <TableCell>
-                        <Chip
-                          label={event.status || 'PUBLISHED'}
-                          color={event.status === 'PUBLISHED' ? 'success' : event.status === 'DRAFT' ? 'warning' : 'default'}
-                          size="small"
-                          sx={{ fontWeight: 600, borderRadius: '6px' }}
-                        />
+                        <Tooltip title={event.status === 'DRAFT' && isGlobalAdmin ? "Click to publish this event" : ""}>
+                          <Chip
+                            label={event.status || 'PUBLISHED'}
+                            color={event.status === 'PUBLISHED' ? 'success' : event.status === 'DRAFT' ? 'warning' : 'default'}
+                            size="small"
+                            onClick={event.status === 'DRAFT' && isGlobalAdmin ? () => handlePublishEvent(event) : undefined}
+                            sx={{
+                              fontWeight: 600,
+                              borderRadius: '6px',
+                              cursor: event.status === 'DRAFT' && isGlobalAdmin ? 'pointer' : 'default'
+                            }}
+                          />
+                        </Tooltip>
                       </TableCell>
                       <TableCell align="right">
                         <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
@@ -908,6 +1180,29 @@ export default function CentralEventsListPage() {
 
                           {isGlobalAdmin && (
                             <>
+                              {event.status === 'DRAFT' && (
+                                <Tooltip title="Publish Event">
+                                  <IconButton
+                                    size="small"
+                                    color="success"
+                                    disabled={publishingId === (event._id || event.id)}
+                                    onClick={() => handlePublishEvent(event)}
+                                    sx={{
+                                      border: '1px solid #10b981',
+                                      borderRadius: '10px',
+                                      bgcolor: 'rgba(16, 185, 129, 0.08)',
+                                      '&:hover': { bgcolor: 'rgba(16, 185, 129, 0.2)' }
+                                    }}
+                                  >
+                                    {publishingId === (event._id || event.id) ? (
+                                      <CircularProgress size={16} color="success" />
+                                    ) : (
+                                      <PublicIcon fontSize="small" />
+                                    )}
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+
                               <Tooltip title="Edit Event">
                                 <IconButton
                                   size="small"
@@ -953,6 +1248,83 @@ export default function CentralEventsListPage() {
             }}
           />
         </Paper>
+      ) : (
+        /* Coordinators Tab: ProfileCards Grid */
+        filteredCoordinators.length === 0 ? (
+          <Paper
+            elevation={0}
+            sx={{
+              py: 8,
+              px: 3,
+              textAlign: 'center',
+              borderRadius: '20px',
+              border: '1px dashed var(--border-color)',
+              bgcolor: 'var(--bg-paper)'
+            }}
+          >
+            <Box
+              sx={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                bgcolor: 'var(--bg-accent-2, #f1f5f9)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mx: 'auto',
+                mb: 2,
+                color: 'text.secondary'
+              }}
+            >
+              <PeopleIcon sx={{ fontSize: 32 }} />
+            </Box>
+            <Typography variant="h6" fontWeight={700} color="text.primary" gutterBottom>
+              No Coordinators Found
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 450, mx: 'auto' }}>
+              {coordinatorSearch
+                ? `No coordinators matching "${coordinatorSearch}". Try clearing your search.`
+                : 'No coordinators are currently assigned to events matching the selected filters.'}
+            </Typography>
+          </Paper>
+        ) : (
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: {
+                xs: '1fr',
+                sm: 'repeat(2, 1fr)',
+                lg: 'repeat(3, 1fr)'
+              },
+              gap: 3
+            }}
+          >
+            {filteredCoordinators.map((coord) => (
+              <ProfileCard
+                key={coord.id}
+                name={coord.name}
+                role={coord.designation || 'Faculty Coordinator'}
+                employeeId={coord.empId}
+                department={coord.department}
+                phone={coord.phone}
+                labels={coord.events}
+                avatarComponent={
+                  <CoordinatorPhoto
+                    employeeCode={coord.empId}
+                    photoUrl={coord.photoUrl}
+                    name={coord.name}
+                    sx={{
+                      width: 110,
+                      height: 110,
+                      border: '2px solid #fff',
+                      borderRadius: '50%'
+                    }}
+                  />
+                }
+              />
+            ))}
+          </Box>
+        )
       )}
 
       {/* ALA Registration Details Dialog */}

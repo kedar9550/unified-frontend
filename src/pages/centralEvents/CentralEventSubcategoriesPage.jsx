@@ -68,6 +68,11 @@ import { toast } from 'sonner';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9022';
 
+const isMongoId = (val) => {
+  if (!val) return false;
+  return /^[0-9a-fA-F]{24}$/.test(String(val).trim());
+};
+
 const getImageUrl = (img) => {
   if (!img) return '';
   const pathStr = typeof img === 'string' ? img : img.url;
@@ -202,14 +207,17 @@ export default function CentralEventSubcategoriesPage() {
         const res = await API.get('/api/employees/search', { params: { query: searchQuery.trim() } });
         const users = res.data?.data || res.data || [];
         if (Array.isArray(users)) {
-          const formatted = users.map(u => ({
-            empId: u.institutionId || u.empId || u.employeeId || '',
-            name: u.name || u.EMP_NAME || '',
-            designation: u.designation || u.DESIGNATION || '',
-            department: typeof u.department === 'object' ? (u.department?.name || u.department?.code) : (u.department || u.DEPT_NAME || ''),
-            phone: u.phone || u.MOBILE || '',
-            email: u.email || u.EMAIL || ''
-          }));
+          const formatted = users.map(u => {
+            const rawDept = typeof u.department === 'object' ? (u.department?.name || u.department?.code) : (u.department || u.DEPT_NAME || '');
+            return {
+              empId: u.institutionId || u.empId || u.employeeId || '',
+              name: u.name || u.EMP_NAME || '',
+              designation: u.designation || u.DESIGNATION || '',
+              department: isMongoId(rawDept) ? '' : rawDept,
+              phone: u.phone || u.MOBILE || '',
+              email: u.email || u.EMAIL || ''
+            };
+          });
           setEmployeeOptions(formatted);
         }
       } catch (err) {
@@ -397,12 +405,13 @@ export default function CentralEventSubcategoriesPage() {
         if (!id) return;
 
         if (!coordsMap.has(id)) {
+          const deptVal = typeof c.department === 'object' ? (c.department?.name || c.department?.code || '') : (c.department || '');
           coordsMap.set(id, {
             id,
-            empId: id,
+            empId: (id && !isMongoId(id)) ? id : '',
             name: c.name || 'Coordinator',
             designation: c.designation || 'Coordinator',
-            department: typeof c.department === 'object' ? (c.department?.name || c.department?.code || '') : (c.department || ''),
+            department: isMongoId(deptVal) ? '' : deptVal,
             phone: c.phone || c.mobile || 'N/A',
             email: c.email || '',
             photoUrl: c.photoUrl || c.profileImage || null,
@@ -702,23 +711,30 @@ export default function CentralEventSubcategoriesPage() {
 
                           return (
                             <Stack spacing={0.6}>
-                              {coordsList.map((c, idx) => (
-                                <Box key={idx} display="flex" alignItems="center" gap={1}>
-                                  <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem', bgcolor: '#2563eb', fontWeight: 700 }}>
-                                    {(c.name || 'C').charAt(0)}
-                                  </Avatar>
-                                  <Box>
-                                    <Typography variant="body2" fontWeight={600} lineHeight={1.2}>
-                                      {c.name}
-                                    </Typography>
-                                    {(c.empId || c.department) && (
-                                      <Typography variant="caption" color="text.secondary" display="block">
-                                        {c.empId ? `(${c.empId})` : ''} {c.department ? `• ${c.department}` : ''}
+                              {coordsList.map((c, idx) => {
+                                const empCode = c.empId && !isMongoId(c.empId) ? `(${c.empId})` : '';
+                                const rawDept = typeof c.department === 'object' ? (c.department?.name || c.department?.code || '') : (c.department || '');
+                                const dept = rawDept && !isMongoId(rawDept) ? rawDept : '';
+                                const hasSubtitle = Boolean(empCode || dept);
+
+                                return (
+                                  <Box key={idx} display="flex" alignItems="center" gap={1}>
+                                    <Avatar sx={{ width: 24, height: 24, fontSize: '0.75rem', bgcolor: '#2563eb', fontWeight: 700 }}>
+                                      {(c.name || 'C').charAt(0)}
+                                    </Avatar>
+                                    <Box>
+                                      <Typography variant="body2" fontWeight={600} lineHeight={1.2}>
+                                        {c.name}
                                       </Typography>
-                                    )}
+                                      {hasSubtitle && (
+                                        <Typography variant="caption" color="text.secondary" display="block">
+                                          {empCode} {empCode && dept ? `• ${dept}` : dept}
+                                        </Typography>
+                                      )}
+                                    </Box>
                                   </Box>
-                                </Box>
-                              ))}
+                                );
+                              })}
                             </Stack>
                           );
                         })()}
@@ -1038,8 +1054,9 @@ export default function CentralEventSubcategoriesPage() {
                           {option.name || option.employeeName}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {option.designation || 'Staff'} • {option.department || 'General'}
-                          {(option.empId || option.institutionId || option.employeeId) &&
+                          {option.designation || 'Staff'}
+                          {option.department && !isMongoId(option.department) ? ` • ${option.department}` : ''}
+                          {(option.empId || option.institutionId || option.employeeId) && !isMongoId(option.empId || option.institutionId || option.employeeId) &&
                             ` • ID: ${option.empId || option.institutionId || option.employeeId}`}
                         </Typography>
                       </Box>

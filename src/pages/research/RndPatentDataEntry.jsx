@@ -325,7 +325,7 @@ export default function RndPatentDataEntry() {
       if (form.applyingSeedGrant === "Yes") expectedAmt = expectedAmt / 2;
       if (isUtilityTypeNo) expectedAmt = 0;
 
-      fd.append("publishedstatus", form.status === "Published" ? "yes" : "no");
+      fd.append("publishedstatus", form.status === "Published" ? "yes" : (form.status === "Granted" ? "" : "no"));
       fd.append("publisheddate", form.publisheddate || "");
       fd.append("publishedexpectedamount", (computedApplyIncentive === "Yes" && form.status === "Published") ? expectedAmt : "");
       

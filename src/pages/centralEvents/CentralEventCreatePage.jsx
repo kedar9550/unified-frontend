@@ -18,7 +18,8 @@ import {
   InputAdornment,
   Autocomplete,
   Avatar,
-  Chip
+  Chip,
+  Paper
 } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
@@ -36,7 +37,8 @@ import {
   People as PeopleIcon,
   School as SchoolIcon,
   Badge as BadgeIcon,
-  Person as PersonIcon
+  Person as PersonIcon,
+  Public as PublicIcon
 } from '@mui/icons-material';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -149,6 +151,7 @@ export default function CentralEventCreatePage() {
   const [participationType, setParticipationType] = useState('SINGLE');
   const [minTeamSize, setMinTeamSize] = useState('1');
   const [maxTeamSize, setMaxTeamSize] = useState('1');
+  const [status, setStatus] = useState('DRAFT');
 
   const [rules, setRules] = useState(['']);
 
@@ -361,6 +364,7 @@ export default function CentralEventCreatePage() {
           setEditingEventId(ev._id);
           setTitle(ev.title || '');
           setDescription(ev.description || '');
+          if (ev.status) setStatus(ev.status);
           if (ev.academicYear) setAcademicYear(ev.academicYear);
           if (ev.typeCode) {
             setTypeCode(ev.typeCode);
@@ -565,8 +569,9 @@ export default function CentralEventCreatePage() {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e, overrideStatus) => {
+    if (e && e.preventDefault) e.preventDefault();
+    const finalStatus = overrideStatus || status || 'DRAFT';
 
     if (!fromDate) {
       toast.error('Please select the Event Start Date');
@@ -622,6 +627,7 @@ export default function CentralEventCreatePage() {
         typeCode,
         title,
         description,
+        status: finalStatus,
         mode,
         venue: venuePayload,
         department: departments || [],
@@ -694,13 +700,13 @@ export default function CentralEventCreatePage() {
       if (isEditMode && editingEventId) {
         const res = await updateCentralEvent(editingEventId, payload);
         if (res.success) {
-          toast.success('Central Event updated successfully!');
+          toast.success(finalStatus === 'PUBLISHED' ? 'Central Event published successfully!' : 'Central Event updated successfully!');
           navigate('/central-events');
         }
       } else {
         const res = await createCentralEvent(payload);
         if (res.success) {
-          toast.success('Central Event created successfully (DRAFT)');
+          toast.success(finalStatus === 'PUBLISHED' ? 'Central Event published successfully!' : 'Central Event created successfully (DRAFT)');
           navigate(`/central-events/${res.data.slug}`);
         }
       }
@@ -728,6 +734,49 @@ export default function CentralEventCreatePage() {
         icon={<EventIcon />}
         showBack
         backPath="/central-events"
+        action={
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Chip
+              icon={status === 'PUBLISHED' ? <PublicIcon sx={{ fontSize: '1rem !important', color: '#16a34a !important' }} /> : undefined}
+              label={status}
+              color={status === 'PUBLISHED' ? 'success' : status === 'DRAFT' ? 'warning' : 'default'}
+              sx={{
+                fontWeight: 700,
+                borderRadius: '10px',
+                px: 1,
+                height: 36,
+                fontSize: '0.85rem',
+                letterSpacing: '0.5px'
+              }}
+            />
+            {status === 'DRAFT' && isEditMode && (
+              <Button
+                variant="contained"
+                color="success"
+                size="small"
+                disabled={submitting}
+                startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <PublicIcon />}
+                onClick={(e) => {
+                  setStatus('PUBLISHED');
+                  handleSubmit(e, 'PUBLISHED');
+                }}
+                sx={{
+                  borderRadius: '10px',
+                  px: 2.5,
+                  py: 0.9,
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.875rem',
+                  background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                Publish Event
+              </Button>
+            )}
+          </Stack>
+        }
       />
 
       <form onSubmit={handleSubmit}>
@@ -1375,27 +1424,26 @@ export default function CentralEventCreatePage() {
                           }}
                           loading={isSearchingFaculty}
                           noOptionsText={facultySearchQuery ? 'No coordinator found' : 'Search employee by name or ID (min 2 chars)'}
-                          renderInput={(params) => {
-                            const inputProps = params.InputProps || {};
-                            return (
-                              <TextField
-                                {...params}
-                                fullWidth
-                                placeholder={selectedFacultyCoordinators.length === 0 ? "Search employee by name or ID..." : "Add another faculty coordinator..."}
-                                InputProps={{
-                                  ...inputProps,
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              fullWidth
+                              placeholder={selectedFacultyCoordinators.length === 0 ? "Search employee by name or ID..." : "Add another faculty coordinator..."}
+                              slotProps={{
+                                input: {
+                                  ...params.slotProps?.input,
                                   sx: { borderRadius: '12px', bgcolor: 'var(--bg-paper)' },
                                   endAdornment: (
                                     <>
                                       {isSearchingFaculty ? <CircularProgress color="inherit" size={20} /> : null}
-                                      {inputProps.endAdornment}
+                                      {params.slotProps?.input?.endAdornment}
                                     </>
                                   )
-                                }}
-                                variant="outlined"
-                              />
-                            );
-                          }}
+                                }
+                              }}
+                              variant="outlined"
+                            />
+                          )}
                           renderOption={(props, option) => (
                             <Box
                               component="li"
@@ -1426,7 +1474,7 @@ export default function CentralEventCreatePage() {
                               </Box>
                             </Box>
                           )}
-                          renderTags={(value, getTagProps) =>
+                          renderValue={(value, getItemProps) =>
                             value.map((option, index) => (
                               <Chip
                                 key={option.empId || index}
@@ -1440,7 +1488,7 @@ export default function CentralEventCreatePage() {
                                 color="primary"
                                 variant="outlined"
                                 sx={{ borderRadius: '8px', fontWeight: 600 }}
-                                {...getTagProps({ index })}
+                                {...getItemProps({ index })}
                               />
                             ))
                           }
@@ -1461,7 +1509,7 @@ export default function CentralEventCreatePage() {
                           Add student coordinators by selecting or typing their university roll number.
                         </Typography>
 
-                        <Box display="flex" gap={2} alignItems="flex-start" flexWrap={{ xs: 'wrap', sm: 'nowrap' }}>
+                        <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
                           <TextField
                             fullWidth
                             label="Student Roll Number"
@@ -1502,7 +1550,7 @@ export default function CentralEventCreatePage() {
                         {/* Selected Student Coordinators List */}
                         {studentCoordinators.length > 0 && (
                           <Box mt={2.5}>
-                            <Typography variant="caption" fontWeight={700} color="text.secondary" textTransform="uppercase" letterSpacing={0.5} mb={1.5} display="block">
+                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, mb: 1.5, display: 'block' }}>
                               Assigned Student Coordinators ({studentCoordinators.length})
                             </Typography>
                             <Grid container spacing={2}>
@@ -1523,7 +1571,7 @@ export default function CentralEventCreatePage() {
                                       <Avatar sx={{ bgcolor: '#0284c7', width: 36, height: 36, fontSize: '0.85rem', fontWeight: 700 }}>
                                         {(s.name || 'S')[0]?.toUpperCase()}
                                       </Avatar>
-                                      <Box minWidth={0}>
+                                      <Box sx={{ minWidth: 0 }}>
                                         <Typography variant="body2" fontWeight={700} noWrap>
                                           {s.name}
                                         </Typography>
@@ -1749,7 +1797,7 @@ export default function CentralEventCreatePage() {
                         Event Banner Image
                       </Typography>
 
-                      <Box display="flex" alignItems="center" gap={3} flexWrap="wrap">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
                         <Button
                           variant="outlined"
                           component="label"
@@ -1787,36 +1835,193 @@ export default function CentralEventCreatePage() {
                 </CardContent>
               </Card>
 
-              {/* Form Actions */}
-              <Box display="flex" justifyContent="flex-end" alignItems="center" gap={2} pt={2} pb={6}>
+              {/* Section 7: Event Status & Publication */}
+              <Card elevation={0} sx={{ borderRadius: '18px', border: '1px solid var(--border-color)', background: 'var(--bg-paper)' }}>
+                <CardContent sx={{ p: 3.5 }}>
+                  <Box display="flex" alignItems="center" gap={1.5} mb={2.5}>
+                    <PublicIcon color="primary" />
+                    <Typography variant="h6" fontWeight={700}>
+                      7. Event Status & Visibility
+                    </Typography>
+                  </Box>
+
+                  <Grid container spacing={3} sx={{ alignItems: 'center' }}>
+                    <Grid size={{ xs: 12, md: 5 }}>
+                      <Typography variant="subtitle2" fontWeight={600} gutterBottom>
+                        Publication Status
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" mb={2}>
+                        Control whether this event is a private draft or published for student registrations.
+                      </Typography>
+                      <FormControl fullWidth size="small">
+                        <InputLabel id="event-status-label">Publication Status</InputLabel>
+                        <Select
+                          labelId="event-status-label"
+                          value={status}
+                          label="Publication Status"
+                          onChange={(e) => setStatus(e.target.value)}
+                          sx={{ borderRadius: '12px', fontWeight: 600 }}
+                        >
+                          <MenuItem value="DRAFT">
+                            <Box display="flex" alignItems="center" gap={1.5}>
+                              <Chip label="DRAFT" color="warning" size="small" sx={{ fontWeight: 700, borderRadius: '6px', height: 22 }} />
+                              <Typography variant="body2" fontWeight={500}>Draft (Hidden from students)</Typography>
+                            </Box>
+                          </MenuItem>
+                          <MenuItem value="PUBLISHED">
+                            <Box display="flex" alignItems="center" gap={1.5}>
+                              <Chip label="PUBLISHED" color="success" size="small" sx={{ fontWeight: 700, borderRadius: '6px', height: 22 }} />
+                              <Typography variant="body2" fontWeight={500}>Published (Open for registrations)</Typography>
+                            </Box>
+                          </MenuItem>
+                          <MenuItem value="CLOSED">
+                            <Box display="flex" alignItems="center" gap={1.5}>
+                              <Chip label="CLOSED" size="small" sx={{ fontWeight: 700, borderRadius: '6px', height: 22 }} />
+                              <Typography variant="body2" fontWeight={500}>Closed (Registration ended)</Typography>
+                            </Box>
+                          </MenuItem>
+                          <MenuItem value="CANCELLED">
+                            <Box display="flex" alignItems="center" gap={1.5}>
+                              <Chip label="CANCELLED" color="error" size="small" sx={{ fontWeight: 700, borderRadius: '6px', height: 22 }} />
+                              <Typography variant="body2" fontWeight={500}>Cancelled</Typography>
+                            </Box>
+                          </MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 7 }}>
+                      <Paper
+                        elevation={0}
+                        sx={{
+                          p: 2.5,
+                          borderRadius: '14px',
+                          bgcolor: status === 'PUBLISHED' ? 'rgba(16, 185, 129, 0.08)' : status === 'DRAFT' ? 'rgba(245, 158, 11, 0.08)' : 'var(--bg-accent-2, #f1f5f9)',
+                          border: `1px solid ${status === 'PUBLISHED' ? 'rgba(16, 185, 129, 0.3)' : status === 'DRAFT' ? 'rgba(245, 158, 11, 0.3)' : 'var(--border-color)'}`
+                        }}
+                      >
+                        <Box display="flex" alignItems="flex-start" gap={2}>
+                          <Box
+                            sx={{
+                              width: 44,
+                              height: 44,
+                              borderRadius: '12px',
+                              bgcolor: status === 'PUBLISHED' ? '#10b981' : status === 'DRAFT' ? '#f59e0b' : '#64748b',
+                              color: '#fff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0
+                            }}
+                          >
+                            <PublicIcon />
+                          </Box>
+                          <Box flex={1}>
+                            <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                              <Typography variant="subtitle2" fontWeight={700}>
+                                {status === 'PUBLISHED' ? 'Event is Live & Published' : status === 'DRAFT' ? 'Event is in Draft Mode' : `Event is ${status}`}
+                              </Typography>
+                            </Box>
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              {status === 'PUBLISHED'
+                                ? 'Students can view this event in the central catalog and submit their registrations based on schedule deadlines.'
+                                : status === 'DRAFT'
+                                ? 'Only administrators can view and edit this event. When ready, click "Publish Event" to make it live for students.'
+                                : `This event is marked as ${status}.`}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Paper>
+                    </Grid>
+                  </Grid>
+                </CardContent>
+              </Card>
+
+              {/* Form Actions Footer */}
+              <Paper
+                elevation={0}
+                sx={{
+                  p: { xs: 2, sm: 2.5 },
+                  borderRadius: '16px',
+                  background: 'var(--bg-paper)',
+                  border: '1px solid var(--border-color)',
+                  boxShadow: '0 8px 30px rgba(0, 0, 0, 0.05)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 2,
+                  mt: 1,
+                  mb: 6
+                }}
+              >
                 <Button
                   variant="outlined"
                   size="large"
                   onClick={() => navigate('/central-events')}
-                  sx={{ borderRadius: '12px', px: 4, py: 1.2, textTransform: 'none', fontWeight: 600 }}
+                  sx={{
+                    borderRadius: '12px',
+                    px: 3.5,
+                    py: 1.2,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    color: 'text.secondary',
+                    borderColor: 'var(--border-color)'
+                  }}
                 >
                   Cancel
                 </Button>
-                <Button
-                  variant="contained"
-                  type="submit"
-                  size="large"
-                  disabled={submitting}
-                  startIcon={submitting ? null : <CheckCircleIcon />}
-                  sx={{
-                    borderRadius: '12px',
-                    px: 5,
-                    py: 1.2,
-                    textTransform: 'none',
-                    fontWeight: 700,
-                    fontSize: '1rem',
-                    background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
-                    boxShadow: '0 8px 20px -4px rgba(37, 99, 235, 0.4)'
-                  }}
-                >
-                  {submitting ? <CircularProgress size={24} color="inherit" /> : (isEditMode ? 'Update Central Event' : 'Create Central Event')}
-                </Button>
-              </Box>
+
+                <Stack direction="row" spacing={2} sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1.5 }}>
+                  {status === 'DRAFT' && (
+                    <Button
+                      variant="contained"
+                      color="success"
+                      size="large"
+                      disabled={submitting}
+                      startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : <PublicIcon />}
+                      onClick={(e) => {
+                        setStatus('PUBLISHED');
+                        handleSubmit(e, 'PUBLISHED');
+                      }}
+                      sx={{
+                        borderRadius: '12px',
+                        px: 3.5,
+                        py: 1.2,
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        fontSize: '0.95rem',
+                        background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                        boxShadow: '0 8px 20px -4px rgba(16, 185, 129, 0.4)',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      Publish Event
+                    </Button>
+                  )}
+
+                  <Button
+                    variant="contained"
+                    type="submit"
+                    size="large"
+                    disabled={submitting}
+                    startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <CheckCircleIcon />}
+                    sx={{
+                      borderRadius: '12px',
+                      px: 4,
+                      py: 1.2,
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      fontSize: '0.95rem',
+                      background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
+                      boxShadow: '0 8px 20px -4px rgba(37, 99, 235, 0.4)',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {submitting ? 'Saving...' : (isEditMode ? 'Update Central Event' : 'Create Central Event')}
+                  </Button>
+                </Stack>
+              </Paper>
             </>
           )}
 

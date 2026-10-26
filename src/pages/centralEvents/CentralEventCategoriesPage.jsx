@@ -67,6 +67,11 @@ import { toast } from 'sonner';
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:9022';
 
+const isMongoId = (val) => {
+  if (!val) return false;
+  return /^[0-9a-fA-F]{24}$/.test(String(val).trim());
+};
+
 const getImageUrl = (img) => {
   if (!img) return '';
   const pathStr = typeof img === 'string' ? img : img.url;
@@ -215,14 +220,17 @@ export default function CentralEventCategoriesPage() {
         const res = await API.get('/api/employees/search', { params: { query: searchQuery.trim() } });
         const users = res.data?.data || res.data || [];
         if (Array.isArray(users)) {
-          const formatted = users.map(u => ({
-            empId: u.institutionId || u.empId || u.employeeId || '',
-            name: u.name || u.EMP_NAME || '',
-            designation: u.designation || u.DESIGNATION || '',
-            department: typeof u.department === 'object' ? (u.department?.name || u.department?.code) : (u.department || u.DEPT_NAME || ''),
-            phone: u.phone || u.MOBILE || '',
-            email: u.email || u.EMAIL || ''
-          }));
+          const formatted = users.map(u => {
+            const rawDept = typeof u.department === 'object' ? (u.department?.name || u.department?.code) : (u.department || u.DEPT_NAME || '');
+            return {
+              empId: u.institutionId || u.empId || u.employeeId || '',
+              name: u.name || u.EMP_NAME || '',
+              designation: u.designation || u.DESIGNATION || '',
+              department: isMongoId(rawDept) ? '' : rawDept,
+              phone: u.phone || u.MOBILE || '',
+              email: u.email || u.EMAIL || ''
+            };
+          });
           setEmployeeOptions(formatted);
         }
       } catch (err) {
@@ -463,12 +471,13 @@ export default function CentralEventCategoriesPage() {
         if (!id) return;
 
         if (!coordsMap.has(id)) {
+          const deptVal = typeof c.department === 'object' ? (c.department?.name || c.department?.code || '') : (c.department || '');
           coordsMap.set(id, {
             id,
-            empId: id,
+            empId: (id && !isMongoId(id)) ? id : '',
             name: c.name || 'Coordinator',
             designation: c.designation || 'Coordinator',
-            department: typeof c.department === 'object' ? (c.department?.name || c.department?.code || '') : (c.department || ''),
+            department: isMongoId(deptVal) ? '' : deptVal,
             phone: c.phone || c.mobile || 'N/A',
             email: c.email || '',
             photoUrl: c.photoUrl || c.profileImage || null,
@@ -500,12 +509,13 @@ export default function CentralEventCategoriesPage() {
             if (!id) return;
 
             if (!coordsMap.has(id)) {
+              const deptVal = typeof c.department === 'object' ? (c.department?.name || c.department?.code || '') : (c.department || '');
               coordsMap.set(id, {
                 id,
-                empId: id,
+                empId: (id && !isMongoId(id)) ? id : '',
                 name: c.name || 'Coordinator',
                 designation: c.designation || 'Coordinator',
-                department: typeof c.department === 'object' ? (c.department?.name || c.department?.code || '') : (c.department || ''),
+                department: isMongoId(deptVal) ? '' : deptVal,
                 phone: c.phone || c.mobile || 'N/A',
                 email: c.email || '',
                 photoUrl: c.photoUrl || c.profileImage || null,
@@ -803,7 +813,7 @@ export default function CentralEventCategoriesPage() {
                                     {(c.name || 'C').charAt(0)}
                                   </Avatar>
                                   <Typography variant="body2" fontWeight={600}>
-                                    {c.name} {c.empId ? `(${c.empId})` : ''}
+                                    {c.name} {c.empId && !isMongoId(c.empId) ? `(${c.empId})` : ''}
                                   </Typography>
                                 </Box>
                               ))}
@@ -1143,8 +1153,9 @@ export default function CentralEventCategoriesPage() {
                             {option.name || option.employeeName}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {option.designation || 'Staff'} • {option.department || 'General'}
-                            {(option.empId || option.institutionId || option.employeeId) &&
+                            {option.designation || 'Staff'}
+                            {option.department && !isMongoId(option.department) ? ` • ${option.department}` : ''}
+                            {(option.empId || option.institutionId || option.employeeId) && !isMongoId(option.empId || option.institutionId || option.employeeId) &&
                               ` • ID: ${option.empId || option.institutionId || option.employeeId}`}
                           </Typography>
                         </Box>
