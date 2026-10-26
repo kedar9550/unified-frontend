@@ -1,4 +1,3 @@
-﻿Faculty Employee ID,Faculty Name,Academic Year,College,PAN Number,Chapter Title,DOI,Text Book Name,ISBN Number(Textbook),Year Of Publication,Month Of Publication,Publisher,Total Authors,Faculty Author Position,"Aditya Co-author positions ( if existing )
-Emp Id only",,,,,,,
-,,,,,,,,,,,,,,1,2,3,4,5,6,7,8
-5741,k,2025-2026,AUS,ABC5689652,Sample Chapter ,1234578ch,sampletextbookname,1256489,2025,MAY,Elsevier,4,2,5660,,5694,4075,,,,
+Faculty Employee ID,Faculty Name,Academic Year,College,PAN Number,Chapter Title,Text Book Name,Publisher,ISBN Number,DOI,Total Chapters in Book,Serving as Editor (Yes/No),Scopus Indexed (Yes/No/Not Available),Publication Scope (National/International),Year Of Publication,Month Of Publication,Number of Pages,Total Authors,Faculty Author Position,Students Involved (Yes/No),Aditya Co-author positions (if existing) Emp Id only,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,1,2,3,4,5,6,7,8
+5741,Dr. John Doe,2025-2026,AUS,ABCDE1234F,Machine Learning Applications in Healthcare,Advances in Medical AI,Springer,978-3-030-12345-6,10.1007/sample.chapter,12,No,Yes,International,2025,MAY,18,3,1,No,5660,,5694,,,,,
