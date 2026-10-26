@@ -95,6 +95,11 @@ export const getCentralEvents = async (params = {}) => {
   return response.data;
 };
 
+export const getAlaRegistrations = async (params = {}) => {
+  const response = await API.get('/api/central-events/ala-registrations', { params });
+  return response.data;
+};
+
 export const getCentralEventBySlug = async (slug) => {
   const response = await API.get(`/api/central-events/${slug}`);
   return response.data;

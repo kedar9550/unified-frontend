@@ -51,11 +51,18 @@ import {
   Delete as DeleteIcon,
   Upload as UploadIcon,
   FormatListBulleted as FormatListBulletedIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Download as DownloadIcon,
+  ContentCopy as ContentCopyIcon,
+  OpenInNew as OpenInNewIcon,
+  School as SchoolIcon,
+  Person as PersonIcon,
+  Payment as PaymentIcon,
+  ContactMail as ContactMailIcon
 } from '@mui/icons-material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getCentralEvents, getEventTypes, getCategoriesByTypeCode, cancelCentralEvent, getAcademicYears, publishCentralEvent } from '../../api/centralEventsApi';
+import { getCentralEvents, getAlaRegistrations, getEventTypes, getCategoriesByTypeCode, cancelCentralEvent, getAcademicYears, publishCentralEvent } from '../../api/centralEventsApi';
 import { fetchEventDepartments } from '../../api/eventDepartmentApi';
 import { PageHeader, CustomTabs, ProfileCard } from '../../components/common';
 import PageContainer from '../../components/common/design-system/PageContainer';
@@ -163,6 +170,59 @@ export default function CentralEventsListPage() {
   const [selectedMode, setSelectedMode] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // ALA Specific State & Helpers
+  const [selectedAlaRecord, setSelectedAlaRecord] = useState(null);
+  const isAlaView = selectedType === 'ALA';
+
+  const handleCopy = (text, label = 'Content') => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    toast.success(`${label} copied to clipboard`);
+  };
+
+  const handleExportAlaCsv = () => {
+    if (!events.length) {
+      toast.error('No ALA registration records to export');
+      return;
+    }
+    const headers = [
+      'Application ID', 'Participant Name', 'Salutation', 'Designation', 'Event Name',
+      'Event Amount', 'Department', 'College Name', 'College Address', 'State',
+      'Email', 'Contact No', 'WhatsApp No', 'WhatsApp Link', 'Payment Status',
+      'UTR', 'Order ID', 'Payment ID', 'Created Date'
+    ];
+    const rows = events.map(e => [
+      `"${e.applicationId || ''}"`,
+      `"${(e.participantName || '').replace(/"/g, '""')}"`,
+      `"${e.salutation || ''}"`,
+      `"${e.designation || ''}"`,
+      `"${(e.event_name || '').replace(/"/g, '""')}"`,
+      `"${e.event_amount || e.amount || 0}"`,
+      `"${(e.department || '').replace(/"/g, '""')}"`,
+      `"${(e.collegeName || '').replace(/"/g, '""')}"`,
+      `"${(e.collegeAddress || '').replace(/"/g, '""')}"`,
+      `"${(e.state || '').replace(/"/g, '""')}"`,
+      `"${e.email || ''}"`,
+      `"${e.contactNo || ''}"`,
+      `"${e.whatsappNo || ''}"`,
+      `"${(e.whatsappLink || '').replace(/"/g, '""')}"`,
+      `"${e.payment_status || ''}"`,
+      `"${e.utr || ''}"`,
+      `"${e.order_id || ''}"`,
+      `"${e.payment_id || ''}"`,
+      `"${e.createdAtDate || ''}"`
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `ALA_Registrations_${selectedAcademicYear || 'All'}_${selectedLevel || 'All'}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('ALA registrations exported to CSV');
+  };
 
   // Delete Dialog State
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -298,6 +358,11 @@ export default function CentralEventsListPage() {
     fetchCats();
   }, [selectedType]);
 
+  // Reset page when any filter or search changes
+  useEffect(() => {
+    setPage(0);
+  }, [selectedType, selectedCategory, selectedLevel, selectedActivityType, selectedMode, selectedStatus, selectedAcademicYear, searchQuery]);
+
   // Fetch Events
   const fetchEvents = async () => {
     setLoading(true);
@@ -312,9 +377,15 @@ export default function CentralEventsListPage() {
       if (selectedAcademicYear) params.academicYear = selectedAcademicYear;
       if (searchQuery) params.search = searchQuery;
 
-      const res = await getCentralEvents(params);
+      let res;
+      if (selectedType === 'ALA') {
+        res = await getAlaRegistrations(params);
+      } else {
+        res = await getCentralEvents(params);
+      }
+
       if (res.success) {
-        setEvents(res.data);
+        setEvents(res.data || []);
       }
     } catch (err) {
       toast.error('Failed to fetch events');
@@ -340,17 +411,17 @@ export default function CentralEventsListPage() {
       const list = Array.isArray(event.coordinators?.faculty) && event.coordinators.faculty.length > 0
         ? event.coordinators.faculty
         : (event.facultyCoordinators?.length > 0
-            ? event.facultyCoordinators
-            : (event.facultyCoordinator?.employeeId || event.facultyCoordinator?.name
-                ? [{
-                    name: event.facultyCoordinator.employeeName || event.facultyCoordinator.name,
-                    empId: event.facultyCoordinator.employeeId || event.facultyCoordinator.empId,
-                    designation: event.facultyCoordinator.designation,
-                    department: event.facultyCoordinator.department,
-                    phone: event.facultyCoordinator.phone,
-                    email: event.facultyCoordinator.email
-                  }]
-                : []));
+          ? event.facultyCoordinators
+          : (event.facultyCoordinator?.employeeId || event.facultyCoordinator?.name
+            ? [{
+              name: event.facultyCoordinator.employeeName || event.facultyCoordinator.name,
+              empId: event.facultyCoordinator.employeeId || event.facultyCoordinator.empId,
+              designation: event.facultyCoordinator.designation,
+              department: event.facultyCoordinator.department,
+              phone: event.facultyCoordinator.phone,
+              email: event.facultyCoordinator.email
+            }]
+            : []));
 
       list.forEach((c) => {
         const id = c.empId || c.employeeId || c.institutionId || c.name;
@@ -636,7 +707,78 @@ export default function CentralEventsListPage() {
         </Grid>
       </Paper>
 
-      {/* Events / Coordinators View */}
+      {/* ALA Banner when ALA is selected */}
+      {isAlaView && (
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2.5,
+            mb: 3,
+            borderRadius: '16px',
+            border: '1px solid var(--border-color)',
+            background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(59, 130, 246, 0.04) 100%)',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2
+          }}
+        >
+          <Box>
+            <Typography variant="h6" fontWeight={800} color="primary.main">
+              ALA Literary & Arts Festival Registrations
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Displaying all registration records from central_event_ala_registrations
+            </Typography>
+          </Box>
+          <Stack direction="row" spacing={1.5} flexWrap="wrap" alignItems="center">
+            <Chip
+              label={`Total: ${events.length}`}
+              color="primary"
+              size="small"
+              sx={{ fontWeight: 700, borderRadius: '8px' }}
+            />
+            <Chip
+              label={`Students: ${events.filter(e => /student/i.test(e.designation)).length}`}
+              color="info"
+              size="small"
+              sx={{ fontWeight: 700, borderRadius: '8px' }}
+            />
+            <Chip
+              label={`Faculty / Professors: ${events.filter(e => !/student/i.test(e.designation)).length}`}
+              color="secondary"
+              size="small"
+              sx={{ fontWeight: 700, borderRadius: '8px' }}
+            />
+            {selectedAcademicYear && (
+              <Chip
+                label={`AY: ${selectedAcademicYear}`}
+                variant="outlined"
+                size="small"
+                sx={{ fontWeight: 600, borderRadius: '8px' }}
+              />
+            )}
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<DownloadIcon />}
+              onClick={handleExportAlaCsv}
+              disabled={events.length === 0}
+              sx={{
+                borderRadius: '10px',
+                textTransform: 'none',
+                fontWeight: 700,
+                background: 'var(--bg-paper)'
+              }}
+            >
+              Export CSV
+            </Button>
+          </Stack>
+        </Paper>
+      )}
+
+      {/* Events Tabular Table */}
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
           <CircularProgress />
@@ -652,31 +794,217 @@ export default function CentralEventsListPage() {
             boxShadow: '0 4px 20px rgba(0,0,0,0.04)'
           }}
         >
-          <TableContainer>
-            <Table>
+          <TableContainer sx={{ overflowX: 'auto', width: '100%' }}>
+            <Table sx={{ minWidth: isAlaView ? 1220 : 1000, tableLayout: 'auto' }}>
               <TableHead sx={{ backgroundColor: 'var(--bg-accent-1, #f8fafc)' }}>
-                <TableRow>
-                  <TableCell><strong>S.No</strong></TableCell>
-                  <TableCell><strong>Banner</strong></TableCell>
-                  <TableCell><strong>Event Title</strong></TableCell>
-                  <TableCell><strong>Type</strong></TableCell>
-                  <TableCell><strong>Category / Activity</strong></TableCell>
-                  <TableCell><strong>Faculty Coordinators</strong></TableCell>
-                  <TableCell><strong>Schedule & Location</strong></TableCell>
-                  <TableCell><strong>Fee & Capacity</strong></TableCell>
-                  <TableCell><strong>Status</strong></TableCell>
-                  <TableCell align="right"><strong>Actions</strong></TableCell>
-                </TableRow>
+                {isAlaView ? (
+                  <TableRow>
+                    <TableCell sx={{ width: 60, whiteSpace: 'nowrap' }}><strong>S.No</strong></TableCell>
+                    <TableCell sx={{ width: 140, whiteSpace: 'nowrap' }}><strong>Application ID</strong></TableCell>
+                    <TableCell sx={{ minWidth: 180, whiteSpace: 'nowrap' }}><strong>Participant & Designation</strong></TableCell>
+                    <TableCell sx={{ minWidth: 170, whiteSpace: 'nowrap' }}><strong>Event Name</strong></TableCell>
+                    <TableCell sx={{ minWidth: 220, whiteSpace: 'nowrap' }}><strong>Institution & Dept</strong></TableCell>
+                    <TableCell sx={{ minWidth: 200, whiteSpace: 'nowrap' }}><strong>Contact Info</strong></TableCell>
+                    <TableCell sx={{ minWidth: 110, whiteSpace: 'nowrap' }}><strong>Fee & Status</strong></TableCell>
+                    <TableCell sx={{ minWidth: 120, whiteSpace: 'nowrap' }}><strong>Registration Date</strong></TableCell>
+                    <TableCell align="right" sx={{ minWidth: 90, whiteSpace: 'nowrap' }}><strong>Actions</strong></TableCell>
+                  </TableRow>
+                ) : (
+                  <TableRow>
+                    <TableCell><strong>S.No</strong></TableCell>
+                    <TableCell><strong>Banner</strong></TableCell>
+                    <TableCell><strong>Event Title</strong></TableCell>
+                    <TableCell><strong>Type</strong></TableCell>
+                    <TableCell><strong>Category / Activity</strong></TableCell>
+                    <TableCell><strong>Faculty Coordinators</strong></TableCell>
+                    <TableCell><strong>Schedule & Location</strong></TableCell>
+                    <TableCell><strong>Fee & Capacity</strong></TableCell>
+                    <TableCell><strong>Status</strong></TableCell>
+                    <TableCell align="right"><strong>Actions</strong></TableCell>
+                  </TableRow>
+                )}
               </TableHead>
               <TableBody>
                 {events.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={10} align="center" sx={{ py: 6 }}>
                       <Typography variant="body1" color="text.secondary" fontWeight={500}>
-                        No events found matching your criteria.
+                        {isAlaView ? 'No ALA registrations found matching your criteria.' : 'No events found matching your criteria.'}
                       </Typography>
                     </TableCell>
                   </TableRow>
+                ) : isAlaView ? (
+                  events.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((item, index) => {
+                    const isStudent = /student/i.test(item.designation);
+                    return (
+                      <TableRow key={item._id || index} hover>
+                        <TableCell sx={{ width: 60, whiteSpace: 'nowrap' }}>
+                          <Typography fontWeight={600} color="text.secondary">
+                            {page * rowsPerPage + index + 1}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ width: 140, whiteSpace: 'nowrap' }}>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontFamily: 'monospace',
+                              fontWeight: 700,
+                              color: 'primary.main',
+                              cursor: 'pointer'
+                            }}
+                            onClick={() => setSelectedAlaRecord(item)}
+                          >
+                            {item.applicationId || 'N/A'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ minWidth: 180, maxWidth: 220 }}>
+                          <Tooltip title={`${item.salutation ? `${item.salutation}. ` : ''}${item.participantName || ''}`} arrow>
+                            <Typography
+                              variant="body2"
+                              fontWeight={700}
+                              sx={{
+                                cursor: 'pointer',
+                                '&:hover': { color: 'primary.main', textDecoration: 'underline' },
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap'
+                              }}
+                              onClick={() => setSelectedAlaRecord(item)}
+                            >
+                              {item.salutation ? `${item.salutation}. ` : ''}{item.participantName || 'N/A'}
+                            </Typography>
+                          </Tooltip>
+                          <Box sx={{ mt: 0.5 }}>
+                            <Chip
+                              label={item.designation || (isStudent ? 'Student' : 'Faculty')}
+                              color={isStudent ? 'info' : 'secondary'}
+                              size="small"
+                              sx={{
+                                fontWeight: 700,
+                                borderRadius: '6px',
+                                fontSize: '0.72rem',
+                                height: 22
+                              }}
+                            />
+                          </Box>
+                        </TableCell>
+                        <TableCell sx={{ minWidth: 170, maxWidth: 220 }}>
+                          <Tooltip title={item.event_name || 'ALA Event'} arrow>
+                            <Typography
+                              variant="body2"
+                              fontWeight={600}
+                              sx={{
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                lineHeight: 1.35
+                              }}
+                            >
+                              {item.event_name || 'ALA Event'}
+                            </Typography>
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell sx={{ minWidth: 220, maxWidth: 260 }}>
+                          <Typography variant="body2" fontWeight={700} color="primary.main" noWrap>
+                            {item.department || 'General'}
+                          </Typography>
+                          <Tooltip title={item.collegeName || 'N/A'} arrow>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                lineHeight: 1.35,
+                                mt: 0.3,
+                                wordBreak: 'break-word'
+                              }}
+                            >
+                              {item.collegeName || 'N/A'}
+                            </Typography>
+                          </Tooltip>
+                          {item.state && (
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.2 }}>
+                              📍 {item.state}
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell sx={{ minWidth: 200, maxWidth: 230 }}>
+                          <Tooltip title={item.email || 'N/A'} arrow>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                fontSize: '0.8rem',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                display: 'block'
+                              }}
+                            >
+                              {item.email || 'N/A'}
+                            </Typography>
+                          </Tooltip>
+                          {(item.contactNo || item.whatsappNo) && (
+                            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.3 }}>
+                              📞 {item.contactNo || item.whatsappNo}
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell sx={{ minWidth: 110, whiteSpace: 'nowrap' }}>
+                          <Typography variant="body2" fontWeight={800} color="success.main">
+                            ₹{item.event_amount || item.amount || 0}
+                          </Typography>
+                          <Chip
+                            label={item.payment_status || 'Success'}
+                            color={item.payment_status?.toLowerCase() === 'success' ? 'success' : 'default'}
+                            size="small"
+                            sx={{ borderRadius: '6px', height: 20, fontSize: '0.68rem', fontWeight: 700, mt: 0.3 }}
+                          />
+                          {item.utr && (
+                            <Tooltip title={`UTR: ${item.utr}`} arrow>
+                              <Typography
+                                variant="caption"
+                                display="block"
+                                sx={{
+                                  fontFamily: 'monospace',
+                                  color: 'text.secondary',
+                                  fontSize: '0.65rem',
+                                  maxWidth: 105,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  mt: 0.2
+                                }}
+                              >
+                                UTR: {item.utr}
+                              </Typography>
+                            </Tooltip>
+                          )}
+                        </TableCell>
+                        <TableCell sx={{ minWidth: 120, whiteSpace: 'nowrap' }}>
+                          <Typography variant="body2" fontWeight={600}>
+                            {item.createdAtDate || (item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'N/A')}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right" sx={{ minWidth: 90, whiteSpace: 'nowrap' }}>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<VisibilityIcon />}
+                            onClick={() => setSelectedAlaRecord(item)}
+                            sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600 }}
+                          >
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 ) : (
                   events.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((event, index) => (
                     <TableRow key={event._id} hover>
@@ -759,14 +1087,14 @@ export default function CentralEventsListPage() {
                           const coordsList = Array.isArray(event.coordinators?.faculty) && event.coordinators.faculty.length > 0
                             ? event.coordinators.faculty
                             : (event.facultyCoordinators?.length > 0
-                                ? event.facultyCoordinators
-                                : (event.facultyCoordinator?.employeeId || event.facultyCoordinator?.name
-                                    ? [{
-                                        name: event.facultyCoordinator.employeeName || event.facultyCoordinator.name,
-                                        empId: event.facultyCoordinator.employeeId || event.facultyCoordinator.empId,
-                                        department: event.facultyCoordinator.department
-                                      }]
-                                    : []));
+                              ? event.facultyCoordinators
+                              : (event.facultyCoordinator?.employeeId || event.facultyCoordinator?.name
+                                ? [{
+                                  name: event.facultyCoordinator.employeeName || event.facultyCoordinator.name,
+                                  empId: event.facultyCoordinator.employeeId || event.facultyCoordinator.empId,
+                                  department: event.facultyCoordinator.department
+                                }]
+                                : []));
 
                           if (coordsList.length === 0) {
                             return (
@@ -908,7 +1236,7 @@ export default function CentralEventsListPage() {
           </TableContainer>
 
           <TablePagination
-            rowsPerPageOptions={[5, 10, 25, 50]}
+            rowsPerPageOptions={[5, 10, 25, 50, 100]}
             component="div"
             count={events.length}
             rowsPerPage={rowsPerPage}
@@ -951,12 +1279,12 @@ export default function CentralEventsListPage() {
               <PeopleIcon sx={{ fontSize: 32 }} />
             </Box>
             <Typography variant="h6" fontWeight={700} color="text.primary" gutterBottom>
-              No Faculty Coordinators Found
+              No Coordinators Found
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 450, mx: 'auto' }}>
               {coordinatorSearch
                 ? `No coordinators matching "${coordinatorSearch}". Try clearing your search.`
-                : 'No faculty coordinators are currently assigned to events matching the selected filters.'}
+                : 'No coordinators are currently assigned to events matching the selected filters.'}
             </Typography>
           </Paper>
         ) : (
@@ -975,8 +1303,9 @@ export default function CentralEventsListPage() {
               <ProfileCard
                 key={coord.id}
                 name={coord.name}
-                role="Faculty Coordinator"
+                role={coord.designation || 'Faculty Coordinator'}
                 employeeId={coord.empId}
+                department={coord.department}
                 phone={coord.phone}
                 labels={coord.events}
                 avatarComponent={
@@ -997,6 +1326,262 @@ export default function CentralEventsListPage() {
           </Box>
         )
       )}
+
+      {/* ALA Registration Details Dialog */}
+      <Dialog
+        open={Boolean(selectedAlaRecord)}
+        onClose={() => setSelectedAlaRecord(null)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '20px',
+            p: 1,
+            boxShadow: 'var(--shadow-premium-soft)'
+          }
+        }}
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            pb: 1,
+            borderBottom: '1px solid var(--border-color)'
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#fff'
+              }}
+            >
+              <EventIcon fontSize="small" />
+            </Box>
+            <Box>
+              <Typography variant="h6" fontWeight={800}>
+                ALA Registration Details
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Application #{selectedAlaRecord?.applicationId || 'N/A'}
+              </Typography>
+            </Box>
+          </Box>
+          <IconButton onClick={() => setSelectedAlaRecord(null)} size="small">
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ py: 3 }}>
+          {selectedAlaRecord && (
+            <Grid container spacing={2.5}>
+              {/* Participant Information */}
+              <Grid size={{ xs: 12 }}>
+                <Typography variant="subtitle2" fontWeight={800} color="primary.main" sx={{ mb: 1, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Participant Information
+                </Typography>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px' }}>
+                  <Typography variant="caption" color="text.secondary" display="block">Full Name & Salutation</Typography>
+                  <Typography variant="body1" fontWeight={700}>
+                    {selectedAlaRecord.salutation ? `${selectedAlaRecord.salutation}. ` : ''}{selectedAlaRecord.participantName || 'N/A'}
+                  </Typography>
+                </Paper>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px' }}>
+                  <Typography variant="caption" color="text.secondary" display="block">Designation</Typography>
+                  <Box sx={{ mt: 0.5 }}>
+                    <Chip
+                      label={selectedAlaRecord.designation || 'N/A'}
+                      color={/student/i.test(selectedAlaRecord.designation) ? 'info' : 'secondary'}
+                      size="small"
+                      sx={{ fontWeight: 700, borderRadius: '8px' }}
+                    />
+                  </Box>
+                </Paper>
+              </Grid>
+
+              {/* Event & Academic Details */}
+              <Grid size={{ xs: 12 }}>
+                <Typography variant="subtitle2" fontWeight={800} color="primary.main" sx={{ mt: 1, mb: 1, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Event & Institution
+                </Typography>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px' }}>
+                  <Typography variant="caption" color="text.secondary" display="block">Event Name</Typography>
+                  <Typography variant="body1" fontWeight={700}>{selectedAlaRecord.event_name || 'N/A'}</Typography>
+                </Paper>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px' }}>
+                  <Typography variant="caption" color="text.secondary" display="block">Department</Typography>
+                  <Typography variant="body1" fontWeight={700}>{selectedAlaRecord.department || 'N/A'}</Typography>
+                </Paper>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 8 }}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px' }}>
+                  <Typography variant="caption" color="text.secondary" display="block">College Name & Address</Typography>
+                  <Typography variant="body2" fontWeight={600}>{selectedAlaRecord.collegeName || 'N/A'}</Typography>
+                  {selectedAlaRecord.collegeAddress && (
+                    <Typography variant="caption" color="text.secondary" display="block">{selectedAlaRecord.collegeAddress}</Typography>
+                  )}
+                </Paper>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 4 }}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px' }}>
+                  <Typography variant="caption" color="text.secondary" display="block">State</Typography>
+                  <Typography variant="body1" fontWeight={700}>{selectedAlaRecord.state || 'N/A'}</Typography>
+                </Paper>
+              </Grid>
+
+              {/* Contact Information */}
+              <Grid size={{ xs: 12 }}>
+                <Typography variant="subtitle2" fontWeight={800} color="primary.main" sx={{ mt: 1, mb: 1, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Contact Information
+                </Typography>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" display="block">Email Address</Typography>
+                    <Typography variant="body2" fontWeight={700}>{selectedAlaRecord.email || 'N/A'}</Typography>
+                  </Box>
+                  {selectedAlaRecord.email && (
+                    <IconButton size="small" onClick={() => handleCopy(selectedAlaRecord.email, 'Email')}>
+                      <ContentCopyIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </Paper>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" display="block">Contact Number / WhatsApp</Typography>
+                    <Typography variant="body2" fontWeight={700}>{selectedAlaRecord.contactNo || selectedAlaRecord.whatsappNo || 'N/A'}</Typography>
+                  </Box>
+                  {(selectedAlaRecord.contactNo || selectedAlaRecord.whatsappNo) && (
+                    <IconButton size="small" onClick={() => handleCopy(selectedAlaRecord.contactNo || selectedAlaRecord.whatsappNo, 'Phone')}>
+                      <ContentCopyIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </Paper>
+              </Grid>
+              {selectedAlaRecord.whatsappLink && (
+                <Grid size={{ xs: 12 }}>
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <Typography variant="caption" color="text.secondary" display="block">WhatsApp Group Link</Typography>
+                      <Typography variant="body2" noWrap sx={{ color: 'primary.main', fontWeight: 600 }}>
+                        {selectedAlaRecord.whatsappLink}
+                      </Typography>
+                    </Box>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<OpenInNewIcon />}
+                      onClick={() => window.open(selectedAlaRecord.whatsappLink.trim(), '_blank')}
+                      sx={{ borderRadius: '8px', ml: 2, textTransform: 'none', flexShrink: 0 }}
+                    >
+                      Open Link
+                    </Button>
+                  </Paper>
+                </Grid>
+              )}
+
+              {/* Payment & Transaction Information */}
+              <Grid size={{ xs: 12 }}>
+                <Typography variant="subtitle2" fontWeight={800} color="primary.main" sx={{ mt: 1, mb: 1, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  Payment & Transaction Details
+                </Typography>
+              </Grid>
+              <Grid size={{ xs: 6, sm: 3 }}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px' }}>
+                  <Typography variant="caption" color="text.secondary" display="block">Fee Amount</Typography>
+                  <Typography variant="h6" fontWeight={800} color="success.main">
+                    ₹{selectedAlaRecord.event_amount || selectedAlaRecord.amount || 0}
+                  </Typography>
+                </Paper>
+              </Grid>
+              <Grid size={{ xs: 6, sm: 3 }}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px' }}>
+                  <Typography variant="caption" color="text.secondary" display="block">Payment Status</Typography>
+                  <Box sx={{ mt: 0.5 }}>
+                    <Chip
+                      label={selectedAlaRecord.payment_status || 'Success'}
+                      color={selectedAlaRecord.payment_status?.toLowerCase() === 'success' ? 'success' : 'default'}
+                      size="small"
+                      sx={{ fontWeight: 700, borderRadius: '6px' }}
+                    />
+                  </Box>
+                </Paper>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" display="block">UTR Number</Typography>
+                    <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 700 }}>
+                      {selectedAlaRecord.utr || 'N/A'}
+                    </Typography>
+                  </Box>
+                  {selectedAlaRecord.utr && (
+                    <IconButton size="small" onClick={() => handleCopy(selectedAlaRecord.utr, 'UTR')}>
+                      <ContentCopyIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </Paper>
+              </Grid>
+              {selectedAlaRecord.order_id && (
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px' }}>
+                    <Typography variant="caption" color="text.secondary" display="block">Order ID</Typography>
+                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{selectedAlaRecord.order_id}</Typography>
+                  </Paper>
+                </Grid>
+              )}
+              {selectedAlaRecord.payment_id && (
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px' }}>
+                    <Typography variant="caption" color="text.secondary" display="block">Payment ID</Typography>
+                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{selectedAlaRecord.payment_id}</Typography>
+                  </Paper>
+                </Grid>
+              )}
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px' }}>
+                  <Typography variant="caption" color="text.secondary" display="block">Registration Date (createdAtDate)</Typography>
+                  <Typography variant="body2" fontWeight={700}>{selectedAlaRecord.createdAtDate || 'N/A'}</Typography>
+                </Paper>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px' }}>
+                  <Typography variant="caption" color="text.secondary" display="block">Created Timestamp</Typography>
+                  <Typography variant="body2">
+                    {selectedAlaRecord.createdAt ? new Date(selectedAlaRecord.createdAt).toLocaleString() : 'N/A'}
+                  </Typography>
+                </Paper>
+              </Grid>
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid var(--border-color)' }}>
+          <Button
+            variant="contained"
+            onClick={() => setSelectedAlaRecord(null)}
+            sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 700, px: 3 }}
+          >
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Delete Event Confirmation Dialog */}
       <Dialog
