@@ -219,11 +219,11 @@ export default function RndPatentDataEntry() {
       return;
     }
     if (finalFacultyRole === "Inventor / Co-Inventor" && (!finalPatentName || !finalApplicantAffiliation)) {
-      toast.error("Please provide the Name of the Applicant and Applicant Affiliation");
+      toast.error("Please provide the Name of the Patent Applicant and Patent Applicant's Affiliation");
       return;
     }
     if (!finalPatentName) {
-      toast.error("Please provide the Name of the Applicant");
+      toast.error("Please provide the Name of the Patent Applicant");
       return;
     }
     if (!form.title || !form.applicationNo || (form.status !== 'Granted' && !form.dateOfFiling)) {
@@ -495,7 +495,7 @@ export default function RndPatentDataEntry() {
 
               {/* Row 2 */}
               <Box>
-                <Typography sx={labelStyle}>Name of the Applicant : *</Typography>
+                <Typography sx={labelStyle}>Patent Applicant Name : *</Typography>
                 <TextField
                   size="small"
                   fullWidth
@@ -506,7 +506,7 @@ export default function RndPatentDataEntry() {
                 />
               </Box>
               <Box>
-                <Typography sx={labelStyle}>Applicant Affiliation : *</Typography>
+                <Typography sx={labelStyle}>Patent Applicant's Affiliation : *</Typography>
                 <TextField
                   size="small"
                   fullWidth

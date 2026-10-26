@@ -122,16 +122,24 @@ export default function NovelProductPublication() {
       // Applicant is PI. Generate N-1 rows, all as Co-Investigators.
       for (let i = 1; i <= total - 1; i++) {
         const existing = form.otherDevelopersList[i - 1];
-        newOtherDevelopers.push(existing || {
-          developerPosition: i + 1,
-          role: "Co-Investigator",
-          affiliationType: "",
-          empId: "",
-          name: "",
-          affiliation: "",
-          department: "",
-          designation: ""
-        });
+        if (existing) {
+          newOtherDevelopers.push({
+            ...existing,
+            developerPosition: i + 1,
+            role: "Co-Investigator"
+          });
+        } else {
+          newOtherDevelopers.push({
+            developerPosition: i + 1,
+            role: "Co-Investigator",
+            affiliationType: "",
+            empId: "",
+            name: "",
+            affiliation: "",
+            department: "",
+            designation: ""
+          });
+        }
       }
     } else if (type === "Co-Principal Investigator (Co-PI)") {
       // Applicant is Co-PI. Generate N-1 rows: 1 PI + N-2 Co-Investigators.

@@ -9,9 +9,9 @@ import BusinessCenterIcon from '@mui/icons-material/BusinessCenter';
 import PersonIcon from '@mui/icons-material/Person';
 import DescriptionIcon from '@mui/icons-material/Description';
 import HistoryIcon from '@mui/icons-material/History';
-import GavelIcon from '@mui/icons-material/Gavel';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import GroupsIcon from '@mui/icons-material/Groups';
+import DownloadIcon from '@mui/icons-material/Download';
 import { toast } from "sonner";
 import API from "../../../api/axios";
 import { useAuth } from "../../../context/AuthContext";
@@ -139,6 +139,41 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
         boxShadow: "var(--shadow-premium)",
     };
 
+    const renderFilePreview = (title, filepath, index) => {
+        if (!filepath) return null;
+        const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+        const fileUrl = filepath.startsWith('http') ? filepath : `${backendURL}${filepath}`;
+        const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filepath);
+
+        return (
+            <Grid key={index} item xs={12} sm={6} md={4}>
+                <Box sx={{ mb: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.75rem", textTransform: "uppercase" }}>
+                        {index}. {title}
+                    </Typography>
+                    <IconButton size="small" href={fileUrl} download target="_blank" sx={{ color: "var(--color-primary)" }}>
+                        <DownloadIcon fontSize="small" />
+                    </IconButton>
+                </Box>
+                <Box sx={{
+                    height: 200, display: "flex", alignItems: "center", justifyContent: "center",
+                    border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "12px",
+                    overflow: "hidden", cursor: "pointer", transition: "all 0.3s ease",
+                    "&:hover": { borderColor: "var(--color-primary)", transform: "translateY(-4px)", boxShadow: "var(--shadow-premium)" }
+                }} onClick={() => window.open(fileUrl, '_blank')}>
+                    {isImage ? (
+                        <img src={fileUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                        <Box sx={{ textAlign: "center" }}>
+                            <DescriptionIcon sx={{ fontSize: 40, color: "var(--text-secondary)", mb: 1 }} />
+                            <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontWeight: 700 }}>PDF View</Typography>
+                        </Box>
+                    )}
+                </Box>
+            </Grid>
+        );
+    };
+
     return (
         <Box sx={{ width: "100%", pb: 5 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
@@ -246,6 +281,10 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                         )}
                         <LabelValue label="Appraisal Eligible?" value={data.status === "Approved" ? (data.appraisalEligible || "No") : "Not yet decided"} horizontal />
                         <LabelValue label="Appraisal Claimant(s)" value={appraisalClaimantsStr} horizontal />
+                        <LabelValue label="Applying for Incentive?" value={data.applyIncentive || "No"} horizontal />
+                        {data.applyIncentive === "Yes" && (
+                            <LabelValue label="Estimated Incentive Amount" value={data.estimatedIncentiveAmount ? `₹${Number(data.estimatedIncentiveAmount).toLocaleString('en-IN')}` : "₹0"} horizontal />
+                        )}
                     </Box>
                 </Card>
             </Box>
@@ -299,6 +338,20 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                     </Table>
                 </TableContainer>
             </Card>
+            )}
+
+            {/* Documents */}
+            {(data.sanctionLetter || data.mou) && (
+                <Card sx={cardStyle}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}>
+                        <AttachFileIcon sx={{ color: "var(--color-primary)" }} />
+                        <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Documents</Typography>
+                    </Box>
+                    <Grid container spacing={3}>
+                        {data.sanctionLetter && renderFilePreview("Account In-charge approval certificate", data.sanctionLetter, 1)}
+                        {data.mou && renderFilePreview("MOU Document", data.mou, 2)}
+                    </Grid>
+                </Card>
             )}
 
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mt: 3 }}>

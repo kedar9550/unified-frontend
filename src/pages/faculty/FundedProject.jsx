@@ -162,16 +162,24 @@ export default function FundedProject() {
       // Applicant is PI. Generate N-1 rows, all as Co-Investigators.
       for (let i = 1; i <= total - 1; i++) {
         const existing = form.otherInvestigatorsList[i - 1];
-        newOtherInvestigators.push(existing || {
-          investigatorPosition: i + 1,
-          role: "Co-Investigator",
-          affiliationType: "",
-          empId: "",
-          name: "",
-          affiliation: "",
-          department: "",
-          designation: ""
-        });
+        if (existing) {
+          newOtherInvestigators.push({
+            ...existing,
+            investigatorPosition: i + 1,
+            role: "Co-Investigator"
+          });
+        } else {
+          newOtherInvestigators.push({
+            investigatorPosition: i + 1,
+            role: "Co-Investigator",
+            affiliationType: "",
+            empId: "",
+            name: "",
+            affiliation: "",
+            department: "",
+            designation: ""
+          });
+        }
       }
     } else if (type === "Co-Principal Investigator (Co-PI)") {
       // Applicant is Co-PI. Generate N-1 rows: 1 PI + N-2 Co-Investigators.
@@ -450,6 +458,32 @@ export default function FundedProject() {
             }}
             publications={publicationsList}
           />
+          <Button
+            variant="contained"
+            onClick={() => {
+              const activeYear = academicYears.length > 0;
+              if (activeYear) {
+                setSelectedYear("");
+                setViewMode("select-year");
+              } else {
+                setNoActiveYearAlertOpen(true);
+              }
+            }}
+            sx={{
+              background: "var(--gradient-primary)",
+              px: 3,
+              fontWeight: 700,
+              textTransform: "none",
+              "&:hover": {
+                opacity: 0.9,
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+              },
+              transition: "all 0.2s ease"
+            }}
+          >
+            Apply New
+          </Button>
         </Box>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (

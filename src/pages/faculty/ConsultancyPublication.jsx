@@ -120,16 +120,24 @@ export default function ConsultancyPublication() {
       // Applicant is PI. Generate N-1 rows, all as Co-Investigators.
       for (let i = 1; i <= total - 1; i++) {
         const existing = form.otherInvestigatorsList[i - 1];
-        newOtherInvestigators.push(existing || {
-          investigatorPosition: i + 1,
-          role: "Co-Investigator",
-          affiliationType: "",
-          empId: "",
-          name: "",
-          affiliation: "",
-          department: "",
-          designation: ""
-        });
+        if (existing) {
+          newOtherInvestigators.push({
+            ...existing,
+            investigatorPosition: i + 1,
+            role: "Co-Investigator"
+          });
+        } else {
+          newOtherInvestigators.push({
+            investigatorPosition: i + 1,
+            role: "Co-Investigator",
+            affiliationType: "",
+            empId: "",
+            name: "",
+            affiliation: "",
+            department: "",
+            designation: ""
+          });
+        }
       }
     } else if (type === "Co-Principal Investigator (Co-PI)") {
       // Applicant is Co-PI. Generate N-1 rows: 1 PI + N-2 Co-Investigators.
@@ -247,6 +255,11 @@ export default function ConsultancyPublication() {
   const handleSubmit = async () => {
     if (!form.title || !form.typeOfConsultancy || !form.fundingIndustry || !form.amount) {
       toast.error("Please fill all required fields");
+      return;
+    }
+
+    if (!files.sanctionLetter && !existingFiles.sanctionLetter) {
+      toast.error("Please upload Account In-charge approval certificate");
       return;
     }
 
@@ -390,6 +403,32 @@ export default function ConsultancyPublication() {
             }}
             publications={publicationsList}
           />
+          <Button
+            variant="contained"
+            onClick={() => {
+              const activeYear = academicYears.length > 0;
+              if (activeYear) {
+                setSelectedYear("");
+                setViewMode("select-year");
+              } else {
+                setNoActiveYearAlertOpen(true);
+              }
+            }}
+            sx={{
+              background: "var(--gradient-primary)",
+              px: 3,
+              fontWeight: 700,
+              textTransform: "none",
+              "&:hover": {
+                opacity: 0.9,
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+              },
+              transition: "all 0.2s ease"
+            }}
+          >
+            Apply New
+          </Button>
         </Box>
       </Box>
       {(!publicationsList || publicationsList.length === 0) ? (
@@ -692,6 +731,8 @@ export default function ConsultancyPublication() {
               <MenuItem value="" disabled>--Select--</MenuItem>
               <MenuItem value="testing">Testing</MenuItem>
               <MenuItem value="design">Design</MenuItem>
+              <MenuItem value="training">Training</MenuItem>
+              <MenuItem value="individual">Individual Consultancy</MenuItem>
             </Select>
           </Box>
           <Box>
@@ -707,7 +748,7 @@ export default function ConsultancyPublication() {
             <TextField size="small" fullWidth value={form.receivedAmount} onChange={handleNumericChange("receivedAmount")} placeholder="Received Amount" />
           </Box>
           <Box>
-            <Typography sx={labelStyle}>Received Amount Date :</Typography>
+            <Typography sx={labelStyle}>Date of Amount received :</Typography>
             <TextField type="date" size="small" fullWidth value={form.receivedAmountDate} onChange={set("receivedAmountDate")} InputLabelProps={{ shrink: true }} />
           </Box>
           <Box>
@@ -757,8 +798,8 @@ export default function ConsultancyPublication() {
                     <Chip label={ca.role} size="small" color={ca.role === "Principal Investigator" ? "primary" : "secondary"} sx={{ fontWeight: 700, borderRadius: "6px" }} />
                   </Box>
 
-                  <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2 }}>
-                    <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                    <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2 }}>
+                    <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6", md: "span 3" } }}>
                       <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE *</Typography>
                       <Select
                         size="small"
@@ -775,7 +816,7 @@ export default function ConsultancyPublication() {
 
                     {ca.affiliationType === "AUS" && (
                       <>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6", md: "span 3" } }}>
                           <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID *</Typography>
                           <TextField
                             size="small"
@@ -788,7 +829,7 @@ export default function ConsultancyPublication() {
                             placeholder="e.g. 5741"
                           />
                         </Box>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6", md: "span 3" } }}>
                           <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>NAME</Typography>
                           <TextField
                             size="small"
@@ -799,7 +840,7 @@ export default function ConsultancyPublication() {
                             sx={{ background: "rgba(0,0,0,0.02)" }}
                           />
                         </Box>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6", md: "span 3" } }}>
                           <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>DEPARTMENT</Typography>
                           <TextField
                             size="small"
@@ -882,27 +923,71 @@ export default function ConsultancyPublication() {
           </Box>
         </Grid2>
 
+        {form.applyIncentive === "Yes" && (() => {
+          const recAmt = parseFloat(String(form.receivedAmount || "0").replace(/,/g, "")) || 0;
+          const type = (form.typeOfConsultancy || "").toLowerCase().trim();
+          let percentage = 0;
+          let typeLabel = "";
+
+          if (type === "testing") {
+            percentage = 50;
+            typeLabel = "Testing (50% Faculty / 50% University)";
+          } else if (type === "design") {
+            percentage = 60;
+            typeLabel = "Design (60% Faculty / 40% University)";
+          } else if (type === "training") {
+            percentage = 80;
+            typeLabel = "Training (80% Faculty / 20% University)";
+          } else if (type === "individual") {
+            percentage = 80;
+            typeLabel = "Any Individual Faculty (80% Faculty / 20% University)";
+          }
+
+          const estimatedAmount = Math.round((recAmt * percentage) / 100);
+
+          return (
+            <Box sx={{
+              p: 2.5,
+              borderRadius: "12px",
+              background: "rgba(16, 185, 129, 0.05)",
+              border: "1px dashed rgba(16, 185, 129, 0.3)",
+              mt: 2.5,
+              mb: 1
+            }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+                <Box>
+                  <Typography sx={{ fontSize: "0.8rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: "#059669" }}>
+                    Estimated Consultancy Incentive Amount
+                  </Typography>
+                  <Typography sx={{ fontSize: "1.6rem", fontWeight: 800, color: "#047857", mt: 0.5 }}>
+                    ₹{estimatedAmount.toLocaleString('en-IN')}
+                  </Typography>
+                  {typeLabel ? (
+                    <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.5 }}>
+                      Allocation: <strong>{typeLabel}</strong> from Received Amount ({recAmt > 0 ? `₹${recAmt.toLocaleString('en-IN')}` : "₹0"})
+                    </Typography>
+                  ) : (
+                    <Typography variant="caption" sx={{ color: "#d97706", display: "block", mt: 0.5 }}>
+                      ⚠️ Please select <strong>Type of Consultancy</strong> and enter <strong>Received Amount</strong> to calculate estimated incentive.
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            </Box>
+          );
+        })()}
+
         <NoteBox />
 
         <Grid2 sx={{ mt: 1 }}>
           <FileField
-            label="Sanction Letter:"
+            label="Account In-charge approval certificate : *"
             name="sanctionLetter"
             onChange={setFile("sanctionLetter")}
             existingFileUrl={existingFiles.sanctionLetter}
             onRemoveExisting={() => {
               setExistingFiles(p => ({ ...p, sanctionLetter: null }));
               setDeleteFlags(p => ({ ...p, sanctionLetter: true }));
-            }}
-          />
-          <FileField
-            label="MOU (If any):"
-            name="mou"
-            onChange={setFile("mou")}
-            existingFileUrl={existingFiles.mou}
-            onRemoveExisting={() => {
-              setExistingFiles(p => ({ ...p, mou: null }));
-              setDeleteFlags(p => ({ ...p, mou: true }));
             }}
           />
         </Grid2>
@@ -1095,6 +1180,11 @@ export default function ConsultancyPublication() {
                 { label: "Investigator Role", value: data.investigatorType || "N/A" },
                 { label: "Appraisal Eligible?", value: data.status === "Approved" ? (data.appraisalEligible || "No") : "Not yet decided" },
                 { label: "Appraisal Claimant(s)", value: appraisalClaimantsStr },
+                { label: "Applying for Incentive?", value: data.applyIncentive || "No" },
+                ...(data.applyIncentive === "Yes" ? [{
+                  label: "Estimated Incentive Amount",
+                  value: data.estimatedIncentiveAmount ? `₹${Number(data.estimatedIncentiveAmount).toLocaleString('en-IN')}` : "-"
+                }] : []),
                 { label: "Approved Incentive Amount", value: data.approvedAmount ? `₹${data.approvedAmount}` : "-" }
               ].map((item, idx, arr) => (
                 <Box
@@ -1175,7 +1265,7 @@ export default function ConsultancyPublication() {
                 <Typography sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Attached Supporting Documents</Typography>
               </Box>
               <Stack direction="row" spacing={3} sx={{ flexWrap: "wrap" }} useFlexGap>
-                {data.sanctionLetter && renderDetailFile("Sanction Letter / Work Order", data.sanctionLetter)}
+                {data.sanctionLetter && renderDetailFile("Account In-charge approval certificate", data.sanctionLetter)}
                 {data.mou && renderDetailFile("MOU Document", data.mou)}
               </Stack>
             </Paper>
