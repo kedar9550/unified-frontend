@@ -233,6 +233,7 @@ export default function PatentPublication() {
           newForm.grantedinsentiveappllieddate = "";
         } else if (val === "Granted") {
           newForm.grantedstatus = "yes";
+          newForm.publishedstatus = null;
         }
       }
       return newForm;
@@ -480,7 +481,7 @@ export default function PatentPublication() {
       if (form.applyingSeedGrant === "Yes") expectedAmt = expectedAmt / 2;
       if (isUtilityTypeNo) expectedAmt = 0;
 
-      fd.append("publishedstatus", form.publishedstatus);
+      fd.append("publishedstatus", form.publishedstatus !== null && form.publishedstatus !== undefined ? form.publishedstatus : "");
       fd.append("publishedexpectedamount", (applyIncentive === "Yes" && form.status === "Published") ? expectedAmt : "");
       fd.append("publishedincentiveamount", form.publishedincentiveamount);
       fd.append("publisheddate", form.publisheddate);
@@ -958,7 +959,7 @@ export default function PatentPublication() {
         )}
 
         <Box>
-          <Typography sx={labelStyle}>Name of the Applicant : *</Typography>
+          <Typography sx={labelStyle}>Patent Applicant Name : *</Typography>
           <TextField
             size="small"
             fullWidth
@@ -970,7 +971,7 @@ export default function PatentPublication() {
           />
         </Box>
         <Box>
-          <Typography sx={labelStyle}>Applicant Affiliation : *</Typography>
+          <Typography sx={labelStyle}>Patent Applicant's Affiliation : *</Typography>
           <TextField
             size="small"
             fullWidth
