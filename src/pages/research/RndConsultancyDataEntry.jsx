@@ -135,7 +135,7 @@ export default function RndConsultancyDataEntry() {
     if (type === "Principal Investigator (PI)") {
       for (let i = 1; i <= total - 1; i++) {
         const existing = form.otherInvestigatorsList[i - 1];
-        newOtherInvestigators.push(existing || {
+        newOtherInvestigators.push(existing ? { ...existing, role: "Co-Investigator" } : {
           investigatorPosition: i + 1,
           role: "Co-Investigator",
           affiliationType: "AUS",
@@ -222,6 +222,10 @@ export default function RndConsultancyDataEntry() {
     }
     if (!form.title || !form.typeOfConsultancy || !form.fundingIndustry || !form.amount) {
       toast.error("Please fill all required fields");
+      return;
+    }
+    if (!files.sanctionLetter) {
+      toast.error("Please upload Account In-charge approval certificate");
       return;
     }
     if (!form.investigatorType) {
@@ -397,6 +401,8 @@ export default function RndConsultancyDataEntry() {
                   <MenuItem value="" disabled>--Select--</MenuItem>
                   <MenuItem value="testing">Testing</MenuItem>
                   <MenuItem value="design">Design</MenuItem>
+                  <MenuItem value="training">Training</MenuItem>
+                  <MenuItem value="individual">Any individual faculty</MenuItem>
                 </Select>
               </Box>
               <Box>
@@ -598,18 +604,67 @@ export default function RndConsultancyDataEntry() {
               </Box>
             </Grid2>
 
+            {form.applyIncentive === "Yes" && (() => {
+              const recAmt = parseFloat(String(form.receivedAmount || "0").replace(/,/g, "")) || 0;
+              const type = (form.typeOfConsultancy || "").toLowerCase().trim();
+              let percentage = 0;
+              let typeLabel = "";
+
+              if (type === "testing") {
+                percentage = 50;
+                typeLabel = "Testing (50% Faculty / 50% University)";
+              } else if (type === "design") {
+                percentage = 60;
+                typeLabel = "Design (60% Faculty / 40% University)";
+              } else if (type === "training") {
+                percentage = 80;
+                typeLabel = "Training (80% Faculty / 20% University)";
+              } else if (type === "individual") {
+                percentage = 80;
+                typeLabel = "Any Individual Faculty (80% Faculty / 20% University)";
+              }
+
+              const estimatedAmount = Math.round((recAmt * percentage) / 100);
+
+              return (
+                <Box sx={{
+                  p: 2.5,
+                  borderRadius: "12px",
+                  background: "rgba(16, 185, 129, 0.05)",
+                  border: "1px dashed rgba(16, 185, 129, 0.3)",
+                  mt: 2.5,
+                  mb: 1
+                }}>
+                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
+                    <Box>
+                      <Typography sx={{ fontSize: "0.8rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.5px", color: "#059669" }}>
+                        Estimated Consultancy Incentive Amount
+                      </Typography>
+                      <Typography sx={{ fontSize: "1.6rem", fontWeight: 800, color: "#047857", mt: 0.5 }}>
+                        ₹{estimatedAmount.toLocaleString('en-IN')}
+                      </Typography>
+                      {typeLabel ? (
+                        <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.5 }}>
+                          Allocation: <strong>{typeLabel}</strong> from Received Amount ({recAmt > 0 ? `₹${recAmt.toLocaleString('en-IN')}` : "₹0"})
+                        </Typography>
+                      ) : (
+                        <Typography variant="caption" sx={{ color: "#d97706", display: "block", mt: 0.5 }}>
+                          ⚠️ Please select <strong>Type of Consultancy</strong> and enter <strong>Received Amount</strong> to calculate estimated incentive.
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
+                </Box>
+              );
+            })()}
+
             <NoteBox />
 
             <Grid2 sx={{ mt: 2 }}>
               <FileField
-                label="Sanction Letter:"
+                label="Account In-charge approval certificate : *"
                 name="sanctionLetter"
                 onChange={setFile("sanctionLetter")}
-              />
-              <FileField
-                label="MOU (If any):"
-                name="mou"
-                onChange={setFile("mou")}
               />
             </Grid2>
 

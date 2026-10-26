@@ -127,7 +127,7 @@ export default function RndFundedProjectDataEntry() {
     if (type === "Principal Investigator (PI)") {
       for (let i = 1; i <= total - 1; i++) {
         const existing = form.otherInvestigatorsList[i - 1];
-        newOtherInvestigators.push(existing || {
+        newOtherInvestigators.push(existing ? { ...existing, role: "Co-Investigator" } : {
           investigatorPosition: i + 1,
           role: "Co-Investigator",
           affiliationType: "AUS",

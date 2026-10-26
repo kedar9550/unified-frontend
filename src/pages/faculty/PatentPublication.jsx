@@ -331,7 +331,7 @@ export default function PatentPublication() {
       return;
     }
     if (finalFacultyRole === "Inventor / Co-Inventor" && (!finalPatentName || !finalApplicantAffiliation)) {
-      toast.error("Please provide the Name of the Applicant and Applicant Affiliation");
+      toast.error("Please provide the Name of the Patent Applicant and Patent Applicant's Affiliation");
       return;
     }
     if (!form.title || !form.applicationNo || (form.status !== 'Granted' && !form.dateOfFiling)) {
@@ -351,7 +351,7 @@ export default function PatentPublication() {
       return;
     }
     if (!form.patentName) {
-      toast.error("Please select the Name of the Applicant in Patent");
+      toast.error("Please enter the Patent Applicant Name");
       return;
     }
     if (!form.applyingSeedGrant) {
