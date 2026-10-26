@@ -1,7 +1,3 @@
-﻿Faculty Employee ID,Faculty Name,Academic Year,College,PAN Number,DOI,"Publication Scope
-(National/International)","Journal Quartile
-Q1/Q2/Q3/Q4","Journal Type
-SCI/SCIE/ESCI/WoS/SCOPUS",Paper Title,Journal Name,Volume,Issue,Published Month,Published Year,H Index,JCR Impact Factor,Total Authors,Faculty  Author Position,"Aditya Co-author positions ( if existing )
-Emp Id only",,,,,,,
-,,,,,,,,,,,,,,,,,,,1,2,3,4,5,6,7,8
-5741,k,2025-2026,AUS,ABC5689652,10.52698752,National,Q1,SCI,Sample title,sample JN,25,10,MAY,2025,5,20,4,2,5660,,5694,,,,,
+Faculty Employee ID,Faculty Name,Academic Year,College,PAN Number,Paper Title,DOI,Journal Name,ISSN,eISSN,Is Scopus (Yes/No),Journal Quartile (Q1/Q2/Q3/Q4/None),Journal Type (SCIE/SCI/ESCI/SSCI/AHCI/None),Journal Category (IEEE/ASME/ASCE/ACM/OTHERS),Volume,Issue,Page Nos,Published Month,Published Year,H Index,Citations,JCR Impact Factor,SDGs,Total Authors,Faculty Author Position,Corresponding Author (Yes/No),Students Involved (Yes/No),Applying Seed Grant (Yes/No),Apply Incentive (Yes/No),Estimated Incentive Amount,Approved Amount,Appraisal Eligible (Yes/No),Aditya Co-author positions (if existing) Emp Id only,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,1,2,3,4,5,6,7,8
+5741,Dr. John Doe,2025-2026,AUS,ABCDE1234F,Sample Machine Learning Research,10.1016/j.sample.2025.01,International Journal of Computing,1234-5678,2049-3630,Yes,Q1,SCIE,OTHERS,25,4,101-115,JAN,2025,12,45,3.25,Goal 4: Quality Education,4,1,Yes,No,No,No,0,0,Yes,5660,,5694,,,,,
