@@ -38,7 +38,8 @@ import {
   ChevronRight,
   EventAvailable,
   Category,
-  Settings
+  Settings,
+  Layers
 } from "@mui/icons-material";
 import { useAuth } from "../../context/AuthContext";
 import { ROLE_ROUTES } from "../../config/rolesNav";
@@ -146,6 +147,8 @@ const ITEM_METADATA = {
   "All Central Events": { color: "rgba(30, 64, 175, 0.12)", iconColor: "#3b82f6", icon: <EventAvailable /> },
   "Manage Event Types": { color: "rgba(168, 85, 247, 0.12)", iconColor: "#a855f7", icon: <Category /> },
   "University Data": { color: "rgba(16, 185, 129, 0.12)", iconColor: "#10b981", icon: <ListAlt /> },
+  "Activity Hub": { color: "rgba(0, 78, 146, 0.12)", iconColor: "#004e92", icon: <Layers /> },
+  "Registrations": { color: "rgba(14, 165, 233, 0.12)", iconColor: "#0ea5e9", icon: <People /> },
 
 
   "Raise Ticket": { color: "rgba(244, 63, 94, 0.12)", iconColor: "#f43f5e", icon: <ConfirmationNumber /> },

@@ -42,6 +42,7 @@ import {
   HourglassEmpty,
   Category,
   DynamicForm,
+  Layers,
 } from "@mui/icons-material";
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
@@ -60,6 +61,14 @@ export const ROLE_ROUTES = {
         { text: "Event Subcategories", path: "/central-events/subcategories", icon: <Category /> },
         { text: "All Central Events", path: "/central-events", icon: <EventAvailable /> },
         { text: "Activities", path: "/central-events/activities", icon: <ListAlt /> },
+        {
+          text: "Activity Hub",
+          icon: <Layers />,
+          nested: [
+            { text: "Activities", path: "/activity-hub/activities", icon: <Layers /> },
+            { text: "Registrations", path: "/activity-hub/registrations", icon: <People /> }
+          ]
+        },
         // { text: "Generate Form", path: "/central-events/activities/generate-form", icon: <DynamicForm /> },
         //  { text: "Dynamic Forms", path: "/central-events/activities/forms", icon: <Description /> },
       ]
@@ -86,14 +95,22 @@ export const ROLE_ROUTES = {
 
   // Navigation items for the Student default role
   STUDENT: [
-
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    { text: "Activity Hub", path: "/student/activity-hub", icon: <Layers /> },
     { text: "Academics", path: "/academics", icon: <MenuBook /> },
   ],
 
   // Navigation items for the Faculty default role
   FACULTY: [
     { text: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+    {
+      text: "Activity Hub",
+      icon: <Layers />,
+      nested: [
+        { text: "Activities", path: "/activity-hub/activities", icon: <Layers /> },
+        { text: "Registrations", path: "/activity-hub/registrations", icon: <People /> }
+      ]
+    },
     { text: "Academics", path: "/teaching", icon: <MenuBook /> },
     {
       text: "Research",
