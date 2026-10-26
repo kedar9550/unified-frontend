@@ -25,12 +25,13 @@ import {
   People as PeopleIcon,
   Close as CloseIcon,
   QrCode2 as QrIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  Public as PublicIcon
 } from '@mui/icons-material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { QRCodeSVG } from 'qrcode.react';
-import { getCentralEventBySlug, registerCentralEvent } from '../../api/centralEventsApi';
+import { getCentralEventBySlug, registerCentralEvent, publishCentralEvent } from '../../api/centralEventsApi';
 import { PageHeader } from '../../components/common';
 import PageContainer from '../../components/common/design-system/PageContainer';
 import { toast } from 'sonner';
@@ -53,6 +54,7 @@ export default function CentralEventDetailPage() {
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [publishing, setPublishing] = useState(false);
 
   // Registration Dialog State
   const [openRegister, setOpenRegister] = useState(false);
@@ -77,6 +79,22 @@ export default function CentralEventDetailPage() {
     };
     fetchEvent();
   }, [slug]);
+
+  const handlePublishEvent = async () => {
+    if (!event?._id) return;
+    setPublishing(true);
+    try {
+      const res = await publishCentralEvent(event._id);
+      if (res.success) {
+        toast.success('Event published successfully!');
+        setEvent(res.data);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to publish event');
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   // Countdown timer for QR
   useEffect(() => {
@@ -174,14 +192,34 @@ export default function CentralEventDetailPage() {
         backPath="/central-events"
         action={
           isGlobalAdmin && (
-            <Button
-              variant="contained"
-              startIcon={<EditIcon />}
-              onClick={() => navigate(`/central-events/edit/${event.slug || event._id}`)}
-              sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600 }}
-            >
-              Edit Event
-            </Button>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              {event.status === 'DRAFT' && (
+                <Button
+                  variant="contained"
+                  color="success"
+                  startIcon={publishing ? <CircularProgress size={16} color="inherit" /> : <PublicIcon />}
+                  disabled={publishing}
+                  onClick={handlePublishEvent}
+                  sx={{
+                    borderRadius: '12px',
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
+                  }}
+                >
+                  Publish Event
+                </Button>
+              )}
+              <Button
+                variant="contained"
+                startIcon={<EditIcon />}
+                onClick={() => navigate(`/central-events/edit/${event.slug || event._id}`)}
+                sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600 }}
+              >
+                Edit Event
+              </Button>
+            </Stack>
           )
         }
       />
@@ -207,7 +245,12 @@ export default function CentralEventDetailPage() {
           />
         )}
         <Box sx={{ p: 4 }}>
-          <Stack direction="row" spacing={1} mb={2} flexWrap="wrap" gap={0.5}>
+          <Stack direction="row" spacing={1} mb={2} flexWrap="wrap" gap={0.5} alignItems="center">
+            <Chip
+              label={event.status || 'PUBLISHED'}
+              color={event.status === 'PUBLISHED' ? 'success' : event.status === 'DRAFT' ? 'warning' : 'default'}
+              sx={{ borderRadius: '8px', fontWeight: 700 }}
+            />
             <Chip label={event.typeCode} color="primary" sx={{ fontWeight: 700, borderRadius: '8px' }} />
             {event.categoryName && <Chip label={event.categoryName} variant="outlined" sx={{ borderRadius: '8px' }} />}
             {event.subcategoryName && <Chip label={event.subcategoryName} color="secondary" variant="outlined" sx={{ borderRadius: '8px', fontWeight: 600 }} />}
@@ -356,8 +399,12 @@ export default function CentralEventDetailPage() {
               <Stack spacing={1.5} mt={2}>
                 {event.coordinators.faculty.map((c, i) => (
                   <Box key={i} sx={{ p: 1.5, borderRadius: '10px', bgcolor: 'var(--bg-accent-1, #f8fafc)' }}>
-                    <Typography fontWeight={700}>{c.name} {c.empId ? `(${c.empId})` : ''}</Typography>
-                    {c.designation && <Typography variant="caption" color="text.secondary" display="block">{c.designation} {c.department ? `• ${c.department}` : ''}</Typography>}
+                    <Typography fontWeight={700}>{c.name} {c.empId && !/^[0-9a-fA-F]{24}$/.test(c.empId) ? `(${c.empId})` : ''}</Typography>
+                    {c.designation && (
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        {c.designation} {c.department && !/^[0-9a-fA-F]{24}$/.test(c.department) ? `• ${c.department}` : ''}
+                      </Typography>
+                    )}
                     {c.email && <Typography variant="caption" color="text.secondary" display="block">📧 {c.email}</Typography>}
                     {c.phone && <Typography variant="caption" color="text.secondary" display="block">📞 {c.phone}</Typography>}
                   </Box>
