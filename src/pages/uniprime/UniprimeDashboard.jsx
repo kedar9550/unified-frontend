@@ -257,7 +257,7 @@ const UniprimeDashboard = () => {
         {/* Header */}
         <Box sx={{ mb: 4 }}>
           <Typography variant="h4" sx={{ fontWeight: 800, color: "var(--text-primary)", mb: 0.5, letterSpacing: "-0.02em" }}>
-            Welcome back, UniPrime!
+            Welcome back, UniPrimes!
           </Typography>
           <Typography variant="body2" color="text.secondary">
             Super Admin Dashboard • Monitor and manage the entire university ecosystem.
