@@ -10,6 +10,20 @@ import "./index.css";
 
 import { LoadingProvider } from "./context/LoadingContext";
 import { SocketProvider } from "./context/SocketContext";
+import { registerSW } from 'virtual:pwa-register';
+
+// Register PWA service worker with auto-update
+registerSW({
+  immediate: true,
+  onRegisteredSW(_url, reg) {
+    if (reg) {
+      // Check for updates every 60 minutes
+      setInterval(() => {
+        reg.update();
+      }, 60 * 60 * 1000);
+    }
+  },
+});
 ReactDOM.createRoot(document.getElementById("root")).render(
   <LoadingProvider>
       <AuthProvider>
