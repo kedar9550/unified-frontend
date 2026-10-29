@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   return {
     resolve: {
       alias: {
-        stream: path.resolve(__dirname, 'src/utils/streamMock.js'),
+        stream: path.resolve(import.meta.dirname, 'src/utils/streamMock.js'),
       },
     },
     define: {
