@@ -1,3 +1,3 @@
-Faculty Employee ID,Faculty Name,Academic Year,College,Book Title,Publisher,ISBN,Publication Scope (National/International),Edition (Number only e.g. 1 or 2),Year Of Publication,Month Of Publication,Cost,Currency Symbol (₹/$),Number of Pages,Scopus Indexed (Yes/No),Total Authors,Faculty Author Position,Students Involved (Yes/No),Aditya Co-author positions (if existing) Emp Id only,,,,,,,,
-,,,,,,,,,,,,,,,,,,1,2,3,4,5,6,7,8
-5741,Dr. John Doe,2025-2026,AUS,Principles of Software Engineering,Tech Knowledge Publications,978-93-12345-67-8,National,1,2025,JAN,650,₹,320,No,3,1,No,5660,,5694,,,,,
+Faculty Employee ID,Faculty Name,Academic Year,College,Book Title,Publisher,ISBN,Publication Scope (National/International),Edition (Number only e.g. 1 or 2),Year Of Publication,Month Of Publication,Cost,Currency Symbol (₹/$),Number of Pages,Scopus Indexed (Yes/No),Total Authors,Faculty Author Position,Students Involved (Yes/No),Applying Seed Grant (Yes/No),Apply Incentive (Yes/No),Estimated Incentive Amount,Approved Amount,Appraisal Eligible (Yes/No),Aditya Co-author positions (if existing) Emp Id only,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,1,2,3,4,5,6,7,8
+5741,Dr. John Doe,2025-2026,AUS,Principles of Software Engineering,Tech Knowledge Publications,978-93-12345-67-8,National,1,2025,JAN,650,₹,320,No,3,1,No,No,No,0,0,Yes,5660,,5694,,,,,
