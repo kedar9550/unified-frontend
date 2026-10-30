@@ -31,9 +31,11 @@ export default function RndPatentDataEntry() {
   const initialFormState = {
     facultyRole: "Applicant",
     applicantAffiliation: "",
+    patentApplicantAffliation: "",
     title: "",
     applicantName: "",
     patentName: "Aditya University",
+    patentApplicantName: "Aditya University",
     patentFiledInInstitution: "Yes",
     isInstitutionRecord: "No",
     area: "",
@@ -78,7 +80,9 @@ export default function RndPatentDataEntry() {
           newForm.approvedAmount = "";
           newForm.patentFiledInInstitution = "Yes";
           newForm.patentName = "Aditya University";
+          newForm.patentApplicantName = "Aditya University";
           newForm.applicantAffiliation = "Aditya University";
+          newForm.patentApplicantAffliation = "Aditya University";
         } else {
           newForm.applyIncentive = "";
           newForm.appraisalEligible = "";
@@ -211,8 +215,8 @@ export default function RndPatentDataEntry() {
     }
 
     const finalFacultyRole = form.patentFiledInInstitution === "Yes" ? "Inventor / Co-Inventor" : form.facultyRole;
-    const finalPatentName = form.patentFiledInInstitution === "Yes" ? "Aditya University" : (finalFacultyRole === "Applicant" ? (targetFacultyName || "") : form.patentName);
-    const finalApplicantAffiliation = form.patentFiledInInstitution === "Yes" ? "Aditya University" : (finalFacultyRole === "Applicant" ? (targetFacultyDetails?.college || "") : form.applicantAffiliation);
+    const finalPatentName = form.patentFiledInInstitution === "Yes" ? "Aditya University" : (finalFacultyRole === "Applicant" ? (targetFacultyName || "") : (form.patentApplicantName || form.patentName));
+    const finalApplicantAffiliation = form.patentFiledInInstitution === "Yes" ? "Aditya University" : (finalFacultyRole === "Applicant" ? (targetFacultyDetails?.college || "") : (form.patentApplicantAffliation || form.applicantAffiliation));
 
     if (form.patentFiledInInstitution === "No" && !finalFacultyRole) {
       toast.error("Please select Target Faculty's role in the patent");
@@ -300,9 +304,9 @@ export default function RndPatentDataEntry() {
 
       fd.append("title", form.title);
       fd.append("facultyRole", finalFacultyRole || "Applicant");
-      fd.append("applicantAffiliation", finalApplicantAffiliation);
+      fd.append("patentApplicantAffliation", finalApplicantAffiliation);
       fd.append("applicantName", targetFacultyName || "");
-      fd.append("patentName", finalPatentName);
+      fd.append("patentApplicantName", finalPatentName);
       fd.append("patentFiledInInstitution", form.patentFiledInInstitution || "Yes");
       fd.append("isUtilityType", form.isUtilityType || "Yes");
       fd.append("area", form.area);
@@ -445,7 +449,9 @@ export default function RndPatentDataEntry() {
                         ...prev,
                         patentFiledInInstitution: val,
                         patentName: val === "Yes" ? "Aditya University" : (newRole === "Applicant" ? (targetFacultyName || "") : ""),
-                        applicantAffiliation: val === "Yes" ? "Aditya University" : (newRole === "Applicant" ? (targetFacultyDetails?.college || "") : "")
+                        patentApplicantName: val === "Yes" ? "Aditya University" : (newRole === "Applicant" ? (targetFacultyName || "") : ""),
+                        applicantAffiliation: val === "Yes" ? "Aditya University" : (newRole === "Applicant" ? (targetFacultyDetails?.college || "") : ""),
+                        patentApplicantAffliation: val === "Yes" ? "Aditya University" : (newRole === "Applicant" ? (targetFacultyDetails?.college || "") : "")
                       }));
                     }}
                   >
@@ -482,7 +488,9 @@ export default function RndPatentDataEntry() {
                           ...prev,
                           facultyRole: val,
                           patentName: prev.patentFiledInInstitution === "Yes" ? "Aditya University" : (val === "Applicant" ? (targetFacultyName || "") : ""),
-                          applicantAffiliation: prev.patentFiledInInstitution === "Yes" ? "Aditya University" : (val === "Applicant" ? (targetFacultyDetails?.college || "") : "")
+                          patentApplicantName: prev.patentFiledInInstitution === "Yes" ? "Aditya University" : (val === "Applicant" ? (targetFacultyName || "") : ""),
+                          applicantAffiliation: prev.patentFiledInInstitution === "Yes" ? "Aditya University" : (val === "Applicant" ? (targetFacultyDetails?.college || "") : ""),
+                          patentApplicantAffliation: prev.patentFiledInInstitution === "Yes" ? "Aditya University" : (val === "Applicant" ? (targetFacultyDetails?.college || "") : "")
                         }));
                       }}
                     >
@@ -499,8 +507,11 @@ export default function RndPatentDataEntry() {
                 <TextField
                   size="small"
                   fullWidth
-                  value={form.patentName}
-                  onChange={set("patentName")}
+                  value={form.patentApplicantName ?? form.patentName}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setForm(prev => ({ ...prev, patentApplicantName: v, patentName: v }));
+                  }}
                   placeholder="Enter Applicant Name"
                   disabled={(form.patentFiledInInstitution || "Yes") === "Yes" || form.facultyRole === "Applicant"}
                 />
@@ -510,8 +521,11 @@ export default function RndPatentDataEntry() {
                 <TextField
                   size="small"
                   fullWidth
-                  value={form.applicantAffiliation}
-                  onChange={set("applicantAffiliation")}
+                  value={form.patentApplicantAffliation ?? form.applicantAffiliation}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setForm(prev => ({ ...prev, patentApplicantAffliation: v, applicantAffiliation: v }));
+                  }}
                   placeholder="Enter Applicant Affiliation"
                   disabled={(form.patentFiledInInstitution || "Yes") === "Yes" || form.facultyRole === "Applicant"}
                 />
