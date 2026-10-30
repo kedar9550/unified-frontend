@@ -244,7 +244,8 @@ const NotificationBell = forwardRef((props, ref) => {
         switch (type) {
             case 'SUCCESS': return <CheckCircle color="success" />;
             case 'ACTION_REQUIRED': return <WarningAmber color="warning" />;
-            case 'REJECTED': return <WarningAmber color="error" />;
+            case 'REJECTED':
+            case 'ERROR': return <WarningAmber color="error" />;
             default: return <InfoOutlined color="info" />;
         }
     };
