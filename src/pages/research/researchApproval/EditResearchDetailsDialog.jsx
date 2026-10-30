@@ -32,9 +32,15 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
 
     useEffect(() => {
         if (currentData) {
-            setFormData({ ...currentData });
+            const initial = { ...currentData };
+            if (type && type.toLowerCase().replace(/[\s\.]+/g, "") === "consultancy") {
+                if (!initial.fundingIndustry && (initial.fundingAgency || initial.organization)) {
+                    initial.fundingIndustry = initial.fundingAgency || initial.organization;
+                }
+            }
+            setFormData(initial);
         }
-    }, [currentData, open]);
+    }, [currentData, open, type]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -80,12 +86,33 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                 </Box>
                 {items.length === 0 && <Typography variant="body2" sx={{ color: "var(--text-secondary)", fontStyle: "italic", mb: 1 }}>No {title.toLowerCase()} added.</Typography>}
                 {items.map((item, index) => (
-                    <Box key={index} sx={{ display: "flex", gap: 1.5, mb: 1.5, alignItems: "flex-start" }}>
+                    <Box key={index} sx={{ display: "flex", gap: 1.5, mb: 1.5, alignItems: "flex-start", flexWrap: "wrap" }}>
                         {positionKey && (
                             <TextField size="small" label="Position" type="number" sx={{ width: 80 }} value={item[positionKey] || ""} onChange={(e) => handleArrayChange(field, index, positionKey, e.target.value)} />
                         )}
-                        <TextField size="small" label="Name" sx={{ flex: 1 }} value={item.name || ""} onChange={(e) => handleArrayChange(field, index, 'name', e.target.value)} />
-                        <TextField size="small" label="Affiliation" sx={{ flex: 1 }} value={item.affiliation || ""} onChange={(e) => handleArrayChange(field, index, 'affiliation', e.target.value)} />
+                        <TextField size="small" label="Name" sx={{ flex: 1, minWidth: 140 }} value={item.name || ""} onChange={(e) => handleArrayChange(field, index, 'name', e.target.value)} />
+                        {field === 'coInvestigators' && (
+                            <>
+                                <FormControl size="small" sx={{ width: 170 }}>
+                                    <InputLabel>Role</InputLabel>
+                                    <Select
+                                        label="Role"
+                                        value={item.role || (item.principalInvestigator === 'Yes' ? 'Principal Investigator' : 'Co-Investigator')}
+                                        onChange={(e) => {
+                                            handleArrayChange(field, index, 'role', e.target.value);
+                                            handleArrayChange(field, index, 'principalInvestigator', e.target.value === 'Principal Investigator' ? 'Yes' : 'No');
+                                            handleArrayChange(field, index, 'coPrincipalInvestigator', e.target.value === 'Principal Investigator' ? 'No' : 'Yes');
+                                        }}
+                                    >
+                                        <MenuItem value="Principal Investigator">Principal Investigator</MenuItem>
+                                        <MenuItem value="Co-Investigator">Co-Investigator</MenuItem>
+                                    </Select>
+                                </FormControl>
+                                <TextField size="small" label="Emp ID" sx={{ width: 110 }} value={item.employeeId || ""} onChange={(e) => handleArrayChange(field, index, 'employeeId', e.target.value)} />
+                                <TextField size="small" label="Dept" sx={{ width: 120 }} value={item.department || ""} onChange={(e) => handleArrayChange(field, index, 'department', e.target.value)} />
+                            </>
+                        )}
+                        <TextField size="small" label="Affiliation" sx={{ flex: 1, minWidth: 140 }} value={item.affiliation || ""} onChange={(e) => handleArrayChange(field, index, 'affiliation', e.target.value)} />
                         <Button color="error" onClick={() => removeArrayItem(field, index)} sx={{ mt: 0.5, minWidth: 'auto', p: 1, borderRadius: '8px' }}><CloseIcon fontSize="small" /></Button>
                     </Box>
                 ))}
@@ -101,7 +128,25 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
             if (routeType === "fundedproject") routeType = "funded-project";
             if (routeType === "novelproduct") routeType = "novel-product";
 
-            const res = await API.put(`/api/hod/research-requests/${routeType}/${currentData._id}`, formData);
+            const payload = { ...formData };
+            if (routeType === "consultancy") {
+                if (!payload.fundingIndustry && payload.fundingAgency) {
+                    payload.fundingIndustry = payload.fundingAgency;
+                }
+                if (payload.fundingIndustry) {
+                    payload.organization = payload.fundingIndustry;
+                }
+                if (payload.receivedAmountDate === "") {
+                    payload.receivedAmountDate = null;
+                }
+                if (payload.investigatorType) {
+                    const isPI = payload.investigatorType === 'Principal Investigator (PI)' || payload.investigatorType === 'Principal Investigator';
+                    payload.principalInvestigator = isPI ? 'Yes' : 'No';
+                    payload.coPrincipalInvestigator = isPI ? 'No' : 'Yes';
+                }
+            }
+
+            const res = await API.put(`/api/hod/research-requests/${routeType}/${currentData._id}`, payload);
             if (res.data?.success) {
                 toast.success("Research details updated successfully");
                 onSave(res.data.data);
@@ -618,48 +663,80 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                 return (
                     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(12, 1fr)" }, gap: 2.5 }}>
                         <Box sx={{ gridColumn: "span 12" }}>
-                            <TextField fullWidth label="Consultancy Title" name="title" value={formData.title || ""} onChange={handleChange} variant="outlined" size="small" />
+                            <TextField fullWidth label="Title of Work" name="title" value={formData.title || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
-                            <TextField fullWidth label="Funding Agency" name="fundingAgency" value={formData.fundingAgency || ""} onChange={handleChange} variant="outlined" size="small" />
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Type of Consultancy</InputLabel>
+                                <Select label="Type of Consultancy" name="typeOfConsultancy" value={formData.typeOfConsultancy || ""} onChange={handleChange}>
+                                    <MenuItem value="testing">Testing</MenuItem>
+                                    <MenuItem value="design">Design</MenuItem>
+                                    <MenuItem value="training">Training</MenuItem>
+                                    <MenuItem value="individual">Individual</MenuItem>
+                                </Select>
+                            </FormControl>
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
-                            <TextField fullWidth label="Amount (₹)" name="amount" value={formData.amount || ""} onChange={handleChange} variant="outlined" size="small" />
+                            <TextField fullWidth label="Funding Industry" name="fundingIndustry" value={formData.fundingIndustry || formData.fundingAgency || formData.organization || ""} onChange={handleChange} variant="outlined" size="small" />
+                        </Box>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                            <TextField fullWidth label="Consultancy Amount (₹)" name="amount" value={formData.amount || ""} onChange={handleChange} variant="outlined" size="small" />
+                        </Box>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                            <TextField fullWidth label="Received Amount (₹)" name="receivedAmount" value={formData.receivedAmount || ""} onChange={handleChange} variant="outlined" size="small" />
+                        </Box>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                            <TextField
+                                fullWidth
+                                type="date"
+                                label="Date of Amount Received"
+                                name="receivedAmountDate"
+                                value={formData.receivedAmountDate ? new Date(formData.receivedAmountDate).toISOString().split("T")[0] : ""}
+                                onChange={handleChange}
+                                InputLabelProps={{ shrink: true }}
+                                variant="outlined"
+                                size="small"
+                            />
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                             <TextField fullWidth label="Duration" name="duration" value={formData.duration || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                             <FormControl fullWidth size="small">
-                                <InputLabel>Consultancy Status</InputLabel>
-                                <Select label="Consultancy Status" name="projectStatus" value={formData.projectStatus || ""} onChange={handleChange}>
-                                    <MenuItem value="Shortlisted">Shortlisted</MenuItem>
-                                    <MenuItem value="Sanctioned">Sanctioned</MenuItem>
+                                <InputLabel>Commencement Month</InputLabel>
+                                <Select label="Commencement Month" name="month" value={formData.month || ""} onChange={handleChange}>
+                                    {MONTHS.map(m => (
+                                        <MenuItem key={m} value={m}>{m}</MenuItem>
+                                    ))}
                                 </Select>
                             </FormControl>
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                             <FormControl fullWidth size="small">
-                                <InputLabel>Investigator Role</InputLabel>
-                                <Select label="Investigator Role" name="investigatorType" value={formData.investigatorType || ""} onChange={handleChange}>
+                                <InputLabel>Commencement Year</InputLabel>
+                                <Select label="Commencement Year" name="year" value={formData.year || ""} onChange={handleChange}>
+                                    {YEARS.map(y => (
+                                        <MenuItem key={y} value={y}>{y}</MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Box>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Your Role in Consultancy</InputLabel>
+                                <Select label="Your Role in Consultancy" name="investigatorType" value={formData.investigatorType || ""} onChange={handleChange}>
                                     <MenuItem value="Principal Investigator (PI)">Principal Investigator (PI)</MenuItem>
                                     <MenuItem value="Co-Principal Investigator (Co-PI)">Co-Principal Investigator (Co-PI)</MenuItem>
                                 </Select>
                             </FormControl>
                         </Box>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
-                            <FormControl fullWidth size="small">
-                                <InputLabel>Apply Incentive</InputLabel>
-                                <Select label="Apply Incentive" name="applyIncentive" value={formData.applyIncentive || ""} onChange={handleChange}>
-                                    <MenuItem value="Yes">Yes</MenuItem>
-                                    <MenuItem value="No">No</MenuItem>
-                                </Select>
-                            </FormControl>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                            <TextField fullWidth label="Total Number of Investigators" name="totalInvestigators" type="number" value={formData.totalInvestigators !== undefined && formData.totalInvestigators !== null ? formData.totalInvestigators : ((formData.coInvestigators?.length || 0) + 1)} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
+                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
                             <FormControl fullWidth size="small">
-                                <InputLabel>Applying Seed Grant</InputLabel>
-                                <Select label="Applying Seed Grant" name="applyingSeedGrant" value={formData.applyingSeedGrant || ""} onChange={handleChange}>
+                                <InputLabel>Applying for Incentive?</InputLabel>
+                                <Select label="Applying for Incentive?" name="applyIncentive" value={formData.applyIncentive || "No"} onChange={handleChange}>
                                     <MenuItem value="Yes">Yes</MenuItem>
                                     <MenuItem value="No">No</MenuItem>
                                 </Select>

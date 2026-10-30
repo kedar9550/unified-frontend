@@ -35,6 +35,7 @@ export default function RndConsultancyDataEntry() {
     month: "",
     year: "",
     investigatorType: "",
+    fundingAdityaUniversity: "No",
     applyIncentive: "No",
     appraisalEligible: "Yes",
     totalInvestigators: 1,
@@ -418,7 +419,7 @@ export default function RndConsultancyDataEntry() {
                 <TextField size="small" fullWidth value={form.receivedAmount} onChange={handleNumericChange("receivedAmount")} placeholder="Received Amount" />
               </Box>
               <Box>
-                <Typography sx={labelStyle}>Received Amount Date :</Typography>
+                <Typography sx={labelStyle}>Date of Amount Received :</Typography>
                 <TextField type="date" size="small" fullWidth value={form.receivedAmountDate} onChange={set("receivedAmountDate")} InputLabelProps={{ shrink: true }} />
               </Box>
               <Box>
@@ -467,8 +468,8 @@ export default function RndConsultancyDataEntry() {
                       <Chip label={ca.role} size="small" color={ca.role === "Principal Investigator" ? "primary" : "secondary"} sx={{ fontWeight: 700, borderRadius: "6px" }} />
                     </Box>
 
-                    <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2 }}>
-                      <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }, gap: 2 }}>
+                      <Box>
                         <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE *</Typography>
                         <Select
                           size="small"
@@ -485,7 +486,7 @@ export default function RndConsultancyDataEntry() {
 
                       {ca.affiliationType === "AUS" && (
                         <>
-                          <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                          <Box>
                             <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID *</Typography>
                             <TextField
                               size="small"
@@ -498,7 +499,7 @@ export default function RndConsultancyDataEntry() {
                               placeholder="e.g. 5741"
                             />
                           </Box>
-                          <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                          <Box>
                             <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>NAME</Typography>
                             <TextField
                               size="small"
@@ -509,7 +510,7 @@ export default function RndConsultancyDataEntry() {
                               sx={{ background: "rgba(0,0,0,0.02)" }}
                             />
                           </Box>
-                          <Box sx={{ gridColumn: { xs: "span 12", sm: "span 4" } }}>
+                          <Box>
                             <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>DEPARTMENT</Typography>
                             <TextField
                               size="small"
