@@ -32,7 +32,13 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
 
     useEffect(() => {
         if (currentData) {
-            setFormData({ ...currentData });
+            setFormData({
+                ...currentData,
+                patentApplicantName: currentData.patentApplicantName || currentData.patentName || "",
+                patentName: currentData.patentApplicantName || currentData.patentName || "",
+                patentApplicantAffliation: currentData.patentApplicantAffliation || currentData.applicantAffiliation || "",
+                applicantAffiliation: currentData.patentApplicantAffliation || currentData.applicantAffiliation || ""
+            });
         }
     }, [currentData, open]);
 
@@ -42,6 +48,14 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
             const next = { ...prev, [name]: value };
             if (name === 'journalType') {
                 next.isWos = (value && value !== 'None') ? 'Yes' : 'No';
+            }
+            if (name === 'patentName' || name === 'patentApplicantName') {
+                next.patentName = value;
+                next.patentApplicantName = value;
+            }
+            if (name === 'applicantAffiliation' || name === 'patentApplicantAffliation') {
+                next.applicantAffiliation = value;
+                next.patentApplicantAffliation = value;
             }
             return next;
         });
@@ -469,8 +483,8 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                                     <InputLabel>Name of Applicant in Patent</InputLabel>
                                     <Select
                                         label="Name of Applicant in Patent"
-                                        name="patentName"
-                                        value={formData.patentName || ""}
+                                        name="patentApplicantName"
+                                        value={formData.patentApplicantName || formData.patentName || ""}
                                         onChange={handleChange}
                                     >
                                         <MenuItem value="Aditya University">Aditya University</MenuItem>
@@ -478,24 +492,24 @@ const EditResearchDetailsDialog = ({ open, onClose, type, currentData, onSave })
                                     </Select>
                                 </FormControl>
                             ) : (
-                                <TextField fullWidth label="Name of Applicant in Patent" name="patentName" value={formData.patentName || ""} onChange={handleChange} variant="outlined" size="small" />
+                                <TextField fullWidth label="Name of Applicant in Patent" name="patentApplicantName" value={formData.patentApplicantName || formData.patentName || ""} onChange={handleChange} variant="outlined" size="small" />
                             )}
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
                             <TextField fullWidth label="Area" name="area" value={formData.area || ""} onChange={handleChange} variant="outlined" size="small" />
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
-                            <TextField 
-                                fullWidth 
-                                label="Filing / Application Number" 
-                                name="applicationNo" 
-                                value={formData.applicationNo || formData.filingNo || ""} 
+                            <TextField
+                                fullWidth
+                                label="Filing / Application Number"
+                                name="applicationNo"
+                                value={formData.applicationNo || formData.filingNo || ""}
                                 onChange={(e) => {
                                     handleChange(e);
                                     setFormData(prev => ({ ...prev, filingNo: e.target.value, applicationNo: e.target.value }));
-                                }} 
-                                variant="outlined" 
-                                size="small" 
+                                }}
+                                variant="outlined"
+                                size="small"
                             />
                         </Box>
                         <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6" } }}>
