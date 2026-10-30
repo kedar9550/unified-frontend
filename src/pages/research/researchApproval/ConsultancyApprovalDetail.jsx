@@ -12,18 +12,36 @@ import HistoryIcon from '@mui/icons-material/History';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import GroupsIcon from '@mui/icons-material/Groups';
 import DownloadIcon from '@mui/icons-material/Download';
+import GavelIcon from '@mui/icons-material/Gavel';
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
 import { toast } from "sonner";
 import API from "../../../api/axios";
 import { useAuth } from "../../../context/AuthContext";
-import EditResearchDetailsDialog from "./EditResearchDetailsDialog";
+import EditInvestigatorsDialog from "./EditInvestigatorsDialog";
+
+const consultancyTypes = [
+    { value: "testing", label: "Testing" },
+    { value: "design", label: "Design" },
+    { value: "training", label: "Training" },
+    { value: "individual", label: "Any individual faculty" },
+    { value: "advisory", label: "Advisory" },
+    { value: "others", label: "Others" }
+];
+
+const monthsList = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+];
 
 const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
     const { user, activeRole } = useAuth();
-    const r = typeof role !== 'undefined' ? role : (typeof effectiveRole !== 'undefined' ? effectiveRole : '');
-    const isDean = r === 'RESEARCH_DEAN';
-    const isCoordinator = r === 'RESEARCH_COORDINATOR';
+    const effectiveRole = role || activeRole || user?.selectedRole || user?.role || '';
+    const isDean = effectiveRole === 'RESEARCH_DEAN';
+    const isCoordinator = effectiveRole === 'RESEARCH_COORDINATOR';
     const isResearchAdmin = isDean || isCoordinator;
     const isHOD = !isResearchAdmin;
+
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [remarks, setRemarks] = useState("");
@@ -32,9 +50,12 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
     const [decisionMode, setDecisionMode] = useState(null);
     const [actionLoading, setActionLoading] = useState(false);
     const [imgError, setImgError] = useState(false);
-    const [editOpen, setEditOpen] = useState(false);
 
-    const effectiveRole = role || activeRole || user?.selectedRole || user?.role || '';
+    // In-page editing states
+    const [isEditingDetails, setIsEditingDetails] = useState(false);
+    const [editableData, setEditableData] = useState({});
+    const [detailsSaving, setDetailsSaving] = useState(false);
+    const [isInvestigatorsModalOpen, setIsInvestigatorsModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -58,7 +79,7 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
             }
         };
         fetchDetails();
-    }, [id]);
+    }, [id, isResearchAdmin]);
 
     const handleAction = async (action) => {
         if (!remarks && action === 'Reject') {
@@ -92,17 +113,111 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
         }
     };
 
+    const handleStartEdit = () => {
+        let formattedDate = "";
+        if (data.receivedAmountDate) {
+            try {
+                formattedDate = new Date(data.receivedAmountDate).toISOString().split('T')[0];
+            } catch (e) {
+                formattedDate = "";
+            }
+        }
+
+        const computedTotal = data.totalInvestigators !== undefined && data.totalInvestigators !== null
+            ? data.totalInvestigators
+            : ((data.coInvestigators?.length || 0) + 1);
+
+        const currentRole = data.investigatorType || (data.principalInvestigator === 'Yes' ? 'Principal Investigator (PI)' : 'Co-Principal Investigator (Co-PI)');
+        const isPI = currentRole.includes('Principal Investigator (PI)') || currentRole === 'Principal Investigator';
+
+        setEditableData({
+            title: data.title || "",
+            typeOfConsultancy: (data.typeOfConsultancy || "testing").toLowerCase(),
+            fundingIndustry: data.fundingIndustry || "",
+            amount: data.amount !== undefined ? data.amount : "",
+            receivedAmount: data.receivedAmount !== undefined ? data.receivedAmount : "",
+            receivedAmountDate: formattedDate,
+            duration: data.duration !== undefined ? data.duration : "",
+            month: data.month || "",
+            year: data.year || "",
+            investigatorType: currentRole,
+            principalInvestigator: isPI ? "Yes" : "No",
+            coPrincipalInvestigator: isPI ? "No" : "Yes",
+            totalInvestigators: computedTotal,
+            coInvestigators: data.coInvestigators ? JSON.parse(JSON.stringify(data.coInvestigators)) : [],
+            applyIncentive: data.applyIncentive || "No"
+        });
+        setIsEditingDetails(true);
+    };
+
+    const handleSaveDetails = async () => {
+        setDetailsSaving(true);
+        try {
+            const isPI = (editableData.investigatorType || '').includes('Principal Investigator (PI)') || editableData.investigatorType === 'Principal Investigator';
+            const payload = {
+                ...editableData,
+                totalInvestigators: Number(editableData.totalInvestigators) || 1,
+                principalInvestigator: isPI ? 'Yes' : 'No',
+                coPrincipalInvestigator: isPI ? 'No' : 'Yes'
+            };
+            const res = await API.put(`/api/hod/research-requests/consultancy/${data._id}`, payload);
+            if (res.data?.success) {
+                const freshRes = await API.get(`/api/research/consultancy/${data._id}`);
+                if (freshRes.data?.success) {
+                    setData(freshRes.data.data);
+                } else {
+                    setData(res.data.data);
+                }
+                setIsEditingDetails(false);
+                toast.success("Consultancy details updated successfully");
+            } else {
+                toast.error(res.data?.message || "Failed to update consultancy details");
+            }
+        } catch (err) {
+            console.error("Save details error:", err);
+            toast.error(err.response?.data?.message || "Failed to update consultancy details");
+        } finally {
+            setDetailsSaving(false);
+        }
+    };
+
     if (loading) return null;
     if (!data) return <Box sx={{ textAlign: 'center', p: 5 }}><Typography color="error">Failed to load data.</Typography><Button onClick={onBack} sx={{ mt: 2 }}>Go Back</Button></Box>;
 
     const { facultyId } = data;
     const mainFacultyName = facultyId?.name || "Faculty Applicant";
-    const adityaCoInvNames = (data.coInvestigators || [])
+
+    const currentCoInvestigators = isEditingDetails ? (editableData.coInvestigators || []) : (data.coInvestigators || []);
+    const adityaCoInvNames = currentCoInvestigators
         .filter(c => c.affiliationType === "Aditya University" || c.employeeId || c.affiliation === "Aditya University")
         .map(c => c.name)
         .filter(Boolean);
     const allClaimants = [mainFacultyName, ...adityaCoInvNames].filter((v, i, a) => v && a.indexOf(v) === i);
     const appraisalClaimantsStr = allClaimants.length > 0 ? allClaimants.join(", ") : "-";
+
+    const currentTotalInvestigators = isEditingDetails
+        ? (Number(editableData.totalInvestigators) || (currentCoInvestigators.length + 1))
+        : (data.totalInvestigators !== undefined && data.totalInvestigators !== null ? data.totalInvestigators : ((data.coInvestigators?.length || 0) + 1));
+
+    const calculatedEstimatedIncentive = (() => {
+        const applyInc = isEditingDetails ? editableData.applyIncentive : data.applyIncentive;
+        if (applyInc !== "Yes") return "₹0";
+
+        if (isEditingDetails) {
+            const recAmt = parseFloat(String(editableData.receivedAmount || "0").replace(/,/g, "")) || 0;
+            const type = (editableData.typeOfConsultancy || "").toLowerCase().trim();
+            let est = 0;
+            if (type === "testing") {
+                est = Math.round(recAmt * 0.50);
+            } else if (type === "design") {
+                est = Math.round(recAmt * 0.60);
+            } else if (type === "training" || type === "individual") {
+                est = Math.round(recAmt * 0.80);
+            }
+            return `₹${est.toLocaleString('en-IN')}`;
+        }
+        return data.estimatedIncentiveAmount ? `₹${Number(data.estimatedIncentiveAmount).toLocaleString('en-IN')}` : "₹0";
+    })();
 
     const statusStyle = (() => {
         const s = data.status || "";
@@ -116,15 +231,15 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
         <Box sx={{
             p: horizontal ? "10px 16px" : 2, borderRadius: "14px", background: horizontal ? "transparent" : "rgba(255,255,255,0.02)",
             height: "100%", display: "flex", flexDirection: horizontal ? "row" : "column",
-            alignItems: horizontal ? "center" : "flex-start", justifyContent: horizontal ? "flex-start" : "center",
+            alignItems: horizontal ? "center" : "flex-start", justifyContent: horizontal ? "space-between" : "center",
             gap: horizontal ? 2 : 0.5, transition: "all 0.3s ease",
             borderBottom: horizontal ? "1px solid var(--border-color)" : "1px solid transparent",
             "&:last-child": { borderBottom: "none" },
             "&:hover": { borderColor: "var(--color-primary)", bgcolor: "rgba(190, 147, 55, 0.05)", transform: "translateY(-2px)", boxShadow: "var(--shadow-premium)" }
         }}>
-            <Typography variant="caption" sx={{ flex: horizontal ? { xs: "0 0 120px", sm: "0 0 150px" } : "none", color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 900, fontSize: "0.65rem", mb: horizontal ? 0 : 0.5 }}>{label}</Typography>
-            <Box sx={{ flex: horizontal ? 1 : "none" }}>
-                {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.9rem" }}>{value || "-"}</Typography>}
+            <Typography variant="caption" sx={{ flex: horizontal ? { xs: "0 0 130px", sm: "0 0 170px" } : "none", color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 900, fontSize: "0.68rem", mb: horizontal ? 0 : 0.5 }}>{label}</Typography>
+            <Box sx={{ flex: horizontal ? 1 : "none", display: horizontal ? "flex" : "block", justifyContent: horizontal ? "flex-end" : "flex-start" }}>
+                {chip ? chip : <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.9rem", textAlign: horizontal ? "right" : "left" }}>{value || "-"}</Typography>}
             </Box>
         </Box>
     );
@@ -173,6 +288,133 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
             </Grid>
         );
     };
+
+    const consultancyDetailsList = [
+        {
+            key: "title",
+            label: "Title of Work",
+            value: data.title || "-",
+            editable: true,
+            type: "text"
+        },
+        {
+            key: "typeOfConsultancy",
+            label: "Type of Consultancy",
+            value: data.typeOfConsultancy ? data.typeOfConsultancy.charAt(0).toUpperCase() + data.typeOfConsultancy.slice(1) : "-",
+            editable: true,
+            type: "select",
+            options: consultancyTypes
+        },
+        {
+            key: "fundingIndustry",
+            label: "Funding Industry",
+            value: data.fundingIndustry || "-",
+            editable: true,
+            type: "text"
+        },
+        {
+            key: "amount",
+            label: "Consultancy Amount",
+            value: `₹${data.amount || 0}`,
+            editable: true,
+            type: "number"
+        },
+        {
+            key: "receivedAmount",
+            label: "Received Amount",
+            value: data.receivedAmount ? `₹${data.receivedAmount}` : "-",
+            editable: true,
+            type: "number"
+        },
+        {
+            key: "receivedAmountDate",
+            label: "Date of Amount Received",
+            value: data.receivedAmountDate ? new Date(data.receivedAmountDate).toLocaleDateString() : "-",
+            editable: true,
+            type: "date"
+        },
+        {
+            key: "duration",
+            label: "Duration",
+            value: data.duration || "-",
+            editable: true,
+            type: "text"
+        },
+        {
+            key: "month",
+            label: "Commencement Month",
+            value: data.month || "-",
+            editable: true,
+            type: "select",
+            options: monthsList
+        },
+        {
+            key: "year",
+            label: "Commencement Year",
+            value: data.year || "-",
+            editable: true,
+            type: "number"
+        },
+        {
+            key: "investigatorType",
+            label: "Your Role in Consultancy",
+            value: data.investigatorType || (data.principalInvestigator === 'Yes' ? 'Principal Investigator (PI)' : 'Co-Principal Investigator (Co-PI)'),
+            editable: true,
+            type: "select",
+            options: [
+                "Principal Investigator (PI)",
+                "Co-Principal Investigator (Co-PI)"
+            ]
+        },
+        {
+            key: "totalInvestigators",
+            label: "Total Number of Investigators",
+            editable: true,
+            type: "investigators",
+            chip: (
+                <Box sx={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    px: 1.5, height: 28, borderRadius: '8px',
+                    bgcolor: 'var(--bg-panel)', border: '1px solid var(--border-color)',
+                    color: 'var(--text-primary)', fontWeight: 900, fontSize: '0.85rem'
+                }}>
+                    {currentTotalInvestigators} Investigator{currentTotalInvestigators > 1 ? 's' : ''}
+                </Box>
+            )
+        },
+        ...((data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) ? [{
+            key: "entryType",
+            label: "Entry Type",
+            value: "R&D Direct Entry",
+            editable: false
+        }] : []),
+        {
+            key: "appraisalEligible",
+            label: "Appraisal Eligible?",
+            value: data.status === "Approved" ? (data.appraisalEligible || "No") : "Not yet decided",
+            editable: false
+        },
+        {
+            key: "appraisalClaimants",
+            label: "Appraisal Claimant(s)",
+            value: appraisalClaimantsStr,
+            editable: false
+        },
+        {
+            key: "applyIncentive",
+            label: "Applying for Incentive?",
+            value: data.applyIncentive || "No",
+            editable: true,
+            type: "select",
+            options: ["Yes", "No"]
+        },
+        ...((isEditingDetails ? editableData.applyIncentive === "Yes" : data.applyIncentive === "Yes") ? [{
+            key: "estimatedIncentiveAmount",
+            label: "Estimated Incentive Amount",
+            value: calculatedEstimatedIncentive,
+            editable: false
+        }] : [])
+    ];
 
     return (
         <Box sx={{ width: "100%", pb: 5 }}>
@@ -264,80 +506,182 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                 </Card>
 
                 <Card sx={{ ...cardStyle, flex: { xs: "1 1 100%", lg: "1 1 48%" }, mb: 0 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3 }}><BusinessCenterIcon sx={{ color: "var(--color-primary)" }} /><Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Consultancy Details</Typography></Box>
+                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                            <BusinessCenterIcon sx={{ color: "var(--color-primary)" }} />
+                            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Consultancy Details</Typography>
+                        </Box>
+                        {isResearchAdmin && (
+                            isEditingDetails ? (
+                                <Box sx={{ display: "flex", gap: 1 }}>
+                                    <Button size="small" variant="outlined" color="inherit" onClick={() => setIsEditingDetails(false)} disabled={detailsSaving} sx={{ borderRadius: "8px", textTransform: "none" }}>Cancel</Button>
+                                    <Button
+                                        size="small"
+                                        variant="contained"
+                                        color="primary"
+                                        startIcon={<SaveIcon />}
+                                        disabled={detailsSaving}
+                                        onClick={handleSaveDetails}
+                                        sx={{ borderRadius: "8px", textTransform: "none" }}
+                                    >
+                                        {detailsSaving ? "Saving..." : "Save Details"}
+                                    </Button>
+                                </Box>
+                            ) : (
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    startIcon={<EditIcon />}
+                                    onClick={handleStartEdit}
+                                    sx={{ borderRadius: "8px", textTransform: "none" }}
+                                >
+                                    Edit
+                                </Button>
+                            )
+                        )}
+                    </Box>
+
                     <Box sx={{ display: "flex", flexDirection: "column" }}>
-                        <LabelValue label="Title of Work" value={data.title} horizontal />
-                        <LabelValue label="Type of Consultancy" value={data.typeOfConsultancy ? data.typeOfConsultancy.charAt(0).toUpperCase() + data.typeOfConsultancy.slice(1) : '-'} horizontal />
-                        <LabelValue label="Funding Industry" value={data.fundingIndustry} horizontal />
-                        <LabelValue label="Consultancy Amount" value={`₹${data.amount}`} horizontal />
-                        <LabelValue label="Received Amount" value={data.receivedAmount ? `₹${data.receivedAmount}` : '-'} horizontal />
-                        <LabelValue label="Received Amount Date" value={data.receivedAmountDate ? new Date(data.receivedAmountDate).toLocaleDateString() : '-'} horizontal />
-                        <LabelValue label="Duration" value={data.duration} horizontal />
-                        <LabelValue label="Commencement Month" value={data.month} horizontal />
-                        <LabelValue label="Commencement Year" value={data.year} horizontal />
-                        <LabelValue label="Your Role in Consultancy" value={data.investigatorType || (data.principalInvestigator === 'Yes' ? 'Principal Investigator (PI)' : 'Co-Principal Investigator (Co-PI)')} horizontal />
-                        {(data.entryType === 'Admin' || data.isDirectEntry === 'true' || data.isDirectEntry === true) && (
-                            <LabelValue label="Entry Type" value="R&D Direct Entry" horizontal />
-                        )}
-                        <LabelValue label="Appraisal Eligible?" value={data.status === "Approved" ? (data.appraisalEligible || "No") : "Not yet decided"} horizontal />
-                        <LabelValue label="Appraisal Claimant(s)" value={appraisalClaimantsStr} horizontal />
-                        <LabelValue label="Applying for Incentive?" value={data.applyIncentive || "No"} horizontal />
-                        {data.applyIncentive === "Yes" && (
-                            <LabelValue label="Estimated Incentive Amount" value={data.estimatedIncentiveAmount ? `₹${Number(data.estimatedIncentiveAmount).toLocaleString('en-IN')}` : "₹0"} horizontal />
-                        )}
+                        {consultancyDetailsList.map((item, idx, arr) => (
+                            <Box
+                                key={item.key || idx}
+                                sx={{
+                                    p: "10px 16px",
+                                    borderRadius: "14px",
+                                    background: "transparent",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    gap: 2,
+                                    borderBottom: idx === arr.length - 1 ? "none" : "1px solid var(--border-color)",
+                                    "&:hover": { borderColor: "var(--color-primary)", bgcolor: "rgba(190, 147, 55, 0.05)", transform: "translateY(-2px)", boxShadow: "var(--shadow-premium)" },
+                                    transition: "all 0.3s ease"
+                                }}
+                            >
+                                <Typography variant="caption" sx={{ flex: { xs: "0 0 130px", sm: "0 0 170px" }, color: "var(--color-primary)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 900, fontSize: "0.68rem" }}>
+                                    {item.label}
+                                </Typography>
+
+                                <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+                                    {isEditingDetails && item.editable ? (
+                                        item.key === "totalInvestigators" ? (
+                                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                                                <TextField
+                                                    size="small"
+                                                    type="number"
+                                                    value={editableData.totalInvestigators || ""}
+                                                    onChange={(e) => setEditableData({ ...editableData, totalInvestigators: e.target.value })}
+                                                    sx={{ width: 85, "& .MuiInputBase-root": { height: 34, fontSize: "0.875rem", borderRadius: "8px" }, bgcolor: "var(--bg-panel)" }}
+                                                    inputProps={{ min: 1 }}
+                                                />
+                                                <Button
+                                                    variant="outlined"
+                                                    size="small"
+                                                    onClick={() => setIsInvestigatorsModalOpen(true)}
+                                                    sx={{ height: 34, textTransform: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                                                >
+                                                    Edit Investigators Details
+                                                </Button>
+                                            </Box>
+                                        ) : item.type === "select" ? (
+                                            <Select
+                                                size="small"
+                                                value={editableData[item.key] !== undefined ? editableData[item.key] : ""}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (item.key === "investigatorType") {
+                                                        const isPI = val === 'Principal Investigator (PI)' || val === 'Principal Investigator';
+                                                        setEditableData(prev => ({
+                                                            ...prev,
+                                                            investigatorType: val,
+                                                            principalInvestigator: isPI ? 'Yes' : 'No',
+                                                            coPrincipalInvestigator: isPI ? 'No' : 'Yes'
+                                                        }));
+                                                    } else {
+                                                        setEditableData(prev => ({ ...prev, [item.key]: val }));
+                                                    }
+                                                }}
+                                                sx={{ minWidth: 160, height: 34, fontSize: "0.875rem", borderRadius: "8px", bgcolor: "var(--bg-panel)" }}
+                                            >
+                                                {item.options.map((opt) => {
+                                                    const optVal = typeof opt === 'object' ? opt.value : opt;
+                                                    const optLabel = typeof opt === 'object' ? opt.label : opt;
+                                                    return <MenuItem key={optVal} value={optVal}>{optLabel}</MenuItem>;
+                                                })}
+                                            </Select>
+                                        ) : (
+                                            <TextField
+                                                size="small"
+                                                type={item.type === "number" ? "number" : item.type === "date" ? "date" : "text"}
+                                                value={editableData[item.key] !== undefined ? editableData[item.key] : ""}
+                                                onChange={(e) => setEditableData(prev => ({ ...prev, [item.key]: e.target.value }))}
+                                                sx={{ minWidth: 160, "& .MuiInputBase-root": { height: 34, fontSize: "0.875rem", borderRadius: "8px" }, bgcolor: "var(--bg-panel)" }}
+                                                InputLabelProps={item.type === "date" ? { shrink: true } : {}}
+                                            />
+                                        )
+                                    ) : item.chip ? (
+                                        item.chip
+                                    ) : (
+                                        <Typography variant="body2" sx={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.9rem", textAlign: "right", maxWidth: "65%", wordBreak: "break-word" }}>
+                                            {item.value || "-"}
+                                        </Typography>
+                                    )}
+                                </Box>
+                            </Box>
+                        ))}
                     </Box>
                 </Card>
             </Box>
 
-            {data.coInvestigators?.length > 0 && (
-            <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
-                <Box sx={{ p: 3, pb: 2 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                        <GroupsIcon sx={{ color: "var(--color-primary)" }} />
-                        <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Investigators Details</Typography>
-                        <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
-                            <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
-                                Total: {data.coInvestigators.length} Co-Investigator{data.coInvestigators.length !== 1 ? 's' : ''}
-                            </Typography>
+            {currentCoInvestigators && currentCoInvestigators.length > 0 && (
+                <Card sx={{ ...cardStyle, p: 0, overflow: "hidden", mb: 3 }}>
+                    <Box sx={{ p: 3, pb: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                            <GroupsIcon sx={{ color: "var(--color-primary)" }} />
+                            <Typography variant="h6" sx={{ fontWeight: 800, color: "var(--text-primary)" }}>Co-Investigators Details</Typography>
+                            <Box sx={{ ml: 'auto', px: 1.5, py: 0.5, borderRadius: '20px', bgcolor: 'rgba(190,147,55,0.12)', border: '1px solid rgba(190,147,55,0.3)' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 900, color: 'var(--color-primary)', fontSize: '0.7rem' }}>
+                                    Total: {currentCoInvestigators.length} Co-Investigator{currentCoInvestigators.length !== 1 ? 's' : ''}
+                                </Typography>
+                            </Box>
                         </Box>
                     </Box>
-                </Box>
-                <TableContainer>
-                    <Table>
-                        <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
-                            <TableRow>
-                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>S.No</TableCell>
-                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
-                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>ROLE</TableCell>
-                                <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {data.coInvestigators.map((ca, i) => {
-                                const roleLabel = ca.role || (ca.principalInvestigator === 'Yes' ? 'Principal Investigator' : 'Co-Investigator');
-                                return (
-                                    <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
-                                        <TableCell>
-                                            <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', bgcolor: 'rgba(190,147,55,0.12)', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem' }}>{i + 1}</Box>
-                                        </TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
-                                            {ca.name}
-                                            {ca.employeeId && <Typography variant="caption" sx={{ display: 'block', color: 'var(--text-secondary)', fontWeight: 600 }}>Staff Code: {ca.employeeId}</Typography>}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Chip label={roleLabel} size="small" color={roleLabel === 'Principal Investigator' ? 'primary' : 'secondary'} variant="outlined" sx={{ fontWeight: 700, borderRadius: '6px', fontSize: '0.7rem' }} />
-                                        </TableCell>
-                                        <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>
-                                            {ca.affiliation || 'Aditya University'}
-                                            {ca.department && <Typography variant="caption" sx={{ display: 'block', color: 'var(--text-secondary)', fontWeight: 600 }}>{ca.department}</Typography>}
-                                        </TableCell>
-                                    </TableRow>
-                                );
-                            })}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            </Card>
+                    <TableContainer>
+                        <Table>
+                            <TableHead sx={{ bgcolor: "var(--bg-panel)" }}>
+                                <TableRow>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase", width: 60 }}>S.No</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>NAME</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>ROLE</TableCell>
+                                    <TableCell sx={{ color: "var(--text-secondary)", fontWeight: 800, fontSize: "0.7rem", textTransform: "uppercase" }}>AFFILIATION</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {currentCoInvestigators.map((ca, i) => {
+                                    const roleLabel = ca.role || (ca.principalInvestigator === 'Yes' ? 'Principal Investigator' : 'Co-Investigator');
+                                    return (
+                                        <TableRow key={i} sx={{ '&:hover': { bgcolor: 'rgba(190,147,55,0.04)' } }}>
+                                            <TableCell>
+                                                <Box sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', bgcolor: 'rgba(190,147,55,0.12)', border: '1.5px solid var(--color-primary)', color: 'var(--color-primary)', fontWeight: 900, fontSize: '0.85rem' }}>{i + 1}</Box>
+                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                                                {ca.name || "-"}
+                                                {ca.employeeId && <Typography variant="caption" sx={{ display: 'block', color: 'var(--text-secondary)', fontWeight: 600 }}>Staff Code: {ca.employeeId}</Typography>}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip label={roleLabel} size="small" color={roleLabel === 'Principal Investigator' ? 'primary' : 'secondary'} variant="outlined" sx={{ fontWeight: 700, borderRadius: '6px', fontSize: '0.7rem' }} />
+                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 600, color: "var(--text-secondary)" }}>
+                                                {ca.affiliation || 'Aditya University'}
+                                                {ca.department && <Typography variant="caption" sx={{ display: 'block', color: 'var(--text-secondary)', fontWeight: 600 }}>{ca.department}</Typography>}
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Card>
             )}
 
             {/* Documents */}
@@ -425,17 +769,25 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                     )}
                 </Box>
             </Box>
-            {isResearchAdmin && (
-                <EditResearchDetailsDialog
-                    open={editOpen}
-                    onClose={() => setEditOpen(false)}
-                    type="Consultancy"
-                    currentData={data}
-                    onSave={(updated) => {
-                        setData(updated);
-                    }}
-                />
-            )}
+
+            <EditInvestigatorsDialog
+                open={isInvestigatorsModalOpen}
+                onClose={() => setIsInvestigatorsModalOpen(false)}
+                coInvestigators={editableData.coInvestigators || []}
+                totalInvestigators={editableData.totalInvestigators || 1}
+                investigatorType={editableData.investigatorType || "Principal Investigator (PI)"}
+                onSave={(invData) => {
+                    const isPI = invData.investigatorType === 'Principal Investigator (PI)' || invData.investigatorType === 'Principal Investigator';
+                    setEditableData(prev => ({
+                        ...prev,
+                        coInvestigators: invData.coInvestigators,
+                        totalInvestigators: invData.totalInvestigators,
+                        investigatorType: invData.investigatorType,
+                        principalInvestigator: isPI ? 'Yes' : 'No',
+                        coPrincipalInvestigator: isPI ? 'No' : 'Yes'
+                    }));
+                }}
+            />
         </Box>
     );
 };

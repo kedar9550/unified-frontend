@@ -39,6 +39,7 @@ export default function ConsultancyPublication() {
     investigatorType: "",
     principalInvestigator: "",
     coPrincipalInvestigator: "",
+    fundingAdityaUniversity: "No",
     applyIncentive: "No",
     totalInvestigators: 1,
     otherInvestigatorsList: []
@@ -84,6 +85,7 @@ export default function ConsultancyPublication() {
       investigatorType: pub.investigatorType || "Principal Investigator (PI)",
       principalInvestigator: pub.principalInvestigator || "",
       coPrincipalInvestigator: pub.coPrincipalInvestigator || "",
+      fundingAdityaUniversity: pub.fundingAdityaUniversity || "No",
       applyIncentive: pub.applyIncentive || "No",
       totalInvestigators: pub.totalInvestigators || 1,
       otherInvestigatorsList: mappedInvestigators
@@ -366,7 +368,7 @@ export default function ConsultancyPublication() {
 
       setForm({
         title: "", typeOfConsultancy: "", fundingIndustry: "", amount: "", receivedAmount: "", receivedAmountDate: "", duration: "", month: "", year: "",
-        investigatorType: "", principalInvestigator: "", coPrincipalInvestigator: "", applyIncentive: "No",
+        investigatorType: "", principalInvestigator: "", coPrincipalInvestigator: "", fundingAdityaUniversity: "No", applyIncentive: "No",
         totalInvestigators: 1, otherInvestigatorsList: []
       });
       setFiles({ sanctionLetter: null, mou: null });
@@ -798,8 +800,8 @@ export default function ConsultancyPublication() {
                     <Chip label={ca.role} size="small" color={ca.role === "Principal Investigator" ? "primary" : "secondary"} sx={{ fontWeight: 700, borderRadius: "6px" }} />
                   </Box>
 
-                    <Box sx={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 2 }}>
-                    <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6", md: "span 3" } }}>
+                    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }, gap: 2 }}>
+                    <Box>
                       <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>AFFILIATION TYPE *</Typography>
                       <Select
                         size="small"
@@ -816,7 +818,7 @@ export default function ConsultancyPublication() {
 
                     {ca.affiliationType === "AUS" && (
                       <>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6", md: "span 3" } }}>
+                        <Box>
                           <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>EMPLOYEE ID *</Typography>
                           <TextField
                             size="small"
@@ -829,7 +831,7 @@ export default function ConsultancyPublication() {
                             placeholder="e.g. 5741"
                           />
                         </Box>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6", md: "span 3" } }}>
+                        <Box>
                           <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>NAME</Typography>
                           <TextField
                             size="small"
@@ -840,7 +842,7 @@ export default function ConsultancyPublication() {
                             sx={{ background: "rgba(0,0,0,0.02)" }}
                           />
                         </Box>
-                        <Box sx={{ gridColumn: { xs: "span 12", sm: "span 6", md: "span 3" } }}>
+                        <Box>
                           <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.5, color: "text.secondary" }}>DEPARTMENT</Typography>
                           <TextField
                             size="small"
@@ -1066,6 +1068,32 @@ export default function ConsultancyPublication() {
     const allClaimants = [mainFacultyName, ...adityaCoInvNames].filter((v, i, a) => v && a.indexOf(v) === i);
     const appraisalClaimantsStr = allClaimants.length > 0 ? allClaimants.join(", ") : "-";
 
+    const renderDetailFile = (title, filepath) => {
+      if (!filepath) return null;
+      const backendURL = (import.meta.env.VITE_BACKEND_URL || "http://localhost:9000").replace(/\/$/, "");
+      let normalizedPath = filepath.replace(/\\/g, '/');
+      if (!normalizedPath.startsWith('http') && !normalizedPath.includes('uploads/')) {
+        normalizedPath = `/uploads/consultancy/${normalizedPath.startsWith('/') ? normalizedPath.substring(1) : normalizedPath}`;
+      }
+      const cleanPath = normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`;
+      const fileUrl = normalizedPath.startsWith('http') ? normalizedPath : `${backendURL}${cleanPath}`;
+      const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(normalizedPath);
+
+      return (
+        <Box sx={{ flex: "1 1 200px" }}>
+          <Typography variant="caption" sx={{ fontWeight: 800, color: "var(--color-primary)", fontSize: "0.7rem", textTransform: "uppercase", display: "block", mb: 1 }}>{title}</Typography>
+          <Box sx={{
+            height: 120, display: "flex", alignItems: "center", justifyContent: "center",
+            border: "1px solid var(--border-color)", background: "var(--bg-panel)", borderRadius: "8px",
+            overflow: "hidden", cursor: "pointer", transition: "all 0.2s ease",
+            "&:hover": { borderColor: "var(--color-primary)", transform: "translateY(-2px)" }
+          }} onClick={() => window.open(fileUrl, '_blank')}>
+            {isImage ? <img src={fileUrl} alt={title} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Box sx={{ textAlign: "center" }}><Description sx={{ fontSize: 24, color: "var(--text-secondary)", mb: 0.5 }} /><Typography variant="caption" sx={{ color: "var(--text-secondary)", fontWeight: 700, display: "block" }}>PDF</Typography></Box>}
+          </Box>
+        </Box>
+      );
+    };
+
     return (
       <Dialog
         open={!!selectedPubDetails}
@@ -1174,7 +1202,7 @@ export default function ConsultancyPublication() {
                 { label: "Client / Funding Industry", value: data.fundingIndustry || "-" },
                 { label: "Sanctioned Amount", value: data.amount ? `₹${data.amount}` : "-" },
                 { label: "Received Amount", value: data.receivedAmount ? `₹${data.receivedAmount}` : "-" },
-                { label: "Received Amount Date", value: data.receivedAmountDate ? new Date(data.receivedAmountDate).toLocaleDateString() : "-" },
+                { label: "Date of Amount Received", value: data.receivedAmountDate ? new Date(data.receivedAmountDate).toLocaleDateString() : "-" },
                 { label: "Duration (Months)", value: data.duration || "-" },
                 { label: "Commencement Month / Year", value: `${data.month || ""} ${data.year || ""}`.trim() || "-" },
                 { label: "Investigator Role", value: data.investigatorType || "N/A" },
