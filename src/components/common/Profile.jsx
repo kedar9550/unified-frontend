@@ -139,7 +139,6 @@ const Profile = () => {
   const { user, activeRole, updateUser } = useAuth();
   const [isEditingPersonalInfo, setIsEditingPersonalInfo] = React.useState(false);
   const [isEditingQualifications, setIsEditingQualifications] = React.useState(false);
-  const [isEditingHonorsAndAwards, setIsEditingHonorsAndAwards] = React.useState(false);
   const [isEditingCourses, setIsEditingCourses] = React.useState(false);
   const [isEditingResearchInterests, setIsEditingResearchInterests] = React.useState(false);
   const [profileData, setProfileData] = React.useState(null);
@@ -343,28 +342,6 @@ const Profile = () => {
     });
   };
 
-  const handleAddAward = () => {
-    setForm(prev => ({
-      ...prev,
-      honorsAndAwards: [...(prev.honorsAndAwards || []), { title: "" }]
-    }));
-  };
-
-  const handleRemoveAward = (index) => {
-    setForm(prev => ({
-      ...prev,
-      honorsAndAwards: (prev.honorsAndAwards || []).filter((_, i) => i !== index)
-    }));
-  };
-
-  const handleAwardChange = (index, field, value) => {
-    setForm(prev => {
-      const newAwards = [...(prev.honorsAndAwards || [])];
-      newAwards[index] = { ...newAwards[index], [field]: value };
-      return { ...prev, honorsAndAwards: newAwards };
-    });
-  };
-
   const handleSave = async () => {
     setLoading(true);
     // Validate all fields before saving
@@ -390,7 +367,6 @@ const Profile = () => {
       setIsEditingQualifications(false);
       setIsEditingCourses(false);
       setIsEditingResearchInterests(false);
-      setIsEditingHonorsAndAwards(false);
     } catch (err) {
       console.error("Update failed", err);
       toast.error("Failed to update profile");
@@ -1223,124 +1199,6 @@ const Profile = () => {
         </Paper>
       )}
 
-      {/* Honors and Awards Card */}
-      {!isStudent && (
-        <Paper sx={{
-          position: "relative",
-          p: 3,
-          borderRadius: "24px",
-          background: "var(--bg-paper)",
-          border: "1px solid var(--border-color)",
-          boxShadow: "var(--shadow-lg)",
-          mt: 3,
-          width: "100%",
-          overflow: "hidden"
-        }}>
-          {/* Decorative background element */}
-          <Box sx={{
-            position: "absolute",
-            top: "-20%",
-            right: "-10%",
-            width: "300px",
-            height: "300px",
-            background: "radial-gradient(circle, var(--color-primary-alpha) 0%, transparent 70%)",
-            opacity: 0.5,
-            zIndex: 0,
-            pointerEvents: "none"
-          }} />
-
-          {/* Header */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 3, position: "relative", zIndex: 1 }}>
-            <WorkspacePremium sx={{ color: "var(--color-primary)" }} />
-            <Typography sx={{ fontSize: "1rem", fontWeight: 800, color: "var(--text-primary)" }}>
-              Honors and Awards
-            </Typography>
-          </Box>
-
-          <Box sx={{ position: "relative", zIndex: 1 }}>
-            {isEditingHonorsAndAwards ? (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {(form.honorsAndAwards || []).map((item, index) => (
-                  <Box key={index} sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                    <TextField
-                      size="small"
-                      placeholder="Award / Honor Title"
-                      value={item.title || ""}
-                      onChange={(e) => handleAwardChange(index, "title", e.target.value)}
-                      sx={{ flex: 1, background: "var(--bg-paper)", borderRadius: "8px" }}
-                    />
-                    <IconButton onClick={() => handleRemoveAward(index)} color="error" size="small">
-                      <Close fontSize="small" />
-                    </IconButton>
-                  </Box>
-                ))}
-                <Button variant="outlined" size="small" onClick={handleAddAward} sx={{ alignSelf: "flex-start", mt: 1 }}>
-                  + Add Award
-                </Button>
-              </Box>
-            ) : (
-              <Box>
-                {(Array.isArray(profile?.honorsAndAwards) && profile.honorsAndAwards.length > 0) ? (
-                  <Box component="ul" sx={{ m: 0, pl: 3, color: "var(--text-primary)" }}>
-                    {profile.honorsAndAwards.map((item, i) => (
-                      <Typography component="li" key={i} sx={{ fontSize: "0.9rem", fontWeight: 600, mb: 1 }}>
-                        {item.title || "-"}
-                      </Typography>
-                    ))}
-                  </Box>
-                ) : (
-                  <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-secondary)" }}>N/A</Typography>
-                )}
-              </Box>
-            )}
-
-            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 3 }}>
-              {isEditingHonorsAndAwards && (
-                <Button
-                  startIcon={<Close />}
-                  variant="outlined"
-                  color="error"
-                  size="small"
-                  onClick={handleDiscard}
-                  disabled={loading}
-                  sx={{
-                    textTransform: "none",
-                    fontWeight: 700,
-                    borderColor: "var(--border-color)",
-                    borderRadius: "50px",
-                    px: 2.5,
-                    py: 0.8,
-                    transition: "all 0.3s ease",
-                    "&:hover": { borderColor: "var(--color-error-dark, #dc2626)", background: "rgba(220, 38, 38, 0.05)", transform: "translateY(-1px)" }
-                  }}
-                >
-                  Discard Changes
-                </Button>
-              )}
-              <Button
-                startIcon={isEditingHonorsAndAwards ? <Save /> : <Edit />}
-                variant="outlined"
-                size="small"
-                onClick={() => isEditingHonorsAndAwards ? handleSave() : setIsEditingHonorsAndAwards(true)}
-                disabled={loading}
-                sx={{
-                  textTransform: "none",
-                  fontWeight: 700,
-                  borderColor: "var(--border-color)",
-                  color: "var(--color-primary)",
-                  borderRadius: "50px",
-                  px: 2.5,
-                  py: 0.8,
-                  transition: "all 0.3s ease",
-                  "&:hover": { borderColor: "var(--color-primary)", background: "rgba(2, 132, 199, 0.05)", transform: "translateY(-1px)" }
-                }}
-              >
-                {loading ? "Saving..." : isEditingHonorsAndAwards ? "Save Changes" : "Edit Info"}
-              </Button>
-            </Box>
-          </Box>
-        </Paper>
-      )}
 
       {/* Account & Security — full width below both columns */}
       <Paper sx={{
