@@ -149,11 +149,6 @@ import DynamicFormsListPage from "./pages/dynamicForms/DynamicFormsListPage";
 import FormSubmissionsPage from "./pages/dynamicForms/FormSubmissionsPage";
 import PublicFormPage from "./pages/dynamicForms/PublicFormPage";
 
-// Activity Hub Module
-import ActivityHubActivitiesPage from "./pages/activityHub/ActivityHubActivitiesPage";
-import ActivityHubRegistrationsPage from "./pages/activityHub/ActivityHubRegistrationsPage";
-import StudentActivityHubPage from "./pages/activityHub/StudentActivityHubPage";
-
 
 
 // Infrastructure
@@ -450,15 +445,6 @@ function App() {
         <Route path="/pay/:token" element={<ProtectedRoute element={<PaymentCheckoutPage />} />} />
 
 
-
-        {/* Activity Hub Module Routes (Isolated from legacy Central Events & Activities) */}
-        <Route path="/activity-hub" element={<ProtectedRoute element={<ActivityHubActivitiesPage />} />} />
-        <Route path="/activity-hub/activities" element={<ProtectedRoute element={<ActivityHubActivitiesPage />} />} />
-        <Route path="/activity-hub/registrations" element={<ProtectedRoute element={<ActivityHubRegistrationsPage />} />} />
-        <Route path="/central-events/activity-hub" element={<ProtectedRoute element={<ActivityHubActivitiesPage />} />} />
-        <Route path="/central-events/activity-hub/activities" element={<ProtectedRoute element={<ActivityHubActivitiesPage />} />} />
-        <Route path="/central-events/activity-hub/registrations" element={<ProtectedRoute element={<ActivityHubRegistrationsPage />} />} />
-        <Route path="/student/activity-hub" element={<ProtectedRoute element={<StudentActivityHubPage />} />} />
 
         {/* Infrastructure */}
         <Route path="/infrastructure/building" element={<ProtectedRoute element={<Building />} />} />
