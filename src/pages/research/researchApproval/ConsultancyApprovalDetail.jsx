@@ -68,7 +68,11 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                     } else {
                         if (res.data.data.hodComment) setRemarks(res.data.data.hodComment);
                     }
-                    if (res.data.data.approvedAmount) setApprovedAmount(res.data.data.approvedAmount);
+                    if (res.data.data.approvedAmount) {
+                        setApprovedAmount(res.data.data.approvedAmount);
+                    } else if (res.data.data.estimatedIncentiveAmount && res.data.data.applyIncentive === 'Yes') {
+                        setApprovedAmount(res.data.data.estimatedIncentiveAmount);
+                    }
                     if (res.data.data.appraisalEligible) setAppraisalEligible(res.data.data.appraisalEligible);
                 }
             } catch (error) {
@@ -89,6 +93,11 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
 
         if (action === 'Approve' && isResearchAdmin && !appraisalEligible) {
             toast.error('Please select Appraisal Eligible status');
+            return;
+        }
+
+        if (action === 'Approve' && isResearchAdmin && data?.applyIncentive === 'Yes' && (!approvedAmount || Number(approvedAmount) <= 0)) {
+            toast.error('Approved Incentive Amount is required');
             return;
         }
 
@@ -413,6 +422,12 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
             label: "Estimated Incentive Amount",
             value: calculatedEstimatedIncentive,
             editable: false
+        }] : []),
+        ...(data.approvedAmount ? [{
+            key: "approvedAmount",
+            label: "Approved Incentive Amount",
+            value: `₹${Number(data.approvedAmount).toLocaleString('en-IN')}`,
+            editable: false
         }] : [])
     ];
 
@@ -715,6 +730,18 @@ const ConsultancyApprovalDetail = ({ id, onBack, role }) => {
                                 <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
                                     {decisionMode === 'Approve' && isResearchAdmin && (
                                         <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
+                                            {data?.applyIncentive === 'Yes' && (
+                                                <Box sx={{ flex: "1 1 200px" }}>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>APPROVED INCENTIVE (₹) *</Typography>
+                                                    <TextField
+                                                        fullWidth size="small" type="number"
+                                                        placeholder="Enter Approved Incentive Amount"
+                                                        value={approvedAmount}
+                                                        onChange={e => setApprovedAmount(e.target.value)}
+                                                        sx={{ "& .MuiOutlinedInput-root": { borderRadius: "10px", bgcolor: "var(--bg-panel)" } }}
+                                                    />
+                                                </Box>
+                                            )}
                                             <Box sx={{ flex: "1 1 200px" }}>
                                                 <Typography variant="subtitle2" sx={{ fontWeight: 900, mb: 1, color: "var(--color-primary)", fontSize: "0.75rem" }}>CONSULTANCY ELIGIBILITY FOR APPRAISAL *</Typography>
                                                 <Select 

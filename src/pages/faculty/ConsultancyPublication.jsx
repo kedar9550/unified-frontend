@@ -62,8 +62,8 @@ export default function ConsultancyPublication() {
         mappedInvestigators.push({
           investigatorPosition: idx + 2,
           role: ca.role || (ca.principalInvestigator === "Yes" ? "Principal Investigator" : "Co-Investigator"),
-          affiliationType: ca.affiliationType || (ca.employeeId ? "AUS" : "Others"),
-          empId: ca.employeeId?.institutionId || ca.employeeId || "",
+          affiliationType: (ca.affiliationType === "AUS" || ca.affiliationType === "Aditya University" || !!ca.employeeId || (ca.affiliation && ca.affiliation.toLowerCase().includes("aditya"))) ? "AUS" : "Others",
+          empId: ca.employeeId?.institutionId || ca.employeeId || ca.empId || "",
           name: ca.name || "",
           affiliation: ca.affiliation || "",
           department: ca.department || "",
@@ -329,9 +329,9 @@ export default function ConsultancyPublication() {
       const coInvestigatorsList = form.otherInvestigatorsList.map(a => ({
         role: a.role,
         affiliationType: a.affiliationType,
-        employeeId: a.affiliationType === "AUS" ? a.empId : null,
+        employeeId: (a.affiliationType === "AUS" || a.affiliationType === "Aditya University") ? (a.empId || a.employeeId || null) : null,
         name: a.name || "",
-        affiliation: a.affiliationType === "AUS" ? "Aditya University" : (a.affiliation || ""),
+        affiliation: (a.affiliationType === "AUS" || a.affiliationType === "Aditya University") ? "Aditya University" : (a.affiliation || ""),
         department: a.department || "",
         designation: a.designation || "",
         // Backward compatibility flags
