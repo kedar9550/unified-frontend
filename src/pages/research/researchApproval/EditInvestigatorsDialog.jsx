@@ -141,7 +141,17 @@ export default function EditInvestigatorsDialog({
       investigatorType: role,
       principalInvestigator: isPI ? "Yes" : "No",
       coPrincipalInvestigator: isPI ? "No" : "Yes",
-      coInvestigators: investigators
+      coInvestigators: investigators.map(inv => {
+        const isAus = inv.affiliationType === "Aditya University" || inv.affiliationType === "AUS" || (inv.affiliation && inv.affiliation.includes("Aditya"));
+        const staffCode = inv.employeeId || inv.empId || "";
+        return {
+          ...inv,
+          affiliationType: isAus ? "Aditya University" : (inv.affiliationType || "Others"),
+          affiliation: isAus ? "Aditya University" : (inv.affiliation || ""),
+          employeeId: isAus && staffCode ? String(staffCode).trim() : null,
+          empId: isAus && staffCode ? String(staffCode).trim() : null
+        };
+      })
     });
     onClose();
   };
